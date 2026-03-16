@@ -1,0 +1,16 @@
+{
+  "name": "Shiora Health AI",
+  "short_name": "Shiora",
+  "description": "Women's Health AI Platform on the Aethelred Blockchain",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

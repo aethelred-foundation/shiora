@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f8fafc"/>
+  <rect x="0" y="0" width="1200" height="4" fill="#0ea5e9"/>
+  <!-- Background glow -->
+  <circle cx="600" cy="280" r="200" fill="#0ea5e9" opacity="0.04"/>
+  <circle cx="600" cy="280" r="120" fill="#0ea5e9" opacity="0.06"/>
+  <!-- Logo squircle -->
+  <rect x="560" y="180" width="80" height="80" rx="18" ry="18" fill="#0ea5e9"/>
+  <!-- White S inside logo -->
+  <g transform="translate(575,192)">
+    <path d="M 30 6 C 18 6 10 12 10 18 C 10 24 16 27 25 29 C 34 31 40 34 40 40 C 40 46 34 50 25 50 C 16 50 10 46 10 46" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+  <!-- App name -->
+  <text x="600" y="310" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="800" fill="#0f172a" letter-spacing="8">SHIORA</text>
+  <!-- Subtitle -->
+  <text x="600" y="355" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#64748b">Women's Health AI on the Aethelred Blockchain</text>
+  <!-- Stats bar -->
+  <rect x="250" y="410" width="700" height="1" fill="#e2e8f0"/>
+  <text x="350" y="460" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#94a3b8">HEALTH RECORDS</text>
+  <text x="350" y="490" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="700" fill="#0f172a">24,831</text>
+  <text x="600" y="460" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#94a3b8">TEE VERIFIED</text>
+  <text x="600" y="490" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="700" fill="#10b981">99.9%</text>
+  <text x="850" y="460" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#94a3b8">AI MODELS</text>
+  <text x="850" y="490" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="700" fill="#0f172a">4</text>
+  <!-- Bottom bar -->
+  <rect x="0" y="626" width="1200" height="4" fill="#0ea5e9"/>
+</svg>
