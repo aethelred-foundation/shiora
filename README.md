@@ -16,7 +16,7 @@
     <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react" alt="React">
   </p>
   <p>
-    <a href="https://shiora.health">App</a> &middot;
+    <a href="https://app.shiora.health">App</a> &middot;
     <a href="https://docs.aethelred.io">Docs</a> &middot;
     <a href="https://api.shiora.health">API Reference</a> &middot;
     <a href="https://discord.gg/aethelred">Discord</a> &middot;
@@ -527,7 +527,7 @@ Apache 2.0 &mdash; see [LICENSE](LICENSE) for details.
 ---
 
 <p align="center">
-  <a href="https://shiora.health">App</a> &middot;
+  <a href="https://app.shiora.health">App</a> &middot;
   <a href="https://docs.aethelred.io">Docs</a> &middot;
   <a href="https://discord.gg/aethelred">Discord</a> &middot;
   <a href="https://twitter.com/aethelred">Twitter</a> &middot;
