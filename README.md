@@ -1,6 +1,6 @@
 <div align="center">
   <br/>
-  <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#e84393" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.572l-7.5 7.428l-7.5-7.428A5 5 0 1 1 12 6.006a5 5 0 1 1 7.5 6.572"/><path d="M12 6v4"/><path d="M10 10h4"/></svg>
+  <img src="README-logo.svg" alt="Shiora" width="200" />
   <h1>Shiora</h1>
   <p><strong>Sovereign health data. Verifiable AI. Zero-knowledge privacy.</strong></p>
   <p>
