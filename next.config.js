@@ -4,6 +4,7 @@ const enableHsts = process.env.SHIORA_ENABLE_HSTS === 'true';
 
 const nextConfig = {
   reactStrictMode: true,
+  turbopack: false,
   swcMinify: true,
   poweredByHeader: false,
 
