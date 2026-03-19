@@ -1,7 +1,7 @@
 {
   "name": "@aethelred/shiora",
   "version": "1.0.0",
-  "description": "Shiora Health AI \u2014 Women's Health Platform on Aethelred",
+  "description": "Shiora Health AI — Women's Health Platform on Aethelred",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
@@ -38,10 +38,12 @@
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
+    "@typescript-eslint/eslint-plugin": "^8.57.1",
+    "@typescript-eslint/parser": "^8.57.1",
     "eslint": "^8.57.0",
     "eslint-config-next": "14.2.29",
     "jest": "^29.7.0",
-    "jest-environment-jsdom": "^30.3.0",
+    "jest-environment-jsdom": "^29.7.0",
     "msw": "^2.1.4",
     "prettier": "^3.2.4",
     "ts-jest": "^29.1.1",
