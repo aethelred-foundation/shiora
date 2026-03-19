@@ -27,18 +27,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-
-      - name: Cache node_modules
-        uses: actions/cache@v4
-        id: cache-deps
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-${{ matrix.node-version }}-
+          cache: 'npm'
 
       - name: Install dependencies
-        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: npm ci --legacy-peer-deps
 
       - name: Lint
