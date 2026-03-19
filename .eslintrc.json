@@ -1,15 +1,17 @@
 {
-  "extends": ["next/core-web-vitals"],
+  "extends": ["next"],
+  "plugins": ["@typescript-eslint"],
+  "parser": "@typescript-eslint/parser",
   "rules": {
     "react/no-unescaped-entities": "off",
     "react-hooks/exhaustive-deps": "warn",
+    "react-hooks/rules-of-hooks": "error",
     "no-console": ["warn", { "allow": ["warn", "error"] }],
     "prefer-const": "error",
     "no-var": "error",
     "eqeqeq": ["error", "always"],
     "curly": ["warn", "multi-line"],
-    "react/display-name": "off",
-    "@typescript-eslint/no-require-imports": "off"
+    "react/display-name": "off"
   },
   "overrides": [
     {
