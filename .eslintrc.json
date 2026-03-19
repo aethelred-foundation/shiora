@@ -7,7 +7,8 @@
     "prefer-const": "error",
     "no-var": "error",
     "eqeqeq": ["error", "always"],
-    "curly": ["warn", "multi-line"]
+    "curly": ["warn", "multi-line"],
+    "react/display-name": "off"
   },
   "overrides": [
     {
