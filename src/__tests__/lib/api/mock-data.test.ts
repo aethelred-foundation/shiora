@@ -66,7 +66,7 @@ describe('generateMockRecords', () => {
     // Use isolateModules to get a fresh module with no cached records
     let isolatedGenerateMockRecords: typeof generateMockRecords;
     jest.isolateModules(() => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      // eslint-disable-next-line global-require
       const mod = require('@/lib/api/mock-data');
       isolatedGenerateMockRecords = mod.generateMockRecords;
     });

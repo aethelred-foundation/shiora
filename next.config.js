@@ -3,8 +3,8 @@ const isDev = process.env.NODE_ENV === 'development';
 const enableHsts = process.env.SHIORA_ENABLE_HSTS === 'true';
 
 const nextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
-  
   swcMinify: true,
   poweredByHeader: false,
 
