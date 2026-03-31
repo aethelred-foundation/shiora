@@ -4,8 +4,8 @@
   <h1>Shiora</h1>
   <p><strong>Sovereign health data. Verifiable AI. Zero-knowledge privacy.</strong></p>
   <p>
-    <a href="https://github.com/aethelred-foundation/shiora/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/aethelred-foundation/shiora/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
-    <a href="https://codecov.io/gh/aethelred-foundation/shiora"><img src="https://img.shields.io/codecov/c/github/aethelred-foundation/shiora?style=flat-square&label=coverage" alt="Coverage"></a>
+    <a href="https://github.com/aethelred-foundation/shiora/actions/workflows/ci.yml"><img src="https://github.com/aethelred-foundation/shiora/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+    <a href="#overview"><img src="https://img.shields.io/badge/status-pre--mainnet-f59e0b?style=flat-square" alt="Status"></a>
     <a href="SECURITY.md"><img src="https://img.shields.io/badge/security-HIPAA%20%2B%20GDPR-informational?style=flat-square" alt="Security"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square" alt="License"></a>
   </p>
