@@ -218,14 +218,18 @@ const routes: Array<{ method: string; pattern: RegExp; handler: Handler }> = [
     pattern: /\/api\/tee\/status/,
     handler: (url) => {
       const include = url.searchParams.get('include');
-      if (include === 'inferences') return ok([
-        { id: 'inf-001', model: 'lstm', input: 'test', result: 'Anomaly Detected', confidence: 96.2, timestamp: Date.now() - 3600000, attestation: '0xabc' },
-        { id: 'inf-002', model: 'anomaly', input: 'test2', result: 'Normal', confidence: 93.8, timestamp: Date.now() - 7200000, attestation: '0xdef' },
-        { id: 'inf-003', model: 'lstm', input: 'test3', result: 'Normal', confidence: 91.5, timestamp: Date.now() - 10800000, attestation: '0xghi' },
-      ]);
-      if (include === 'models') return ok([
-        { id: 'lstm', name: 'Health LSTM', version: '3.2', accuracy: 96.5, lastUpdated: Date.now() - 86400000, teePlatform: 'Intel SGX' },
-      ]);
+      if (include === 'inferences') {
+        return ok([
+          { id: 'inf-001', model: 'lstm', input: 'test', result: 'Anomaly Detected', confidence: 96.2, timestamp: Date.now() - 3600000, attestation: '0xabc' },
+          { id: 'inf-002', model: 'anomaly', input: 'test2', result: 'Normal', confidence: 93.8, timestamp: Date.now() - 7200000, attestation: '0xdef' },
+          { id: 'inf-003', model: 'lstm', input: 'test3', result: 'Normal', confidence: 91.5, timestamp: Date.now() - 10800000, attestation: '0xghi' },
+        ]);
+      }
+      if (include === 'models') {
+        return ok([
+          { id: 'lstm', name: 'Health LSTM', version: '3.2', accuracy: 96.5, lastUpdated: Date.now() - 86400000, teePlatform: 'Intel SGX' },
+        ]);
+      }
       return ok({ status: 'operational', platform: 'Intel SGX', attestationsToday: 342, enclaveUptime: 99.97, inferencesCompleted: 12847 });
     },
   },
@@ -908,13 +912,17 @@ const routes: Array<{ method: string; pattern: RegExp; handler: Handler }> = [
     pattern: /\/api\/rewards$/,
     handler: (url) => {
       const include = url.searchParams.get('include');
-      if (include === 'streaks') return ok([
-        { action: 'data_upload', currentStreak: 12, longestStreak: 18, lastActionAt: Date.now() - 3600000, nextMilestone: 14, multiplier: 1.5 },
-        { action: 'wearable_sync', currentStreak: 28, longestStreak: 42, lastActionAt: Date.now() - 7200000, nextMilestone: 30, multiplier: 2.0 },
-        { action: 'community_post', currentStreak: 5, longestStreak: 10, lastActionAt: Date.now() - 86400000, nextMilestone: 7, multiplier: 1.2 },
-        { action: 'health_checkup', currentStreak: 3, longestStreak: 6, lastActionAt: Date.now() - 86400000 * 7, nextMilestone: 4, multiplier: 1.0 },
-      ]);
-      if (include === 'stats') return ok({ totalEarned: 1247, totalClaimed: 982, pendingRewards: 265, activeStreaks: 4, rank: 87, level: 5, nextLevelThreshold: 1500 });
+      if (include === 'streaks') {
+        return ok([
+          { action: 'data_upload', currentStreak: 12, longestStreak: 18, lastActionAt: Date.now() - 3600000, nextMilestone: 14, multiplier: 1.5 },
+          { action: 'wearable_sync', currentStreak: 28, longestStreak: 42, lastActionAt: Date.now() - 7200000, nextMilestone: 30, multiplier: 2.0 },
+          { action: 'community_post', currentStreak: 5, longestStreak: 10, lastActionAt: Date.now() - 86400000, nextMilestone: 7, multiplier: 1.2 },
+          { action: 'health_checkup', currentStreak: 3, longestStreak: 6, lastActionAt: Date.now() - 86400000 * 7, nextMilestone: 4, multiplier: 1.0 },
+        ]);
+      }
+      if (include === 'stats') {
+        return ok({ totalEarned: 1247, totalClaimed: 982, pendingRewards: 265, activeStreaks: 4, rank: 87, level: 5, nextLevelThreshold: 1500 });
+      }
       // Default: return reward entries array
       return ok(Array.from({ length: 5 }, (_, i) => ({
         id: `reward-${String(i).padStart(4, '0')}`,

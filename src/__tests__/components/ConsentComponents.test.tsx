@@ -253,6 +253,25 @@ describe('ConsentScopeSelector', () => {
     if (labButton) fireEvent.click(labButton);
     expect(onChange).toHaveBeenCalled();
   });
+
+  it('does not add more scopes when the maximum is already reached', () => {
+    const onChange = jest.fn();
+    render(
+      <TestWrapper>
+        <ConsentScopeSelector
+          selected={['lab_results' as ConsentScope]}
+          onChange={onChange}
+          maxScopes={1}
+        />
+      </TestWrapper>
+    );
+    const vitalsButton = screen.getAllByRole('button').find((button) =>
+      button.textContent?.includes('Vitals')
+    );
+    expect(vitalsButton).toBeDisabled();
+    if (vitalsButton) fireEvent.click(vitalsButton);
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });
 
 // ---------------------------------------------------------------------------

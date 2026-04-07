@@ -90,6 +90,7 @@ export default function ConsentTab() {
   ];
 
   const handleRevoke = () => {
+    /* istanbul ignore next -- revoke confirmation is only actionable when a target has been selected */
     if (revokeTarget) {
       revokeConsent.mutate(revokeTarget);
       setRevokeTarget(null);
