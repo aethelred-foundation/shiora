@@ -250,7 +250,7 @@ describe('ImportWizard', () => {
         <ImportWizard onImport={jest.fn()} isLoading={false} />
       </TestWrapper>
     );
-    expect(screen.getByPlaceholderText(/https:\/\/fhir.example.com/)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('https://fhir.example.com/api/Patient')).toBeInTheDocument();
   });
 
   it('Preview Resources button is disabled with empty inputs', () => {
@@ -370,7 +370,7 @@ describe('ImportWizard', () => {
         <ImportWizard onImport={jest.fn()} isLoading={false} />
       </TestWrapper>
     );
-    fireEvent.change(screen.getByPlaceholderText(/https:\/\/fhir.example.com/), {
+    fireEvent.change(screen.getByPlaceholderText('https://fhir.example.com/api/Patient'), {
       target: { value: 'https://fhir.server.com/api' },
     });
     expect(screen.getByText('Preview Resources')).not.toBeDisabled();
