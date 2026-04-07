@@ -184,6 +184,7 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    /* istanbul ignore else -- the handler is only bound to dragenter, dragover, and dragleave */
     if (e.type === 'dragenter' || e.type === 'dragover') {
       setDragActive(true);
     } else if (e.type === 'dragleave') {

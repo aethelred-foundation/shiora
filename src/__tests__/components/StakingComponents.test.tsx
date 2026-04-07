@@ -131,6 +131,19 @@ describe('StakePanel', () => {
     expect(onStake).toHaveBeenCalledWith(500);
   });
 
+  it('does not attempt to stake when onStake is not provided', () => {
+    render(
+      <TestWrapper>
+        <StakePanel stats={mockStakingStats} />
+      </TestWrapper>
+    );
+    const input = screen.getByRole('spinbutton');
+    fireEvent.change(input, { target: { value: '500' } });
+    const button = screen.getByRole('button', { name: /Stake AETHEL/ });
+    fireEvent.click(button);
+    expect((input as HTMLInputElement).value).toBe('500');
+  });
+
   it('shows Staking... when isStaking is true', () => {
     render(
       <TestWrapper>
