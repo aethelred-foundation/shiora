@@ -7,10 +7,24 @@
 
 import React, { useState } from 'react';
 import {
-  User, Eye, Pill, AlertCircle, FileSearch,
-  Syringe, Scissors, AlertTriangle, Link2,
-  Upload, Download, ArrowRight, CheckCircle,
-  XCircle, Clock, Edit3, Code, FileJson,
+  User,
+  Eye,
+  Pill,
+  AlertCircle,
+  FileSearch,
+  Syringe,
+  Scissors,
+  AlertTriangle,
+  Link2,
+  Upload,
+  Download,
+  ArrowRight,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Edit3,
+  Code,
+  FileJson,
 } from 'lucide-react';
 
 import { MedicalCard, StatusBadge } from '@/components/ui/PagePrimitives';
@@ -81,7 +95,8 @@ export function FHIRBadge({ resourceType }: { resourceType: FHIRResourceType }) 
 export function ResourceViewer({ resource }: { resource: FHIRResource }) {
   const [showRaw, setShowRaw] = useState(false);
   const meta = FHIR_RESOURCE_TYPES.find((t) => t.id === resource.resourceType);
-  const color = RESOURCE_COLORS[resource.resourceType] ??
+  const color =
+    RESOURCE_COLORS[resource.resourceType] ??
     /* istanbul ignore next -- resourceType always in RESOURCE_COLORS */
     '#94a3b8';
 
@@ -93,18 +108,29 @@ export function ResourceViewer({ resource }: { resource: FHIRResource }) {
             className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
             style={{ backgroundColor: color }}
           >
-            {RESOURCE_ICON_MAP[resource.resourceType] ??
+            {RESOURCE_ICON_MAP[resource.resourceType] ?? (
               /* istanbul ignore next -- icon always found for known resourceTypes */
-              <Code className="w-5 h-5" />}
+              <Code className="w-5 h-5" />
+            )}
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-slate-900">{meta?.label ??
-              /* istanbul ignore next -- meta always found for known resourceTypes */
-              resource.resourceType}</h3>
+            <h3 className="text-sm font-semibold text-slate-900">
+              {meta?.label ??
+                /* istanbul ignore next -- meta always found for known resourceTypes */
+                resource.resourceType}
+            </h3>
             <p className="text-xs text-slate-500 font-mono">{resource.id}</p>
           </div>
         </div>
-        <Badge variant={resource.status === 'active' || resource.status === 'final' || resource.status === 'completed' ? 'success' : 'warning'}>
+        <Badge
+          variant={
+            resource.status === 'active' ||
+            resource.status === 'final' ||
+            resource.status === 'completed'
+              ? 'success'
+              : 'warning'
+          }
+        >
           {resource.status}
         </Badge>
       </div>
@@ -116,7 +142,9 @@ export function ResourceViewer({ resource }: { resource: FHIRResource }) {
         </div>
         <div className="flex justify-between">
           <span className="text-slate-500">Mapped to Shiora</span>
-          <span className={resource.mappedRecordId ? 'text-emerald-600 font-medium' : 'text-slate-400'}>
+          <span
+            className={resource.mappedRecordId ? 'text-emerald-600 font-medium' : 'text-slate-400'}
+          >
             {resource.mappedRecordId ? 'Yes' : 'No'}
           </span>
         </div>
@@ -148,17 +176,27 @@ export function MappingTable({ mappings }: { mappings: FHIRMapping[] }) {
     <MedicalCard padding={false}>
       <div className="p-5 pb-3">
         <h3 className="text-base font-semibold text-slate-900">FHIR to Shiora Mappings</h3>
-        <p className="text-xs text-slate-400 mt-0.5">{mappings.length} resource type mappings configured</p>
+        <p className="text-xs text-slate-400 mt-0.5">
+          {mappings.length} resource type mappings configured
+        </p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100">
-              <th className="px-5 py-2 text-left text-xs font-medium text-slate-500 uppercase">FHIR Type</th>
+              <th className="px-5 py-2 text-left text-xs font-medium text-slate-500 uppercase">
+                FHIR Type
+              </th>
               <th className="px-5 py-2 text-left text-xs font-medium text-slate-500 uppercase" />
-              <th className="px-5 py-2 text-left text-xs font-medium text-slate-500 uppercase">Shiora Type</th>
-              <th className="px-5 py-2 text-left text-xs font-medium text-slate-500 uppercase">Fields</th>
-              <th className="px-5 py-2 text-left text-xs font-medium text-slate-500 uppercase">Default</th>
+              <th className="px-5 py-2 text-left text-xs font-medium text-slate-500 uppercase">
+                Shiora Type
+              </th>
+              <th className="px-5 py-2 text-left text-xs font-medium text-slate-500 uppercase">
+                Fields
+              </th>
+              <th className="px-5 py-2 text-left text-xs font-medium text-slate-500 uppercase">
+                Default
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
@@ -218,16 +256,20 @@ export function ImportWizard({
                 step > i + 1
                   ? 'bg-emerald-600 text-white'
                   : step === i + 1
-                  ? 'bg-brand-600 text-white'
-                  : 'bg-slate-100 text-slate-400'
+                    ? 'bg-brand-600 text-white'
+                    : 'bg-slate-100 text-slate-400'
               }`}
             >
               {step > i + 1 ? <CheckCircle className="w-3.5 h-3.5" /> : i + 1}
             </div>
-            <span className={`text-xs font-medium ${step === i + 1 ? 'text-brand-700' : 'text-slate-400'}`}>
+            <span
+              className={`text-xs font-medium ${step === i + 1 ? 'text-brand-700' : 'text-slate-400'}`}
+            >
               {label}
             </span>
-            {i < 2 && <div className={`w-8 h-0.5 ${step > i + 1 ? 'bg-emerald-600' : 'bg-slate-200'}`} />}
+            {i < 2 && (
+              <div className={`w-8 h-0.5 ${step > i + 1 ? 'bg-emerald-600' : 'bg-slate-200'}`} />
+            )}
           </div>
         ))}
       </div>
@@ -236,10 +278,12 @@ export function ImportWizard({
       {step === 1 && (
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-slate-700 mb-1 block">FHIR JSON Bundle</label>
+            <label className="text-sm font-medium text-slate-700 mb-1 block">
+              FHIR JSON Bundle
+            </label>
             <textarea
               rows={4}
-              placeholder='Paste FHIR Bundle JSON here...'
+              placeholder="Paste FHIR Bundle JSON here..."
               value={importSource}
               onChange={(e) => setImportSource(e.target.value)}
               className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -348,7 +392,10 @@ export function ExportConfigPanel({
   isLoading: boolean;
 }) {
   const [format, setFormat] = useState<'json' | 'xml'>('json');
-  const [selectedTypes, setSelectedTypes] = useState<FHIRResourceType[]>(['Patient', 'Observation']);
+  const [selectedTypes, setSelectedTypes] = useState<FHIRResourceType[]>([
+    'Patient',
+    'Observation',
+  ]);
   const [destination, setDestination] = useState('IPFS Encrypted Bundle');
 
   const toggleType = (type: FHIRResourceType) => {
@@ -391,7 +438,9 @@ export function ExportConfigPanel({
                 key={f}
                 onClick={() => setFormat(f)}
                 className={`px-4 py-2 text-xs font-medium rounded-lg transition-colors uppercase ${
-                  format === f ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  format === f
+                    ? 'bg-brand-600 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 {f}

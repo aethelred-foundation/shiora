@@ -121,7 +121,7 @@ describe('ClinicalAlertCard', () => {
     render(
       <TestWrapper>
         <ClinicalAlertCard alert={mockAlert} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Warfarin-Aspirin Interaction')).toBeInTheDocument();
     expect(screen.getByText(/Concurrent use increases bleeding risk/)).toBeInTheDocument();
@@ -131,7 +131,7 @@ describe('ClinicalAlertCard', () => {
     render(
       <TestWrapper>
         <ClinicalAlertCard alert={mockAlert} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('critical')).toBeInTheDocument();
   });
@@ -140,7 +140,7 @@ describe('ClinicalAlertCard', () => {
     render(
       <TestWrapper>
         <ClinicalAlertCard alert={mockAlert} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Consider alternative anticoagulation strategy.')).toBeInTheDocument();
   });
@@ -149,7 +149,7 @@ describe('ClinicalAlertCard', () => {
     render(
       <TestWrapper>
         <ClinicalAlertCard alert={mockAlert} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Warfarin')).toBeInTheDocument();
     expect(screen.getByText('Aspirin')).toBeInTheDocument();
@@ -165,7 +165,7 @@ describe('PathwayFlowchart', () => {
     render(
       <TestWrapper>
         <PathwayFlowchart pathway={mockPathway} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Hypertension Management')).toBeInTheDocument();
     expect(screen.getByText(/Stepwise approach/)).toBeInTheDocument();
@@ -175,7 +175,7 @@ describe('PathwayFlowchart', () => {
     render(
       <TestWrapper>
         <PathwayFlowchart pathway={mockPathway} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Hypertension')).toBeInTheDocument();
     expect(screen.getByText('CKD')).toBeInTheDocument();
@@ -185,7 +185,7 @@ describe('PathwayFlowchart', () => {
     render(
       <TestWrapper>
         <PathwayFlowchart pathway={mockPathway} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Lifestyle Modifications')).toBeInTheDocument();
     expect(screen.getByText('First-Line Pharmacotherapy')).toBeInTheDocument();
@@ -205,7 +205,7 @@ describe('DrugInteractionRow', () => {
             <DrugInteractionRow interaction={mockInteraction} />
           </tbody>
         </table>
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Metformin')).toBeInTheDocument();
     expect(screen.getByText('Contrast Dye')).toBeInTheDocument();
@@ -220,7 +220,7 @@ describe('DrugInteractionRow', () => {
             <DrugInteractionRow interaction={mockInteraction} />
           </tbody>
         </table>
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('established')).toBeInTheDocument();
   });
@@ -235,7 +235,7 @@ describe('DifferentialCard', () => {
     render(
       <TestWrapper>
         <DifferentialCard diagnosis={mockDiagnosis} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Pulmonary Embolism')).toBeInTheDocument();
     expect(screen.getByText(/I26\.99/)).toBeInTheDocument();
@@ -245,7 +245,7 @@ describe('DifferentialCard', () => {
     render(
       <TestWrapper>
         <DifferentialCard diagnosis={mockDiagnosis} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('82%')).toBeInTheDocument();
   });
@@ -254,7 +254,7 @@ describe('DifferentialCard', () => {
     render(
       <TestWrapper>
         <DifferentialCard diagnosis={mockDiagnosis} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Acute dyspnea')).toBeInTheDocument();
     expect(screen.getByText('No prior DVT history')).toBeInTheDocument();
@@ -264,7 +264,7 @@ describe('DifferentialCard', () => {
     render(
       <TestWrapper>
         <DifferentialCard diagnosis={mockDiagnosis} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('CT Pulmonary Angiogram')).toBeInTheDocument();
     expect(screen.getByText('V/Q Scan')).toBeInTheDocument();
@@ -280,7 +280,7 @@ describe('AuditTrailTable', () => {
     render(
       <TestWrapper>
         <AuditTrailTable entries={mockAuditEntries} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Timestamp')).toBeInTheDocument();
     expect(screen.getByText('Decision Type')).toBeInTheDocument();
@@ -292,7 +292,7 @@ describe('AuditTrailTable', () => {
     render(
       <TestWrapper>
         <AuditTrailTable entries={mockAuditEntries} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Drug Check')).toBeInTheDocument();
     expect(screen.getByText('clinical-llm-v3')).toBeInTheDocument();
@@ -304,7 +304,7 @@ describe('AuditTrailTable', () => {
     render(
       <TestWrapper>
         <AuditTrailTable entries={[]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Loading audit trail...')).toBeInTheDocument();
   });
@@ -318,7 +318,7 @@ describe('AuditTrailTable', () => {
     render(
       <TestWrapper>
         <AuditTrailTable entries={[entry]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Pending review')).toBeInTheDocument();
   });
@@ -328,7 +328,7 @@ describe('AuditTrailTable', () => {
     render(
       <TestWrapper>
         <AuditTrailTable entries={[entry]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('65.0%')).toBeInTheDocument();
   });
@@ -338,7 +338,7 @@ describe('AuditTrailTable', () => {
     render(
       <TestWrapper>
         <AuditTrailTable entries={[entry]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('80.0%')).toBeInTheDocument();
   });
@@ -348,7 +348,7 @@ describe('AuditTrailTable', () => {
     render(
       <TestWrapper>
         <AuditTrailTable entries={[entry]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('90.0%')).toBeInTheDocument();
   });
@@ -364,7 +364,7 @@ describe('ClinicalAlertCard — branch coverage', () => {
     render(
       <TestWrapper>
         <ClinicalAlertCard alert={alert} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('info')).toBeInTheDocument();
   });
@@ -374,7 +374,7 @@ describe('ClinicalAlertCard — branch coverage', () => {
     render(
       <TestWrapper>
         <ClinicalAlertCard alert={alert} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('warning')).toBeInTheDocument();
   });
@@ -384,7 +384,7 @@ describe('ClinicalAlertCard — branch coverage', () => {
     render(
       <TestWrapper>
         <ClinicalAlertCard alert={alert} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Warfarin-Aspirin Interaction')).toBeInTheDocument();
   });
@@ -394,7 +394,7 @@ describe('ClinicalAlertCard — branch coverage', () => {
     render(
       <TestWrapper>
         <ClinicalAlertCard alert={alert} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Warfarin-Aspirin Interaction')).toBeInTheDocument();
   });
@@ -433,7 +433,7 @@ describe('PathwayFlowchart — branch coverage', () => {
     render(
       <TestWrapper>
         <PathwayFlowchart pathway={pathway} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Pending Step')).toBeInTheDocument();
     expect(screen.getByText('Skipped Step')).toBeInTheDocument();
@@ -459,7 +459,7 @@ describe('PathwayFlowchart — branch coverage', () => {
     render(
       <TestWrapper>
         <PathwayFlowchart pathway={pathway} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('No Meta Step')).toBeInTheDocument();
   });
@@ -474,8 +474,12 @@ describe('DrugInteractionRow — branch coverage', () => {
     const interaction: DrugInteraction = { ...mockInteraction, teeVerified: false };
     render(
       <TestWrapper>
-        <table><tbody><DrugInteractionRow interaction={interaction} /></tbody></table>
-      </TestWrapper>
+        <table>
+          <tbody>
+            <DrugInteractionRow interaction={interaction} />
+          </tbody>
+        </table>
+      </TestWrapper>,
     );
     expect(screen.getByText('Metformin')).toBeInTheDocument();
   });
@@ -484,18 +488,29 @@ describe('DrugInteractionRow — branch coverage', () => {
     const interaction: DrugInteraction = { ...mockInteraction, evidenceLevel: 'probable' as any };
     render(
       <TestWrapper>
-        <table><tbody><DrugInteractionRow interaction={interaction} /></tbody></table>
-      </TestWrapper>
+        <table>
+          <tbody>
+            <DrugInteractionRow interaction={interaction} />
+          </tbody>
+        </table>
+      </TestWrapper>,
     );
     expect(screen.getByText('probable')).toBeInTheDocument();
   });
 
   it('renders unknown evidence level with neutral variant', () => {
-    const interaction: DrugInteraction = { ...mockInteraction, evidenceLevel: 'theoretical' as any };
+    const interaction: DrugInteraction = {
+      ...mockInteraction,
+      evidenceLevel: 'theoretical' as any,
+    };
     render(
       <TestWrapper>
-        <table><tbody><DrugInteractionRow interaction={interaction} /></tbody></table>
-      </TestWrapper>
+        <table>
+          <tbody>
+            <DrugInteractionRow interaction={interaction} />
+          </tbody>
+        </table>
+      </TestWrapper>,
     );
     expect(screen.getByText('theoretical')).toBeInTheDocument();
   });
@@ -511,27 +526,27 @@ describe('DifferentialCard — branch coverage', () => {
     render(
       <TestWrapper>
         <DifferentialCard diagnosis={dx} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('25%')).toBeInTheDocument();
   });
 
   it('renders probability 40-59 with cyan bar color', () => {
-    const dx: DifferentialDiagnosis = { ...mockDiagnosis, probability: 0.50 };
+    const dx: DifferentialDiagnosis = { ...mockDiagnosis, probability: 0.5 };
     render(
       <TestWrapper>
         <DifferentialCard diagnosis={dx} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('50%')).toBeInTheDocument();
   });
 
   it('renders probability 60-79 with amber bar color', () => {
-    const dx: DifferentialDiagnosis = { ...mockDiagnosis, probability: 0.70 };
+    const dx: DifferentialDiagnosis = { ...mockDiagnosis, probability: 0.7 };
     render(
       <TestWrapper>
         <DifferentialCard diagnosis={dx} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('70%')).toBeInTheDocument();
   });

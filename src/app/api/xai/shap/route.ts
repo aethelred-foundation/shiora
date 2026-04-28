@@ -11,9 +11,16 @@ import { seededRandom, seededInt } from '@/lib/utils';
 const SEED = 1600;
 
 const FEATURES = [
-  'Cycle Length', 'BBT Average', 'LH Surge Timing', 'Age',
-  'BMI', 'Sleep Quality', 'Stress Level', 'Exercise Frequency',
-  'Previous Cycle Regularity', 'Hormone Balance Score',
+  'Cycle Length',
+  'BBT Average',
+  'LH Surge Timing',
+  'Age',
+  'BMI',
+  'Sleep Quality',
+  'Stress Level',
+  'Exercise Frequency',
+  'Previous Cycle Regularity',
+  'Hormone Balance Score',
 ];
 
 // ────────────────────────────────────────────────────────────
@@ -27,7 +34,11 @@ export async function GET(request: NextRequest) {
   const inferenceId = request.nextUrl.searchParams.get('inferenceId');
 
   if (!inferenceId) {
-    return errorResponse('VALIDATION_ERROR', 'inferenceId query parameter is required', HTTP.UNPROCESSABLE);
+    return errorResponse(
+      'VALIDATION_ERROR',
+      'inferenceId query parameter is required',
+      HTTP.UNPROCESSABLE,
+    );
   }
 
   const baseValue = seededRandom(SEED) * 0.3 + 0.4;
@@ -43,6 +54,8 @@ export async function GET(request: NextRequest) {
     inferenceId,
     shapValues,
     baseValue: parseFloat(baseValue.toFixed(3)),
-    outputValue: parseFloat((baseValue + shapValues.reduce((s, v) => s + v.contribution, 0)).toFixed(3)),
+    outputValue: parseFloat(
+      (baseValue + shapValues.reduce((s, v) => s + v.contribution, 0)).toFixed(3),
+    ),
   });
 }

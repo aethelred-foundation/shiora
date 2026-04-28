@@ -2,10 +2,27 @@
 
 import React, { useState } from 'react';
 import {
-  Users, MessageCircle, ShieldCheck, Hash, Send,
-  Heart, ThumbsUp, Smile, Star, Sparkles,
-  ChevronRight, UserCheck, Lock,
-  Baby, Flame, Ribbon, CircleDot, Leaf, Brain, Apple, HeartHandshake,
+  Users,
+  MessageCircle,
+  ShieldCheck,
+  Hash,
+  Send,
+  Heart,
+  ThumbsUp,
+  Smile,
+  Star,
+  Sparkles,
+  ChevronRight,
+  UserCheck,
+  Lock,
+  Baby,
+  Flame,
+  Ribbon,
+  CircleDot,
+  Leaf,
+  Brain,
+  Apple,
+  HeartHandshake,
 } from 'lucide-react';
 
 import type { CommunityCircle, AnonymousPost, CircleCategory } from '@/types';
@@ -19,16 +36,30 @@ import { timeAgo, truncateAddress } from '@/lib/utils';
 // ============================================================
 
 /** Map circle category to a Lucide icon component */
-export function CircleCategoryIcon({ category, className }: { category: string; className?: string }) {
+export function CircleCategoryIcon({
+  category,
+  className,
+}: {
+  category: string;
+  className?: string;
+}) {
   switch (category) {
-    case 'fertility': return <Heart className={className ?? 'w-5 h-5 text-purple-500'} />;
-    case 'pregnancy': return <Baby className={className ?? 'w-5 h-5 text-pink-500'} />;
-    case 'menopause': return <Flame className={className ?? 'w-5 h-5 text-orange-500'} />;
-    case 'endometriosis': return <Ribbon className={className ?? 'w-5 h-5 text-yellow-500'} />;
-    case 'pcos': return <CircleDot className={className ?? 'w-5 h-5 text-teal-500'} />;
-    case 'general_wellness': return <Leaf className={className ?? 'w-5 h-5 text-green-500'} />;
-    case 'mental_health': return <Brain className={className ?? 'w-5 h-5 text-blue-500'} />;
-    default: return <Apple className={className ?? 'w-5 h-5 text-red-500'} />;
+    case 'fertility':
+      return <Heart className={className ?? 'w-5 h-5 text-purple-500'} />;
+    case 'pregnancy':
+      return <Baby className={className ?? 'w-5 h-5 text-pink-500'} />;
+    case 'menopause':
+      return <Flame className={className ?? 'w-5 h-5 text-orange-500'} />;
+    case 'endometriosis':
+      return <Ribbon className={className ?? 'w-5 h-5 text-yellow-500'} />;
+    case 'pcos':
+      return <CircleDot className={className ?? 'w-5 h-5 text-teal-500'} />;
+    case 'general_wellness':
+      return <Leaf className={className ?? 'w-5 h-5 text-green-500'} />;
+    case 'mental_health':
+      return <Brain className={className ?? 'w-5 h-5 text-blue-500'} />;
+    default:
+      return <Apple className={className ?? 'w-5 h-5 text-red-500'} />;
   }
 }
 
@@ -36,13 +67,20 @@ export function CircleCategoryIcon({ category, className }: { category: string; 
 /* istanbul ignore next -- className fallback branches are unreachable; component is always called without className */
 function ReactionIcon({ name, className }: { name: string; className?: string }) {
   switch (name) {
-    case 'heart': return <Heart className={className ?? 'w-4 h-4'} />;
-    case 'clap': return <ThumbsUp className={className ?? 'w-4 h-4'} />;
-    case 'support': return <HeartHandshake className={className ?? 'w-4 h-4'} />;
-    case 'smile': return <Smile className={className ?? 'w-4 h-4'} />;
-    case 'star': return <Star className={className ?? 'w-4 h-4'} />;
-    case 'sparkles': return <Sparkles className={className ?? 'w-4 h-4'} />;
-    default: return <Heart className={className ?? 'w-4 h-4'} />;
+    case 'heart':
+      return <Heart className={className ?? 'w-4 h-4'} />;
+    case 'clap':
+      return <ThumbsUp className={className ?? 'w-4 h-4'} />;
+    case 'support':
+      return <HeartHandshake className={className ?? 'w-4 h-4'} />;
+    case 'smile':
+      return <Smile className={className ?? 'w-4 h-4'} />;
+    case 'star':
+      return <Star className={className ?? 'w-4 h-4'} />;
+    case 'sparkles':
+      return <Sparkles className={className ?? 'w-4 h-4'} />;
+    default:
+      return <Heart className={className ?? 'w-4 h-4'} />;
   }
 }
 
@@ -78,7 +116,9 @@ export function CircleCard({ circle, onJoin, onLeave, onSelect }: CircleCardProp
             </Badge>
           )}
           {circle.isJoined && (
-            <Badge variant="success" dot>Joined</Badge>
+            <Badge variant="success" dot>
+              Joined
+            </Badge>
           )}
         </div>
       </div>
@@ -130,7 +170,9 @@ export function AnonymousPostCard({ post, onReact }: AnonymousPostCardProps) {
     <MedicalCard hover={false}>
       <div className="flex items-center gap-2 mb-2">
         <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-400 to-brand-400 flex items-center justify-center">
-          <span className="text-xs font-bold text-white">{post.anonymousId.slice(-2).toUpperCase()}</span>
+          <span className="text-xs font-bold text-white">
+            {post.anonymousId.slice(-2).toUpperCase()}
+          </span>
         </div>
         <span className="text-xs font-mono text-slate-500">{post.anonymousId}</span>
         {post.zkpVerified && (
@@ -147,7 +189,10 @@ export function AnonymousPostCard({ post, onReact }: AnonymousPostCardProps) {
       {post.tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-3">
           {post.tags.map((tag) => (
-            <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-2xs text-slate-500">
+            <span
+              key={tag}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-2xs text-slate-500"
+            >
               <Hash className="w-2.5 h-2.5" /> {tag}
             </span>
           ))}
@@ -196,9 +241,7 @@ export function DiscussionThread({ post, onReact }: DiscussionThreadProps) {
       <AnonymousPostCard post={post} onReact={onReact} />
       {post.replyCount > 0 && (
         <div className="ml-6 mt-2 pl-4 border-l-2 border-slate-200">
-          <p className="text-xs text-slate-400 py-2">
-            {post.replyCount} replies in this thread
-          </p>
+          <p className="text-xs text-slate-400 py-2">{post.replyCount} replies in this thread</p>
         </div>
       )}
     </div>
@@ -222,7 +265,12 @@ export function ZKPMembershipProof({ circleId, proofId }: ZKPMembershipProofProp
         <p className="text-xs font-medium text-emerald-800">ZKP Membership Verified</p>
         <p className="text-2xs text-emerald-600">
           Your membership is cryptographically verified without revealing your identity.
-          {proofId && <> Proof: <span className="font-mono">{proofId.slice(0, 12)}...</span></>}
+          {proofId && (
+            <>
+              {' '}
+              Proof: <span className="font-mono">{proofId.slice(0, 12)}...</span>
+            </>
+          )}
         </p>
       </div>
     </div>
@@ -242,7 +290,14 @@ interface CircleBrowserProps {
   onSelect: (id: string) => void;
 }
 
-export function CircleBrowser({ circles, activeCategory, onCategoryChange, onJoin, onLeave, onSelect }: CircleBrowserProps) {
+export function CircleBrowser({
+  circles,
+  activeCategory,
+  onCategoryChange,
+  onJoin,
+  onLeave,
+  onSelect,
+}: CircleBrowserProps) {
   return (
     <div>
       {/* Category tabs */}
@@ -250,7 +305,9 @@ export function CircleBrowser({ circles, activeCategory, onCategoryChange, onJoi
         <button
           onClick={() => onCategoryChange(undefined)}
           className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
-            !activeCategory ? 'bg-brand-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            !activeCategory
+              ? 'bg-brand-500 text-white'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >
           All
@@ -260,7 +317,9 @@ export function CircleBrowser({ circles, activeCategory, onCategoryChange, onJoi
             key={cat.id}
             onClick={() => onCategoryChange(cat.id as CircleCategory)}
             className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
-              activeCategory === cat.id ? 'bg-brand-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              activeCategory === cat.id
+                ? 'bg-brand-500 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
             {cat.label}

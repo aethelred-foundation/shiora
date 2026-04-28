@@ -5,11 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { useApp } from '@/contexts/AppContext';
 import { api } from '@/lib/api/client';
-import type {
-  NetworkState,
-  Block,
-  BlockchainConfig,
-} from '@/types';
+import type { NetworkState, Block, BlockchainConfig } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -253,10 +249,7 @@ export function useNetwork(maxBlocks: number = 50): UseNetworkReturn {
     [realTime.blockHeight],
   );
 
-  const formattedLoad = useMemo(
-    () => `${realTime.networkLoad}%`,
-    [realTime.networkLoad],
-  );
+  const formattedLoad = useMemo(() => `${realTime.networkLoad}%`, [realTime.networkLoad]);
 
   // ---- Computed averages --------------------------------------------------
 

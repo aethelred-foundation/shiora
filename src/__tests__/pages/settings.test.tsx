@@ -16,7 +16,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Settings')).toBeInTheDocument();
   });
@@ -25,10 +25,10 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(
-      screen.getByText(/Manage your account, privacy, security, and platform preferences/)
+      screen.getByText(/Manage your account, privacy, security, and platform preferences/),
     ).toBeInTheDocument();
   });
 
@@ -36,7 +36,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
   });
@@ -45,7 +45,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   });
@@ -54,7 +54,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByRole('navigation', { name: 'Settings navigation' })).toBeInTheDocument();
   });
@@ -63,7 +63,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getAllByText('Profile').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Security').length).toBeGreaterThanOrEqual(1);
@@ -78,7 +78,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Personal Information')).toBeInTheDocument();
     expect(screen.getByText('Display Name')).toBeInTheDocument();
@@ -90,7 +90,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Wallet Address')).toBeInTheDocument();
   });
@@ -99,7 +99,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Save Changes')).toBeInTheDocument();
   });
@@ -108,7 +108,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const securityButtons = screen.getAllByText('Security');
     fireEvent.click(securityButtons[securityButtons.length - 1]);
@@ -121,7 +121,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const privacyButtons = screen.getAllByText('Privacy');
     fireEvent.click(privacyButtons[privacyButtons.length - 1]);
@@ -136,7 +136,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const notifButtons = screen.getAllByText('Notifications');
     fireEvent.click(notifButtons[notifButtons.length - 1]);
@@ -151,7 +151,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const connectedButtons = screen.getAllByText('Connected Apps');
     fireEvent.click(connectedButtons[connectedButtons.length - 1]);
@@ -164,7 +164,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const exportButtons = screen.getAllByText('Data Export');
     fireEvent.click(exportButtons[exportButtons.length - 1]);
@@ -180,7 +180,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const networkButtons = screen.getAllByText('Network');
     fireEvent.click(networkButtons[networkButtons.length - 1]);
@@ -196,7 +196,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const nameInput = screen.getByLabelText('Display Name') as HTMLInputElement;
     fireEvent.change(nameInput, { target: { value: 'New Name' } });
@@ -207,7 +207,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const emailInput = screen.getByLabelText('Email Address') as HTMLInputElement;
     fireEvent.change(emailInput, { target: { value: 'new@example.com' } });
@@ -218,7 +218,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const bioInput = screen.getByLabelText('Bio') as HTMLTextAreaElement;
     fireEvent.change(bioInput, { target: { value: 'New bio text' } });
@@ -231,7 +231,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const securityButtons = screen.getAllByText('Security');
     fireEvent.click(securityButtons[securityButtons.length - 1]);
@@ -257,7 +257,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const securityButtons = screen.getAllByText('Security');
     fireEvent.click(securityButtons[securityButtons.length - 1]);
@@ -281,7 +281,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const privacyButtons = screen.getAllByText('Privacy');
     fireEvent.click(privacyButtons[privacyButtons.length - 1]);
@@ -326,7 +326,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const notifButtons = screen.getAllByText('Notifications');
     fireEvent.click(notifButtons[notifButtons.length - 1]);
@@ -378,7 +378,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const securityButtons = screen.getAllByText('Security');
     fireEvent.click(securityButtons[securityButtons.length - 1]);
@@ -399,7 +399,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const exportButtons = screen.getAllByText('Data Export');
     fireEvent.click(exportButtons[exportButtons.length - 1]);
@@ -417,7 +417,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const exportButtons = screen.getAllByText('Data Export');
     fireEvent.click(exportButtons[exportButtons.length - 1]);
@@ -439,7 +439,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const exportButtons = screen.getAllByText('Data Export');
     fireEvent.click(exportButtons[exportButtons.length - 1]);
@@ -467,7 +467,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const networkButtons = screen.getAllByText('Network');
     fireEvent.click(networkButtons[networkButtons.length - 1]);
@@ -489,7 +489,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const networkButtons = screen.getAllByText('Network');
     fireEvent.click(networkButtons[networkButtons.length - 1]);
@@ -519,7 +519,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Should show the connected wallet address and badges
@@ -534,7 +534,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const privacyButtons = screen.getAllByText('Privacy');
     fireEvent.click(privacyButtons[privacyButtons.length - 1]);
@@ -550,7 +550,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const securityButtons = screen.getAllByText('Security');
     fireEvent.click(securityButtons[securityButtons.length - 1]);
@@ -569,7 +569,7 @@ describe('SettingsPage', () => {
     render(
       <TestWrapper>
         <SettingsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const networkButtons = screen.getAllByText('Network');
     fireEvent.click(networkButtons[networkButtons.length - 1]);

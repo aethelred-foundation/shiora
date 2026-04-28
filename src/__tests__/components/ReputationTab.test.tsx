@@ -106,8 +106,11 @@ jest.mock('@/hooks/useProviderReputation', () => ({
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return React.createElement(QueryClientProvider, { client: qc },
-    React.createElement(AppProvider, null, children));
+  return React.createElement(
+    QueryClientProvider,
+    { client: qc },
+    React.createElement(AppProvider, null, children),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -123,7 +126,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Total Providers')).toBeInTheDocument();
     expect(screen.getByText('Average Score')).toBeInTheDocument();
@@ -135,7 +138,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByPlaceholderText('Search providers...')).toBeInTheDocument();
     expect(screen.getByText('All Trust Levels')).toBeInTheDocument();
@@ -145,7 +148,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Dr. Sarah Chen')).toBeInTheDocument();
     expect(screen.getByText('Dr. James Liu')).toBeInTheDocument();
@@ -155,7 +158,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const searchInput = screen.getByPlaceholderText('Search providers...');
@@ -171,7 +174,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const searchInput = screen.getByPlaceholderText('Search providers...');
@@ -184,7 +187,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('All Trust Levels'));
 
@@ -199,14 +202,14 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Open filter dropdown and click Gold
     fireEvent.click(screen.getByText('All Trust Levels'));
     // Get the Gold option from within the dropdown container
     const dropdownItems = document.querySelectorAll('.absolute.left-0.top-full button');
-    const goldBtn = Array.from(dropdownItems).find(btn => btn.textContent === 'Gold');
+    const goldBtn = Array.from(dropdownItems).find((btn) => btn.textContent === 'Gold');
     expect(goldBtn).toBeTruthy();
     fireEvent.click(goldBtn!);
 
@@ -220,7 +223,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.click(screen.getByText('Dr. Sarah Chen'));
@@ -233,7 +236,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.click(screen.getByText('Dr. Sarah Chen'));
@@ -247,7 +250,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.click(screen.getByText('Dr. Sarah Chen'));
@@ -262,7 +265,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.click(screen.getByText('Dr. Sarah Chen'));
@@ -276,7 +279,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.click(screen.getByText('Dr. Sarah Chen'));
@@ -288,7 +291,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('3')).toBeInTheDocument();
   });
@@ -297,7 +300,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('77')).toBeInTheDocument();
   });
@@ -308,14 +311,14 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Dr. Sarah Chen'));
     fireEvent.click(screen.getByText('Write Review'));
 
     // Find overall rating star buttons (w-7 h-7 stars)
     const allButtons = screen.getAllByRole('button');
-    const overallStarButtons = allButtons.filter(btn => btn.querySelector('.w-7'));
+    const overallStarButtons = allButtons.filter((btn) => btn.querySelector('.w-7'));
     expect(overallStarButtons.length).toBe(5);
 
     // Click star 2 to set rating to 2
@@ -326,7 +329,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Dr. Sarah Chen'));
     fireEvent.click(screen.getByText('Write Review'));
@@ -365,7 +368,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Dr. Sarah Chen'));
     fireEvent.click(screen.getByText('Write Review'));
@@ -384,7 +387,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Dr. Sarah Chen'));
     fireEvent.click(screen.getByText('Write Review'));
@@ -399,7 +402,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Dr. Sarah Chen'));
     fireEvent.click(screen.getByText('Write Review'));
@@ -411,7 +414,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('All Trust Levels'));
     // Verify dropdown is open
@@ -427,7 +430,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Dr. Sarah Chen'));
     expect(screen.getByText('Reputation History')).toBeInTheDocument();
@@ -437,7 +440,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Breach Clinic'));
     // Should show breach count in red
@@ -448,7 +451,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const searchInput = screen.getByPlaceholderText('Search providers...');
     fireEvent.change(searchInput, { target: { value: 'Endocrinology' } });
@@ -460,11 +463,11 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('All Trust Levels'));
     const dropdownItems = document.querySelectorAll('.absolute.left-0.top-full button');
-    const silverBtn = Array.from(dropdownItems).find(btn => btn.textContent === 'Silver');
+    const silverBtn = Array.from(dropdownItems).find((btn) => btn.textContent === 'Silver');
     fireEvent.click(silverBtn!);
     expect(screen.getByText('Dr. James Liu')).toBeInTheDocument();
     expect(screen.queryByText('Dr. Sarah Chen')).not.toBeInTheDocument();
@@ -474,11 +477,11 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('All Trust Levels'));
     const dropdownItems = document.querySelectorAll('.absolute.left-0.top-full button');
-    const bronzeBtn = Array.from(dropdownItems).find(btn => btn.textContent === 'Bronze');
+    const bronzeBtn = Array.from(dropdownItems).find((btn) => btn.textContent === 'Bronze');
     fireEvent.click(bronzeBtn!);
     expect(screen.getByText('Breach Clinic')).toBeInTheDocument();
     expect(screen.queryByText('Dr. Sarah Chen')).not.toBeInTheDocument();
@@ -488,7 +491,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Navigate to detail view
     fireEvent.click(screen.getByText('Dr. Sarah Chen'));
@@ -510,11 +513,11 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('All Trust Levels'));
     const dropdownItems = document.querySelectorAll('.absolute.left-0.top-full button');
-    const goldBtn = Array.from(dropdownItems).find(btn => btn.textContent === 'Gold');
+    const goldBtn = Array.from(dropdownItems).find((btn) => btn.textContent === 'Gold');
     fireEvent.click(goldBtn!);
     // Filter button should now show "Gold" as the label (line 386)
     // The "All Trust Levels" text should no longer be visible
@@ -528,7 +531,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const spinner = document.querySelector('.animate-spin');
     expect(spinner).toBeTruthy();
@@ -541,7 +544,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Failed to load providers')).toBeInTheDocument();
   });
@@ -555,7 +558,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Dr. Sarah Chen'));
     // Reviews section should show spinner
@@ -572,7 +575,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Dr. Sarah Chen'));
     expect(screen.getByText('No reviews yet for this provider')).toBeInTheDocument();
@@ -587,7 +590,7 @@ describe('ReputationTab', () => {
     render(
       <TestWrapper>
         <ReputationTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Dr. Sarah Chen'));
     fireEvent.click(screen.getByText('Write Review'));

@@ -5,19 +5,9 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  successResponse,
-  errorResponse,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
-import {
-  seededRandom,
-  seededInt,
-  seededHex,
-  seededPick,
-  generateAttestation,
-} from '@/lib/utils';
+import { seededRandom, seededInt, seededHex, seededPick, generateAttestation } from '@/lib/utils';
 import { ALERT_METRICS } from '@/lib/constants';
 import type { PredictiveAlert, AlertSeverity, AlertMetric } from '@/types';
 
@@ -59,7 +49,10 @@ function generateMockAlerts(): PredictiveAlert[] {
       title: titles[metric] ?? 'Health Alert',
       message: `The ${metricDef.label.toLowerCase()} metric has crossed the configured threshold.`,
       currentValue: parseFloat(
-        (metricDef.defaultThreshold + (metricDef.condition === 'above' ? 1 : -1) * seededRandom(s + 11) * 10).toFixed(1),
+        (
+          metricDef.defaultThreshold +
+          (metricDef.condition === 'above' ? 1 : -1) * seededRandom(s + 11) * 10
+        ).toFixed(1),
       ),
       threshold: metricDef.defaultThreshold,
       triggeredAt,
@@ -117,7 +110,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (!['acknowledge', 'resolve'].includes(action)) {
-      return errorResponse('VALIDATION_ERROR', 'action must be "acknowledge" or "resolve"', HTTP.BAD_REQUEST);
+      return errorResponse(
+        'VALIDATION_ERROR',
+        'action must be "acknowledge" or "resolve"',
+        HTTP.BAD_REQUEST,
+      );
     }
 
     return successResponse(

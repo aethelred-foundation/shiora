@@ -191,7 +191,7 @@ describe('UploadModal', () => {
     expect(screen.getByText('report.pdf')).toBeInTheDocument();
 
     // Click the remove button (stopPropagation is called internally)
-    const removeButtons = screen.getAllByRole('button').filter(btn => {
+    const removeButtons = screen.getAllByRole('button').filter((btn) => {
       return btn.querySelector('svg') && btn.classList.contains('p-1');
     });
     if (removeButtons.length > 0) {
@@ -204,7 +204,9 @@ describe('UploadModal', () => {
 
   it('sets drag active on dragenter and dragover, clears on dragleave', () => {
     render(<UploadModal open={true} onClose={jest.fn()} />);
-    const dropZone = screen.getByText(/Drag & drop files or click to browse/).closest('div[class*="border-dashed"]')!;
+    const dropZone = screen
+      .getByText(/Drag & drop files or click to browse/)
+      .closest('div[class*="border-dashed"]')!;
 
     // dragenter
     fireEvent.dragEnter(dropZone, { dataTransfer: { files: [] } });
@@ -223,7 +225,9 @@ describe('UploadModal', () => {
 
   it('handles file drop', () => {
     render(<UploadModal open={true} onClose={jest.fn()} />);
-    const dropZone = screen.getByText(/Drag & drop files or click to browse/).closest('div[class*="border-dashed"]')!;
+    const dropZone = screen
+      .getByText(/Drag & drop files or click to browse/)
+      .closest('div[class*="border-dashed"]')!;
 
     const file = createFile('dropped.pdf', 1024, 'application/pdf');
     fireEvent.drop(dropZone, {
@@ -234,7 +238,9 @@ describe('UploadModal', () => {
 
   it('handles drop with no files', () => {
     render(<UploadModal open={true} onClose={jest.fn()} />);
-    const dropZone = screen.getByText(/Drag & drop files or click to browse/).closest('div[class*="border-dashed"]')!;
+    const dropZone = screen
+      .getByText(/Drag & drop files or click to browse/)
+      .closest('div[class*="border-dashed"]')!;
     fireEvent.drop(dropZone, {
       dataTransfer: { files: [] },
     });
@@ -292,13 +298,15 @@ describe('UploadModal', () => {
     // Add files, select record type, enable button, then remove file and quickly click
     render(<UploadModal open={true} onClose={jest.fn()} />);
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [createFile('test.pdf', 1024, 'application/pdf')] } });
+    fireEvent.change(input, {
+      target: { files: [createFile('test.pdf', 1024, 'application/pdf')] },
+    });
     fireEvent.click(screen.getByText('Lab Results'));
     // Now button is enabled - get it
     const uploadBtn = screen.getByText('Encrypt & Upload').closest('button')!;
     expect(uploadBtn).not.toBeDisabled();
     // Remove the file
-    const removeBtn = screen.getAllByRole('button').find(btn => btn.classList.contains('p-1'));
+    const removeBtn = screen.getAllByRole('button').find((btn) => btn.classList.contains('p-1'));
     if (removeBtn) fireEvent.click(removeBtn);
     // The button is now disabled, but we stored the onClick ref
     // React batches updates, so let's try clicking immediately after removing
@@ -312,7 +320,9 @@ describe('UploadModal', () => {
   it('simulateUpload validates record type is selected', async () => {
     render(<UploadModal open={true} onClose={jest.fn()} />);
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [createFile('test.pdf', 1024, 'application/pdf')] } });
+    fireEvent.change(input, {
+      target: { files: [createFile('test.pdf', 1024, 'application/pdf')] },
+    });
     const uploadBtn = screen.getByText('Encrypt & Upload').closest('button')!;
     expect(uploadBtn).toBeDisabled();
   });
@@ -357,7 +367,7 @@ describe('UploadModal', () => {
     });
 
     expect(onUploadComplete).toHaveBeenCalledWith(
-      expect.objectContaining({ recordType: 'lab_result' })
+      expect.objectContaining({ recordType: 'lab_result' }),
     );
   });
 
@@ -367,13 +377,17 @@ describe('UploadModal', () => {
 
     // Add file and select type
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [createFile('test.pdf', 1024, 'application/pdf')] } });
+    fireEvent.change(input, {
+      target: { files: [createFile('test.pdf', 1024, 'application/pdf')] },
+    });
     fireEvent.click(screen.getByText('Lab Results'));
     fireEvent.click(screen.getByText('Encrypt & Upload'));
 
     // Fast-forward through upload
     for (let i = 0; i < 5; i++) {
-      await act(async () => { jest.advanceTimersByTime(2500); });
+      await act(async () => {
+        jest.advanceTimersByTime(2500);
+      });
     }
 
     await waitFor(() => {
@@ -414,7 +428,7 @@ describe('UploadModal', () => {
     fireEvent.focus(providerInput);
     fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
     // Provider should now be selected and dropdown closed
-    expect(screen.queryByText('Metro Women\'s Health')).not.toBeInTheDocument();
+    expect(screen.queryByText("Metro Women's Health")).not.toBeInTheDocument();
   });
 
   it('closes provider dropdown when clicking outside', () => {
@@ -457,7 +471,9 @@ describe('UploadModal', () => {
     render(<UploadModal open={true} onClose={jest.fn()} />);
 
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [createFile('test.pdf', 1024, 'application/pdf')] } });
+    fireEvent.change(input, {
+      target: { files: [createFile('test.pdf', 1024, 'application/pdf')] },
+    });
     fireEvent.click(screen.getByText('Lab Results'));
     fireEvent.click(screen.getByText('Encrypt & Upload'));
 
@@ -476,7 +492,9 @@ describe('UploadModal', () => {
 
   it('triggers file input click when drop zone is clicked', () => {
     render(<UploadModal open={true} onClose={jest.fn()} />);
-    const dropZone = screen.getByText(/Drag & drop files or click to browse/).closest('div[class*="border-dashed"]')!;
+    const dropZone = screen
+      .getByText(/Drag & drop files or click to browse/)
+      .closest('div[class*="border-dashed"]')!;
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     const clickSpy = jest.spyOn(input, 'click');
     fireEvent.click(dropZone);
@@ -491,7 +509,9 @@ describe('UploadModal', () => {
 
     // Add file
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [createFile('test.pdf', 1024, 'application/pdf')] } });
+    fireEvent.change(input, {
+      target: { files: [createFile('test.pdf', 1024, 'application/pdf')] },
+    });
 
     // Select record type
     fireEvent.click(screen.getByText('Lab Results'));
@@ -511,7 +531,9 @@ describe('UploadModal', () => {
 
     // Fast forward
     for (let i = 0; i < 5; i++) {
-      await act(async () => { jest.advanceTimersByTime(2500); });
+      await act(async () => {
+        jest.advanceTimersByTime(2500);
+      });
     }
 
     await waitFor(() => {
@@ -520,7 +542,7 @@ describe('UploadModal', () => {
           recordType: 'lab_result',
           provider: 'Dr. Sarah Chen, OB-GYN',
           tags: ['routine'],
-        })
+        }),
       );
     });
   });
@@ -530,12 +552,16 @@ describe('UploadModal', () => {
   it('success state shows encryption, TEE, IPFS, and on-chain badges', async () => {
     render(<UploadModal open={true} onClose={jest.fn()} />);
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [createFile('test.pdf', 1024, 'application/pdf')] } });
+    fireEvent.change(input, {
+      target: { files: [createFile('test.pdf', 1024, 'application/pdf')] },
+    });
     fireEvent.click(screen.getByText('Lab Results'));
     fireEvent.click(screen.getByText('Encrypt & Upload'));
 
     for (let i = 0; i < 5; i++) {
-      await act(async () => { jest.advanceTimersByTime(2500); });
+      await act(async () => {
+        jest.advanceTimersByTime(2500);
+      });
     }
 
     await waitFor(() => {

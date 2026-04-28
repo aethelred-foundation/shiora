@@ -3,11 +3,7 @@
 import { useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
-import type {
-  ResearchStudy,
-  DataContribution,
-  RecordType,
-} from '@/types';
+import type { ResearchStudy, DataContribution, RecordType } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Query keys
@@ -41,7 +37,10 @@ export interface UseResearchReturn {
   /** Contribute data mutation. */
   contributeMutation: {
     mutate: (params: { studyId: string; dataTypes: RecordType[] }) => void;
-    mutateAsync: (params: { studyId: string; dataTypes: RecordType[] }) => Promise<DataContribution>;
+    mutateAsync: (params: {
+      studyId: string;
+      dataTypes: RecordType[];
+    }) => Promise<DataContribution>;
     isLoading: boolean;
     error: Error | null;
   };
@@ -66,12 +65,14 @@ export function useResearch(): UseResearchReturn {
 
   const contributionsQuery = useQuery({
     queryKey: [CONTRIBUTIONS_KEY],
-    queryFn: () => api.get<DataContribution[]>('/api/research/studies', { include: 'contributions' }),
+    queryFn: () =>
+      api.get<DataContribution[]>('/api/research/studies', { include: 'contributions' }),
     staleTime: 30_000,
   });
 
   const enrollMut = useMutation({
-    mutationFn: (id: string) => api.post<ResearchStudy>(`/api/research/studies`, { studyId: id, action: 'enroll' }),
+    mutationFn: (id: string) =>
+      api.post<ResearchStudy>(`/api/research/studies`, { studyId: id, action: 'enroll' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [STUDIES_KEY] });
     },

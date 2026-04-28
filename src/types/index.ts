@@ -11,12 +11,7 @@
 // ============================================================
 
 /** Supported health record categories. */
-export type RecordType =
-  | 'lab_result'
-  | 'imaging'
-  | 'prescription'
-  | 'vitals'
-  | 'notes';
+export type RecordType = 'lab_result' | 'imaging' | 'prescription' | 'vitals' | 'notes';
 
 /** Lifecycle status of a health record on IPFS/blockchain. */
 export type RecordStatus = 'Verified' | 'Pinning' | 'Pinned' | 'Processing';
@@ -710,9 +705,16 @@ export interface HealthDataState {
 // ============================================================
 
 export type ConsentScope =
-  | 'cycle_data' | 'fertility_markers' | 'lab_results' | 'imaging'
-  | 'prescriptions' | 'vitals' | 'clinical_notes' | 'wearable_data'
-  | 'ai_inferences' | 'full_access';
+  | 'cycle_data'
+  | 'fertility_markers'
+  | 'lab_results'
+  | 'imaging'
+  | 'prescriptions'
+  | 'vitals'
+  | 'clinical_notes'
+  | 'wearable_data'
+  | 'ai_inferences'
+  | 'full_access';
 
 export type ConsentStatus = 'active' | 'expired' | 'revoked' | 'pending';
 
@@ -806,8 +808,14 @@ export interface ChatModelConfig {
 // ============================================================
 
 export type VaultCompartmentCategory =
-  | 'cycle_tracking' | 'fertility_data' | 'hormone_levels'
-  | 'medications' | 'lab_results' | 'imaging' | 'symptoms' | 'pregnancy';
+  | 'cycle_tracking'
+  | 'fertility_data'
+  | 'hormone_levels'
+  | 'medications'
+  | 'lab_results'
+  | 'imaging'
+  | 'symptoms'
+  | 'pregnancy';
 
 export type VaultLockStatus = 'locked' | 'unlocked' | 'partial';
 
@@ -829,8 +837,15 @@ export interface VaultCompartment {
 export type SymptomSeverity = 1 | 2 | 3 | 4 | 5;
 
 export type SymptomCategory =
-  | 'pain' | 'mood' | 'energy' | 'digestive' | 'skin'
-  | 'sleep' | 'discharge' | 'temperature' | 'other';
+  | 'pain'
+  | 'mood'
+  | 'energy'
+  | 'digestive'
+  | 'skin'
+  | 'sleep'
+  | 'discharge'
+  | 'temperature'
+  | 'other';
 
 export interface SymptomLog {
   id: string;
@@ -879,9 +894,14 @@ export interface VaultPrivacyScore {
 export type ListingStatus = 'active' | 'sold' | 'expired' | 'withdrawn';
 
 export type MarketplaceCategory =
-  | 'menstrual_cycles' | 'fertility_data' | 'lab_results'
-  | 'vitals_timeseries' | 'wearable_data' | 'imaging_anonymized'
-  | 'clinical_outcomes' | 'medication_responses';
+  | 'menstrual_cycles'
+  | 'fertility_data'
+  | 'lab_results'
+  | 'vitals_timeseries'
+  | 'wearable_data'
+  | 'imaging_anonymized'
+  | 'clinical_outcomes'
+  | 'medication_responses';
 
 export interface DataListing {
   id: string;
@@ -957,9 +977,18 @@ export interface WearableDevice {
 }
 
 export type WearableMetricType =
-  | 'heart_rate' | 'hrv' | 'spo2' | 'temperature' | 'steps'
-  | 'calories' | 'sleep_duration' | 'sleep_score' | 'readiness'
-  | 'strain' | 'recovery' | 'respiratory_rate';
+  | 'heart_rate'
+  | 'hrv'
+  | 'spo2'
+  | 'temperature'
+  | 'steps'
+  | 'calories'
+  | 'sleep_duration'
+  | 'sleep_score'
+  | 'readiness'
+  | 'strain'
+  | 'recovery'
+  | 'respiratory_rate';
 
 export interface WearableDataPoint {
   id: string;
@@ -985,8 +1014,14 @@ export interface WearableSyncBatch {
 // ============================================================
 
 export type FHIRResourceType =
-  | 'Patient' | 'Observation' | 'MedicationRequest' | 'Condition'
-  | 'DiagnosticReport' | 'Immunization' | 'Procedure' | 'AllergyIntolerance';
+  | 'Patient'
+  | 'Observation'
+  | 'MedicationRequest'
+  | 'Condition'
+  | 'DiagnosticReport'
+  | 'Immunization'
+  | 'Procedure'
+  | 'AllergyIntolerance';
 
 export interface FHIRResource {
   id: string;
@@ -1037,9 +1072,16 @@ export type AlertSeverity = 'critical' | 'warning' | 'info';
 export type AlertChannel = 'in_app' | 'email' | 'push' | 'sms';
 
 export type AlertMetric =
-  | 'temperature' | 'cycle_length' | 'heart_rate' | 'hrv'
-  | 'spo2' | 'blood_pressure' | 'glucose' | 'weight'
-  | 'sleep_score' | 'recovery_score';
+  | 'temperature'
+  | 'cycle_length'
+  | 'heart_rate'
+  | 'hrv'
+  | 'spo2'
+  | 'blood_pressure'
+  | 'glucose'
+  | 'weight'
+  | 'sleep_score'
+  | 'recovery_score';
 
 export interface AlertRule {
   id: string;
@@ -1085,8 +1127,12 @@ export interface AlertHistory {
 // ============================================================
 
 export type ZKClaimType =
-  | 'age_range' | 'condition_present' | 'medication_active'
-  | 'data_quality' | 'provider_verified' | 'fertility_window';
+  | 'age_range'
+  | 'condition_present'
+  | 'medication_active'
+  | 'data_quality'
+  | 'provider_verified'
+  | 'fertility_window';
 
 export interface ZKProof {
   id: string;
@@ -1216,8 +1262,14 @@ export interface StakingStats {
 // ============================================================
 
 export type CircleCategory =
-  | 'fertility' | 'pregnancy' | 'menopause' | 'endometriosis'
-  | 'pcos' | 'general_wellness' | 'mental_health' | 'nutrition';
+  | 'fertility'
+  | 'pregnancy'
+  | 'menopause'
+  | 'endometriosis'
+  | 'pcos'
+  | 'general_wellness'
+  | 'mental_health'
+  | 'nutrition';
 
 export interface CommunityCircle {
   id: string;
@@ -1260,8 +1312,14 @@ export interface CircleMembership {
 // ============================================================
 
 export type RewardAction =
-  | 'data_upload' | 'wearable_sync' | 'community_post' | 'health_checkup'
-  | 'data_contribution' | 'streak_bonus' | 'milestone' | 'referral';
+  | 'data_upload'
+  | 'wearable_sync'
+  | 'community_post'
+  | 'health_checkup'
+  | 'data_contribution'
+  | 'streak_bonus'
+  | 'milestone'
+  | 'referral';
 
 export interface RewardEntry {
   id: string;
@@ -1627,7 +1685,12 @@ export interface ClinicalGuideline {
 /** A clinical alert for the patient. */
 export interface ClinicalAlert {
   id: string;
-  type: 'drug_interaction' | 'overdue_screening' | 'lab_abnormal' | 'guideline_deviation' | 'contraindication';
+  type:
+    | 'drug_interaction'
+    | 'overdue_screening'
+    | 'lab_abnormal'
+    | 'guideline_deviation'
+    | 'contraindication';
   severity: AlertSeverity;
   title: string;
   message: string;
@@ -1654,7 +1717,12 @@ export interface SymptomAssessment {
 /** An immutable clinical decision audit entry. */
 export interface ClinicalDecisionAuditEntry {
   id: string;
-  decisionType: 'pathway_step' | 'drug_check' | 'differential' | 'guideline_applied' | 'alert_generated';
+  decisionType:
+    | 'pathway_step'
+    | 'drug_check'
+    | 'differential'
+    | 'guideline_applied'
+    | 'alert_generated';
   inputs: string;
   output: string;
   modelId: string;
@@ -1681,9 +1749,16 @@ export interface ClinicalStats {
 
 /** Organ system identifiers. */
 export type OrganSystem =
-  | 'cardiovascular' | 'respiratory' | 'neurological' | 'endocrine'
-  | 'musculoskeletal' | 'gastrointestinal' | 'renal' | 'hepatic'
-  | 'immune' | 'reproductive';
+  | 'cardiovascular'
+  | 'respiratory'
+  | 'neurological'
+  | 'endocrine'
+  | 'musculoskeletal'
+  | 'gastrointestinal'
+  | 'renal'
+  | 'hepatic'
+  | 'immune'
+  | 'reproductive';
 
 /** A digital twin model representing a virtual patient. */
 export interface DigitalTwin {
@@ -1692,7 +1767,12 @@ export interface DigitalTwin {
   createdAt: number;
   lastUpdated: number;
   modelVersion: string;
-  organScores: { system: OrganSystem; score: number; trend: 'improving' | 'stable' | 'declining'; lastUpdated: number }[];
+  organScores: {
+    system: OrganSystem;
+    score: number;
+    trend: 'improving' | 'stable' | 'declining';
+    lastUpdated: number;
+  }[];
   overallHealthScore: number;
   dataSourceCount: number;
   simulationCount: number;
@@ -1765,10 +1845,22 @@ export interface TwinTimelineEvent {
 // ============================================================
 
 /** MPC protocol types. */
-export type MPCProtocolType = 'secure_sum' | 'federated_averaging' | 'private_intersection' | 'garbled_circuits' | 'secret_sharing';
+export type MPCProtocolType =
+  | 'secure_sum'
+  | 'federated_averaging'
+  | 'private_intersection'
+  | 'garbled_circuits'
+  | 'secret_sharing';
 
 /** Status of an MPC session. */
-export type MPCSessionStatus = 'setup' | 'enrolling' | 'computing' | 'converging' | 'completed' | 'failed' | 'cancelled';
+export type MPCSessionStatus =
+  | 'setup'
+  | 'enrolling'
+  | 'computing'
+  | 'converging'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
 
 /** An MPC computation session. */
 export interface MPCSession {
@@ -1944,7 +2036,12 @@ export interface ComplianceOverview {
 export type TriageLevel = 1 | 2 | 3 | 4 | 5;
 
 /** Disposition recommendation from triage. */
-export type TriageDisposition = 'emergency_room' | 'urgent_care' | 'primary_care' | 'self_care' | 'call_911';
+export type TriageDisposition =
+  | 'emergency_room'
+  | 'urgent_care'
+  | 'primary_care'
+  | 'self_care'
+  | 'call_911';
 
 /** An emergency information card. */
 export interface EmergencyCard {
@@ -1994,7 +2091,13 @@ export interface EmergencyProtocol {
   name: string;
   category: string;
   severity: AlertSeverity;
-  steps: { order: number; instruction: string; medication?: string; dosage?: string; timeLimit?: string }[];
+  steps: {
+    order: number;
+    instruction: string;
+    medication?: string;
+    dosage?: string;
+    timeLimit?: string;
+  }[];
   autoNotifyTeam: boolean;
   teeVerifiedDoses: boolean;
   attestation: string;
@@ -2123,7 +2226,12 @@ export interface GeneVariant {
   rsId: string;
   chromosome: string;
   position: number;
-  clinicalSignificance: 'pathogenic' | 'likely_pathogenic' | 'uncertain' | 'likely_benign' | 'benign';
+  clinicalSignificance:
+    | 'pathogenic'
+    | 'likely_pathogenic'
+    | 'uncertain'
+    | 'likely_benign'
+    | 'benign';
   associatedConditions: string[];
   frequency: number;
 }

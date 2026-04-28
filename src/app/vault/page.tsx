@@ -10,22 +10,67 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Lock, Unlock, Shield, Calendar, Heart, TrendingUp,
-  Pill, TestTube2, ScanLine, Thermometer, Baby,
-  Database, Clock, Eye, Users, Activity, AlertCircle,
-  BarChart3, PieChart as PieChartIcon, RefreshCw,
-  CheckCircle, XCircle, FileText, Trash2,
+  Lock,
+  Unlock,
+  Shield,
+  Calendar,
+  Heart,
+  TrendingUp,
+  Pill,
+  TestTube2,
+  ScanLine,
+  Thermometer,
+  Baby,
+  Database,
+  Clock,
+  Eye,
+  Users,
+  Activity,
+  AlertCircle,
+  BarChart3,
+  PieChart as PieChartIcon,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  FileText,
+  Trash2,
 } from 'lucide-react';
 import {
-  AreaChart, Area, BarChart, Bar, LineChart, Line,
-  PieChart, Pie, Cell, RadarChart, Radar,
-  PolarGrid, PolarAngleAxis,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
 } from 'recharts';
 
 import { useApp } from '@/contexts/AppContext';
-import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, Tabs } from '@/components/ui/SharedComponents';
-import { MedicalCard, SectionHeader, StatusBadge, HealthMetricCard } from '@/components/ui/PagePrimitives';
+import {
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  Tabs,
+} from '@/components/ui/SharedComponents';
+import {
+  MedicalCard,
+  SectionHeader,
+  StatusBadge,
+  HealthMetricCard,
+} from '@/components/ui/PagePrimitives';
 import {
   CompartmentCard,
   CycleCalendar,
@@ -35,19 +80,38 @@ import {
   PrivacyMeter,
 } from '@/components/vault/VaultComponents';
 import {
-  BRAND, VAULT_CATEGORIES, SYMPTOM_CATEGORIES,
-  CYCLE_PHASE_COLORS, CHART_COLORS, REPRODUCTIVE_JURISDICTIONS,
+  BRAND,
+  VAULT_CATEGORIES,
+  SYMPTOM_CATEGORIES,
+  CYCLE_PHASE_COLORS,
+  CHART_COLORS,
+  REPRODUCTIVE_JURISDICTIONS,
   EXTENDED_STATUS_STYLES,
 } from '@/lib/constants';
 import {
-  seededRandom, seededInt, seededHex, seededPick,
-  formatNumber, formatBytes, formatDate, formatDateTime,
-  timeAgo, generateCID, generateAttestation,
+  seededRandom,
+  seededInt,
+  seededHex,
+  seededPick,
+  formatNumber,
+  formatBytes,
+  formatDate,
+  formatDateTime,
+  timeAgo,
+  generateCID,
+  generateAttestation,
 } from '@/lib/utils';
 import type {
-  VaultCompartment, VaultCompartmentCategory, VaultLockStatus,
-  CycleEntry, CyclePhase, SymptomLog, SymptomCategory,
-  SymptomSeverity, FertilityMarker, VaultPrivacyScore,
+  VaultCompartment,
+  VaultCompartmentCategory,
+  VaultLockStatus,
+  CycleEntry,
+  CyclePhase,
+  SymptomLog,
+  SymptomCategory,
+  SymptomSeverity,
+  FertilityMarker,
+  VaultPrivacyScore,
 } from '@/types';
 
 // ============================================================
@@ -61,9 +125,11 @@ function generatePageCompartments(): VaultCompartment[] {
     const lockStatuses: VaultLockStatus[] = ['locked', 'unlocked', 'partial'];
     const accessCount = seededInt(SEED + i * 11, 0, 5);
     const providers = [
-      'Dr. Sarah Chen, OB-GYN', 'Metro Women\'s Health',
-      'Dr. James Liu, Endocrinology', 'Fertility Clinic of Boston',
-      'Stanford Women\'s Care',
+      'Dr. Sarah Chen, OB-GYN',
+      "Metro Women's Health",
+      'Dr. James Liu, Endocrinology',
+      'Fertility Clinic of Boston',
+      "Stanford Women's Care",
     ];
     return {
       id: `vault-${seededHex(SEED + i * 100, 12)}`,
@@ -76,7 +142,7 @@ function generatePageCompartments(): VaultCompartment[] {
       lastAccessed: Date.now() - seededInt(SEED + i * 17, 1, 30) * 86400000,
       encryptionKey: `0x${seededHex(SEED + i * 50, 64)}`,
       accessList: Array.from({ length: accessCount }, (_, j) =>
-        seededPick(SEED + i * 20 + j, providers)
+        seededPick(SEED + i * 20 + j, providers),
       ),
       jurisdictionFlags: ['us-ca', 'eu-gdpr'].slice(0, seededInt(SEED + i * 9, 1, 2)),
       createdAt: Date.now() - seededInt(SEED + i * 23, 60, 365) * 86400000,
@@ -147,7 +213,17 @@ function generatePageSymptoms(): SymptomLog[] {
     other: ['Dizziness', 'Leg cramps', 'Hair loss', 'Weight changes', 'Swelling'],
   };
 
-  const categories: SymptomCategory[] = ['pain', 'mood', 'energy', 'digestive', 'skin', 'sleep', 'discharge', 'temperature', 'other'];
+  const categories: SymptomCategory[] = [
+    'pain',
+    'mood',
+    'energy',
+    'digestive',
+    'skin',
+    'sleep',
+    'discharge',
+    'temperature',
+    'other',
+  ];
 
   return Array.from({ length: 60 }, (_, i) => {
     const category = seededPick(SEED + i * 73, categories);
@@ -160,14 +236,26 @@ function generatePageSymptoms(): SymptomLog[] {
       category,
       symptom: seededPick(SEED + i * 79, names),
       severity: seededInt(SEED + i * 81, 1, 5) as SymptomSeverity,
-      notes: seededPick(SEED + i * 83, ['', '', '', 'Took ibuprofen', 'After exercise', 'Morning onset']),
+      notes: seededPick(SEED + i * 83, [
+        '',
+        '',
+        '',
+        'Took ibuprofen',
+        'After exercise',
+        'Morning onset',
+      ]),
       tags: [seededPick(SEED + i * 85, ['tracked', 'recurring', 'new', 'improving', 'worsening'])],
     };
   });
 }
 
 function generatePageFertilityMarkers(): FertilityMarker[] {
-  const types: FertilityMarker['type'][] = ['lh_surge', 'bbt_shift', 'cervical_mucus', 'ovulation_confirmed'];
+  const types: FertilityMarker['type'][] = [
+    'lh_surge',
+    'bbt_shift',
+    'cervical_mucus',
+    'ovulation_confirmed',
+  ];
   const sources: FertilityMarker['source'][] = ['manual', 'ai_predicted', 'wearable'];
 
   return Array.from({ length: 12 }, (_, i) => ({
@@ -242,8 +330,14 @@ export default function VaultPage() {
     [compartments],
   );
   const lockedCount = compartments.filter((c) => c.lockStatus === 'locked').length;
-  const currentCycleDay = cycleEntries.length > 0 ? cycleEntries[cycleEntries.length - 1].day : /* istanbul ignore next */ 1;
-  const currentPhase = cycleEntries.length > 0 ? cycleEntries[cycleEntries.length - 1].phase : /* istanbul ignore next */ 'follicular';
+  const currentCycleDay =
+    cycleEntries.length > 0
+      ? cycleEntries[cycleEntries.length - 1].day
+      : /* istanbul ignore next */ 1;
+  const currentPhase =
+    cycleEntries.length > 0
+      ? cycleEntries[cycleEntries.length - 1].phase
+      : /* istanbul ignore next */ 'follicular';
   const averageCycleLength = 28;
   const nextPeriodDays = averageCycleLength - currentCycleDay;
   const fertileWindowStart = Date.now() + (14 - currentCycleDay - 5) * 86400000;
@@ -257,7 +351,8 @@ export default function VaultPage() {
     });
     return SYMPTOM_CATEGORIES.map((cat) => ({
       name: cat.label,
-      count: freq[cat.id] ||
+      count:
+        freq[cat.id] ||
         /* istanbul ignore next */
         0,
       icon: cat.icons[0],
@@ -301,19 +396,27 @@ export default function VaultPage() {
     return compartments.map((c, i) => ({
       name: c.label,
       value: c.storageUsed,
-      color: VAULT_CATEGORIES[i]?.color ??
+      color:
+        VAULT_CATEGORIES[i]?.color ??
         /* istanbul ignore next */
         CHART_COLORS[i % CHART_COLORS.length],
     }));
   }, [compartments]);
 
   // AI prediction data
-  const aiPredictions = useMemo(() => [
-    { label: 'Next Period', value: `${nextPeriodDays} days`, confidence: 94 },
-    { label: 'Ovulation Window', value: `Day ${14 - currentCycleDay + currentCycleDay}`, confidence: 91 },
-    { label: 'Cycle Regularity', value: '92%', confidence: 88 },
-    { label: 'Hormone Balance', value: 'Optimal', confidence: 85 },
-  ], [nextPeriodDays, currentCycleDay]);
+  const aiPredictions = useMemo(
+    () => [
+      { label: 'Next Period', value: `${nextPeriodDays} days`, confidence: 94 },
+      {
+        label: 'Ovulation Window',
+        value: `Day ${14 - currentCycleDay + currentCycleDay}`,
+        confidence: 91,
+      },
+      { label: 'Cycle Regularity', value: '92%', confidence: 88 },
+      { label: 'Hormone Balance', value: 'Optimal', confidence: 85 },
+    ],
+    [nextPeriodDays, currentCycleDay],
+  );
 
   // Hormone levels (mock)
   const hormoneLevels = useMemo(() => {
@@ -321,28 +424,61 @@ export default function VaultPage() {
       const day = i + 1;
       return {
         day: `Day ${day}`,
-        estrogen: day <= 14
-          ? 20 + (day / 14) * 280
-          : 300 - ((day - 14) / 14) * 200,
-        progesterone: day <= 14
-          ? 1 + seededRandom(SEED + i * 113) * 2
-          : 5 + ((day - 14) / 14) * 20 + seededRandom(SEED + i * 115) * 5,
-        lh: day >= 12 && day <= 15
-          ? 20 + (day === 14 ? 60 : seededRandom(SEED + i * 117) * 30)
-          : 5 + seededRandom(SEED + i * 119) * 10,
+        estrogen: day <= 14 ? 20 + (day / 14) * 280 : 300 - ((day - 14) / 14) * 200,
+        progesterone:
+          day <= 14
+            ? 1 + seededRandom(SEED + i * 113) * 2
+            : 5 + ((day - 14) / 14) * 20 + seededRandom(SEED + i * 115) * 5,
+        lh:
+          day >= 12 && day <= 15
+            ? 20 + (day === 14 ? 60 : seededRandom(SEED + i * 117) * 30)
+            : 5 + seededRandom(SEED + i * 119) * 10,
       };
     });
   }, []);
 
   // Recent activity feed
-  const recentActivity = useMemo(() => [
-    { icon: <Lock className="w-4 h-4" />, text: 'Cycle Tracking compartment locked', time: Date.now() - 3600000, color: 'text-slate-500' },
-    { icon: <Activity className="w-4 h-4" />, text: 'New symptom logged: Headache', time: Date.now() - 7200000, color: 'text-amber-500' },
-    { icon: <Shield className="w-4 h-4" />, text: 'Privacy audit completed', time: Date.now() - 14400000, color: 'text-emerald-500' },
-    { icon: <Heart className="w-4 h-4" />, text: 'Fertility markers updated', time: Date.now() - 28800000, color: 'text-violet-500' },
-    { icon: <Eye className="w-4 h-4" />, text: 'Dr. Sarah Chen accessed Lab Results', time: Date.now() - 43200000, color: 'text-brand-500' },
-    { icon: <Database className="w-4 h-4" />, text: 'New records encrypted and stored', time: Date.now() - 86400000, color: 'text-brand-500' },
-  ], []);
+  const recentActivity = useMemo(
+    () => [
+      {
+        icon: <Lock className="w-4 h-4" />,
+        text: 'Cycle Tracking compartment locked',
+        time: Date.now() - 3600000,
+        color: 'text-slate-500',
+      },
+      {
+        icon: <Activity className="w-4 h-4" />,
+        text: 'New symptom logged: Headache',
+        time: Date.now() - 7200000,
+        color: 'text-amber-500',
+      },
+      {
+        icon: <Shield className="w-4 h-4" />,
+        text: 'Privacy audit completed',
+        time: Date.now() - 14400000,
+        color: 'text-emerald-500',
+      },
+      {
+        icon: <Heart className="w-4 h-4" />,
+        text: 'Fertility markers updated',
+        time: Date.now() - 28800000,
+        color: 'text-violet-500',
+      },
+      {
+        icon: <Eye className="w-4 h-4" />,
+        text: 'Dr. Sarah Chen accessed Lab Results',
+        time: Date.now() - 43200000,
+        color: 'text-brand-500',
+      },
+      {
+        icon: <Database className="w-4 h-4" />,
+        text: 'New records encrypted and stored',
+        time: Date.now() - 86400000,
+        color: 'text-brand-500',
+      },
+    ],
+    [],
+  );
 
   // Handler stubs
   /* istanbul ignore next -- stub: production would call the mutation */
@@ -366,7 +502,6 @@ export default function VaultPage() {
 
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-
           {/* Hero Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
             <div className="flex items-center gap-4">
@@ -393,12 +528,7 @@ export default function VaultPage() {
           </div>
 
           {/* Tabs */}
-          <Tabs
-            tabs={VAULT_TABS}
-            activeTab={activeTab}
-            onChange={setActiveTab}
-            className="mb-8"
-          />
+          <Tabs tabs={VAULT_TABS} activeTab={activeTab} onChange={setActiveTab} className="mb-8" />
 
           {/* ============================================================ */}
           {/* TAB 1: OVERVIEW */}
@@ -435,7 +565,10 @@ export default function VaultPage() {
 
               {/* Compartment Grid */}
               <div>
-                <SectionHeader title="Data Compartments" subtitle="Manage your encrypted reproductive health data" />
+                <SectionHeader
+                  title="Data Compartments"
+                  subtitle="Manage your encrypted reproductive health data"
+                />
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {compartments.map((compartment) => (
                     <CompartmentCard
@@ -453,8 +586,13 @@ export default function VaultPage() {
                 <SectionHeader title="Recent Activity" size="sm" />
                 <div className="space-y-3">
                   {recentActivity.map((item, i) => (
-                    <div key={i} className="flex items-center gap-3 py-2 border-b border-slate-50 last:border-0">
-                      <div className={`w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center ${item.color}`}>
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 py-2 border-b border-slate-50 last:border-0"
+                    >
+                      <div
+                        className={`w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center ${item.color}`}
+                      >
                         {item.icon}
                       </div>
                       <span className="flex-1 text-sm text-slate-700">{item.text}</span>
@@ -473,7 +611,11 @@ export default function VaultPage() {
             <div className="space-y-8">
               {/* Calendar */}
               <MedicalCard>
-                <SectionHeader title="Cycle Calendar" subtitle="Your menstrual cycle phases and flow" size="sm" />
+                <SectionHeader
+                  title="Cycle Calendar"
+                  subtitle="Your menstrual cycle phases and flow"
+                  size="sm"
+                />
                 <CycleCalendar entries={cycleEntries} currentDay={currentCycleDay} />
               </MedicalCard>
 
@@ -487,16 +629,37 @@ export default function VaultPage() {
                 <MedicalCard>
                   <p className="text-xs text-slate-400 mb-1">Next Period</p>
                   <p className="text-2xl font-bold text-slate-900">{nextPeriodDays}d</p>
-                  <p className="text-xs text-slate-500 mt-1">{formatDate(Date.now() + nextPeriodDays * 86400000)}</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {formatDate(Date.now() + nextPeriodDays * 86400000)}
+                  </p>
                 </MedicalCard>
                 <MedicalCard>
                   <p className="text-xs text-slate-400 mb-1">Fertile Window</p>
                   <p className="text-2xl font-bold text-slate-900">
-                    Day {Math.max(1, 14 - 5 + (/* istanbul ignore next */ currentCycleDay <= 14 ? 0 : currentCycleDay - 14))}-{Math.min(28, 14 + 1 + (/* istanbul ignore next */ currentCycleDay <= 14 ? 0 : currentCycleDay - 14))}
+                    Day{' '}
+                    {Math.max(
+                      1,
+                      14 -
+                        5 +
+                        /* istanbul ignore next */ (currentCycleDay <= 14
+                          ? 0
+                          : currentCycleDay - 14),
+                    )}
+                    -
+                    {Math.min(
+                      28,
+                      14 +
+                        1 +
+                        /* istanbul ignore next */ (currentCycleDay <= 14
+                          ? 0
+                          : currentCycleDay - 14),
+                    )}
                   </p>
-                  <p className="text-xs text-slate-500 mt-1">{currentCycleDay >= 9 && currentCycleDay <= 16
-                    ? /* istanbul ignore next */ 'Active now'
-                    : 'Upcoming'}</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {currentCycleDay >= 9 && currentCycleDay <= 16
+                      ? /* istanbul ignore next */ 'Active now'
+                      : 'Upcoming'}
+                  </p>
                 </MedicalCard>
                 <MedicalCard>
                   <p className="text-xs text-slate-400 mb-1">Avg Cycle Length</p>
@@ -509,7 +672,10 @@ export default function VaultPage() {
               <MedicalCard>
                 <SectionHeader title="Basal Body Temperature" subtitle="Last 28 days" size="sm" />
                 <ResponsiveContainer width="100%" height={250}>
-                  <AreaChart data={temperatureData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <AreaChart
+                    data={temperatureData}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                  >
                     <defs>
                       <linearGradient id="tempGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.2} />
@@ -517,10 +683,33 @@ export default function VaultPage() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} />
-                    <YAxis domain={[96.5, 99]} tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} />
-                    <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', fontSize: '12px' }} />
-                    <Area type="monotone" dataKey="temperature" stroke="#f43f5e" fill="url(#tempGrad)" strokeWidth={2} dot={{ r: 2, fill: '#f43f5e' }} name="Temp (F)" />
+                    <XAxis
+                      dataKey="day"
+                      tick={{ fontSize: 10, fill: '#94a3b8' }}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      domain={[96.5, 99]}
+                      tick={{ fontSize: 10, fill: '#94a3b8' }}
+                      tickLine={false}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#fff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="temperature"
+                      stroke="#f43f5e"
+                      fill="url(#tempGrad)"
+                      strokeWidth={2}
+                      dot={{ r: 2, fill: '#f43f5e' }}
+                      name="Temp (F)"
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               </MedicalCard>
@@ -529,11 +718,29 @@ export default function VaultPage() {
               <MedicalCard>
                 <SectionHeader title="Cycle Length History" subtitle="Last 6 cycles" size="sm" />
                 <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={cycleLengthHistory} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <BarChart
+                    data={cycleLengthHistory}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="cycle" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} />
-                    <YAxis domain={[24, 32]} tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} />
-                    <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', fontSize: '12px' }} />
+                    <XAxis
+                      dataKey="cycle"
+                      tick={{ fontSize: 10, fill: '#94a3b8' }}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      domain={[24, 32]}
+                      tick={{ fontSize: 10, fill: '#94a3b8' }}
+                      tickLine={false}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#fff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                      }}
+                    />
                     <Bar dataKey="length" fill={BRAND.sky} radius={[6, 6, 0, 0]} name="Days" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -548,7 +755,11 @@ export default function VaultPage() {
             <div className="space-y-8">
               {/* Symptom Logger */}
               <MedicalCard>
-                <SectionHeader title="Log Symptoms" subtitle="Track your daily symptoms" size="sm" />
+                <SectionHeader
+                  title="Log Symptoms"
+                  subtitle="Track your daily symptoms"
+                  size="sm"
+                />
                 <SymptomLogger
                   categories={SYMPTOM_CATEGORIES}
                   onLog={handleLogSymptom}
@@ -558,11 +769,23 @@ export default function VaultPage() {
 
               {/* Symptom Frequency */}
               <MedicalCard>
-                <SectionHeader title="Symptom Frequency" subtitle="Most common symptoms this cycle" size="sm" />
+                <SectionHeader
+                  title="Symptom Frequency"
+                  subtitle="Most common symptoms this cycle"
+                  size="sm"
+                />
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={symptomFrequency} layout="vertical" margin={{ top: 0, right: 20, left: 80, bottom: 0 }}>
+                  <BarChart
+                    data={symptomFrequency}
+                    layout="vertical"
+                    margin={{ top: 0, right: 20, left: 80, bottom: 0 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                    <XAxis type="number" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} />
+                    <XAxis
+                      type="number"
+                      tick={{ fontSize: 10, fill: '#94a3b8' }}
+                      tickLine={false}
+                    />
                     <YAxis
                       type="category"
                       dataKey="name"
@@ -570,7 +793,14 @@ export default function VaultPage() {
                       tickLine={false}
                       width={75}
                     />
-                    <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', fontSize: '12px' }} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#fff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                      }}
+                    />
                     <Bar dataKey="count" fill={BRAND.sky} radius={[0, 6, 6, 0]} name="Count" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -578,14 +808,44 @@ export default function VaultPage() {
 
               {/* Symptom Trend */}
               <MedicalCard>
-                <SectionHeader title="Symptom Trend" subtitle="Symptoms per day over the last 30 days" size="sm" />
+                <SectionHeader
+                  title="Symptom Trend"
+                  subtitle="Symptoms per day over the last 30 days"
+                  size="sm"
+                />
                 <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={symptomTrend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <LineChart
+                    data={symptomTrend}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} interval={4} />
-                    <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} allowDecimals={false} />
-                    <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', fontSize: '12px' }} />
-                    <Line type="monotone" dataKey="count" stroke="#f43f5e" strokeWidth={2} dot={{ r: 2, fill: '#f43f5e' }} name="Symptoms" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 10, fill: '#94a3b8' }}
+                      tickLine={false}
+                      interval={4}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10, fill: '#94a3b8' }}
+                      tickLine={false}
+                      allowDecimals={false}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#fff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="count"
+                      stroke="#f43f5e"
+                      strokeWidth={2}
+                      dot={{ r: 2, fill: '#f43f5e' }}
+                      name="Symptoms"
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </MedicalCard>
@@ -599,7 +859,11 @@ export default function VaultPage() {
             <div className="space-y-8">
               {/* Fertility Chart */}
               <MedicalCard>
-                <SectionHeader title="Fertility Overview" subtitle="Temperature and fertility score tracking" size="sm" />
+                <SectionHeader
+                  title="Fertility Overview"
+                  subtitle="Temperature and fertility score tracking"
+                  size="sm"
+                />
                 <FertilityChart
                   entries={cycleEntries}
                   markers={fertilityMarkers}
@@ -610,43 +874,67 @@ export default function VaultPage() {
 
               {/* Fertility Markers Timeline */}
               <MedicalCard>
-                <SectionHeader title="Fertility Markers" subtitle="Recent observations and predictions" size="sm" />
+                <SectionHeader
+                  title="Fertility Markers"
+                  subtitle="Recent observations and predictions"
+                  size="sm"
+                />
                 <div className="space-y-3">
-                  {fertilityMarkers.sort((a, b) => b.date - a.date).map((marker) => (
-                    <div key={marker.id} className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl">
-                      <div className="w-10 h-10 rounded-lg bg-violet-50 flex items-center justify-center text-violet-600">
-                        <Heart className="w-5 h-5" />
+                  {fertilityMarkers
+                    .sort((a, b) => b.date - a.date)
+                    .map((marker) => (
+                      <div
+                        key={marker.id}
+                        className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-violet-50 flex items-center justify-center text-violet-600">
+                          <Heart className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-slate-700">
+                            {MARKER_LABELS[marker.type] ??
+                              /* istanbul ignore next */
+                              marker.type}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {SOURCE_LABELS[marker.source] ??
+                              /* istanbul ignore next */
+                              marker.source}{' '}
+                            &middot; Confidence: {marker.confidence.toFixed(0)}%
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-slate-900">
+                            {marker.value.toFixed(1)}
+                          </p>
+                          <p className="text-xs text-slate-400">{formatDate(marker.date)}</p>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-slate-700">
-                          {MARKER_LABELS[marker.type] ??
-                            /* istanbul ignore next */
-                            marker.type}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {SOURCE_LABELS[marker.source] ??
-                            /* istanbul ignore next */
-                            marker.source} &middot; Confidence: {marker.confidence.toFixed(0)}%
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-slate-900">{marker.value.toFixed(1)}</p>
-                        <p className="text-xs text-slate-400">{formatDate(marker.date)}</p>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </MedicalCard>
 
               {/* AI Predictions */}
               <MedicalCard>
-                <SectionHeader title="AI Predictions" subtitle="TEE-verified reproductive health predictions" size="sm" />
+                <SectionHeader
+                  title="AI Predictions"
+                  subtitle="TEE-verified reproductive health predictions"
+                  size="sm"
+                />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {aiPredictions.map((pred, i) => (
                     <div key={i} className="p-4 bg-slate-50 rounded-xl">
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-sm font-medium text-slate-700">{pred.label}</p>
-                        <Badge variant={pred.confidence >= 90 ? 'success' : pred.confidence >= 80 ? 'info' : /* istanbul ignore next */ 'warning'}>
+                        <Badge
+                          variant={
+                            pred.confidence >= 90
+                              ? 'success'
+                              : pred.confidence >= 80
+                                ? 'info'
+                                : /* istanbul ignore next */ 'warning'
+                          }
+                        >
                           {pred.confidence}% confidence
                         </Badge>
                       </div>
@@ -658,16 +946,55 @@ export default function VaultPage() {
 
               {/* Hormone Level Tracking */}
               <MedicalCard>
-                <SectionHeader title="Hormone Levels" subtitle="Estimated hormone levels through the cycle" size="sm" />
+                <SectionHeader
+                  title="Hormone Levels"
+                  subtitle="Estimated hormone levels through the cycle"
+                  size="sm"
+                />
                 <ResponsiveContainer width="100%" height={280}>
-                  <LineChart data={hormoneLevels} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <LineChart
+                    data={hormoneLevels}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} />
+                    <XAxis
+                      dataKey="day"
+                      tick={{ fontSize: 10, fill: '#94a3b8' }}
+                      tickLine={false}
+                    />
                     <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} />
-                    <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', fontSize: '12px' }} />
-                    <Line type="monotone" dataKey="estrogen" stroke="#a78bfa" strokeWidth={2} dot={false} name="Estrogen (pg/mL)" />
-                    <Line type="monotone" dataKey="progesterone" stroke="#fb923c" strokeWidth={2} dot={false} name="Progesterone (ng/mL)" />
-                    <Line type="monotone" dataKey="lh" stroke="#f43f5e" strokeWidth={2} dot={false} name="LH (mIU/mL)" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#fff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="estrogen"
+                      stroke="#a78bfa"
+                      strokeWidth={2}
+                      dot={false}
+                      name="Estrogen (pg/mL)"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="progesterone"
+                      stroke="#fb923c"
+                      strokeWidth={2}
+                      dot={false}
+                      name="Progesterone (ng/mL)"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="lh"
+                      stroke="#f43f5e"
+                      strokeWidth={2}
+                      dot={false}
+                      name="LH (mIU/mL)"
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </MedicalCard>
@@ -709,30 +1036,51 @@ export default function VaultPage() {
 
               {/* Access Management */}
               <MedicalCard>
-                <SectionHeader title="Access Management" subtitle="Providers with compartment access" size="sm" />
+                <SectionHeader
+                  title="Access Management"
+                  subtitle="Providers with compartment access"
+                  size="sm"
+                />
                 <div className="space-y-3">
-                  {compartments.filter((c) => c.accessList.length > 0).map((compartment) => (
-                    <div key={compartment.id} className="p-3 bg-slate-50 rounded-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-slate-700">{compartment.label}</span>
-                        <StatusBadge status={compartment.lockStatus.charAt(0).toUpperCase() + compartment.lockStatus.slice(1)} styles={EXTENDED_STATUS_STYLES} />
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {compartment.accessList.map((provider, j) => (
-                          <span key={j} className="inline-flex items-center gap-1 px-2 py-0.5 bg-white rounded-full text-xs text-slate-600 border border-slate-200">
-                            <Users className="w-3 h-3" />
-                            {provider}
+                  {compartments
+                    .filter((c) => c.accessList.length > 0)
+                    .map((compartment) => (
+                      <div key={compartment.id} className="p-3 bg-slate-50 rounded-xl">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-slate-700">
+                            {compartment.label}
                           </span>
-                        ))}
+                          <StatusBadge
+                            status={
+                              compartment.lockStatus.charAt(0).toUpperCase() +
+                              compartment.lockStatus.slice(1)
+                            }
+                            styles={EXTENDED_STATUS_STYLES}
+                          />
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {compartment.accessList.map((provider, j) => (
+                            <span
+                              key={j}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 bg-white rounded-full text-xs text-slate-600 border border-slate-200"
+                            >
+                              <Users className="w-3 h-3" />
+                              {provider}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </MedicalCard>
 
               {/* Storage Breakdown */}
               <MedicalCard>
-                <SectionHeader title="Storage Breakdown" subtitle="Storage used per compartment" size="sm" />
+                <SectionHeader
+                  title="Storage Breakdown"
+                  subtitle="Storage used per compartment"
+                  size="sm"
+                />
                 <div className="flex flex-col md:flex-row items-center gap-8">
                   <ResponsiveContainer width="100%" height={250}>
                     <PieChart>
@@ -750,7 +1098,12 @@ export default function VaultPage() {
                         ))}
                       </Pie>
                       <Tooltip
-                        contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', fontSize: '12px' }}
+                        contentStyle={{
+                          backgroundColor: '#fff',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                        }}
                         formatter={/* istanbul ignore next */ (value: number) => formatBytes(value)}
                       />
                     </PieChart>
@@ -760,7 +1113,9 @@ export default function VaultPage() {
                       <div key={i} className="flex items-center gap-2 text-sm">
                         <span className="w-3 h-3 rounded" style={{ backgroundColor: item.color }} />
                         <span className="flex-1 text-slate-600">{item.name}</span>
-                        <span className="font-medium text-slate-900">{formatBytes(item.value)}</span>
+                        <span className="font-medium text-slate-900">
+                          {formatBytes(item.value)}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -776,13 +1131,21 @@ export default function VaultPage() {
             <div className="space-y-8">
               {/* Privacy Meter */}
               <MedicalCard className="max-w-md mx-auto">
-                <SectionHeader title="Privacy Score" subtitle="Overall data protection assessment" size="sm" />
+                <SectionHeader
+                  title="Privacy Score"
+                  subtitle="Overall data protection assessment"
+                  size="sm"
+                />
                 <PrivacyMeter score={PRIVACY_SCORE} />
               </MedicalCard>
 
               {/* Jurisdiction Status */}
               <MedicalCard>
-                <SectionHeader title="Jurisdiction Protections" subtitle="Applicable reproductive data protection laws" size="sm" />
+                <SectionHeader
+                  title="Jurisdiction Protections"
+                  subtitle="Applicable reproductive data protection laws"
+                  size="sm"
+                />
                 <div className="flex flex-wrap gap-3">
                   {REPRODUCTIVE_JURISDICTIONS.map((j) => (
                     <JurisdictionBadge
@@ -796,7 +1159,11 @@ export default function VaultPage() {
 
               {/* Data Deletion Controls */}
               <MedicalCard>
-                <SectionHeader title="Data Controls" subtitle="Manage your reproductive data retention" size="sm" />
+                <SectionHeader
+                  title="Data Controls"
+                  subtitle="Manage your reproductive data retention"
+                  size="sm"
+                />
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                     <div>
@@ -831,10 +1198,17 @@ export default function VaultPage() {
 
               {/* Encryption Status */}
               <MedicalCard>
-                <SectionHeader title="Encryption Status" subtitle="Per-compartment encryption verification" size="sm" />
+                <SectionHeader
+                  title="Encryption Status"
+                  subtitle="Per-compartment encryption verification"
+                  size="sm"
+                />
                 <div className="space-y-2">
                   {compartments.map((compartment) => (
-                    <div key={compartment.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                    <div
+                      key={compartment.id}
+                      className="flex items-center justify-between p-3 bg-slate-50 rounded-xl"
+                    >
                       <div className="flex items-center gap-3">
                         <CheckCircle className="w-4 h-4 text-emerald-500" />
                         <span className="text-sm text-slate-700">{compartment.label}</span>
@@ -855,14 +1229,14 @@ export default function VaultPage() {
                   <div>
                     <p className="text-sm font-medium text-emerald-700">Last Security Audit</p>
                     <p className="text-xs text-emerald-600">
-                      Completed {formatDateTime(Date.now() - 3 * 86400000)} &middot; All {compartments.length} compartments verified
+                      Completed {formatDateTime(Date.now() - 3 * 86400000)} &middot; All{' '}
+                      {compartments.length} compartments verified
                     </p>
                   </div>
                 </div>
               </MedicalCard>
             </div>
           )}
-
         </div>
       </main>
 

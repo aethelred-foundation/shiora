@@ -5,11 +5,7 @@
 
 import { NextRequest } from 'next/server';
 import { z, ZodError } from 'zod';
-import {
-  successResponse,
-  validationError,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, validationError, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededHex, generateAttestation } from '@/lib/utils';
 
@@ -20,7 +16,7 @@ const ExportSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   try {

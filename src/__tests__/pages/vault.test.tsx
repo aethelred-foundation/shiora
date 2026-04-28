@@ -16,7 +16,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Reproductive Data Vault')).toBeInTheDocument();
   });
@@ -25,18 +25,16 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
-    expect(
-      screen.getByText(/Sovereign, encrypted reproductive health data/)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Sovereign, encrypted reproductive health data/)).toBeInTheDocument();
   });
 
   it('renders all tabs', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Use role=tab to target only the tab buttons
     const tabs = screen.getAllByRole('tab');
@@ -53,7 +51,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Data Compartments')).toBeInTheDocument();
     // Compartment labels appear (may have duplicates with tabs)
@@ -65,7 +63,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/Privacy Score: 87/)).toBeInTheDocument();
   });
@@ -74,7 +72,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Total Compartments')).toBeInTheDocument();
     // "Locked" appears multiple times (stat card + lock status badges), use getAllByText
@@ -87,7 +85,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Find tab by role
     const tabs = screen.getAllByRole('tab');
@@ -102,7 +100,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const privacyTab = tabs.find((t) => t.textContent === 'Privacy');
@@ -117,7 +115,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const compartmentsTab = tabs.find((t) => t.textContent === 'Compartments');
@@ -131,7 +129,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const symptomsTab = tabs.find((t) => t.textContent === 'Symptoms');
@@ -145,7 +143,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const fertilityTab = tabs.find((t) => t.textContent === 'Fertility');
@@ -159,7 +157,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Recent Activity')).toBeInTheDocument();
   });
@@ -168,7 +166,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/\d+\/\d+ Locked/)).toBeInTheDocument();
   });
@@ -179,7 +177,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const fertilityTab = tabs.find((t) => t.textContent === 'Fertility');
@@ -194,23 +192,27 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const fertilityTab = tabs.find((t) => t.textContent === 'Fertility');
     fireEvent.click(fertilityTab!);
     expect(screen.getByText('Fertility Markers')).toBeInTheDocument();
     // Marker labels should appear
-    expect(screen.getAllByText(/LH Surge|BBT Shift|Cervical Mucus|Ovulation Confirmed/).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(/LH Surge|BBT Shift|Cervical Mucus|Ovulation Confirmed/).length,
+    ).toBeGreaterThan(0);
     // Source labels should appear
-    expect(screen.getAllByText(/Manual Entry|AI Predicted|Wearable Device/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Manual Entry|AI Predicted|Wearable Device/).length).toBeGreaterThan(
+      0,
+    );
   });
 
   it('renders hormone level chart on fertility tab', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const fertilityTab = tabs.find((t) => t.textContent === 'Fertility');
@@ -223,7 +225,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const fertilityTab = tabs.find((t) => t.textContent === 'Fertility');
@@ -241,7 +243,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const compartmentsTab = tabs.find((t) => t.textContent === 'Compartments');
@@ -254,7 +256,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const compartmentsTab = tabs.find((t) => t.textContent === 'Compartments');
@@ -267,7 +269,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const compartmentsTab = tabs.find((t) => t.textContent === 'Compartments');
@@ -281,7 +283,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const privacyTab = tabs.find((t) => t.textContent === 'Privacy');
@@ -296,7 +298,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const privacyTab = tabs.find((t) => t.textContent === 'Privacy');
@@ -312,7 +314,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const privacyTab = tabs.find((t) => t.textContent === 'Privacy');
@@ -327,7 +329,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const cycleTab = tabs.find((t) => t.textContent === 'Cycle Tracking');
@@ -342,7 +344,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const cycleTab = tabs.find((t) => t.textContent === 'Cycle Tracking');
@@ -355,7 +357,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const cycleTab = tabs.find((t) => t.textContent === 'Cycle Tracking');
@@ -369,7 +371,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const symptomsTab = tabs.find((t) => t.textContent === 'Symptoms');
@@ -382,7 +384,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Find and click lock buttons (for unlocked compartments)
     const lockButtons = screen.getAllByLabelText('Lock compartment');
@@ -394,7 +396,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Find and click unlock buttons (for locked compartments)
     const unlockButtons = screen.getAllByLabelText('Unlock compartment');
@@ -406,7 +408,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const compartmentsTab = tabs.find((t) => t.textContent === 'Compartments');
@@ -422,7 +424,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const cycleTab = tabs.find((t) => t.textContent === 'Cycle Tracking');

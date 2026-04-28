@@ -17,8 +17,11 @@ import type { RewardEntry, RewardStreak, RewardStats } from '@/types';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return React.createElement(QueryClientProvider, { client: qc },
-    React.createElement(AppProvider, null, children));
+  return React.createElement(
+    QueryClientProvider,
+    { client: qc },
+    React.createElement(AppProvider, null, children),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -85,7 +88,7 @@ describe('RewardCard', () => {
     render(
       <TestWrapper>
         <RewardCard reward={mockReward} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Earned reward for uploading health record')).toBeInTheDocument();
     expect(screen.getByText('+5')).toBeInTheDocument();
@@ -96,7 +99,7 @@ describe('RewardCard', () => {
     render(
       <TestWrapper>
         <RewardCard reward={mockReward} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Upload Health Record')).toBeInTheDocument();
   });
@@ -105,7 +108,7 @@ describe('RewardCard', () => {
     render(
       <TestWrapper>
         <RewardCard reward={mockClaimedReward} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Claimed')).toBeInTheDocument();
   });
@@ -114,7 +117,7 @@ describe('RewardCard', () => {
     render(
       <TestWrapper>
         <RewardCard reward={mockReward} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('Claimed')).not.toBeInTheDocument();
   });
@@ -124,7 +127,7 @@ describe('RewardCard', () => {
     render(
       <TestWrapper>
         <RewardCard reward={mockReward} onClaim={onClaim} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Claim')).toBeInTheDocument();
   });
@@ -134,7 +137,7 @@ describe('RewardCard', () => {
     render(
       <TestWrapper>
         <RewardCard reward={mockReward} onClaim={onClaim} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Claim'));
     expect(onClaim).toHaveBeenCalledWith('reward-1');
@@ -144,7 +147,7 @@ describe('RewardCard', () => {
     render(
       <TestWrapper>
         <RewardCard reward={mockReward} onClaim={jest.fn()} isClaimLoading={true} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Claiming...')).toBeInTheDocument();
   });
@@ -153,7 +156,7 @@ describe('RewardCard', () => {
     render(
       <TestWrapper>
         <RewardCard reward={mockClaimedReward} onClaim={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('Claim')).not.toBeInTheDocument();
   });
@@ -168,7 +171,7 @@ describe('EarnChart', () => {
     render(
       <TestWrapper>
         <EarnChart data={mockEarnData} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Daily Earnings')).toBeInTheDocument();
   });
@@ -177,7 +180,7 @@ describe('EarnChart', () => {
     render(
       <TestWrapper>
         <EarnChart data={mockEarnData} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Last 30 days')).toBeInTheDocument();
   });
@@ -186,7 +189,7 @@ describe('EarnChart', () => {
     const { container } = render(
       <TestWrapper>
         <EarnChart data={[]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.firstChild).toBeTruthy();
   });
@@ -201,7 +204,7 @@ describe('StreakIndicator', () => {
     render(
       <TestWrapper>
         <StreakIndicator streak={mockStreak} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Upload Health Record')).toBeInTheDocument();
   });
@@ -210,7 +213,7 @@ describe('StreakIndicator', () => {
     render(
       <TestWrapper>
         <StreakIndicator streak={mockStreak} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('14')).toBeInTheDocument();
     expect(screen.getByText('Longest: 30 days')).toBeInTheDocument();
@@ -220,7 +223,7 @@ describe('StreakIndicator', () => {
     render(
       <TestWrapper>
         <StreakIndicator streak={mockStreak} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('1.5x')).toBeInTheDocument();
   });
@@ -229,7 +232,7 @@ describe('StreakIndicator', () => {
     render(
       <TestWrapper>
         <StreakIndicator streak={mockStreakNoMultiplier} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('1.0x')).not.toBeInTheDocument();
   });
@@ -244,7 +247,7 @@ describe('MilestoneProgress', () => {
     render(
       <TestWrapper>
         <MilestoneProgress stats={mockStats} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Level Progress')).toBeInTheDocument();
   });
@@ -253,7 +256,7 @@ describe('MilestoneProgress', () => {
     render(
       <TestWrapper>
         <MilestoneProgress stats={mockStats} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Level 5')).toBeInTheDocument();
   });
@@ -262,7 +265,7 @@ describe('MilestoneProgress', () => {
     render(
       <TestWrapper>
         <MilestoneProgress stats={mockStats} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('350 AETHEL earned')).toBeInTheDocument();
     expect(screen.getByText('500 AETHEL')).toBeInTheDocument();
@@ -272,7 +275,7 @@ describe('MilestoneProgress', () => {
     render(
       <TestWrapper>
         <MilestoneProgress stats={mockStats} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('150 AETHEL to Level 6')).toBeInTheDocument();
   });
@@ -282,7 +285,7 @@ describe('MilestoneProgress', () => {
     render(
       <TestWrapper>
         <MilestoneProgress stats={maxedStats} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Level up!')).toBeInTheDocument();
   });
@@ -297,7 +300,7 @@ describe('RewardsSummary', () => {
     render(
       <TestWrapper>
         <RewardsSummary stats={mockStats} streakCount={3} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Rewards Summary')).toBeInTheDocument();
   });
@@ -306,7 +309,7 @@ describe('RewardsSummary', () => {
     render(
       <TestWrapper>
         <RewardsSummary stats={mockStats} streakCount={3} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Total Earned')).toBeInTheDocument();
     expect(screen.getByText('350')).toBeInTheDocument();
@@ -316,7 +319,7 @@ describe('RewardsSummary', () => {
     render(
       <TestWrapper>
         <RewardsSummary stats={mockStats} streakCount={3} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Pending')).toBeInTheDocument();
     expect(screen.getByText('50')).toBeInTheDocument();
@@ -326,7 +329,7 @@ describe('RewardsSummary', () => {
     render(
       <TestWrapper>
         <RewardsSummary stats={mockStats} streakCount={3} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Active Streaks')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
@@ -336,7 +339,7 @@ describe('RewardsSummary', () => {
     render(
       <TestWrapper>
         <RewardsSummary stats={mockStats} streakCount={3} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Level')).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();

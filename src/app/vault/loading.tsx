@@ -1,4 +1,9 @@
-import { SkeletonStats, SkeletonChart, SkeletonCard, SkeletonTable } from '@/components/ui/Skeleton';
+import {
+  SkeletonStats,
+  SkeletonChart,
+  SkeletonCard,
+  SkeletonTable,
+} from '@/components/ui/Skeleton';
 
 export default function VaultLoading() {
   return (

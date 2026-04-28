@@ -14,11 +14,7 @@ export function SkeletonLine({
   className?: string;
 }) {
   return (
-    <div
-      className={`skeleton rounded ${className}`}
-      style={{ width, height }}
-      aria-hidden="true"
-    />
+    <div className={`skeleton rounded ${className}`} style={{ width, height }} aria-hidden="true" />
   );
 }
 
@@ -105,13 +101,12 @@ export function SkeletonCard({
 /**
  * Skeleton metric card — simulates a HealthMetricCard.
  */
-export function SkeletonMetric({
-  className = '',
-}: {
-  className?: string;
-}) {
+export function SkeletonMetric({ className = '' }: { className?: string }) {
   return (
-    <div className={`bg-white border border-slate-200 rounded-2xl p-5 ${className}`} aria-hidden="true">
+    <div
+      className={`bg-white border border-slate-200 rounded-2xl p-5 ${className}`}
+      aria-hidden="true"
+    >
       <div className="flex items-start justify-between mb-3">
         <div className="skeleton w-10 h-10 rounded-xl" />
         <div className="skeleton w-16 h-7 rounded" />
@@ -168,11 +163,7 @@ export function SkeletonChart({
   className?: string;
 }) {
   return (
-    <div
-      className={`skeleton rounded-xl ${className}`}
-      style={{ height }}
-      aria-hidden="true"
-    />
+    <div className={`skeleton rounded-xl ${className}`} style={{ height }} aria-hidden="true" />
   );
 }
 

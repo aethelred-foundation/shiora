@@ -128,6 +128,7 @@ npm run validate
 ```
 
 This runs:
+
 1. `tsc --noEmit` -- TypeScript type checking
 2. `next lint` -- ESLint
 3. `prettier --check .` -- Format verification
@@ -184,16 +185,16 @@ This project follows [Conventional Commits](https://www.conventionalcommits.org/
 
 ### Types
 
-| Type | Description |
-|---|---|
-| `feat` | A new feature |
-| `fix` | A bug fix |
-| `docs` | Documentation changes |
-| `style` | Formatting changes (no code logic change) |
+| Type       | Description                                |
+| ---------- | ------------------------------------------ |
+| `feat`     | A new feature                              |
+| `fix`      | A bug fix                                  |
+| `docs`     | Documentation changes                      |
+| `style`    | Formatting changes (no code logic change)  |
 | `refactor` | Code restructuring without behavior change |
-| `test` | Adding or updating tests |
-| `chore` | Build process, dependency updates, tooling |
-| `perf` | Performance improvements |
+| `test`     | Adding or updating tests                   |
+| `chore`    | Build process, dependency updates, tooling |
+| `perf`     | Performance improvements                   |
 
 ### Scope
 

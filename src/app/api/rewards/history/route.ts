@@ -7,14 +7,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import type {
-  RewardEntry,
-  ApiResponse,
-} from '@/types';
-import {
-  seededHex,
-  generateTxHash,
-} from '@/lib/utils';
+import type { RewardEntry, ApiResponse } from '@/types';
+import { seededHex, generateTxHash } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
 // In-memory store

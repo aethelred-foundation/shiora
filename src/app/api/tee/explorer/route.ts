@@ -98,7 +98,12 @@ function generateAttestations(): TEEVerificationChain[] {
 
 function generateJobs(): TEEComputeJob[] {
   const statuses: ComputeJobStatus[] = ['queued', 'running', 'completed', 'failed', 'cancelled'];
-  const priorities: Array<'low' | 'normal' | 'high' | 'critical'> = ['low', 'normal', 'high', 'critical'];
+  const priorities: Array<'low' | 'normal' | 'high' | 'critical'> = [
+    'low',
+    'normal',
+    'high',
+    'critical',
+  ];
   const items: TEEComputeJob[] = [];
 
   for (let i = 0; i < 15; i++) {
@@ -129,9 +134,36 @@ function generateJobs(): TEEComputeJob[] {
 }
 
 function generateEnclaves(): TEEEnclaveInfo[] {
-  const regions = ['us-east-1', 'us-west-2', 'eu-west-1', 'ap-southeast-1', 'us-central-1', 'eu-central-1', 'ap-northeast-1', 'sa-east-1'];
-  const firmwareVersions = ['2.18.100.4', '3.1.0', '1.51.0', '2.20.0', '3.2.1', '1.53.2', '2.19.0', '3.0.5'];
-  const statusOptions: TEEStatus[] = ['operational', 'operational', 'operational', 'operational', 'operational', 'operational', 'degraded', 'offline'];
+  const regions = [
+    'us-east-1',
+    'us-west-2',
+    'eu-west-1',
+    'ap-southeast-1',
+    'us-central-1',
+    'eu-central-1',
+    'ap-northeast-1',
+    'sa-east-1',
+  ];
+  const firmwareVersions = [
+    '2.18.100.4',
+    '3.1.0',
+    '1.51.0',
+    '2.20.0',
+    '3.2.1',
+    '1.53.2',
+    '2.19.0',
+    '3.0.5',
+  ];
+  const statusOptions: TEEStatus[] = [
+    'operational',
+    'operational',
+    'operational',
+    'operational',
+    'operational',
+    'operational',
+    'degraded',
+    'offline',
+  ];
   const items: TEEEnclaveInfo[] = [];
 
   for (let i = 0; i < 8; i++) {

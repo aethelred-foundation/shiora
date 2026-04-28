@@ -2,17 +2,41 @@
 
 import React, { useState } from 'react';
 import {
-  Users, Lock, Shield, ShieldCheck,
-  Database, Star, ChevronRight, ChevronDown,
-  Activity, CheckCircle, XCircle, Clock,
-  Layers, Network, Zap,
+  Users,
+  Lock,
+  Shield,
+  ShieldCheck,
+  Database,
+  Star,
+  ChevronRight,
+  ChevronDown,
+  Activity,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Layers,
+  Network,
+  Zap,
 } from 'lucide-react';
 import {
-  BarChart, Bar, LineChart, Line,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
 } from 'recharts';
 
-import { MedicalCard, TruncatedHash, StatusBadge, TEEBadge, ChartTooltip } from '@/components/ui/PagePrimitives';
+import {
+  MedicalCard,
+  TruncatedHash,
+  StatusBadge,
+  TEEBadge,
+  ChartTooltip,
+} from '@/components/ui/PagePrimitives';
 import { Badge } from '@/components/ui/SharedComponents';
 import { BRAND, MPC_PROTOCOL_TYPES, EXTENDED_STATUS_STYLES } from '@/lib/constants';
 import { formatNumber, timeAgo } from '@/lib/utils';
@@ -70,9 +94,8 @@ interface SessionCardProps {
 }
 
 export function SessionCard({ session, onClick }: SessionCardProps) {
-  const roundProgress = session.totalRounds > 0
-    ? (session.currentRound / session.totalRounds) * 100
-    : 0;
+  const roundProgress =
+    session.totalRounds > 0 ? (session.currentRound / session.totalRounds) * 100 : 0;
   const participantRatio = `${session.participants.length}/${session.maxParticipants}`;
   const isActive = ['computing', 'converging', 'enrolling'].includes(session.status);
 
@@ -90,7 +113,9 @@ export function SessionCard({ session, onClick }: SessionCardProps) {
 
       {/* Protocol + Participant count */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full border ${PROTOCOL_COLORS[session.protocol]}`}>
+        <span
+          className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full border ${PROTOCOL_COLORS[session.protocol]}`}
+        >
           <Network className="w-3 h-3" />
           {PROTOCOL_LABELS[session.protocol]}
         </span>
@@ -104,7 +129,9 @@ export function SessionCard({ session, onClick }: SessionCardProps) {
       {isActive && (
         <div className="mb-3">
           <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-            <span>Round {session.currentRound}/{session.totalRounds}</span>
+            <span>
+              Round {session.currentRound}/{session.totalRounds}
+            </span>
             <span>{roundProgress.toFixed(0)}%</span>
           </div>
           <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -148,14 +175,26 @@ export function ConvergenceChart({ data, height = 240 }: ConvergenceChartProps) 
             tick={{ fontSize: 10, fill: '#94a3b8' }}
             tickLine={false}
             axisLine={{ stroke: '#e2e8f0' }}
-            label={{ value: 'Round', position: 'insideBottomRight', offset: -5, fontSize: 10, fill: '#94a3b8' }}
+            label={{
+              value: 'Round',
+              position: 'insideBottomRight',
+              offset: -5,
+              fontSize: 10,
+              fill: '#94a3b8',
+            }}
           />
           <YAxis
             yAxisId="loss"
             tick={{ fontSize: 10, fill: '#94a3b8' }}
             tickLine={false}
             axisLine={false}
-            label={{ value: 'Loss', angle: -90, position: 'insideLeft', fontSize: 10, fill: '#94a3b8' }}
+            label={{
+              value: 'Loss',
+              angle: -90,
+              position: 'insideLeft',
+              fontSize: 10,
+              fill: '#94a3b8',
+            }}
           />
           <YAxis
             yAxisId="accuracy"
@@ -164,7 +203,13 @@ export function ConvergenceChart({ data, height = 240 }: ConvergenceChartProps) 
             tickLine={false}
             axisLine={false}
             domain={[40, 100]}
-            label={{ value: 'Accuracy %', angle: 90, position: 'insideRight', fontSize: 10, fill: '#94a3b8' }}
+            label={{
+              value: 'Accuracy %',
+              angle: 90,
+              position: 'insideRight',
+              fontSize: 10,
+              fill: '#94a3b8',
+            }}
           />
           <Tooltip
             content={({ active, payload, label }) => (
@@ -217,9 +262,13 @@ export function ResultCard({ result }: ResultCardProps) {
     name: key,
     value,
   }));
-  const budgetPercent = result.privacyBudgetUsed > 0
-    ? Math.min(100, (result.privacyBudgetUsed / (result.privacyBudgetUsed + result.noiseAdded * 10)) * 100)
-    : 0;
+  const budgetPercent =
+    result.privacyBudgetUsed > 0
+      ? Math.min(
+          100,
+          (result.privacyBudgetUsed / (result.privacyBudgetUsed + result.noiseAdded * 10)) * 100,
+        )
+      : 0;
 
   return (
     <MedicalCard>
@@ -249,7 +298,9 @@ export function ResultCard({ result }: ResultCardProps) {
             <span>{timeAgo(result.completedAt)}</span>
           </div>
         </div>
-        <Badge variant="success" dot>Completed</Badge>
+        <Badge variant="success" dot>
+          Completed
+        </Badge>
       </div>
 
       {expanded && (
@@ -265,11 +316,7 @@ export function ResultCard({ result }: ResultCardProps) {
                   tickLine={false}
                   axisLine={{ stroke: '#e2e8f0' }}
                 />
-                <YAxis
-                  tick={{ fontSize: 10, fill: '#94a3b8' }}
-                  tickLine={false}
-                  axisLine={false}
-                />
+                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
                 <Tooltip
                   content={({ active, payload, label }) => (
                     <ChartTooltip
@@ -295,7 +342,10 @@ export function ResultCard({ result }: ResultCardProps) {
                 <Lock className="w-3 h-3" />
                 Privacy Budget Used
               </span>
-              <span>{result.privacyBudgetUsed.toFixed(2)} / {(result.privacyBudgetUsed + result.noiseAdded * 10).toFixed(2)} epsilon</span>
+              <span>
+                {result.privacyBudgetUsed.toFixed(2)} /{' '}
+                {(result.privacyBudgetUsed + result.noiseAdded * 10).toFixed(2)} epsilon
+              </span>
             </div>
             <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
               <div
@@ -309,11 +359,15 @@ export function ResultCard({ result }: ResultCardProps) {
           <div className="grid grid-cols-2 gap-4 text-xs">
             <div>
               <span className="text-slate-500">Confidence Interval</span>
-              <p className="text-sm font-semibold text-slate-900 mt-0.5">&plusmn;{result.confidenceInterval.toFixed(2)}</p>
+              <p className="text-sm font-semibold text-slate-900 mt-0.5">
+                &plusmn;{result.confidenceInterval.toFixed(2)}
+              </p>
             </div>
             <div>
               <span className="text-slate-500">DP Noise Added</span>
-              <p className="text-sm font-semibold text-slate-900 mt-0.5">{result.noiseAdded.toFixed(3)} sigma</p>
+              <p className="text-sm font-semibold text-slate-900 mt-0.5">
+                {result.noiseAdded.toFixed(3)} sigma
+              </p>
             </div>
           </div>
 
@@ -384,7 +438,8 @@ export function DatasetCard({ dataset }: DatasetCardProps) {
             className="h-full rounded-full"
             style={{
               width: `${qualityPercent}%`,
-              background: qualityPercent >= 80 ? '#10b981' : qualityPercent >= 60 ? '#f59e0b' : '#ef4444',
+              background:
+                qualityPercent >= 80 ? '#10b981' : qualityPercent >= 60 ? '#f59e0b' : '#ef4444',
             }}
           />
         </div>
@@ -400,7 +455,9 @@ export function DatasetCard({ dataset }: DatasetCardProps) {
 
       {/* Privacy level + reward */}
       <div className="flex items-center justify-between gap-2">
-        <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full border ${PRIVACY_LEVEL_STYLES[dataset.privacyLevel]}`}>
+        <span
+          className={`px-2 py-0.5 text-[10px] font-medium rounded-full border ${PRIVACY_LEVEL_STYLES[dataset.privacyLevel]}`}
+        >
           {dataset.privacyLevel.charAt(0).toUpperCase() + dataset.privacyLevel.slice(1)}
         </span>
         <span className="text-xs font-semibold text-brand-600">
@@ -441,12 +498,12 @@ export function ProtocolSelector({ selected, onChange }: ProtocolSelectorProps) 
           }`}
         >
           <div className="flex items-center gap-3">
-            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-              selected === p.id ? 'border-brand-500' : 'border-slate-300'
-            }`}>
-              {selected === p.id && (
-                <div className="w-2 h-2 rounded-full bg-brand-500" />
-              )}
+            <div
+              className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                selected === p.id ? 'border-brand-500' : 'border-slate-300'
+              }`}
+            >
+              {selected === p.id && <div className="w-2 h-2 rounded-full bg-brand-500" />}
             </div>
             <div className="min-w-0">
               <p className="text-sm font-medium text-slate-900">{p.label}</p>

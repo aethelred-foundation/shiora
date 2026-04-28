@@ -25,7 +25,7 @@ describe('MedicalCard', () => {
     render(
       <MedicalCard>
         <p>Card Content</p>
-      </MedicalCard>
+      </MedicalCard>,
     );
     expect(screen.getByText('Card Content')).toBeInTheDocument();
   });
@@ -34,7 +34,7 @@ describe('MedicalCard', () => {
     const { container } = render(
       <MedicalCard className="my-custom">
         <p>Test</p>
-      </MedicalCard>
+      </MedicalCard>,
     );
     expect(container.firstChild).toHaveClass('my-custom');
   });
@@ -43,7 +43,7 @@ describe('MedicalCard', () => {
     const { container } = render(
       <MedicalCard>
         <p>Hover</p>
-      </MedicalCard>
+      </MedicalCard>,
     );
     expect(container.firstChild).toHaveClass('hover:shadow-card-hover');
   });
@@ -52,7 +52,7 @@ describe('MedicalCard', () => {
     const { container } = render(
       <MedicalCard hover={false}>
         <p>No Hover</p>
-      </MedicalCard>
+      </MedicalCard>,
     );
     expect(container.firstChild).not.toHaveClass('hover:shadow-card-hover');
   });
@@ -61,7 +61,7 @@ describe('MedicalCard', () => {
     const { container } = render(
       <MedicalCard>
         <p>Padded</p>
-      </MedicalCard>
+      </MedicalCard>,
     );
     expect(container.firstChild).toHaveClass('p-5');
   });
@@ -70,7 +70,7 @@ describe('MedicalCard', () => {
     const { container } = render(
       <MedicalCard padding={false}>
         <p>No Pad</p>
-      </MedicalCard>
+      </MedicalCard>,
     );
     expect(container.firstChild).not.toHaveClass('p-5');
   });
@@ -80,7 +80,7 @@ describe('MedicalCard', () => {
     render(
       <MedicalCard onClick={onClick}>
         <p>Clickable</p>
-      </MedicalCard>
+      </MedicalCard>,
     );
     fireEvent.click(screen.getByText('Clickable'));
     expect(onClick).toHaveBeenCalled();
@@ -90,7 +90,7 @@ describe('MedicalCard', () => {
     const { container } = render(
       <MedicalCard onClick={jest.fn()}>
         <p>Click</p>
-      </MedicalCard>
+      </MedicalCard>,
     );
     expect(container.firstChild).toHaveClass('cursor-pointer');
   });
@@ -126,7 +126,7 @@ describe('CopyButton', () => {
     render(
       <div onClick={parentClick}>
         <CopyButton text="test" />
-      </div>
+      </div>,
     );
     fireEvent.click(screen.getByTitle('Copy to clipboard'));
     expect(parentClick).not.toHaveBeenCalled();
@@ -137,7 +137,7 @@ describe('CopyButton', () => {
     render(
       <div onClick={parentClick}>
         <CopyButton text="test" stopPropagation={false} />
-      </div>
+      </div>,
     );
     fireEvent.click(screen.getByTitle('Copy to clipboard'));
     expect(parentClick).toHaveBeenCalled();
@@ -153,7 +153,9 @@ describe('CopyButton', () => {
     render(<CopyButton text="test" />);
     fireEvent.click(screen.getByTitle('Copy to clipboard'));
     expect(screen.getByLabelText('Copied')).toBeInTheDocument();
-    act(() => { jest.advanceTimersByTime(2000); });
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
     expect(screen.getByLabelText('Copy to clipboard')).toBeInTheDocument();
     jest.useRealTimers();
   });
@@ -180,9 +182,7 @@ describe('SectionHeader', () => {
   });
 
   it('renders action when provided', () => {
-    render(
-      <SectionHeader title="Title" action={<button>Action</button>} />
-    );
+    render(<SectionHeader title="Title" action={<button>Action</button>} />);
     expect(screen.getByText('Action')).toBeInTheDocument();
   });
 
@@ -197,14 +197,20 @@ describe('SectionHeader', () => {
   });
 
   it('renders with icon prop', () => {
-    const MockIcon = (props: React.SVGProps<SVGSVGElement>) => <svg data-testid="section-icon" {...props} />;
+    const MockIcon = (props: React.SVGProps<SVGSVGElement>) => (
+      <svg data-testid="section-icon" {...props} />
+    );
     const { container } = render(<SectionHeader title="With Icon" icon={MockIcon as any} />);
     expect(container.querySelector('[data-testid="section-icon"]')).toBeInTheDocument();
   });
 
   it('renders icon with sm size', () => {
-    const MockIcon = (props: React.SVGProps<SVGSVGElement>) => <svg data-testid="section-icon-sm" {...props} />;
-    const { container } = render(<SectionHeader title="Small Icon" size="sm" icon={MockIcon as any} />);
+    const MockIcon = (props: React.SVGProps<SVGSVGElement>) => (
+      <svg data-testid="section-icon-sm" {...props} />
+    );
+    const { container } = render(
+      <SectionHeader title="Small Icon" size="sm" icon={MockIcon as any} />,
+    );
     expect(container.querySelector('[data-testid="section-icon-sm"]')).toBeInTheDocument();
   });
 });
@@ -315,7 +321,7 @@ describe('HealthMetricCard', () => {
         label="Records"
         value="147"
         unit="encrypted"
-      />
+      />,
     );
     expect(screen.getByText('Records')).toBeInTheDocument();
     expect(screen.getByText('147')).toBeInTheDocument();
@@ -324,11 +330,7 @@ describe('HealthMetricCard', () => {
 
   it('renders icon', () => {
     render(
-      <HealthMetricCard
-        icon={<span data-testid="test-icon">I</span>}
-        label="Test"
-        value="10"
-      />
+      <HealthMetricCard icon={<span data-testid="test-icon">I</span>} label="Test" value="10" />,
     );
     expect(screen.getByTestId('test-icon')).toBeInTheDocument();
   });
@@ -341,21 +343,14 @@ describe('HealthMetricCard', () => {
         value="100"
         trend={4.2}
         trendLabel="this month"
-      />
+      />,
     );
     expect(screen.getByText('+4.2%')).toBeInTheDocument();
     expect(screen.getByText('this month')).toBeInTheDocument();
   });
 
   it('renders negative trend', () => {
-    render(
-      <HealthMetricCard
-        icon={<span>I</span>}
-        label="Decline"
-        value="50"
-        trend={-2.3}
-      />
-    );
+    render(<HealthMetricCard icon={<span>I</span>} label="Decline" value="50" trend={-2.3} />);
     expect(screen.getByText('-2.3%')).toBeInTheDocument();
   });
 
@@ -367,7 +362,7 @@ describe('HealthMetricCard', () => {
         value="100"
         trend={0}
         trendLabel="no change"
-      />
+      />,
     );
     expect(screen.getByText('no change')).toBeInTheDocument();
   });
@@ -379,7 +374,7 @@ describe('HealthMetricCard', () => {
         label="Sparky"
         value="42"
         sparklineData={[10, 20, 30, 40, 50]}
-      />
+      />,
     );
     // Sparkline renders an SVG
     const svgs = container.querySelectorAll('svg');
@@ -393,7 +388,7 @@ describe('HealthMetricCard', () => {
         label="Metric"
         value="100"
         trendLabel="vs last month"
-      />
+      />,
     );
     expect(screen.getByText('vs last month')).toBeInTheDocument();
   });
@@ -443,9 +438,7 @@ describe('Sparkline', () => {
   });
 
   it('renders with custom dimensions', () => {
-    const { container } = render(
-      <Sparkline data={[5, 10, 15]} width={100} height={50} />
-    );
+    const { container } = render(<Sparkline data={[5, 10, 15]} width={100} height={50} />);
     const svg = container.querySelector('svg');
     expect(svg).toHaveAttribute('width', '100');
     expect(svg).toHaveAttribute('height', '50');
@@ -489,10 +482,8 @@ describe('ChartTooltip', () => {
       <ChartTooltip
         active={true}
         label="Day 1"
-        payload={[
-          { color: '#8B1538', name: 'Temperature', value: 97.5 },
-        ]}
-      />
+        payload={[{ color: '#8B1538', name: 'Temperature', value: 97.5 }]}
+      />,
     );
     expect(screen.getByText('Day 1')).toBeInTheDocument();
     expect(screen.getByText('Temperature:')).toBeInTheDocument();
@@ -504,7 +495,7 @@ describe('ChartTooltip', () => {
         active={true}
         payload={[{ color: '#8B1538', name: 'Temp', value: 97.5 }]}
         formatValue={(v) => `${v}F`}
-      />
+      />,
     );
     expect(screen.getByText('97.5F')).toBeInTheDocument();
   });
@@ -517,7 +508,7 @@ describe('ChartTooltip', () => {
           { color: '#8B1538', name: 'A', value: 10 },
           { color: '#a78bfa', name: 'B', value: 20 },
         ]}
-      />
+      />,
     );
     expect(screen.getByText('A:')).toBeInTheDocument();
     expect(screen.getByText('B:')).toBeInTheDocument();
@@ -525,10 +516,7 @@ describe('ChartTooltip', () => {
 
   it('formats string values without formatValue callback', () => {
     render(
-      <ChartTooltip
-        active={true}
-        payload={[{ color: '#8B1538', name: 'Status', value: 'OK' }]}
-      />
+      <ChartTooltip active={true} payload={[{ color: '#8B1538', name: 'Status', value: 'OK' }]} />,
     );
     expect(screen.getByText('OK')).toBeInTheDocument();
   });

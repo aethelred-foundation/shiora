@@ -14,8 +14,15 @@ import type { SymptomCategory, SymptomSeverity } from '@/types';
 const SEED = 700;
 
 const SYMPTOM_CATEGORY_IDS = [
-  'pain', 'mood', 'energy', 'digestive', 'skin',
-  'sleep', 'discharge', 'temperature', 'other',
+  'pain',
+  'mood',
+  'energy',
+  'digestive',
+  'skin',
+  'sleep',
+  'discharge',
+  'temperature',
+  'other',
 ] as const;
 
 const SYMPTOM_NAMES: Record<string, string[]> = {
@@ -31,7 +38,17 @@ const SYMPTOM_NAMES: Record<string, string[]> = {
 };
 
 function generateMockSymptoms() {
-  const categories: SymptomCategory[] = ['pain', 'mood', 'energy', 'digestive', 'skin', 'sleep', 'discharge', 'temperature', 'other'];
+  const categories: SymptomCategory[] = [
+    'pain',
+    'mood',
+    'energy',
+    'digestive',
+    'skin',
+    'sleep',
+    'discharge',
+    'temperature',
+    'other',
+  ];
 
   return Array.from({ length: 60 }, (_, i) => {
     const category = seededPick(SEED + i * 73, categories);
@@ -42,7 +59,14 @@ function generateMockSymptoms() {
       category,
       symptom: seededPick(SEED + i * 79, names),
       severity: seededInt(SEED + i * 81, 1, 5),
-      notes: seededPick(SEED + i * 83, ['', '', '', 'Took ibuprofen', 'After exercise', 'Morning onset']),
+      notes: seededPick(SEED + i * 83, [
+        '',
+        '',
+        '',
+        'Took ibuprofen',
+        'After exercise',
+        'Morning onset',
+      ]),
       tags: [seededPick(SEED + i * 85, ['tracked', 'recurring', 'new', 'improving', 'worsening'])],
     };
   });
@@ -60,9 +84,7 @@ export async function GET(request: NextRequest) {
 
   // Optional category filter
   const categoryParam = request.nextUrl.searchParams.get('category');
-  const filtered = categoryParam
-    ? symptoms.filter((s) => s.category === categoryParam)
-    : symptoms;
+  const filtered = categoryParam ? symptoms.filter((s) => s.category === categoryParam) : symptoms;
 
   return successResponse({
     symptoms: filtered,

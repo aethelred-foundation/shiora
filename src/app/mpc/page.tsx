@@ -11,20 +11,51 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Network, Users, ShieldCheck, Lock, Activity,
-  Database, Plus, CheckCircle, BarChart3,
-  Layers, Cpu, Info, Sliders,
+  Network,
+  Users,
+  ShieldCheck,
+  Lock,
+  Activity,
+  Database,
+  Plus,
+  CheckCircle,
+  BarChart3,
+  Layers,
+  Cpu,
+  Info,
+  Sliders,
 } from 'lucide-react';
-import {
-  BarChart, Bar,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-} from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 import { useApp } from '@/contexts/AppContext';
-import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, Tabs, ProgressRing } from '@/components/ui/SharedComponents';
-import { MedicalCard, HealthMetricCard, SectionHeader, ChartTooltip, StatusBadge, TEEBadge, TruncatedHash } from '@/components/ui/PagePrimitives';
+import {
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  Tabs,
+  ProgressRing,
+} from '@/components/ui/SharedComponents';
+import {
+  MedicalCard,
+  HealthMetricCard,
+  SectionHeader,
+  ChartTooltip,
+  StatusBadge,
+  TEEBadge,
+  TruncatedHash,
+} from '@/components/ui/PagePrimitives';
 import { BRAND, CHART_COLORS, MPC_PROTOCOL_TYPES } from '@/lib/constants';
-import { seededRandom, seededInt, seededHex, formatNumber, formatPercent, timeAgo, generateAttestation } from '@/lib/utils';
+import {
+  seededRandom,
+  seededInt,
+  seededHex,
+  formatNumber,
+  formatPercent,
+  timeAgo,
+  generateAttestation,
+} from '@/lib/utils';
 
 import { useMPC } from '@/hooks/useMPC';
 import {
@@ -87,13 +118,14 @@ export default function MPCLabPage() {
   ];
 
   // ---- Stats derived from sessions ----
-  const activeSessions = useMemo(() =>
-    sessions.filter((s) => ['computing', 'converging', 'enrolling'].includes(s.status)).length,
+  const activeSessions = useMemo(
+    () =>
+      sessions.filter((s) => ['computing', 'converging', 'enrolling'].includes(s.status)).length,
     [sessions],
   );
 
-  const totalParticipants = useMemo(() =>
-    sessions.reduce((sum, s) => sum + s.participants.length, 0),
+  const totalParticipants = useMemo(
+    () => sessions.reduce((sum, s) => sum + s.participants.length, 0),
     [sessions],
   );
 
@@ -103,19 +135,19 @@ export default function MPCLabPage() {
     return total / sessions.length;
   }, [sessions]);
 
-  const completedStudies = useMemo(() =>
-    sessions.filter((s) => s.status === 'completed').length,
+  const completedStudies = useMemo(
+    () => sessions.filter((s) => s.status === 'completed').length,
     [sessions],
   );
 
   // Sparkline data for stat cards
-  const activeSparkline = useMemo(() =>
-    Array.from({ length: 12 }, (_, i) => seededInt(SEED + i * 3, 1, 6)),
+  const activeSparkline = useMemo(
+    () => Array.from({ length: 12 }, (_, i) => seededInt(SEED + i * 3, 1, 6)),
     [],
   );
 
-  const participantSparkline = useMemo(() =>
-    Array.from({ length: 12 }, (_, i) => seededInt(SEED + 50 + i * 5, 20, 80)),
+  const participantSparkline = useMemo(
+    () => Array.from({ length: 12 }, (_, i) => seededInt(SEED + 50 + i * 5, 20, 80)),
     [],
   );
 
@@ -130,7 +162,6 @@ export default function MPCLabPage() {
 
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-
           {/* ---- Header ---- */}
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
             <div>
@@ -139,12 +170,15 @@ export default function MPCLabPage() {
                 <h1 className="text-2xl font-bold text-slate-900">MPC Computation Lab</h1>
               </div>
               <p className="text-sm text-slate-500">
-                Run privacy-preserving multi-party computations across distributed datasets on the Aethelred network
+                Run privacy-preserving multi-party computations across distributed datasets on the
+                Aethelred network
               </p>
             </div>
             <div className="flex items-center gap-2">
               <TEEBadge platform="Intel SGX" verified />
-              <Badge variant="success" dot>Network Live</Badge>
+              <Badge variant="success" dot>
+                Network Live
+              </Badge>
             </div>
           </div>
 
@@ -229,7 +263,9 @@ export default function MPCLabPage() {
                   <ConvergenceChart data={selectedSession.convergence} height={260} />
                   <div className="mt-4">
                     <PrivacyBudgetBar
-                      used={selectedSession.privacyBudgetTotal - selectedSession.privacyBudgetRemaining}
+                      used={
+                        selectedSession.privacyBudgetTotal - selectedSession.privacyBudgetRemaining
+                      }
                       total={selectedSession.privacyBudgetTotal}
                       label="Privacy Budget (epsilon)"
                     />
@@ -254,10 +290,7 @@ export default function MPCLabPage() {
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Protocol
                     </label>
-                    <ProtocolSelector
-                      selected={formProtocol}
-                      onChange={setFormProtocol}
-                    />
+                    <ProtocolSelector selected={formProtocol} onChange={setFormProtocol} />
                   </div>
 
                   {/* Session name */}
@@ -321,8 +354,12 @@ export default function MPCLabPage() {
                   {/* Privacy budget slider */}
                   <div className="mb-5">
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-sm font-medium text-slate-700">Privacy Budget (epsilon)</label>
-                      <span className="text-sm font-semibold text-brand-600">{formBudget.toFixed(1)} &epsilon;</span>
+                      <label className="text-sm font-medium text-slate-700">
+                        Privacy Budget (epsilon)
+                      </label>
+                      <span className="text-sm font-semibold text-brand-600">
+                        {formBudget.toFixed(1)} &epsilon;
+                      </span>
                     </div>
                     <input
                       type="range"
@@ -372,7 +409,11 @@ export default function MPCLabPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      addNotification('info', 'Demo Mode', 'Session creation is available in demo mode only.')
+                      addNotification(
+                        'info',
+                        'Demo Mode',
+                        'Session creation is available in demo mode only.',
+                      )
                     }
                     className="w-full px-4 py-2.5 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
                   >
@@ -392,11 +433,15 @@ export default function MPCLabPage() {
                     <div className="space-y-3">
                       <div>
                         <span className="text-xs text-slate-500">Selected Protocol</span>
-                        <p className="text-sm font-semibold text-slate-900">{selectedProtocolInfo.label}</p>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {selectedProtocolInfo.label}
+                        </p>
                       </div>
                       <div>
                         <span className="text-xs text-slate-500">Description</span>
-                        <p className="text-xs text-slate-600 mt-0.5">{selectedProtocolInfo.description}</p>
+                        <p className="text-xs text-slate-600 mt-0.5">
+                          {selectedProtocolInfo.description}
+                        </p>
                       </div>
                       <div className="border-t border-slate-100 pt-3">
                         <span className="text-xs text-slate-500">Privacy Guarantees</span>
@@ -513,7 +558,6 @@ export default function MPCLabPage() {
               )}
             </div>
           )}
-
         </div>
       </main>
 

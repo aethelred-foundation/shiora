@@ -4,12 +4,21 @@
 // ============================================================
 
 import {
-  seededRandom, seededInt, seededHex, seededPick, seededAddress,
-  generateCID, generateTxHash, generateAttestation,
+  seededRandom,
+  seededInt,
+  seededHex,
+  seededPick,
+  seededAddress,
+  generateCID,
+  generateTxHash,
+  generateAttestation,
 } from '@/lib/utils';
 import {
-  PROVIDER_NAMES, SPECIALTIES, DATA_SCOPES,
-  AI_MODELS, TEE_PLATFORMS,
+  PROVIDER_NAMES,
+  SPECIALTIES,
+  DATA_SCOPES,
+  AI_MODELS,
+  TEE_PLATFORMS,
 } from '@/lib/constants';
 
 // ────────────────────────────────────────────────────────────
@@ -122,45 +131,112 @@ const TEE_SEED = 500;
 
 const TYPE_DESCRIPTIONS: Record<string, string[]> = {
   lab_result: [
-    'Complete Blood Count', 'Thyroid Panel (TSH, T3, T4)', 'Lipid Panel',
-    'Hemoglobin A1C', 'Hormone Panel (Estradiol, Progesterone)',
-    'Comprehensive Metabolic Panel', 'Iron Studies', 'Vitamin D Level',
+    'Complete Blood Count',
+    'Thyroid Panel (TSH, T3, T4)',
+    'Lipid Panel',
+    'Hemoglobin A1C',
+    'Hormone Panel (Estradiol, Progesterone)',
+    'Comprehensive Metabolic Panel',
+    'Iron Studies',
+    'Vitamin D Level',
   ],
   imaging: [
-    'Pelvic Ultrasound', 'Mammogram Bilateral', 'Transvaginal Sonogram',
-    'Bone Density Scan', 'MRI Pelvis', 'HSG Report',
+    'Pelvic Ultrasound',
+    'Mammogram Bilateral',
+    'Transvaginal Sonogram',
+    'Bone Density Scan',
+    'MRI Pelvis',
+    'HSG Report',
   ],
   prescription: [
-    'Estradiol 2mg Oral', 'Progesterone 200mg', 'Levothyroxine 50mcg',
-    'Prenatal Vitamins', 'Metformin 500mg',
+    'Estradiol 2mg Oral',
+    'Progesterone 200mg',
+    'Levothyroxine 50mcg',
+    'Prenatal Vitamins',
+    'Metformin 500mg',
   ],
   vitals: [
-    'Blood Pressure Reading', 'Weight & BMI Check', 'Heart Rate Monitoring',
-    'Oxygen Saturation', 'Temperature Log',
+    'Blood Pressure Reading',
+    'Weight & BMI Check',
+    'Heart Rate Monitoring',
+    'Oxygen Saturation',
+    'Temperature Log',
   ],
   notes: [
-    'Annual Exam Notes', 'Follow-up Visit Summary', 'Pre-conception Consultation',
-    'Specialist Referral', 'Treatment Plan Update',
+    'Annual Exam Notes',
+    'Follow-up Visit Summary',
+    'Pre-conception Consultation',
+    'Specialist Referral',
+    'Treatment Plan Update',
   ],
 };
 
 const TAGS_POOL = [
-  'routine', 'urgent', 'follow-up', 'annual', 'specialist',
-  'lab', 'imaging', 'medication', 'monitoring', 'fertility',
-  'prenatal', 'postpartum',
+  'routine',
+  'urgent',
+  'follow-up',
+  'annual',
+  'specialist',
+  'lab',
+  'imaging',
+  'medication',
+  'monitoring',
+  'fertility',
+  'prenatal',
+  'postpartum',
 ];
 
 const AUDIT_ACTIONS = [
-  { action: 'Viewed lab results', type: 'access' as const, detail: 'Accessed Complete Blood Count record' },
-  { action: 'Access granted', type: 'grant' as const, detail: 'Full Records access granted for 90 days' },
-  { action: 'Downloaded imaging', type: 'download' as const, detail: 'Downloaded Pelvic Ultrasound report' },
-  { action: 'Access revoked', type: 'revoke' as const, detail: 'Provider access revoked by patient' },
-  { action: 'Scope modified', type: 'modify' as const, detail: 'Access scope changed from Full Records to Lab Results Only' },
-  { action: 'Viewed vitals', type: 'access' as const, detail: 'Accessed Blood Pressure reading history' },
-  { action: 'Access request', type: 'grant' as const, detail: 'New access request submitted by provider' },
-  { action: 'Viewed prescriptions', type: 'access' as const, detail: 'Accessed Estradiol prescription record' },
-  { action: 'Access expired', type: 'revoke' as const, detail: 'Time-limited access expired automatically' },
-  { action: 'Downloaded lab results', type: 'download' as const, detail: 'Downloaded Thyroid Panel report' },
+  {
+    action: 'Viewed lab results',
+    type: 'access' as const,
+    detail: 'Accessed Complete Blood Count record',
+  },
+  {
+    action: 'Access granted',
+    type: 'grant' as const,
+    detail: 'Full Records access granted for 90 days',
+  },
+  {
+    action: 'Downloaded imaging',
+    type: 'download' as const,
+    detail: 'Downloaded Pelvic Ultrasound report',
+  },
+  {
+    action: 'Access revoked',
+    type: 'revoke' as const,
+    detail: 'Provider access revoked by patient',
+  },
+  {
+    action: 'Scope modified',
+    type: 'modify' as const,
+    detail: 'Access scope changed from Full Records to Lab Results Only',
+  },
+  {
+    action: 'Viewed vitals',
+    type: 'access' as const,
+    detail: 'Accessed Blood Pressure reading history',
+  },
+  {
+    action: 'Access request',
+    type: 'grant' as const,
+    detail: 'New access request submitted by provider',
+  },
+  {
+    action: 'Viewed prescriptions',
+    type: 'access' as const,
+    detail: 'Accessed Estradiol prescription record',
+  },
+  {
+    action: 'Access expired',
+    type: 'revoke' as const,
+    detail: 'Time-limited access expired automatically',
+  },
+  {
+    action: 'Downloaded lab results',
+    type: 'download' as const,
+    detail: 'Downloaded Thyroid Panel report',
+  },
 ];
 
 const ANOMALY_TYPES = [
@@ -201,7 +277,14 @@ export function generateMockRecords(count: number = 24): MockHealthRecord[] {
       attestation: generateAttestation(RECORD_SEED + i * 40),
       size: seededInt(RECORD_SEED + i * 11, 20, 2000) * 1024,
       provider: seededPick(RECORD_SEED + i * 13, PROVIDER_NAMES),
-      status: (i < 2 ? 'Processing' : i < 4 ? 'Pinning' : seededPick(RECORD_SEED + i * 9, ['Verified', 'Pinned'] as const)) as MockHealthRecord['status'],
+      status: (i < 2
+        ? 'Processing'
+        : i < 4
+          ? 'Pinning'
+          : seededPick(RECORD_SEED + i * 9, [
+              'Verified',
+              'Pinned',
+            ] as const)) as MockHealthRecord['status'],
       ipfsNodes: seededInt(RECORD_SEED + i * 17, 12, 64),
       tags: [TAGS_POOL[i % TAGS_POOL.length], TAGS_POOL[(i + 3) % TAGS_POOL.length]],
       deleted: false,
@@ -227,7 +310,14 @@ export function generateMockGrants(count: number = 8): MockAccessGrant[] {
   if (_cachedGrants && _cachedGrants.length === count) return _cachedGrants;
 
   const statuses: MockAccessGrant['status'][] = [
-    'Active', 'Active', 'Active', 'Expired', 'Revoked', 'Pending', 'Active', 'Expired',
+    'Active',
+    'Active',
+    'Active',
+    'Expired',
+    'Revoked',
+    'Pending',
+    'Active',
+    'Expired',
   ];
 
   _cachedGrants = Array.from({ length: count }, (_, i) => ({
@@ -238,15 +328,18 @@ export function generateMockGrants(count: number = 8): MockAccessGrant[] {
     status: statuses[i % statuses.length],
     scope: seededPick(ACCESS_SEED + i * 3, DATA_SCOPES),
     grantedAt: Date.now() - seededInt(ACCESS_SEED + i * 11, 7, 180) * 86400000,
-    expiresAt: statuses[i % statuses.length] === 'Expired'
-      ? Date.now() - seededInt(ACCESS_SEED + i * 13, 1, 30) * 86400000
-      : Date.now() + seededInt(ACCESS_SEED + i * 15, 7, 90) * 86400000,
-    lastAccess: statuses[i % statuses.length] === 'Active'
-      ? Date.now() - seededInt(ACCESS_SEED + i * 17, 1, 48) * 3600000
-      : null,
-    accessCount: statuses[i % statuses.length] === 'Active'
-      ? seededInt(ACCESS_SEED + i * 19, 3, 47)
-      : seededInt(ACCESS_SEED + i * 19, 0, 15),
+    expiresAt:
+      statuses[i % statuses.length] === 'Expired'
+        ? Date.now() - seededInt(ACCESS_SEED + i * 13, 1, 30) * 86400000
+        : Date.now() + seededInt(ACCESS_SEED + i * 15, 7, 90) * 86400000,
+    lastAccess:
+      statuses[i % statuses.length] === 'Active'
+        ? Date.now() - seededInt(ACCESS_SEED + i * 17, 1, 48) * 3600000
+        : null,
+    accessCount:
+      statuses[i % statuses.length] === 'Active'
+        ? seededInt(ACCESS_SEED + i * 19, 3, 47)
+        : seededInt(ACCESS_SEED + i * 19, 0, 15),
     txHash: generateTxHash(ACCESS_SEED + i * 30),
     attestation: generateAttestation(ACCESS_SEED + i * 40),
     canView: true,
@@ -416,7 +509,7 @@ export function generateInsightsOverview() {
 
 export function generateNetworkStatus() {
   return {
-    blockHeight: 2847391 + Math.floor(Date.now() / 3000) % 1000,
+    blockHeight: 2847391 + (Math.floor(Date.now() / 3000) % 1000),
     tps: Math.round(1800 + seededRandom(100) * 1000),
     epoch: 247,
     networkLoad: Math.round(60 + seededRandom(130) * 25),

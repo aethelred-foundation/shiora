@@ -4,16 +4,9 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  successResponse,
-  errorResponse,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
-import {
-  seededInt,
-  generateTxHash,
-} from '@/lib/utils';
+import { seededInt, generateTxHash } from '@/lib/utils';
 import type { ZKVerificationResult, ZKClaimType } from '@/types';
 
 // ────────────────────────────────────────────────────────────

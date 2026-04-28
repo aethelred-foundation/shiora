@@ -14,12 +14,7 @@ import type {
   RecordType,
   ApiResponse,
 } from '@/types';
-import {
-  seededRandom,
-  seededInt,
-  seededHex,
-  seededPick,
-} from '@/lib/utils';
+import { seededRandom, seededInt, seededHex, seededPick } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
 // Mock data
@@ -41,7 +36,7 @@ const STUDY_TITLES = [
 const INSTITUTIONS = [
   'Stanford School of Medicine',
   'MIT Computational Health Lab',
-  'Johns Hopkins Women\'s Health Center',
+  "Johns Hopkins Women's Health Center",
   'Harvard T.H. Chan School of Public Health',
   'Mayo Clinic Research Division',
   'Oxford Reproductive Health Institute',
@@ -50,8 +45,14 @@ const INSTITUTIONS = [
 ];
 
 const PIS = [
-  'Dr. Sarah Chen', 'Dr. Michael Torres', 'Dr. Aisha Patel', 'Dr. James Liu',
-  'Dr. Emily Nakamura', 'Dr. Rachel Anderson', 'Dr. David Kim', 'Dr. Maria Garcia',
+  'Dr. Sarah Chen',
+  'Dr. Michael Torres',
+  'Dr. Aisha Patel',
+  'Dr. James Liu',
+  'Dr. Emily Nakamura',
+  'Dr. Rachel Anderson',
+  'Dr. David Kim',
+  'Dr. Maria Garcia',
 ];
 
 const DATA_TYPE_OPTIONS: RecordType[][] = [
@@ -67,11 +68,11 @@ const DATA_TYPE_OPTIONS: RecordType[][] = [
 
 function generateStudies(): ResearchStudy[] {
   return Array.from({ length: 8 }, (_, i) => {
-    const status: StudyStatus = i < 3 ? 'recruiting' : i < 5 ? 'active' : i < 7 ? 'completed' : 'suspended';
+    const status: StudyStatus =
+      i < 3 ? 'recruiting' : i < 5 ? 'active' : i < 7 ? 'completed' : 'suspended';
     const target = seededInt(SEED + i * 17, 50, 500);
-    const participants = status === 'completed'
-      ? target
-      : Math.floor(target * seededRandom(SEED + i * 19) * 0.9);
+    const participants =
+      status === 'completed' ? target : Math.floor(target * seededRandom(SEED + i * 19) * 0.9);
 
     return {
       id: `study-${seededHex(SEED + i * 100, 12)}`,
@@ -110,7 +111,8 @@ export async function GET(request: NextRequest) {
     // Generate mock contributions
     const mockContributions: DataContribution[] = Array.from({ length: 5 }, (_, i) => ({
       id: `contrib-${seededHex(SEED + 3000 + i * 100, 12)}`,
-      studyId: studies[i]?.id ?? /* istanbul ignore next */ `study-${seededHex(SEED + i * 100, 12)}`,
+      studyId:
+        studies[i]?.id ?? /* istanbul ignore next */ `study-${seededHex(SEED + i * 100, 12)}`,
       contributorAnonymousId: `anon-${seededHex(SEED + 3000 + i * 7, 8)}`,
       dataTypes: DATA_TYPE_OPTIONS[i] ?? /* istanbul ignore next */ ['vitals'],
       contributedAt: Date.now() - seededInt(SEED + 3000 + i * 11, 1, 60) * 86400000,

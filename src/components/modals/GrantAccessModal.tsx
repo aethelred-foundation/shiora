@@ -9,9 +9,21 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import {
-  Shield, Search, Building2, Eye, Download, ExternalLink,
-  Calendar, Clock, CheckCircle, AlertCircle, Lock,
-  ChevronRight, ChevronLeft, Fingerprint, Link2,
+  Shield,
+  Search,
+  Building2,
+  Eye,
+  Download,
+  ExternalLink,
+  Calendar,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Lock,
+  ChevronRight,
+  ChevronLeft,
+  Fingerprint,
+  Link2,
 } from 'lucide-react';
 
 import { Modal, Badge } from '@/components/ui/SharedComponents';
@@ -81,9 +93,7 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
 
   const filteredProviders = useMemo(() => {
     if (!providerSearch) return PROVIDER_NAMES;
-    return PROVIDER_NAMES.filter((p) =>
-      p.toLowerCase().includes(providerSearch.toLowerCase())
-    );
+    return PROVIDER_NAMES.filter((p) => p.toLowerCase().includes(providerSearch.toLowerCase()));
   }, [providerSearch]);
 
   const resetForm = useCallback(() => {
@@ -158,7 +168,17 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
       duration,
       customExpiry,
     });
-  }, [selectedProvider, providerAddress, scope, canView, canDownload, canShare, duration, customExpiry, onGrantComplete]);
+  }, [
+    selectedProvider,
+    providerAddress,
+    scope,
+    canView,
+    canDownload,
+    canShare,
+    duration,
+    customExpiry,
+    onGrantComplete,
+  ]);
 
   const expiryDate = useMemo(() => {
     if (duration === 'custom') return customExpiry;
@@ -177,13 +197,16 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
           </div>
           <h3 className="text-lg font-bold text-slate-900 mb-2">Access Granted</h3>
           <p className="text-sm text-slate-500 mb-6">
-            Provider access has been recorded on the Aethelred blockchain and will be enforced by TEE smart contracts.
+            Provider access has been recorded on the Aethelred blockchain and will be enforced by
+            TEE smart contracts.
           </p>
 
           <div className="bg-slate-50 rounded-xl p-4 mb-6 space-y-3 text-left">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-500">Provider</span>
-              <span className="font-medium text-slate-900">{selectedProvider || /* istanbul ignore next */ 'Custom Address'}</span>
+              <span className="font-medium text-slate-900">
+                {selectedProvider || /* istanbul ignore next */ 'Custom Address'}
+              </span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-500">Scope</span>
@@ -220,12 +243,20 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
             <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
           <h3 className="text-lg font-bold text-slate-900 mb-2">Transaction Failed</h3>
-          <p className="text-sm text-slate-500 mb-6">The blockchain transaction could not be completed. Please try again.</p>
+          <p className="text-sm text-slate-500 mb-6">
+            The blockchain transaction could not be completed. Please try again.
+          </p>
           <div className="flex gap-3 justify-center">
-            <button onClick={handleClose} className="px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">
+            <button
+              onClick={handleClose}
+              className="px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors"
+            >
               Cancel
             </button>
-            <button onClick={() => setStep('review')} className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-medium transition-colors">
+            <button
+              onClick={() => setStep('review')}
+              className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-medium transition-colors"
+            >
               Try Again
             </button>
           </div>
@@ -243,7 +274,9 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
             <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
           </div>
           <p className="text-sm text-slate-600 mb-2">Simulating blockchain transaction...</p>
-          <p className="text-xs text-slate-400">Recording access grant on the Aethelred blockchain</p>
+          <p className="text-xs text-slate-400">
+            Recording access grant on the Aethelred blockchain
+          </p>
         </div>
       </Modal>
     );
@@ -251,21 +284,25 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
 
   // ─── Step indicators ───
   const steps = ['provider', 'permissions', 'review'] as const;
-  const currentStepIndex = steps.indexOf(step as typeof steps[number]);
+  const currentStepIndex = steps.indexOf(step as (typeof steps)[number]);
 
   return (
     <Modal
       open={open}
       onClose={handleClose}
       title={
-        step === 'provider' ? 'Select Provider' :
-        step === 'permissions' ? 'Set Permissions' :
-        'Review & Confirm'
+        step === 'provider'
+          ? 'Select Provider'
+          : step === 'permissions'
+            ? 'Set Permissions'
+            : 'Review & Confirm'
       }
       description={
-        step === 'provider' ? 'Choose a healthcare provider to grant access' :
-        step === 'permissions' ? 'Configure data scope, permissions, and duration' :
-        'Review the access grant before submitting'
+        step === 'provider'
+          ? 'Choose a healthcare provider to grant access'
+          : step === 'permissions'
+            ? 'Configure data scope, permissions, and duration'
+            : 'Review the access grant before submitting'
       }
       size="lg"
     >
@@ -280,7 +317,9 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
                 }`}
               />
               {i < steps.length - 1 && (
-                <div className={`w-8 h-0.5 ${i < currentStepIndex ? 'bg-brand-500' : 'bg-slate-200'}`} />
+                <div
+                  className={`w-8 h-0.5 ${i < currentStepIndex ? 'bg-brand-500' : 'bg-slate-200'}`}
+                />
               )}
             </React.Fragment>
           ))}
@@ -328,20 +367,23 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
 
             {/* Manual address */}
             <div>
-              <label className="block text-sm font-medium text-slate-900 mb-1.5">Or enter provider address manually</label>
+              <label className="block text-sm font-medium text-slate-900 mb-1.5">
+                Or enter provider address manually
+              </label>
               <div className="relative">
                 <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
                   value={providerAddress}
-                  onChange={(e) => { setProviderAddress(e.target.value); setAddressError(''); }}
+                  onChange={(e) => {
+                    setProviderAddress(e.target.value);
+                    setAddressError('');
+                  }}
                   placeholder="aeth1..."
                   className="w-full pl-9 pr-4 py-2 text-sm font-mono border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 />
               </div>
-              {addressError && (
-                <p className="text-xs text-red-500 mt-1">{addressError}</p>
-              )}
+              {addressError && <p className="text-xs text-red-500 mt-1">{addressError}</p>}
             </div>
 
             {/* Next */}
@@ -369,7 +411,9 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
                     key={s}
                     onClick={() => setScope(s)}
                     className={`p-3 rounded-xl border-2 text-left transition-colors ${
-                      scope === s ? 'border-brand-500 bg-brand-50' : 'border-slate-200 hover:border-slate-300'
+                      scope === s
+                        ? 'border-brand-500 bg-brand-50'
+                        : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
                     <span className="text-xs font-medium text-slate-700">{s}</span>
@@ -383,29 +427,58 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
               <label className="block text-sm font-medium text-slate-900 mb-2">Permissions</label>
               <div className="space-y-2">
                 {[
-                  { key: 'view', label: 'View', desc: 'View records within TEE enclave', icon: Eye, enabled: canView, toggle: setCanView },
-                  { key: 'download', label: 'Download', desc: 'Download encrypted records', icon: Download, enabled: canDownload, toggle: setCanDownload },
-                  { key: 'share', label: 'Share', desc: 'Share with other authorized providers', icon: ExternalLink, enabled: canShare, toggle: setCanShare },
+                  {
+                    key: 'view',
+                    label: 'View',
+                    desc: 'View records within TEE enclave',
+                    icon: Eye,
+                    enabled: canView,
+                    toggle: setCanView,
+                  },
+                  {
+                    key: 'download',
+                    label: 'Download',
+                    desc: 'Download encrypted records',
+                    icon: Download,
+                    enabled: canDownload,
+                    toggle: setCanDownload,
+                  },
+                  {
+                    key: 'share',
+                    label: 'Share',
+                    desc: 'Share with other authorized providers',
+                    icon: ExternalLink,
+                    enabled: canShare,
+                    toggle: setCanShare,
+                  },
                 ].map((perm) => (
                   <button
                     key={perm.key}
                     onClick={() => perm.toggle(!perm.enabled)}
                     className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-colors text-left ${
-                      perm.enabled ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 hover:border-slate-300'
+                      perm.enabled
+                        ? 'border-emerald-300 bg-emerald-50'
+                        : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      perm.enabled ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'
-                    }`}>
+                    <div
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                        perm.enabled
+                          ? 'bg-emerald-100 text-emerald-600'
+                          : 'bg-slate-100 text-slate-400'
+                      }`}
+                    >
                       <perm.icon className="w-4 h-4" />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-slate-900">{perm.label}</p>
                       <p className="text-xs text-slate-500">{perm.desc}</p>
                     </div>
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      perm.enabled ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300'
-                    }`}>
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        perm.enabled ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300'
+                      }`}
+                    >
                       {perm.enabled && <CheckCircle className="w-3 h-3 text-white" />}
                     </div>
                   </button>
@@ -473,11 +546,15 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
               <div className="space-y-3">
                 <div className="flex items-center justify-between py-2 border-b border-slate-200">
                   <span className="text-sm text-slate-500">Provider</span>
-                  <span className="text-sm font-medium text-slate-900">{selectedProvider || 'Custom Address'}</span>
+                  <span className="text-sm font-medium text-slate-900">
+                    {selectedProvider || 'Custom Address'}
+                  </span>
                 </div>
                 <div className="flex items-start justify-between py-2 border-b border-slate-200">
                   <span className="text-sm text-slate-500">Address</span>
-                  <span className="text-xs font-mono text-slate-700 max-w-[200px] break-all text-right">{providerAddress}</span>
+                  <span className="text-xs font-mono text-slate-700 max-w-[200px] break-all text-right">
+                    {providerAddress}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-slate-200">
                   <span className="text-sm text-slate-500">Data Scope</span>
@@ -503,7 +580,8 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
               <Link2 className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
               <p className="text-xs text-amber-700">
                 This action will submit a transaction to the Aethelred blockchain. The access grant
-                will be enforced by TEE smart contracts and cannot be modified without a new transaction.
+                will be enforced by TEE smart contracts and cannot be modified without a new
+                transaction.
               </p>
             </div>
 

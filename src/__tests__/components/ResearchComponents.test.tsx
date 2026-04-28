@@ -15,8 +15,11 @@ import type { ResearchStudy, DataContribution, RecordType } from '@/types';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return React.createElement(QueryClientProvider, { client: qc },
-    React.createElement(AppProvider, null, children));
+  return React.createElement(
+    QueryClientProvider,
+    { client: qc },
+    React.createElement(AppProvider, null, children),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -26,7 +29,8 @@ function TestWrapper({ children }: { children: React.ReactNode }) {
 const mockStudy: ResearchStudy = {
   id: 'study-1',
   title: 'Endometriosis Biomarker Discovery',
-  description: 'A multi-center study identifying novel biomarkers for early endometriosis detection.',
+  description:
+    'A multi-center study identifying novel biomarkers for early endometriosis detection.',
   institution: 'Stanford Medical Center',
   principalInvestigator: 'Dr. Emily Nakamura',
   status: 'recruiting',
@@ -81,7 +85,7 @@ describe('StudyCard', () => {
     render(
       <TestWrapper>
         <StudyCard study={mockStudy} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Endometriosis Biomarker Discovery')).toBeInTheDocument();
     expect(screen.getByText('Stanford Medical Center')).toBeInTheDocument();
@@ -91,7 +95,7 @@ describe('StudyCard', () => {
     render(
       <TestWrapper>
         <StudyCard study={mockStudy} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('PI: Dr. Emily Nakamura')).toBeInTheDocument();
   });
@@ -100,7 +104,7 @@ describe('StudyCard', () => {
     render(
       <TestWrapper>
         <StudyCard study={mockStudy} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('120/500 participants')).toBeInTheDocument();
     expect(screen.getByText('24%')).toBeInTheDocument();
@@ -110,7 +114,7 @@ describe('StudyCard', () => {
     render(
       <TestWrapper>
         <StudyCard study={mockStudy} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('25 AETHEL')).toBeInTheDocument();
   });
@@ -119,7 +123,7 @@ describe('StudyCard', () => {
     render(
       <TestWrapper>
         <StudyCard study={mockStudy} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('ZKP Required')).toBeInTheDocument();
   });
@@ -128,7 +132,7 @@ describe('StudyCard', () => {
     render(
       <TestWrapper>
         <StudyCard study={mockCompletedStudy} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('ZKP Required')).not.toBeInTheDocument();
   });
@@ -138,7 +142,7 @@ describe('StudyCard', () => {
     render(
       <TestWrapper>
         <StudyCard study={mockStudy} onEnroll={onEnroll} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Enroll')).toBeInTheDocument();
   });
@@ -148,7 +152,7 @@ describe('StudyCard', () => {
     render(
       <TestWrapper>
         <StudyCard study={mockStudy} onEnroll={onEnroll} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Enroll'));
     expect(onEnroll).toHaveBeenCalledWith('study-1');
@@ -158,7 +162,7 @@ describe('StudyCard', () => {
     render(
       <TestWrapper>
         <StudyCard study={mockStudy} onEnroll={jest.fn()} isEnrolling={true} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Enrolling...')).toBeInTheDocument();
   });
@@ -167,7 +171,7 @@ describe('StudyCard', () => {
     render(
       <TestWrapper>
         <StudyCard study={mockCompletedStudy} onEnroll={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('Enroll')).not.toBeInTheDocument();
   });
@@ -181,8 +185,11 @@ describe('ContributionHistory', () => {
   it('renders total contributions count', () => {
     render(
       <TestWrapper>
-        <ContributionHistory contributions={mockContributions} studies={[mockStudy, mockCompletedStudy]} />
-      </TestWrapper>
+        <ContributionHistory
+          contributions={mockContributions}
+          studies={[mockStudy, mockCompletedStudy]}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText('Contributions')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
@@ -191,8 +198,11 @@ describe('ContributionHistory', () => {
   it('renders total compensation for accepted contributions', () => {
     render(
       <TestWrapper>
-        <ContributionHistory contributions={mockContributions} studies={[mockStudy, mockCompletedStudy]} />
-      </TestWrapper>
+        <ContributionHistory
+          contributions={mockContributions}
+          studies={[mockStudy, mockCompletedStudy]}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText('Total Compensation')).toBeInTheDocument();
     // Only accepted contributions count (25 AETHEL)
@@ -202,8 +212,11 @@ describe('ContributionHistory', () => {
   it('renders contribution list with study titles', () => {
     render(
       <TestWrapper>
-        <ContributionHistory contributions={mockContributions} studies={[mockStudy, mockCompletedStudy]} />
-      </TestWrapper>
+        <ContributionHistory
+          contributions={mockContributions}
+          studies={[mockStudy, mockCompletedStudy]}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText('Endometriosis Biomarker Discovery')).toBeInTheDocument();
     expect(screen.getByText('PCOS Genetic Mapping')).toBeInTheDocument();
@@ -212,8 +225,11 @@ describe('ContributionHistory', () => {
   it('renders status badges for each contribution', () => {
     render(
       <TestWrapper>
-        <ContributionHistory contributions={mockContributions} studies={[mockStudy, mockCompletedStudy]} />
-      </TestWrapper>
+        <ContributionHistory
+          contributions={mockContributions}
+          studies={[mockStudy, mockCompletedStudy]}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText('accepted')).toBeInTheDocument();
     expect(screen.getByText('pending')).toBeInTheDocument();
@@ -223,7 +239,7 @@ describe('ContributionHistory', () => {
     render(
       <TestWrapper>
         <ContributionHistory contributions={[]} studies={[]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('No contributions yet')).toBeInTheDocument();
   });
@@ -242,7 +258,7 @@ describe('ContributionHistory', () => {
     render(
       <TestWrapper>
         <ContributionHistory contributions={[orphanContrib]} studies={[]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Unknown Study')).toBeInTheDocument();
     expect(screen.getByText('rejected')).toBeInTheDocument();
@@ -257,7 +273,7 @@ describe('ContributionHistory', () => {
     render(
       <TestWrapper>
         <ContributionHistory contributions={[unknownStatus]} studies={[mockStudy]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('reviewing')).toBeInTheDocument();
   });
@@ -271,8 +287,14 @@ describe('EnrollModal', () => {
   it('renders nothing when study is null', () => {
     const { container } = render(
       <TestWrapper>
-        <EnrollModal study={null} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <EnrollModal
+          study={null}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     expect(container.firstChild).toBeNull();
   });
@@ -280,8 +302,14 @@ describe('EnrollModal', () => {
   it('renders study title and institution when open', () => {
     render(
       <TestWrapper>
-        <EnrollModal study={mockStudy} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <EnrollModal
+          study={mockStudy}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText('Endometriosis Biomarker Discovery')).toBeInTheDocument();
     expect(screen.getByText(/Stanford Medical Center/)).toBeInTheDocument();
@@ -290,8 +318,14 @@ describe('EnrollModal', () => {
   it('renders compensation section', () => {
     render(
       <TestWrapper>
-        <EnrollModal study={mockStudy} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <EnrollModal
+          study={mockStudy}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText('Compensation')).toBeInTheDocument();
     expect(screen.getByText('25 AETHEL')).toBeInTheDocument();
@@ -300,8 +334,14 @@ describe('EnrollModal', () => {
   it('renders consent checkboxes', () => {
     render(
       <TestWrapper>
-        <EnrollModal study={mockStudy} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <EnrollModal
+          study={mockStudy}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText('Consent')).toBeInTheDocument();
   });
@@ -309,8 +349,14 @@ describe('EnrollModal', () => {
   it('Confirm Enrollment button is disabled when consent not given', () => {
     render(
       <TestWrapper>
-        <EnrollModal study={mockStudy} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <EnrollModal
+          study={mockStudy}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     const confirmBtn = screen.getByText('Confirm Enrollment');
     expect(confirmBtn).toBeDisabled();
@@ -320,8 +366,14 @@ describe('EnrollModal', () => {
     const onClose = jest.fn();
     render(
       <TestWrapper>
-        <EnrollModal study={mockStudy} open={true} onClose={onClose} onConfirm={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <EnrollModal
+          study={mockStudy}
+          open={true}
+          onClose={onClose}
+          onConfirm={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Cancel'));
     expect(onClose).toHaveBeenCalled();
@@ -330,8 +382,14 @@ describe('EnrollModal', () => {
   it('shows loading state when isLoading is true', () => {
     render(
       <TestWrapper>
-        <EnrollModal study={mockStudy} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={true} />
-      </TestWrapper>
+        <EnrollModal
+          study={mockStudy}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={true}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText('Enrolling...')).toBeInTheDocument();
   });
@@ -339,8 +397,14 @@ describe('EnrollModal', () => {
   it('renders data type checkboxes for study', () => {
     render(
       <TestWrapper>
-        <EnrollModal study={mockStudy} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <EnrollModal
+          study={mockStudy}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText('Select Data Types to Contribute')).toBeInTheDocument();
     // lab_result and vitals should be available as checkboxes
@@ -351,8 +415,14 @@ describe('EnrollModal', () => {
   it('can toggle data type selection', () => {
     render(
       <TestWrapper>
-        <EnrollModal study={mockStudy} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <EnrollModal
+          study={mockStudy}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
 
     const checkboxes = screen.getAllByRole('checkbox');
@@ -369,8 +439,14 @@ describe('EnrollModal', () => {
     const onConfirm = jest.fn();
     render(
       <TestWrapper>
-        <EnrollModal study={mockStudy} open={true} onClose={jest.fn()} onConfirm={onConfirm} isLoading={false} />
-      </TestWrapper>
+        <EnrollModal
+          study={mockStudy}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={onConfirm}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
 
     const checkboxes = screen.getAllByRole('checkbox');
@@ -394,8 +470,14 @@ describe('EnrollModal', () => {
   it('keeps confirm disabled when only consent is checked but no data types', () => {
     render(
       <TestWrapper>
-        <EnrollModal study={mockStudy} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <EnrollModal
+          study={mockStudy}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
 
     const checkboxes = screen.getAllByRole('checkbox');
@@ -411,8 +493,14 @@ describe('EnrollModal', () => {
   it('renders study description in the modal', () => {
     render(
       <TestWrapper>
-        <EnrollModal study={mockStudy} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <EnrollModal
+          study={mockStudy}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText(/multi-center study/)).toBeInTheDocument();
   });
@@ -420,8 +508,14 @@ describe('EnrollModal', () => {
   it('renders IRB approval ID in consent text', () => {
     render(
       <TestWrapper>
-        <EnrollModal study={mockStudy} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <EnrollModal
+          study={mockStudy}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText(/IRB-2024-0042/)).toBeInTheDocument();
   });

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraMPCOrchestrator
@@ -48,7 +48,7 @@ contract ShioraMPCOrchestrator is Ownable, ReentrancyGuard, Pausable {
     // Structs
     // ────────────────────────────────────────────────────────
 
-    struct MPCSession {
+    struct MpcSession {
         bytes32 sessionId;
         address organizer;
         string name;
@@ -77,7 +77,7 @@ contract ShioraMPCOrchestrator is Ownable, ReentrancyGuard, Pausable {
         uint256 rewardAmount;
     }
 
-    struct MPCResult {
+    struct MpcResult {
         bytes32 resultId;
         bytes32 sessionId;
         bytes32 aggregatedHash;
@@ -92,10 +92,10 @@ contract ShioraMPCOrchestrator is Ownable, ReentrancyGuard, Pausable {
     // State
     // ────────────────────────────────────────────────────────
 
-    mapping(bytes32 => MPCSession) private _sessions;
+    mapping(bytes32 => MpcSession) private _sessions;
     mapping(bytes32 => mapping(address => Participant)) private _participants;
     mapping(bytes32 => address[]) private _sessionParticipantAddresses;
-    mapping(bytes32 => MPCResult) private _results;
+    mapping(bytes32 => MpcResult) private _results;
     mapping(address => bytes32[]) private _organizerSessions;
 
     bytes32[] private _allSessionIds;
@@ -173,14 +173,22 @@ contract ShioraMPCOrchestrator is Ownable, ReentrancyGuard, Pausable {
     // ────────────────────────────────────────────────────────
 
     modifier onlyOrganizer(bytes32 sessionId) {
-        if (_sessions[sessionId].organizer == address(0)) revert SessionNotFound();
-        if (_sessions[sessionId].organizer != msg.sender) revert NotSessionOrganizer();
+        _onlyOrganizer(sessionId);
         _;
     }
 
     modifier inStatus(bytes32 sessionId, SessionStatus expected) {
-        if (_sessions[sessionId].status != expected) revert SessionNotInStatus(expected);
+        _inStatus(sessionId, expected);
         _;
+    }
+
+    function _onlyOrganizer(bytes32 sessionId) internal view {
+        if (_sessions[sessionId].organizer == address(0)) revert SessionNotFound();
+        if (_sessions[sessionId].organizer != msg.sender) revert NotSessionOrganizer();
+    }
+
+    function _inStatus(bytes32 sessionId, SessionStatus expected) internal view {
+        if (_sessions[sessionId].status != expected) revert SessionNotInStatus(expected);
     }
 
     // ────────────────────────────────────────────────────────
@@ -228,7 +236,7 @@ contract ShioraMPCOrchestrator is Ownable, ReentrancyGuard, Pausable {
             abi.encodePacked(msg.sender, name, block.timestamp, _nonce)
         );
 
-        _sessions[sessionId] = MPCSession({
+        _sessions[sessionId] = MpcSession({
             sessionId: sessionId,
             organizer: msg.sender,
             name: name,
@@ -260,7 +268,7 @@ contract ShioraMPCOrchestrator is Ownable, ReentrancyGuard, Pausable {
     function startComputation(
         bytes32 sessionId
     ) external onlyOrganizer(sessionId) inStatus(sessionId, SessionStatus.ENROLLING) {
-        MPCSession storage session = _sessions[sessionId];
+        MpcSession storage session = _sessions[sessionId];
         if (session.currentParticipants < session.minParticipants) {
             revert InsufficientParticipants();
         }
@@ -275,7 +283,7 @@ contract ShioraMPCOrchestrator is Ownable, ReentrancyGuard, Pausable {
     function cancelSession(
         bytes32 sessionId
     ) external onlyOrganizer(sessionId) {
-        MPCSession storage session = _sessions[sessionId];
+        MpcSession storage session = _sessions[sessionId];
         require(
             session.status != SessionStatus.COMPLETED &&
             session.status != SessionStatus.CANCELLED,
@@ -299,7 +307,7 @@ contract ShioraMPCOrchestrator is Ownable, ReentrancyGuard, Pausable {
         bytes32 sessionId,
         bytes32 teeAttestationHash
     ) external nonReentrant inStatus(sessionId, SessionStatus.ENROLLING) {
-        MPCSession storage session = _sessions[sessionId];
+        MpcSession storage session = _sessions[sessionId];
         if (session.currentParticipants >= session.maxParticipants) revert SessionFull();
 
         Participant storage p = _participants[sessionId][msg.sender];
@@ -379,7 +387,7 @@ contract ShioraMPCOrchestrator is Ownable, ReentrancyGuard, Pausable {
         uint256 privacyBudgetConsumed,
         uint256 noiseLevel
     ) external nonReentrant onlyOwner returns (bytes32 resultId) {
-        MPCSession storage session = _sessions[sessionId];
+        MpcSession storage session = _sessions[sessionId];
         if (session.organizer == address(0)) revert SessionNotFound();
         if (aggregatedHash == bytes32(0)) revert InvalidHash();
         if (session.privacyBudgetUsed + privacyBudgetConsumed > session.privacyBudgetTotal) {
@@ -391,7 +399,7 @@ contract ShioraMPCOrchestrator is Ownable, ReentrancyGuard, Pausable {
             abi.encodePacked(sessionId, "result", block.timestamp, _nonce)
         );
 
-        _results[resultId] = MPCResult({
+        _results[resultId] = MpcResult({
             resultId: resultId,
             sessionId: sessionId,
             aggregatedHash: aggregatedHash,
@@ -420,7 +428,7 @@ contract ShioraMPCOrchestrator is Ownable, ReentrancyGuard, Pausable {
     // View Functions
     // ────────────────────────────────────────────────────────
 
-    function getSession(bytes32 sessionId) external view returns (MPCSession memory) {
+    function getSession(bytes32 sessionId) external view returns (MpcSession memory) {
         if (_sessions[sessionId].organizer == address(0)) revert SessionNotFound();
         return _sessions[sessionId];
     }
@@ -436,7 +444,7 @@ contract ShioraMPCOrchestrator is Ownable, ReentrancyGuard, Pausable {
         return _sessionParticipantAddresses[sessionId];
     }
 
-    function getResult(bytes32 resultId) external view returns (MPCResult memory) {
+    function getResult(bytes32 resultId) external view returns (MpcResult memory) {
         return _results[resultId];
     }
 
@@ -449,7 +457,7 @@ contract ShioraMPCOrchestrator is Ownable, ReentrancyGuard, Pausable {
     }
 
     function getRemainingPrivacyBudget(bytes32 sessionId) external view returns (uint256) {
-        MPCSession storage session = _sessions[sessionId];
+        MpcSession storage session = _sessions[sessionId];
         return session.privacyBudgetTotal - session.privacyBudgetUsed;
     }
 

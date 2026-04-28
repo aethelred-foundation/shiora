@@ -146,7 +146,7 @@ describe('GenomicProfileCard', () => {
     render(
       <TestWrapper>
         <GenomicProfileCard overview={mockOverview} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Genomic Profile')).toBeInTheDocument();
     expect(screen.getByText('Clinically Significant')).toBeInTheDocument();
@@ -157,7 +157,7 @@ describe('GenomicProfileCard', () => {
     render(
       <TestWrapper>
         <GenomicProfileCard overview={mockOverview} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Cardiovascular Disease')).toBeInTheDocument();
   });
@@ -176,7 +176,7 @@ describe('PharmacogenomicRow', () => {
             <PharmacogenomicRow result={mockPgxResult} />
           </tbody>
         </table>
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Codeine')).toBeInTheDocument();
     expect(screen.getByText('Analgesic')).toBeInTheDocument();
@@ -193,7 +193,7 @@ describe('BiomarkerCard', () => {
     render(
       <TestWrapper>
         <BiomarkerCard biomarker={mockBiomarker} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('HbA1c')).toBeInTheDocument();
     expect(screen.getByText('6.2')).toBeInTheDocument();
@@ -210,7 +210,7 @@ describe('BiomarkerTrendChart', () => {
     render(
       <TestWrapper>
         <BiomarkerTrendChart biomarker={mockBiomarker} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('HbA1c')).toBeInTheDocument();
     expect(screen.getByText('Metabolic marker')).toBeInTheDocument();
@@ -226,7 +226,7 @@ describe('RiskScoreRadar', () => {
     render(
       <TestWrapper>
         <RiskScoreRadar scores={mockRiskScores} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Risk Profile Overview')).toBeInTheDocument();
   });
@@ -241,7 +241,7 @@ describe('RiskScoreCard', () => {
     render(
       <TestWrapper>
         <RiskScoreCard score={mockRiskScores[0]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('elevated')).toBeInTheDocument();
     expect(screen.getByText('85th percentile')).toBeInTheDocument();
@@ -252,7 +252,7 @@ describe('RiskScoreCard', () => {
     render(
       <TestWrapper>
         <RiskScoreCard score={mockRiskScores[0]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Diet')).toBeInTheDocument();
     expect(screen.getByText('Exercise')).toBeInTheDocument();
@@ -268,7 +268,7 @@ describe('GenomicReportCard', () => {
     render(
       <TestWrapper>
         <GenomicReportCard report={mockReport} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Pharmacogenomic Summary')).toBeInTheDocument();
     expect(screen.getByText('reviewed')).toBeInTheDocument();
@@ -278,7 +278,7 @@ describe('GenomicReportCard', () => {
     render(
       <TestWrapper>
         <GenomicReportCard report={mockReport} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('8 findings')).toBeInTheDocument();
     expect(screen.getByText('3 actionable')).toBeInTheDocument();
@@ -289,7 +289,7 @@ describe('GenomicReportCard', () => {
     render(
       <TestWrapper>
         <GenomicReportCard report={report} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Pharmacogenomic Summary')).toBeInTheDocument();
   });
@@ -299,7 +299,7 @@ describe('GenomicReportCard', () => {
     render(
       <TestWrapper>
         <GenomicReportCard report={report} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('generating')).toBeInTheDocument();
   });
@@ -309,7 +309,7 @@ describe('GenomicReportCard', () => {
     render(
       <TestWrapper>
         <GenomicReportCard report={report} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('ready')).toBeInTheDocument();
   });
@@ -319,7 +319,7 @@ describe('GenomicReportCard', () => {
     render(
       <TestWrapper>
         <GenomicReportCard report={report} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('shared')).toBeInTheDocument();
   });
@@ -329,7 +329,7 @@ describe('GenomicReportCard', () => {
     render(
       <TestWrapper>
         <GenomicReportCard report={report} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('unknown_status')).toBeInTheDocument();
   });
@@ -350,7 +350,7 @@ describe('BiomarkerCard — branch coverage', () => {
     render(
       <TestWrapper>
         <BiomarkerCard biomarker={biomarker} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('normal')).toBeInTheDocument();
     expect(screen.getByText('improving')).toBeInTheDocument();
@@ -366,7 +366,7 @@ describe('BiomarkerCard — branch coverage', () => {
     render(
       <TestWrapper>
         <BiomarkerCard biomarker={biomarker} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('abnormal')).toBeInTheDocument();
     expect(screen.getByText('stable')).toBeInTheDocument();
@@ -388,7 +388,7 @@ describe('BiomarkerTrendChart — branch coverage', () => {
     render(
       <TestWrapper>
         <BiomarkerTrendChart biomarker={biomarker} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('normal')).toBeInTheDocument();
     expect(screen.getByText('improving')).toBeInTheDocument();
@@ -404,7 +404,7 @@ describe('BiomarkerTrendChart — branch coverage', () => {
     render(
       <TestWrapper>
         <BiomarkerTrendChart biomarker={biomarker} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('abnormal')).toBeInTheDocument();
     expect(screen.getByText('stable')).toBeInTheDocument();
@@ -421,7 +421,7 @@ describe('GenomicProfileCard — branch coverage', () => {
     render(
       <TestWrapper>
         <GenomicProfileCard overview={overview} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Genomic Profile')).toBeInTheDocument();
     expect(screen.queryByText('High Risk Conditions')).not.toBeInTheDocument();
@@ -441,7 +441,7 @@ describe('RiskScoreCard — branch coverage', () => {
     render(
       <TestWrapper>
         <RiskScoreCard score={score} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('unknown_level')).toBeInTheDocument();
   });
@@ -454,7 +454,7 @@ describe('RiskScoreCard — branch coverage', () => {
     render(
       <TestWrapper>
         <RiskScoreCard score={score} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('low')).toBeInTheDocument();
   });
@@ -467,7 +467,7 @@ describe('RiskScoreCard — branch coverage', () => {
     render(
       <TestWrapper>
         <RiskScoreCard score={score} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('high')).toBeInTheDocument();
   });
@@ -479,14 +479,16 @@ describe('RiskScoreCard — branch coverage', () => {
 
 describe('RiskScoreRadar — branch coverage', () => {
   it('renders with unknown category ID (fallback to Dna icon)', () => {
-    const scores: PolygenicRiskScore[] = [{
-      ...mockRiskScores[0],
-      category: 'unknown_category' as any,
-    }];
+    const scores: PolygenicRiskScore[] = [
+      {
+        ...mockRiskScores[0],
+        category: 'unknown_category' as any,
+      },
+    ];
     render(
       <TestWrapper>
         <RiskScoreRadar scores={scores} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Risk Profile Overview')).toBeInTheDocument();
   });

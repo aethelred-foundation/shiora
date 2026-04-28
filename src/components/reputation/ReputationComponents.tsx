@@ -10,13 +10,25 @@
 
 import React from 'react';
 import {
-  Shield, ShieldCheck, Star, User,
-  Calendar, Activity, AlertTriangle, CheckCircle,
-  Award, Building2,
+  Shield,
+  ShieldCheck,
+  Star,
+  User,
+  Calendar,
+  Activity,
+  AlertTriangle,
+  CheckCircle,
+  Award,
+  Building2,
 } from 'lucide-react';
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, CartesianGrid,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
 } from 'recharts';
 
 import type { ProviderReputation, ProviderReview, TrustLevel } from '@/types';
@@ -29,7 +41,10 @@ import { formatDate, timeAgo } from '@/lib/utils';
 // Trust level config
 // ---------------------------------------------------------------------------
 
-const TRUST_CONFIG: Record<TrustLevel, { label: string; color: string; bg: string; border: string; icon: React.ReactNode }> = {
+const TRUST_CONFIG: Record<
+  TrustLevel,
+  { label: string; color: string; bg: string; border: string; icon: React.ReactNode }
+> = {
   gold: {
     label: 'Gold',
     color: 'text-amber-700',
@@ -81,13 +96,13 @@ export function ReputationScore({
   const offset = circumference - (score / 100) * circumference;
 
   const scoreColor =
-    score >= 90 ? '#f59e0b' :
-    score >= 75 ? '#64748b' :
-    score >= 60 ? '#f97316' :
-    '#94a3b8';
+    score >= 90 ? '#f59e0b' : score >= 75 ? '#64748b' : score >= 60 ? '#f97316' : '#94a3b8';
 
   return (
-    <div className="relative inline-flex items-center justify-center" style={{ width: dims, height: dims }}>
+    <div
+      className="relative inline-flex items-center justify-center"
+      style={{ width: dims, height: dims }}
+    >
       <svg width={dims} height={dims} className="-rotate-90">
         <circle
           cx={dims / 2}
@@ -111,12 +126,12 @@ export function ReputationScore({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={`font-bold ${size === 'lg' ? 'text-xl' : size === 'md' ? 'text-base' : 'text-sm'} text-slate-900`}>
+        <span
+          className={`font-bold ${size === 'lg' ? 'text-xl' : size === 'md' ? 'text-base' : 'text-sm'} text-slate-900`}
+        >
           {score}
         </span>
-        {size !== 'sm' && (
-          <span className="text-2xs text-slate-400">/ 100</span>
-        )}
+        {size !== 'sm' && <span className="text-2xs text-slate-400">/ 100</span>}
       </div>
     </div>
   );
@@ -163,11 +178,7 @@ export function StarRating({
 // ReviewCard
 // ---------------------------------------------------------------------------
 
-export function ReviewCard({
-  review,
-}: {
-  review: ProviderReview;
-}) {
+export function ReviewCard({ review }: { review: ProviderReview }) {
   return (
     <MedicalCard>
       <div className="flex items-start justify-between mb-3">
@@ -195,7 +206,9 @@ export function ReviewCard({
       <div className="grid grid-cols-2 gap-2 mb-3">
         {Object.entries(review.categories).map(([key, value]) => (
           <div key={key} className="flex items-center justify-between text-xs">
-            <span className="text-slate-500 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+            <span className="text-slate-500 capitalize">
+              {key.replace(/([A-Z])/g, ' $1').trim()}
+            </span>
             <StarRating rating={value} size="sm" />
           </div>
         ))}
@@ -220,9 +233,11 @@ export function TrustBadge({
   const config = TRUST_CONFIG[trustLevel];
 
   return (
-    <span className={`inline-flex items-center gap-1 ${
-      size === 'md' ? 'px-2.5 py-1' : 'px-2 py-0.5'
-    } ${config.bg} ${config.color} border ${config.border} rounded-full text-xs font-medium`}>
+    <span
+      className={`inline-flex items-center gap-1 ${
+        size === 'md' ? 'px-2.5 py-1' : 'px-2 py-0.5'
+      } ${config.bg} ${config.color} border ${config.border} rounded-full text-xs font-medium`}
+    >
       {config.icon}
       {config.label}
     </span>
@@ -233,11 +248,7 @@ export function TrustBadge({
 // ReputationHistory — line chart of score over time
 // ---------------------------------------------------------------------------
 
-export function ReputationHistory({
-  data,
-}: {
-  data: { month: string; score: number }[];
-}) {
+export function ReputationHistory({ data }: { data: { month: string; score: number }[] }) {
   return (
     <MedicalCard padding={false}>
       <div className="p-5 pb-0">
@@ -313,13 +324,18 @@ export function ProviderProfile({
             </span>
             {provider.dataBreaches > 0 && (
               <span className="flex items-center gap-1 text-red-500">
-                <AlertTriangle className="w-3 h-3" /> {provider.dataBreaches} breach{provider.dataBreaches > 1 ? 'es' : ''}
+                <AlertTriangle className="w-3 h-3" /> {provider.dataBreaches} breach
+                {provider.dataBreaches > 1 ? 'es' : ''}
               </span>
             )}
           </div>
         </div>
         <div className="shrink-0">
-          <ReputationScore score={provider.overallScore} trustLevel={provider.trustLevel} size="sm" />
+          <ReputationScore
+            score={provider.overallScore}
+            trustLevel={provider.trustLevel}
+            size="sm"
+          />
         </div>
       </div>
     </MedicalCard>

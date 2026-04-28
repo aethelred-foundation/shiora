@@ -126,16 +126,14 @@ function buildTimeline(
     twinId,
     type: 'prediction',
     title: '90-Day Predictions Generated',
-    description: 'Biomarker predictions recalculated with updated parameters and latest lab results.',
+    description:
+      'Biomarker predictions recalculated with updated parameters and latest lab results.',
     timestamp: twin.createdAt + 60 * 86400000,
     attestation: twin.attestation,
   });
 
   // Data sync events
-  const syncTimes = [
-    Date.now() - 2 * 3600000,
-    Date.now() - 24 * 3600000,
-  ];
+  const syncTimes = [Date.now() - 2 * 3600000, Date.now() - 24 * 3600000];
   const syncDescs = [
     'Wearable data synced: 1,248 new data points from Apple Health and Oura Ring.',
     'EHR records synced: 3 new lab results imported via FHIR bridge.',
@@ -205,20 +203,11 @@ export function useDigitalTwin(): UseDigitalTwinReturn {
 
   // ---- Computed ----
 
-  const simulations = useMemo(
-    () => simulationsQuery.data ?? [],
-    [simulationsQuery.data],
-  );
+  const simulations = useMemo(() => simulationsQuery.data ?? [], [simulationsQuery.data]);
 
-  const parameters = useMemo(
-    () => parametersQuery.data ?? [],
-    [parametersQuery.data],
-  );
+  const parameters = useMemo(() => parametersQuery.data ?? [], [parametersQuery.data]);
 
-  const predictions = useMemo(
-    () => predictionsQuery.data ?? [],
-    [predictionsQuery.data],
-  );
+  const predictions = useMemo(() => predictionsQuery.data ?? [], [predictionsQuery.data]);
 
   const timeline = useMemo(
     () => buildTimeline(twinQuery.data, simulations),

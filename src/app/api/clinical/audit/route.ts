@@ -6,13 +6,7 @@
 import { NextRequest } from 'next/server';
 import { successResponse } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
-import {
-  seededRandom,
-  seededInt,
-  seededHex,
-  seededPick,
-  generateAttestation,
-} from '@/lib/utils';
+import { seededRandom, seededInt, seededHex, seededPick, generateAttestation } from '@/lib/utils';
 import type { ClinicalDecisionAuditEntry } from '@/types';
 
 const SEED = 2100;
@@ -106,8 +100,12 @@ export async function GET(request: NextRequest) {
 
   const entries: ClinicalDecisionAuditEntry[] = Array.from({ length: 15 }, (_, i) => {
     const decisionType = seededPick(SEED + 600 + i * 3, DECISION_TYPES);
-    const inputIdx = Math.floor(seededRandom(SEED + 600 + i * 5) * INPUTS_BY_TYPE[decisionType].length);
-    const outputIdx = Math.floor(seededRandom(SEED + 600 + i * 7) * OUTPUTS_BY_TYPE[decisionType].length);
+    const inputIdx = Math.floor(
+      seededRandom(SEED + 600 + i * 5) * INPUTS_BY_TYPE[decisionType].length,
+    );
+    const outputIdx = Math.floor(
+      seededRandom(SEED + 600 + i * 7) * OUTPUTS_BY_TYPE[decisionType].length,
+    );
 
     return {
       id: `audit-${seededHex(SEED + 600 + i * 11, 12)}`,
@@ -118,12 +116,14 @@ export async function GET(request: NextRequest) {
       confidence: Math.round((seededRandom(SEED + 600 + i * 17) * 20 + 78) * 100) / 100,
       attestation: generateAttestation(SEED + 600 + i * 19),
       timestamp: Date.now() - seededInt(SEED + 600 + i * 23, 1, 168) * 3600000,
-      reviewedBy: seededRandom(SEED + 600 + i * 29) > 0.4
-        ? seededPick(SEED + 600 + i * 31, REVIEWERS)
-        : undefined,
-      reviewedAt: seededRandom(SEED + 600 + i * 29) > 0.4
-        ? Date.now() - seededInt(SEED + 600 + i * 37, 0, 48) * 3600000
-        : undefined,
+      reviewedBy:
+        seededRandom(SEED + 600 + i * 29) > 0.4
+          ? seededPick(SEED + 600 + i * 31, REVIEWERS)
+          : undefined,
+      reviewedAt:
+        seededRandom(SEED + 600 + i * 29) > 0.4
+          ? Date.now() - seededInt(SEED + 600 + i * 37, 0, 48) * 3600000
+          : undefined,
     };
   });
 

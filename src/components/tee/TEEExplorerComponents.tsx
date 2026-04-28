@@ -2,22 +2,30 @@
 
 import React, { useState } from 'react';
 import {
-  Cpu, Shield, ShieldCheck, Server, Cloud,
-  ChevronRight, ChevronDown, Clock, Zap,
-  CheckCircle, XCircle, ArrowRight, Eye,
-  Hash, Lock, Fingerprint, Network,
+  Cpu,
+  Shield,
+  ShieldCheck,
+  Server,
+  Cloud,
+  ChevronRight,
+  ChevronDown,
+  Clock,
+  Zap,
+  CheckCircle,
+  XCircle,
+  ArrowRight,
+  Eye,
+  Hash,
+  Lock,
+  Fingerprint,
+  Network,
 } from 'lucide-react';
 
 import { MedicalCard, TruncatedHash, TEEBadge, StatusBadge } from '@/components/ui/PagePrimitives';
 import { Badge } from '@/components/ui/SharedComponents';
 import { BRAND, TEE_ENCLAVE_TYPES, COMPUTE_JOB_STATES } from '@/lib/constants';
 import { formatNumber, timeAgo, formatDateTime, seededHex } from '@/lib/utils';
-import type {
-  TEEVerificationChain,
-  TEEComputeJob,
-  TEEEnclaveInfo,
-  TEEPlatform,
-} from '@/types';
+import type { TEEVerificationChain, TEEComputeJob, TEEEnclaveInfo, TEEPlatform } from '@/types';
 
 // ============================================================
 // Platform Icon Mapping
@@ -72,17 +80,19 @@ export function AttestationRow({ attestation, index }: AttestationRowProps) {
         <td className="px-4 py-3 text-sm text-slate-600">{attestation.modelId}</td>
         <td className="px-4 py-3">
           {attestation.verifiedOnChain ? (
-            <Badge variant="success" dot>Verified</Badge>
+            <Badge variant="success" dot>
+              Verified
+            </Badge>
           ) : (
-            <Badge variant="warning" dot>Pending</Badge>
+            <Badge variant="warning" dot>
+              Pending
+            </Badge>
           )}
         </td>
         <td className="px-4 py-3 text-sm font-mono text-slate-600">
           {formatNumber(attestation.blockHeight)}
         </td>
-        <td className="px-4 py-3 text-sm text-slate-500">
-          {timeAgo(attestation.timestamp)}
-        </td>
+        <td className="px-4 py-3 text-sm text-slate-500">{timeAgo(attestation.timestamp)}</td>
       </tr>
       {expanded && (
         <tr className="bg-slate-50 border-b border-slate-200">
@@ -164,7 +174,10 @@ const JOB_STATUS_VARIANT: Record<string, 'success' | 'error' | 'warning' | 'info
   cancelled: 'neutral',
 };
 
-const PRIORITY_VARIANT: Record<string, 'success' | 'error' | 'warning' | 'info' | 'neutral' | 'brand'> = {
+const PRIORITY_VARIANT: Record<
+  string,
+  'success' | 'error' | 'warning' | 'info' | 'neutral' | 'brand'
+> = {
   low: 'neutral',
   normal: 'info',
   high: 'warning',
@@ -173,9 +186,11 @@ const PRIORITY_VARIANT: Record<string, 'success' | 'error' | 'warning' | 'info' 
 
 export function ComputeJobRow({ job, index }: ComputeJobRowProps) {
   return (
-    <tr className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${
-      index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
-    }`}>
+    <tr
+      className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${
+        index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
+      }`}
+    >
       <td className="px-4 py-3">
         <span className="text-sm font-mono text-slate-700">{job.id}</span>
       </td>
@@ -193,9 +208,7 @@ export function ComputeJobRow({ job, index }: ComputeJobRowProps) {
           ? `${job.executionTimeMs}ms`
           : `${(job.executionTimeMs / 1000).toFixed(2)}s`}
       </td>
-      <td className="px-4 py-3 text-sm font-mono text-slate-600">
-        {job.gasCost.toFixed(4)} AETH
-      </td>
+      <td className="px-4 py-3 text-sm font-mono text-slate-600">{job.gasCost.toFixed(4)} AETH</td>
       <td className="px-4 py-3">
         <Badge variant={PRIORITY_VARIANT[job.priority] ?? 'neutral'}>
           {job.priority.charAt(0).toUpperCase() + job.priority.slice(1)}
@@ -235,8 +248,12 @@ export function EnclaveCard({ enclave }: EnclaveCardProps) {
             <p className="text-xs text-slate-500">{enclave.platform}</p>
           </div>
         </div>
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyle.bg} ${statusStyle.text}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot} ${enclave.status === 'operational' ? 'animate-pulse' : ''}`} />
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyle.bg} ${statusStyle.text}`}
+        >
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot} ${enclave.status === 'operational' ? 'animate-pulse' : ''}`}
+          />
           {enclave.status.charAt(0).toUpperCase() + enclave.status.slice(1)}
         </span>
       </div>
@@ -272,7 +289,12 @@ export function EnclaveCard({ enclave }: EnclaveCardProps) {
             className="h-2 rounded-full transition-all duration-500"
             style={{
               width: `${Math.min(enclave.trustScore, 100)}%`,
-              backgroundColor: enclave.trustScore >= 95 ? '#10b981' : enclave.trustScore >= 90 ? '#C9A227' : '#f43f5e',
+              backgroundColor:
+                enclave.trustScore >= 95
+                  ? '#10b981'
+                  : enclave.trustScore >= 90
+                    ? '#C9A227'
+                    : '#f43f5e',
             }}
           />
         </div>
@@ -360,7 +382,9 @@ export function VerificationPipeline({ seed }: VerificationPipelineProps) {
                 {step.icon}
               </div>
               <p className="text-sm font-medium text-slate-900 mb-1">{step.label}</p>
-              <p className="font-mono text-[10px] text-slate-500 break-all max-w-[120px]">{step.hash}</p>
+              <p className="font-mono text-[10px] text-slate-500 break-all max-w-[120px]">
+                {step.hash}
+              </p>
               <p className="text-[10px] text-slate-400 mt-1">{step.timestamp}</p>
             </div>
             {i < steps.length - 1 && (
@@ -388,9 +412,7 @@ export function VerificationPipeline({ seed }: VerificationPipelineProps) {
               >
                 {step.icon}
               </div>
-              {i < steps.length - 1 && (
-                <div className="w-0.5 h-8 bg-brand-200 my-1" />
-              )}
+              {i < steps.length - 1 && <div className="w-0.5 h-8 bg-brand-200 my-1" />}
             </div>
             {/* Content */}
             <div className="pb-6">
@@ -441,12 +463,18 @@ export function RecentVerificationChains({ attestations }: RecentVerificationCha
               className="w-full flex items-center gap-4 px-4 py-3 text-left"
               onClick={() => setExpandedId(isExpanded ? null : att.id)}
             >
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                att.verifiedOnChain
-                  ? 'bg-emerald-50 text-emerald-600'
-                  : 'bg-amber-50 text-amber-600'
-              }`}>
-                {att.verifiedOnChain ? <CheckCircle className="w-4.5 h-4.5" /> : <Clock className="w-4.5 h-4.5" />}
+              <div
+                className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                  att.verifiedOnChain
+                    ? 'bg-emerald-50 text-emerald-600'
+                    : 'bg-amber-50 text-amber-600'
+                }`}
+              >
+                {att.verifiedOnChain ? (
+                  <CheckCircle className="w-4.5 h-4.5" />
+                ) : (
+                  <Clock className="w-4.5 h-4.5" />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -476,15 +504,17 @@ export function RecentVerificationChains({ attestations }: RecentVerificationCha
               <div className="px-4 pb-4 pt-1 border-t border-slate-100">
                 {/* Mini pipeline visualization */}
                 <div className="flex items-center gap-1 mb-4 py-2 px-3 bg-slate-50 rounded-lg overflow-x-auto">
-                  {['Request', 'Enclave', 'Measurement', 'Attestation', 'On-chain'].map((step, i) => (
-                    <React.Fragment key={step}>
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-brand-50 text-brand-700 text-[10px] font-medium whitespace-nowrap">
-                        <CheckCircle className="w-3 h-3" />
-                        {step}
-                      </span>
-                      {i < 4 && <ArrowRight className="w-3 h-3 text-brand-300 shrink-0" />}
-                    </React.Fragment>
-                  ))}
+                  {['Request', 'Enclave', 'Measurement', 'Attestation', 'On-chain'].map(
+                    (step, i) => (
+                      <React.Fragment key={step}>
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-brand-50 text-brand-700 text-[10px] font-medium whitespace-nowrap">
+                          <CheckCircle className="w-3 h-3" />
+                          {step}
+                        </span>
+                        {i < 4 && <ArrowRight className="w-3 h-3 text-brand-300 shrink-0" />}
+                      </React.Fragment>
+                    ),
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">

@@ -83,15 +83,12 @@ export function useLocalStorage<T>(
   }, [initialValue]);
 
   /** Update the stored value (accepts a raw value or an updater function). */
-  const setValue = useCallback(
-    (value: T | ((prev: T) => T)) => {
-      setStoredValue((prev) => {
-        const nextValue = value instanceof Function ? value(prev) : value;
-        return nextValue;
-      });
-    },
-    [],
-  );
+  const setValue = useCallback((value: T | ((prev: T) => T)) => {
+    setStoredValue((prev) => {
+      const nextValue = value instanceof Function ? value(prev) : value;
+      return nextValue;
+    });
+  }, []);
 
   /** Remove the key from localStorage and reset to `initialValue`. */
   const removeValue = useCallback(() => {

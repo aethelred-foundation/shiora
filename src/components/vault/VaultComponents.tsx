@@ -10,19 +10,62 @@
 
 import React, { useState, useMemo } from 'react';
 import {
-  Lock, Unlock, Calendar, Heart, TrendingUp, Pill,
-  TestTube2, ScanLine, Thermometer, Baby, Shield,
-  Clock, Database, Users, Eye, Droplet,
-  Frown, Smile, Zap, Apple, Droplets, Moon,
-  Meh, AlertCircle, AlertTriangle, ThermometerSun,
-  Angry, CloudRain, Battery, BatteryLow, Dumbbell, BatteryWarning,
-  Wind, UtensilsCrossed, Sparkles, Circle, CircleDot,
-  CloudMoon, MoonStar, Star, Snowflake, Cross,
+  Lock,
+  Unlock,
+  Calendar,
+  Heart,
+  TrendingUp,
+  Pill,
+  TestTube2,
+  ScanLine,
+  Thermometer,
+  Baby,
+  Shield,
+  Clock,
+  Database,
+  Users,
+  Eye,
+  Droplet,
+  Frown,
+  Smile,
+  Zap,
+  Apple,
+  Droplets,
+  Moon,
+  Meh,
+  AlertCircle,
+  AlertTriangle,
+  ThermometerSun,
+  Angry,
+  CloudRain,
+  Battery,
+  BatteryLow,
+  Dumbbell,
+  BatteryWarning,
+  Wind,
+  UtensilsCrossed,
+  Sparkles,
+  Circle,
+  CircleDot,
+  CloudMoon,
+  MoonStar,
+  Star,
+  Snowflake,
+  Cross,
   type LucideIcon,
 } from 'lucide-react';
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis,
-  Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine, ReferenceArea,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  ReferenceLine,
+  ReferenceArea,
 } from 'recharts';
 
 import type {
@@ -67,10 +110,34 @@ const SYMPTOM_ICON_MAP: Record<string, React.ReactNode> = {
 
 /** Map Lucide icon name strings to components for dynamic rendering */
 const LUCIDE_ICON_MAP: Record<string, LucideIcon> = {
-  Frown, Smile, Meh, Zap, Apple, Droplets, Moon, Droplet, Thermometer,
-  AlertCircle, AlertTriangle, ThermometerSun, Angry, CloudRain,
-  Battery, BatteryLow, Dumbbell, BatteryWarning, Wind, UtensilsCrossed,
-  Sparkles, Circle, CircleDot, CloudMoon, MoonStar, Star, Snowflake, Cross,
+  Frown,
+  Smile,
+  Meh,
+  Zap,
+  Apple,
+  Droplets,
+  Moon,
+  Droplet,
+  Thermometer,
+  AlertCircle,
+  AlertTriangle,
+  ThermometerSun,
+  Angry,
+  CloudRain,
+  Battery,
+  BatteryLow,
+  Dumbbell,
+  BatteryWarning,
+  Wind,
+  UtensilsCrossed,
+  Sparkles,
+  Circle,
+  CircleDot,
+  CloudMoon,
+  MoonStar,
+  Star,
+  Snowflake,
+  Cross,
 };
 
 /** Severity level icon configs: icon name + color */
@@ -164,13 +231,17 @@ export function CompartmentCard({ compartment, onLock, onUnlock }: CompartmentCa
             isLocked
               ? 'bg-slate-100 text-slate-600'
               : compartment.lockStatus === 'partial'
-              ? 'bg-amber-50 text-amber-700'
-              : 'bg-emerald-50 text-emerald-700'
+                ? 'bg-amber-50 text-amber-700'
+                : 'bg-emerald-50 text-emerald-700'
           }`}
         >
           <span
             className={`w-1.5 h-1.5 rounded-full ${
-              isLocked ? 'bg-slate-500' : compartment.lockStatus === 'partial' ? 'bg-amber-500' : 'bg-emerald-500'
+              isLocked
+                ? 'bg-slate-500'
+                : compartment.lockStatus === 'partial'
+                  ? 'bg-amber-500'
+                  : 'bg-emerald-500'
             }`}
           />
           {compartment.lockStatus.charAt(0).toUpperCase() + compartment.lockStatus.slice(1)}
@@ -248,22 +319,20 @@ export function CycleCalendar({ entries, currentDay }: CycleCalendarProps) {
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-1">
         {calendarDays.map((day, i) => {
-          const phaseColors = day.entry
-            ? CYCLE_PHASE_COLORS[day.entry.phase]
-            : null;
+          const phaseColors = day.entry ? CYCLE_PHASE_COLORS[day.entry.phase] : null;
           const dots = day.entry ? flowDots(day.entry.flow) : 0;
 
           return (
             <div
               key={i}
               className={`relative rounded-lg p-1.5 min-h-[3.5rem] text-center transition-all ${
-                phaseColors
-                  ? 'border border-transparent'
-                  : 'border border-slate-100'
+                phaseColors ? 'border border-transparent' : 'border border-slate-100'
               } ${day.isToday ? 'ring-2 ring-brand-500 ring-offset-1' : ''}`}
               style={phaseColors ? { backgroundColor: phaseColors.fill } : undefined}
             >
-              <span className={`text-xs font-medium ${phaseColors ? 'text-slate-700' : 'text-slate-400'}`}>
+              <span
+                className={`text-xs font-medium ${phaseColors ? 'text-slate-700' : 'text-slate-400'}`}
+              >
                 {day.date.getDate()}
               </span>
 
@@ -331,7 +400,8 @@ export function SymptomLogger({ categories, onLog, recentLogs }: SymptomLoggerPr
     onLog({
       date: Date.now(),
       category: selectedCategory,
-      symptom: categories.find((c) => c.id === selectedCategory)?.label ??
+      symptom:
+        categories.find((c) => c.id === selectedCategory)?.label ??
         /* istanbul ignore next */
         selectedCategory,
       severity: severity as 1 | 2 | 3 | 4 | 5,
@@ -423,16 +493,16 @@ export function SymptomLogger({ categories, onLog, recentLogs }: SymptomLoggerPr
                 className="flex items-center gap-3 px-3 py-2 bg-slate-50 rounded-xl text-sm"
               >
                 <LucideIconByName
-                  name={catMeta?.icons[Math.min(log.severity - 1, 4)] ??
+                  name={
+                    catMeta?.icons[Math.min(log.severity - 1, 4)] ??
                     /* istanbul ignore next */
-                    'Circle'}
+                    'Circle'
+                  }
                   className="w-5 h-5 text-slate-500"
                 />
                 <div className="flex-1 min-w-0">
                   <span className="font-medium text-slate-700">{log.symptom}</span>
-                  <span className="text-slate-400 ml-2">
-                    Severity {log.severity}/5
-                  </span>
+                  <span className="text-slate-400 ml-2">Severity {log.severity}/5</span>
                 </div>
                 <span className="text-xs text-slate-400 whitespace-nowrap">
                   {timeAgo(log.date)}
@@ -457,7 +527,12 @@ interface FertilityChartProps {
   fertileEnd: number;
 }
 
-export function FertilityChart({ entries, markers, fertileStart, fertileEnd }: FertilityChartProps) {
+export function FertilityChart({
+  entries,
+  markers,
+  fertileStart,
+  fertileEnd,
+}: FertilityChartProps) {
   // Take last 28 entries for one cycle view
   const chartData = useMemo(() => {
     const last28 = entries.slice(-28);
@@ -498,7 +573,12 @@ export function FertilityChart({ entries, markers, fertileStart, fertileEnd }: F
             tickLine={false}
             axisLine={{ stroke: '#e2e8f0' }}
             orientation="left"
-            label={{ value: 'Temp (F)', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: '#94a3b8' } }}
+            label={{
+              value: 'Temp (F)',
+              angle: -90,
+              position: 'insideLeft',
+              style: { fontSize: 10, fill: '#94a3b8' },
+            }}
           />
           <YAxis
             yAxisId="fertility"
@@ -507,7 +587,12 @@ export function FertilityChart({ entries, markers, fertileStart, fertileEnd }: F
             tickLine={false}
             axisLine={{ stroke: '#e2e8f0' }}
             orientation="right"
-            label={{ value: 'Fertility %', angle: 90, position: 'insideRight', style: { fontSize: 10, fill: '#94a3b8' } }}
+            label={{
+              value: 'Fertility %',
+              angle: 90,
+              position: 'insideRight',
+              style: { fontSize: 10, fill: '#94a3b8' },
+            }}
           />
           <Tooltip
             contentStyle={{
@@ -524,7 +609,11 @@ export function FertilityChart({ entries, markers, fertileStart, fertileEnd }: F
             x2="Day 16"
             fill="#a78bfa"
             fillOpacity={0.1}
-            label={{ value: 'Fertile Window', position: 'top', style: { fontSize: 10, fill: '#a78bfa' } }}
+            label={{
+              value: 'Fertile Window',
+              position: 'top',
+              style: { fontSize: 10, fill: '#a78bfa' },
+            }}
           />
           {/* BBT shift line */}
           <ReferenceLine
@@ -533,7 +622,11 @@ export function FertilityChart({ entries, markers, fertileStart, fertileEnd }: F
             stroke="#f43f5e"
             strokeDasharray="4 4"
             strokeOpacity={0.5}
-            label={{ value: 'BBT Shift', position: 'left', style: { fontSize: 10, fill: '#f43f5e' } }}
+            label={{
+              value: 'BBT Shift',
+              position: 'left',
+              style: { fontSize: 10, fill: '#f43f5e' },
+            }}
           />
           {/* Temperature line */}
           <Area
@@ -642,14 +735,7 @@ export function PrivacyMeter({ score }: PrivacyMeterProps) {
       <div className="flex justify-center">
         <div className="relative w-32 h-32">
           <svg width="128" height="128" className="-rotate-90">
-            <circle
-              cx="64"
-              cy="64"
-              r={radius}
-              fill="none"
-              stroke="#e2e8f0"
-              strokeWidth="8"
-            />
+            <circle cx="64" cy="64" r={radius} fill="none" stroke="#e2e8f0" strokeWidth="8" />
             <circle
               cx="64"
               cy="64"

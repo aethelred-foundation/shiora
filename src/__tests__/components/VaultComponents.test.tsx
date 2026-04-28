@@ -25,8 +25,11 @@ import { SYMPTOM_CATEGORIES } from '@/lib/constants';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return React.createElement(QueryClientProvider, { client: qc },
-    React.createElement(AppProvider, null, children));
+  return React.createElement(
+    QueryClientProvider,
+    { client: qc },
+    React.createElement(AppProvider, null, children),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -80,7 +83,7 @@ const mockCycleEntries: CycleEntry[] = Array.from({ length: 28 }, (_, i) => ({
   date: Date.now() - (27 - i) * 86400000,
   day: i + 1,
   phase: (['menstrual', 'follicular', 'ovulation', 'luteal'] as const)[Math.floor(i / 7) % 4],
-  temperature: 97.5 + (i * 0.02),
+  temperature: 97.5 + i * 0.02,
   flow: (['none', 'light', 'medium', 'heavy'] as const)[i % 4],
   symptoms: [],
   fertilityScore: 10 + i * 3,
@@ -115,17 +118,19 @@ describe('CompartmentCard', () => {
     render(
       <TestWrapper>
         <CompartmentCard compartment={mockCompartment} onLock={jest.fn()} onUnlock={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Cycle Tracking')).toBeInTheDocument();
-    expect(screen.getByText('Tracks your menstrual cycle patterns and predictions.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Tracks your menstrual cycle patterns and predictions.'),
+    ).toBeInTheDocument();
   });
 
   it('renders record count', () => {
     render(
       <TestWrapper>
         <CompartmentCard compartment={mockCompartment} onLock={jest.fn()} onUnlock={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('45 records')).toBeInTheDocument();
   });
@@ -134,7 +139,7 @@ describe('CompartmentCard', () => {
     render(
       <TestWrapper>
         <CompartmentCard compartment={mockCompartment} onLock={jest.fn()} onUnlock={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('2 providers')).toBeInTheDocument();
   });
@@ -143,7 +148,7 @@ describe('CompartmentCard', () => {
     render(
       <TestWrapper>
         <CompartmentCard compartment={mockCompartment} onLock={jest.fn()} onUnlock={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Unlocked')).toBeInTheDocument();
   });
@@ -151,8 +156,12 @@ describe('CompartmentCard', () => {
   it('renders Locked status badge for locked compartment', () => {
     render(
       <TestWrapper>
-        <CompartmentCard compartment={mockLockedCompartment} onLock={jest.fn()} onUnlock={jest.fn()} />
-      </TestWrapper>
+        <CompartmentCard
+          compartment={mockLockedCompartment}
+          onLock={jest.fn()}
+          onUnlock={jest.fn()}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText('Locked')).toBeInTheDocument();
   });
@@ -160,8 +169,12 @@ describe('CompartmentCard', () => {
   it('renders Partial status badge for partial compartment', () => {
     render(
       <TestWrapper>
-        <CompartmentCard compartment={mockPartialCompartment} onLock={jest.fn()} onUnlock={jest.fn()} />
-      </TestWrapper>
+        <CompartmentCard
+          compartment={mockPartialCompartment}
+          onLock={jest.fn()}
+          onUnlock={jest.fn()}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText('Partial')).toBeInTheDocument();
   });
@@ -171,7 +184,7 @@ describe('CompartmentCard', () => {
     render(
       <TestWrapper>
         <CompartmentCard compartment={mockCompartment} onLock={onLock} onUnlock={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByLabelText('Lock compartment'));
     expect(onLock).toHaveBeenCalled();
@@ -181,8 +194,12 @@ describe('CompartmentCard', () => {
     const onUnlock = jest.fn();
     render(
       <TestWrapper>
-        <CompartmentCard compartment={mockLockedCompartment} onLock={jest.fn()} onUnlock={onUnlock} />
-      </TestWrapper>
+        <CompartmentCard
+          compartment={mockLockedCompartment}
+          onLock={jest.fn()}
+          onUnlock={onUnlock}
+        />
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByLabelText('Unlock compartment'));
     expect(onUnlock).toHaveBeenCalled();
@@ -192,8 +209,12 @@ describe('CompartmentCard', () => {
     const singleAccessCompartment = { ...mockCompartment, accessList: ['aeth1provider001'] };
     render(
       <TestWrapper>
-        <CompartmentCard compartment={singleAccessCompartment} onLock={jest.fn()} onUnlock={jest.fn()} />
-      </TestWrapper>
+        <CompartmentCard
+          compartment={singleAccessCompartment}
+          onLock={jest.fn()}
+          onUnlock={jest.fn()}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText('1 provider')).toBeInTheDocument();
   });
@@ -208,7 +229,7 @@ describe('CycleCalendar', () => {
     render(
       <TestWrapper>
         <CycleCalendar entries={mockCycleEntries} currentDay={14} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Sun')).toBeInTheDocument();
     expect(screen.getByText('Mon')).toBeInTheDocument();
@@ -219,7 +240,7 @@ describe('CycleCalendar', () => {
     render(
       <TestWrapper>
         <CycleCalendar entries={mockCycleEntries} currentDay={14} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Menstrual')).toBeInTheDocument();
     expect(screen.getByText('Follicular')).toBeInTheDocument();
@@ -231,7 +252,7 @@ describe('CycleCalendar', () => {
     const { container } = render(
       <TestWrapper>
         <CycleCalendar entries={[]} currentDay={1} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.firstChild).toBeTruthy();
   });
@@ -246,7 +267,7 @@ describe('SymptomLogger', () => {
     render(
       <TestWrapper>
         <SymptomLogger categories={SYMPTOM_CATEGORIES} onLog={jest.fn()} recentLogs={[]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Select Category')).toBeInTheDocument();
   });
@@ -255,7 +276,7 @@ describe('SymptomLogger', () => {
     render(
       <TestWrapper>
         <SymptomLogger categories={SYMPTOM_CATEGORIES} onLog={jest.fn()} recentLogs={[]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Pain')).toBeInTheDocument();
     expect(screen.getByText('Mood')).toBeInTheDocument();
@@ -267,7 +288,7 @@ describe('SymptomLogger', () => {
     render(
       <TestWrapper>
         <SymptomLogger categories={SYMPTOM_CATEGORIES} onLog={jest.fn()} recentLogs={[]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Recent Symptoms')).toBeInTheDocument();
   });
@@ -276,7 +297,7 @@ describe('SymptomLogger', () => {
     render(
       <TestWrapper>
         <SymptomLogger categories={SYMPTOM_CATEGORIES} onLog={jest.fn()} recentLogs={[]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Click on Pain category
     fireEvent.click(screen.getByText('Pain'));
@@ -290,7 +311,7 @@ describe('SymptomLogger', () => {
     render(
       <TestWrapper>
         <SymptomLogger categories={SYMPTOM_CATEGORIES} onLog={onLog} recentLogs={[]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Pain'));
     fireEvent.click(screen.getByText('Log Symptom'));
@@ -300,8 +321,12 @@ describe('SymptomLogger', () => {
   it('renders recent symptom logs', () => {
     render(
       <TestWrapper>
-        <SymptomLogger categories={SYMPTOM_CATEGORIES} onLog={jest.fn()} recentLogs={[mockSymptomLog]} />
-      </TestWrapper>
+        <SymptomLogger
+          categories={SYMPTOM_CATEGORIES}
+          onLog={jest.fn()}
+          recentLogs={[mockSymptomLog]}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText(/Severity 3\/5/)).toBeInTheDocument();
   });
@@ -310,7 +335,7 @@ describe('SymptomLogger', () => {
     render(
       <TestWrapper>
         <SymptomLogger categories={SYMPTOM_CATEGORIES} onLog={jest.fn()} recentLogs={[]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Pain'));
     const slider = screen.getByRole('slider');
@@ -322,7 +347,7 @@ describe('SymptomLogger', () => {
     render(
       <TestWrapper>
         <SymptomLogger categories={SYMPTOM_CATEGORIES} onLog={jest.fn()} recentLogs={[]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Pain'));
     const textarea = screen.getByPlaceholderText('Add any additional details...');
@@ -345,7 +370,7 @@ describe('FertilityChart', () => {
           fertileStart={10}
           fertileEnd={16}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.firstChild).toBeTruthy();
   });
@@ -359,7 +384,7 @@ describe('FertilityChart', () => {
           fertileStart={10}
           fertileEnd={16}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Temperature')).toBeInTheDocument();
     expect(screen.getByText('Fertility Score')).toBeInTheDocument();
@@ -377,7 +402,7 @@ describe('JurisdictionBadge', () => {
     render(
       <TestWrapper>
         <JurisdictionBadge jurisdiction="California, US" protectionLevel="high" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('California, US')).toBeInTheDocument();
   });
@@ -386,7 +411,7 @@ describe('JurisdictionBadge', () => {
     const { container } = render(
       <TestWrapper>
         <JurisdictionBadge jurisdiction="Florida, US" protectionLevel="medium" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.firstChild).toBeTruthy();
     expect(screen.getByText('Florida, US')).toBeInTheDocument();
@@ -396,7 +421,7 @@ describe('JurisdictionBadge', () => {
     const { container } = render(
       <TestWrapper>
         <JurisdictionBadge jurisdiction="Texas, US" protectionLevel="low" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.firstChild).toBeTruthy();
     expect(screen.getByText('Texas, US')).toBeInTheDocument();
@@ -412,7 +437,7 @@ describe('PrivacyMeter', () => {
     render(
       <TestWrapper>
         <PrivacyMeter score={mockPrivacyScore} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Overall score is 88 and dataMinimizationScore is also 88, so use getAllByText
     const scores = screen.getAllByText('88');
@@ -424,7 +449,7 @@ describe('PrivacyMeter', () => {
     render(
       <TestWrapper>
         <PrivacyMeter score={mockPrivacyScore} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Encryption')).toBeInTheDocument();
     expect(screen.getByText('Access Control')).toBeInTheDocument();
@@ -436,7 +461,7 @@ describe('PrivacyMeter', () => {
     render(
       <TestWrapper>
         <PrivacyMeter score={mockPrivacyScore} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('98')).toBeInTheDocument();
     expect(screen.getByText('85')).toBeInTheDocument();
@@ -454,7 +479,7 @@ describe('PrivacyMeter', () => {
     render(
       <TestWrapper>
         <PrivacyMeter score={mediumScore} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('70')).toBeInTheDocument();
   });
@@ -470,7 +495,7 @@ describe('PrivacyMeter', () => {
     const { container } = render(
       <TestWrapper>
         <PrivacyMeter score={lowScore} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // overall=45 and encryptionScore=45 will both render as "45"
     const fortyFives = screen.getAllByText('45');

@@ -6,18 +6,9 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  successResponse,
-  errorResponse,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
-import {
-  seededRandom,
-  seededInt,
-  seededHex,
-  seededPick,
-} from '@/lib/utils';
+import { seededRandom, seededInt, seededHex, seededPick } from '@/lib/utils';
 import { ALERT_METRICS } from '@/lib/constants';
 import type { AlertRule, AlertSeverity, AlertChannel, AlertMetric } from '@/types';
 
@@ -80,7 +71,11 @@ export async function POST(request: NextRequest) {
     const { metric, condition, threshold, unit, severity, channels, cooldownMinutes } = body;
 
     if (!metric || !condition || threshold === undefined || !severity) {
-      return errorResponse('VALIDATION_ERROR', 'metric, condition, threshold, and severity are required', HTTP.BAD_REQUEST);
+      return errorResponse(
+        'VALIDATION_ERROR',
+        'metric, condition, threshold, and severity are required',
+        HTTP.BAD_REQUEST,
+      );
     }
 
     const seed = Date.now();

@@ -7,16 +7,42 @@
 
 import React from 'react';
 import {
-  Heart, Wind, Brain, Zap, Bone, Apple, Droplets,
-  CircleDot, Shield, Baby, TrendingUp, TrendingDown,
-  Minus, Play, CheckCircle, Clock, AlertTriangle,
-  Activity, RefreshCw, Cpu, FileText, Settings,
-  Sliders, ChevronRight,
+  Heart,
+  Wind,
+  Brain,
+  Zap,
+  Bone,
+  Apple,
+  Droplets,
+  CircleDot,
+  Shield,
+  Baby,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Play,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  Activity,
+  RefreshCw,
+  Cpu,
+  FileText,
+  Settings,
+  Sliders,
+  ChevronRight,
 } from 'lucide-react';
 import {
-  LineChart, Line, AreaChart, Area,
-  XAxis, YAxis, Tooltip, ResponsiveContainer,
-  CartesianGrid, ReferenceLine,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  ReferenceLine,
 } from 'recharts';
 
 import { MedicalCard, ChartTooltip, TEEBadge, TruncatedHash } from '@/components/ui/PagePrimitives';
@@ -83,9 +109,16 @@ export function OrganScoreCard({
   const meta = getOrganMeta(system);
   const scoreColor = getScoreColor(score);
 
-  const TrendIcon = trend === 'improving' ? TrendingUp : trend === 'declining' ? TrendingDown : Minus;
-  const trendColor = trend === 'improving' ? 'text-emerald-600' : trend === 'declining' ? 'text-rose-600' : 'text-slate-400';
-  const trendLabel = trend === 'improving' ? 'Improving' : trend === 'declining' ? 'Declining' : 'Stable';
+  const TrendIcon =
+    trend === 'improving' ? TrendingUp : trend === 'declining' ? TrendingDown : Minus;
+  const trendColor =
+    trend === 'improving'
+      ? 'text-emerald-600'
+      : trend === 'declining'
+        ? 'text-rose-600'
+        : 'text-slate-400';
+  const trendLabel =
+    trend === 'improving' ? 'Improving' : trend === 'declining' ? 'Declining' : 'Stable';
 
   return (
     <MedicalCard>
@@ -108,7 +141,9 @@ export function OrganScoreCard({
       <div className="mb-2">
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs text-slate-500">Health Score</span>
-          <span className="text-sm font-bold" style={{ color: scoreColor }}>{score}</span>
+          <span className="text-sm font-bold" style={{ color: scoreColor }}>
+            {score}
+          </span>
         </div>
         <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
           <div
@@ -143,7 +178,8 @@ export function SimulationCard({
   isSelected?: boolean;
   onClick?: () => void;
 }) {
-  const statusVariant = SIM_STATUS_VARIANTS[simulation.status] ??
+  const statusVariant =
+    SIM_STATUS_VARIANTS[simulation.status] ??
     /* istanbul ignore next */
     'neutral';
 
@@ -181,8 +217,8 @@ export function SimulationCard({
               {simulation.status === 'completed'
                 ? `Completed ${timeAgo(simulation.completedAt!)}`
                 : simulation.status === 'simulating'
-                ? 'Running...'
-                : 'Pending'}
+                  ? 'Running...'
+                  : 'Pending'}
             </p>
           </div>
         </div>
@@ -204,8 +240,11 @@ export function SimulationCard({
               return (
                 <div key={i} className="text-center p-2 bg-slate-50 rounded-lg">
                   <p className="text-xs text-slate-500 truncate">{bm.metric}</p>
-                  <p className={`text-sm font-bold ${isImproving ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {change > 0 ? '+' : ''}{change.toFixed(1)}%
+                  <p
+                    className={`text-sm font-bold ${isImproving ? 'text-emerald-600' : 'text-rose-600'}`}
+                  >
+                    {change > 0 ? '+' : ''}
+                    {change.toFixed(1)}%
                   </p>
                 </div>
               );
@@ -216,9 +255,7 @@ export function SimulationCard({
 
       {/* Confidence + TEE */}
       <div className="flex items-center justify-between mt-3">
-        <span className="text-xs text-slate-400">
-          Confidence: {simulation.confidenceInterval}%
-        </span>
+        <span className="text-xs text-slate-400">Confidence: {simulation.confidenceInterval}%</span>
         <TEEBadge verified={simulation.status === 'completed'} />
       </div>
     </MedicalCard>
@@ -233,7 +270,8 @@ export function SimulationDetailChart({ simulation }: { simulation: TwinSimulati
   const { trajectoryData } = simulation;
   if (trajectoryData.length === 0) return null;
 
-  const metric = trajectoryData[0]?.metric ??
+  const metric =
+    trajectoryData[0]?.metric ??
     /* istanbul ignore next */
     'Metric';
 
@@ -256,7 +294,13 @@ export function SimulationDetailChart({ simulation }: { simulation: TwinSimulati
               tick={{ fontSize: 10, fill: '#94a3b8' }}
               tickLine={false}
               axisLine={{ stroke: '#e2e8f0' }}
-              label={{ value: 'Days', position: 'insideBottom', offset: -2, fontSize: 10, fill: '#94a3b8' }}
+              label={{
+                value: 'Days',
+                position: 'insideBottom',
+                offset: -2,
+                fontSize: 10,
+                fill: '#94a3b8',
+              }}
             />
             <YAxis
               tick={{ fontSize: 10, fill: '#94a3b8' }}
@@ -293,10 +337,18 @@ export function SimulationDetailChart({ simulation }: { simulation: TwinSimulati
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/50">
-                <th className="py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Metric</th>
-                <th className="py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Before</th>
-                <th className="py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">After</th>
-                <th className="py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Change</th>
+                <th className="py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Metric
+                </th>
+                <th className="py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Before
+                </th>
+                <th className="py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  After
+                </th>
+                <th className="py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Change
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -306,7 +358,10 @@ export function SimulationDetailChart({ simulation }: { simulation: TwinSimulati
                 if (!am) return null;
                 const change = ((am.value - bm.value) / bm.value) * 100;
                 return (
-                  <tr key={i} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                  <tr
+                    key={i}
+                    className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors"
+                  >
                     <td className="py-2 px-3 text-sm font-medium text-slate-900">{bm.metric}</td>
                     <td className="py-2 px-3 text-sm text-slate-600">
                       {bm.value} <span className="text-xs text-slate-400">{bm.unit}</span>
@@ -315,8 +370,11 @@ export function SimulationDetailChart({ simulation }: { simulation: TwinSimulati
                       {am.value} <span className="text-xs text-slate-400">{am.unit}</span>
                     </td>
                     <td className="py-2 px-3">
-                      <span className={`text-sm font-bold ${change < 0 ? 'text-emerald-600' : change > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
-                        {change > 0 ? '+' : ''}{change.toFixed(1)}%
+                      <span
+                        className={`text-sm font-bold ${change < 0 ? 'text-emerald-600' : change > 0 ? 'text-rose-600' : 'text-slate-400'}`}
+                      >
+                        {change > 0 ? '+' : ''}
+                        {change.toFixed(1)}%
                       </span>
                     </td>
                   </tr>
@@ -417,7 +475,8 @@ export function PredictionCard({ prediction }: { prediction: TwinPrediction }) {
   const allValues = trendData.map((d) => d.value);
   const minVal = Math.min(...allValues);
   const maxVal = Math.max(...allValues);
-  const padding = (maxVal - minVal) * 0.2 ||
+  const padding =
+    (maxVal - minVal) * 0.2 ||
     /* istanbul ignore next */
     1;
 
@@ -451,7 +510,9 @@ export function PredictionCard({ prediction }: { prediction: TwinPrediction }) {
         </div>
         <div className="text-center p-2 bg-slate-50 rounded-lg">
           <p className="text-xs text-slate-500">90d</p>
-          <p className={`text-sm font-bold ${prediction.riskLevel === 'high' ? 'text-rose-600' : prediction.riskLevel === 'moderate' ? 'text-amber-600' : 'text-emerald-600'}`}>
+          <p
+            className={`text-sm font-bold ${prediction.riskLevel === 'high' ? 'text-rose-600' : prediction.riskLevel === 'moderate' ? 'text-amber-600' : 'text-emerald-600'}`}
+          >
             {prediction.predicted90d}
           </p>
         </div>
@@ -463,8 +524,28 @@ export function PredictionCard({ prediction }: { prediction: TwinPrediction }) {
           <AreaChart data={trendData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
             <defs>
               <linearGradient id={`predGrad-${prediction.id}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={prediction.riskLevel === 'high' ? '#ef4444' : prediction.riskLevel === 'moderate' ? '#f59e0b' : '#10b981'} stopOpacity={0.3} />
-                <stop offset="100%" stopColor={prediction.riskLevel === 'high' ? '#ef4444' : prediction.riskLevel === 'moderate' ? '#f59e0b' : '#10b981'} stopOpacity={0} />
+                <stop
+                  offset="0%"
+                  stopColor={
+                    prediction.riskLevel === 'high'
+                      ? '#ef4444'
+                      : prediction.riskLevel === 'moderate'
+                        ? '#f59e0b'
+                        : '#10b981'
+                  }
+                  stopOpacity={0.3}
+                />
+                <stop
+                  offset="100%"
+                  stopColor={
+                    prediction.riskLevel === 'high'
+                      ? '#ef4444'
+                      : prediction.riskLevel === 'moderate'
+                        ? '#f59e0b'
+                        : '#10b981'
+                  }
+                  stopOpacity={0}
+                />
               </linearGradient>
             </defs>
             <XAxis
@@ -473,14 +554,17 @@ export function PredictionCard({ prediction }: { prediction: TwinPrediction }) {
               tickLine={false}
               axisLine={false}
             />
-            <YAxis
-              domain={[Math.floor(minVal - padding), Math.ceil(maxVal + padding)]}
-              hide
-            />
+            <YAxis domain={[Math.floor(minVal - padding), Math.ceil(maxVal + padding)]} hide />
             <Area
               type="monotone"
               dataKey="value"
-              stroke={prediction.riskLevel === 'high' ? '#ef4444' : prediction.riskLevel === 'moderate' ? '#f59e0b' : '#10b981'}
+              stroke={
+                prediction.riskLevel === 'high'
+                  ? '#ef4444'
+                  : prediction.riskLevel === 'moderate'
+                    ? '#f59e0b'
+                    : '#10b981'
+              }
               strokeWidth={2}
               fill={`url(#predGrad-${prediction.id})`}
               dot={{ r: 3, strokeWidth: 0 }}
@@ -494,15 +578,26 @@ export function PredictionCard({ prediction }: { prediction: TwinPrediction }) {
         <span className="text-xs text-slate-500">
           {prediction.unit} &middot; CI: {prediction.confidenceBand}%
         </span>
-        <div className={`flex items-center gap-1 text-xs ${isRising ? 'text-rose-500' : 'text-emerald-500'}`}>
-          {isRising ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-          <span className="font-medium">{isRising ? '+' : ''}{trend90.toFixed(1)}</span>
+        <div
+          className={`flex items-center gap-1 text-xs ${isRising ? 'text-rose-500' : 'text-emerald-500'}`}
+        >
+          {isRising ? (
+            <TrendingUp className="w-3.5 h-3.5" />
+          ) : (
+            <TrendingDown className="w-3.5 h-3.5" />
+          )}
+          <span className="font-medium">
+            {isRising ? '+' : ''}
+            {trend90.toFixed(1)}
+          </span>
         </div>
       </div>
 
       {/* Recommendations */}
       <div className="border-t border-slate-100 pt-3">
-        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">Recommendations</p>
+        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">
+          Recommendations
+        </p>
         <ul className="space-y-1">
           {prediction.recommendations.map((rec, i) => (
             <li key={i} className="text-xs text-slate-600 flex items-start gap-1.5">
@@ -543,7 +638,9 @@ export function TimelineEventItem({ event }: { event: TwinTimelineEvent }) {
   return (
     <div className="flex gap-4 py-4 border-b border-slate-100 last:border-0">
       {/* Icon */}
-      <div className={`w-10 h-10 rounded-xl ${eventStyle.bg} flex items-center justify-center shrink-0`}>
+      <div
+        className={`w-10 h-10 rounded-xl ${eventStyle.bg} flex items-center justify-center shrink-0`}
+      >
         {eventStyle.icon}
       </div>
 
@@ -559,9 +656,7 @@ export function TimelineEventItem({ event }: { event: TwinTimelineEvent }) {
             <Clock className="w-3 h-3 inline mr-1" />
             {formatDateTime(event.timestamp)}
           </span>
-          {event.attestation && (
-            <TruncatedHash hash={event.attestation} startLen={8} endLen={4} />
-          )}
+          {event.attestation && <TruncatedHash hash={event.attestation} startLen={8} endLen={4} />}
         </div>
       </div>
     </div>

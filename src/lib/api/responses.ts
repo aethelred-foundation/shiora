@@ -22,6 +22,7 @@ export const HTTP = {
   UNPROCESSABLE: 422,
   TOO_MANY_REQUESTS: 429,
   INTERNAL: 500,
+  SERVICE_UNAVAILABLE: 503,
 } as const;
 
 // ────────────────────────────────────────────────────────────

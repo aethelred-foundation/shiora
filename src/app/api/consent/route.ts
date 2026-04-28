@@ -8,24 +8,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 
-import type {
-  ConsentGrant,
-  PaginatedResponse,
-  ApiResponse,
-} from '@/types';
-import {
-  seededHex,
-  seededAddress,
-  generateTxHash,
-  generateAttestation,
-} from '@/lib/utils';
+import type { ConsentGrant, PaginatedResponse, ApiResponse } from '@/types';
+import { seededHex, seededAddress, generateTxHash, generateAttestation } from '@/lib/utils';
 import {
   ConsentCreateSchema,
   ConsentListQuerySchema,
   parseSearchParams,
 } from '@/lib/api/validation';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
-import { createConsent, listConsents } from '@/lib/api/store';
+import { createConsent, listConsents } from '@/lib/api/store-service';
 
 // ---------------------------------------------------------------------------
 // GET /api/consent
@@ -39,12 +30,9 @@ export async function GET(request: NextRequest) {
     const auth = requireAuth(request);
     if ('status' in auth) return auth;
 
-    const query = parseSearchParams(
-      ConsentListQuerySchema,
-      request.nextUrl.searchParams,
-    );
+    const query = parseSearchParams(ConsentListQuerySchema, request.nextUrl.searchParams);
 
-    let filtered = listConsents(auth.walletAddress!);
+    let filtered = await listConsents(auth.walletAddress!);
 
     if (query.status) {
       filtered = filtered.filter((consent) => consent.status === query.status);
@@ -59,8 +47,8 @@ export async function GET(request: NextRequest) {
       const q = query.search.toLowerCase();
       filtered = filtered.filter(
         (consent) =>
-          consent.providerName.toLowerCase().includes(q)
-          || consent.providerAddress.toLowerCase().includes(q),
+          consent.providerName.toLowerCase().includes(q) ||
+          consent.providerAddress.toLowerCase().includes(q),
       );
     }
 
@@ -125,7 +113,7 @@ export async function POST(request: NextRequest) {
     const form = ConsentCreateSchema.parse(await request.json());
 
     const seed = Date.now();
-    const consent = createConsent(auth.walletAddress!, {
+    const consent = await createConsent(auth.walletAddress!, {
       id: `consent-${seededHex(seed, 12)}`,
       patientAddress: auth.walletAddress!,
       providerAddress: form.providerAddress || seededAddress(seed + 2),

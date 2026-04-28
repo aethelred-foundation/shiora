@@ -13,12 +13,7 @@ import {
   PredictionCard,
   TimelineEventItem,
 } from '@/components/twin/TwinComponents';
-import type {
-  TwinSimulation,
-  TwinParameter,
-  TwinPrediction,
-  TwinTimelineEvent,
-} from '@/types';
+import type { TwinSimulation, TwinParameter, TwinPrediction, TwinTimelineEvent } from '@/types';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   return <AppProvider>{children}</AppProvider>;
@@ -99,7 +94,7 @@ describe('OrganScoreCard', () => {
           trend="improving"
           lastUpdated={Date.now() - 3600000}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Health Score')).toBeInTheDocument();
     expect(screen.getByText('82')).toBeInTheDocument();
@@ -115,7 +110,7 @@ describe('OrganScoreCard', () => {
           trend="declining"
           lastUpdated={Date.now() - 3600000}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Declining')).toBeInTheDocument();
     expect(screen.getByText('50')).toBeInTheDocument();
@@ -130,7 +125,7 @@ describe('OrganScoreCard', () => {
           trend="stable"
           lastUpdated={Date.now() - 3600000}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Stable')).toBeInTheDocument();
   });
@@ -144,7 +139,7 @@ describe('OrganScoreCard', () => {
           trend="improving"
           lastUpdated={Date.now()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('90')).toBeInTheDocument();
   });
@@ -158,7 +153,7 @@ describe('OrganScoreCard', () => {
           trend="stable"
           lastUpdated={Date.now()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('72')).toBeInTheDocument();
   });
@@ -166,13 +161,8 @@ describe('OrganScoreCard', () => {
   it('renders low-medium score (55-69) with yellow color', () => {
     render(
       <TestWrapper>
-        <OrganScoreCard
-          system="endocrine"
-          score={60}
-          trend="declining"
-          lastUpdated={Date.now()}
-        />
-      </TestWrapper>
+        <OrganScoreCard system="endocrine" score={60} trend="declining" lastUpdated={Date.now()} />
+      </TestWrapper>,
     );
     expect(screen.getByText('60')).toBeInTheDocument();
   });
@@ -180,13 +170,8 @@ describe('OrganScoreCard', () => {
   it('renders low score (< 55) with red color', () => {
     render(
       <TestWrapper>
-        <OrganScoreCard
-          system="renal"
-          score={40}
-          trend="declining"
-          lastUpdated={Date.now()}
-        />
-      </TestWrapper>
+        <OrganScoreCard system="renal" score={40} trend="declining" lastUpdated={Date.now()} />
+      </TestWrapper>,
     );
     expect(screen.getByText('40')).toBeInTheDocument();
   });
@@ -200,7 +185,7 @@ describe('OrganScoreCard', () => {
           trend="stable"
           lastUpdated={Date.now()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('unknownsystem')).toBeInTheDocument();
   });
@@ -215,7 +200,7 @@ describe('SimulationCard', () => {
     render(
       <TestWrapper>
         <SimulationCard simulation={mockSimulation} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Statin Therapy Start')).toBeInTheDocument();
     expect(screen.getByText('completed')).toBeInTheDocument();
@@ -225,7 +210,7 @@ describe('SimulationCard', () => {
     render(
       <TestWrapper>
         <SimulationCard simulation={mockSimulation} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/Simulate the effect of starting atorvastatin/)).toBeInTheDocument();
   });
@@ -234,7 +219,7 @@ describe('SimulationCard', () => {
     render(
       <TestWrapper>
         <SimulationCard simulation={mockSimulation} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('LDL Cholesterol')).toBeInTheDocument();
     expect(screen.getByText('Total Cholesterol')).toBeInTheDocument();
@@ -255,7 +240,7 @@ describe('SimulationCard', () => {
     render(
       <TestWrapper>
         <SimulationCard simulation={worseningSim} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Positive change should show '+' prefix and rose color
     expect(screen.getByText('+25.0%')).toBeInTheDocument();
@@ -272,7 +257,7 @@ describe('SimulationDetailChart', () => {
     render(
       <TestWrapper>
         <SimulationDetailChart simulation={mockSimulation} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('LDL Cholesterol Trajectory')).toBeInTheDocument();
   });
@@ -294,7 +279,7 @@ describe('SimulationDetailChart', () => {
     render(
       <TestWrapper>
         <SimulationDetailChart simulation={mixedSim} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Worsening metric (positive change) should show rose color with '+' prefix
     expect(screen.getByText('+30.0%')).toBeInTheDocument();
@@ -307,7 +292,7 @@ describe('SimulationDetailChart', () => {
     const { container } = render(
       <TestWrapper>
         <SimulationDetailChart simulation={emptySim} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.firstChild).toBeNull();
   });
@@ -322,7 +307,7 @@ describe('ParameterSlider', () => {
     render(
       <TestWrapper>
         <ParameterSlider parameter={mockParameter} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Resting Heart Rate')).toBeInTheDocument();
     expect(screen.getByText('Cardiovascular')).toBeInTheDocument();
@@ -334,7 +319,7 @@ describe('ParameterSlider', () => {
     render(
       <TestWrapper>
         <ParameterSlider parameter={mockParameter} overrideValue={85} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('85')).toBeInTheDocument();
     expect(screen.getByText('Modified (was 72)')).toBeInTheDocument();
@@ -345,7 +330,7 @@ describe('ParameterSlider', () => {
     render(
       <TestWrapper>
         <ParameterSlider parameter={mockParameter} onChange={onChange} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const slider = screen.getByRole('slider');
     fireEvent.change(slider, { target: { value: '80' } });
@@ -362,7 +347,7 @@ describe('PredictionCard', () => {
     render(
       <TestWrapper>
         <PredictionCard prediction={mockPrediction} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Fasting Glucose')).toBeInTheDocument();
     expect(screen.getByText('moderate risk')).toBeInTheDocument();
@@ -373,7 +358,7 @@ describe('PredictionCard', () => {
     render(
       <TestWrapper>
         <PredictionCard prediction={mockPrediction} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('102')).toBeInTheDocument();
     expect(screen.getByText('105')).toBeInTheDocument();
@@ -384,7 +369,7 @@ describe('PredictionCard', () => {
     render(
       <TestWrapper>
         <PredictionCard prediction={mockPrediction} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Reduce carbohydrate intake')).toBeInTheDocument();
     expect(screen.getByText('Increase daily walking')).toBeInTheDocument();
@@ -400,7 +385,7 @@ describe('TimelineEventItem', () => {
     render(
       <TestWrapper>
         <TimelineEventItem event={mockEvent} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Statin Simulation Run')).toBeInTheDocument();
     expect(screen.getByText(/Completed simulation of atorvastatin/)).toBeInTheDocument();
@@ -410,7 +395,7 @@ describe('TimelineEventItem', () => {
     render(
       <TestWrapper>
         <TimelineEventItem event={mockEvent} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('simulation')).toBeInTheDocument();
   });
@@ -426,7 +411,7 @@ describe('TimelineEventItem', () => {
     render(
       <TestWrapper>
         <TimelineEventItem event={noAttestation} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Data Sync Event')).toBeInTheDocument();
     expect(screen.getByText('data sync')).toBeInTheDocument();
@@ -444,7 +429,7 @@ describe('TimelineEventItem', () => {
     render(
       <TestWrapper>
         <TimelineEventItem event={creation} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Twin Created')).toBeInTheDocument();
   });
@@ -460,7 +445,7 @@ describe('TimelineEventItem', () => {
     render(
       <TestWrapper>
         <TimelineEventItem event={paramUpdate} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Parameter Changed')).toBeInTheDocument();
     expect(screen.getByText('parameter update')).toBeInTheDocument();
@@ -477,7 +462,7 @@ describe('TimelineEventItem', () => {
     render(
       <TestWrapper>
         <TimelineEventItem event={pred} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Prediction Generated')).toBeInTheDocument();
   });
@@ -493,7 +478,7 @@ describe('TimelineEventItem', () => {
     render(
       <TestWrapper>
         <TimelineEventItem event={unknown} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Unknown Event')).toBeInTheDocument();
   });
@@ -513,7 +498,7 @@ describe('SimulationCard — branch coverage', () => {
     render(
       <TestWrapper>
         <SimulationCard simulation={sim} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('simulating')).toBeInTheDocument();
     expect(screen.getByText('Running...')).toBeInTheDocument();
@@ -528,7 +513,7 @@ describe('SimulationCard — branch coverage', () => {
     render(
       <TestWrapper>
         <SimulationCard simulation={sim} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('pending')).toBeInTheDocument();
     expect(screen.getByText('Pending')).toBeInTheDocument();
@@ -538,7 +523,7 @@ describe('SimulationCard — branch coverage', () => {
     const { container } = render(
       <TestWrapper>
         <SimulationCard simulation={mockSimulation} isSelected />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const card = container.querySelector('.ring-2');
     expect(card).toBeInTheDocument();
@@ -553,7 +538,7 @@ describe('SimulationCard — branch coverage', () => {
     render(
       <TestWrapper>
         <SimulationCard simulation={sim} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('failed')).toBeInTheDocument();
   });
@@ -567,7 +552,7 @@ describe('SimulationCard — branch coverage', () => {
     render(
       <TestWrapper>
         <SimulationCard simulation={sim} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText(/LDL Cholesterol/)).not.toBeInTheDocument();
   });
@@ -587,7 +572,7 @@ describe('SimulationDetailChart — branch coverage', () => {
     render(
       <TestWrapper>
         <SimulationDetailChart simulation={sim} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('0.0%')).toBeInTheDocument();
   });
@@ -607,7 +592,7 @@ describe('PredictionCard — branch coverage', () => {
     render(
       <TestWrapper>
         <PredictionCard prediction={pred} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('high risk')).toBeInTheDocument();
   });
@@ -621,7 +606,7 @@ describe('PredictionCard — branch coverage', () => {
     render(
       <TestWrapper>
         <PredictionCard prediction={pred} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('low risk')).toBeInTheDocument();
   });
@@ -635,7 +620,7 @@ describe('PredictionCard — branch coverage', () => {
     render(
       <TestWrapper>
         <PredictionCard prediction={pred} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/-25\.0/)).toBeInTheDocument();
   });
@@ -648,7 +633,7 @@ describe('PredictionCard — branch coverage', () => {
     render(
       <TestWrapper>
         <PredictionCard prediction={pred} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('unknown risk')).toBeInTheDocument();
   });
@@ -663,7 +648,7 @@ describe('ParameterSlider — branch coverage', () => {
     render(
       <TestWrapper>
         <ParameterSlider parameter={mockParameter} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText(/Modified/)).not.toBeInTheDocument();
   });
@@ -672,7 +657,7 @@ describe('ParameterSlider — branch coverage', () => {
     render(
       <TestWrapper>
         <ParameterSlider parameter={mockParameter} overrideValue={72} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText(/Modified/)).not.toBeInTheDocument();
   });

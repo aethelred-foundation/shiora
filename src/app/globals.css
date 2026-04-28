@@ -7,16 +7,16 @@
    ========================================================================== */
 
 :root {
-  --color-primary: #8B1538;
-  --color-primary-dark: #6E1130;
-  --color-accent: #C9A227;
+  --color-primary: #8b1538;
+  --color-primary-dark: #6e1130;
+  --color-accent: #c9a227;
   --color-secondary: #a78bfa;
   --color-success: #10b981;
   --color-warning: #fb923c;
   --color-error: #f43f5e;
-  --color-surface: #FFF8F0;
+  --color-surface: #fff8f0;
   --color-surface-raised: #ffffff;
-  --color-border: #FFEBD4;
+  --color-border: #ffebd4;
 }
 
 /* ---------- Base ---------- */
@@ -26,11 +26,18 @@ html {
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #FFF8F0;
+  background-color: #fff8f0;
   color: #1a1a1a;
 }
 
@@ -38,7 +45,7 @@ body {
 
 ::selection {
   background: rgba(139, 21, 56, 0.2);
-  color: #3B091A;
+  color: #3b091a;
 }
 
 /* ---------- Focus Visible ---------- */
@@ -48,7 +55,7 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid #8B1538;
+  outline: 2px solid #8b1538;
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -61,16 +68,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #FFF3E6;
+  background: #fff3e6;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #FFDFC0;
+  background: #ffdfc0;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #C9A227;
+  background: #c9a227;
 }
 
 /* ==========================================================================
@@ -78,33 +85,64 @@ body {
    ========================================================================== */
 
 @keyframes modal-overlay-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modal-content-in {
-  from { opacity: 0; transform: scale(0.95) translateY(10px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 @keyframes drawer-in {
-  from { transform: translateX(100%); }
-  to   { transform: translateX(0); }
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 @keyframes toast-in {
-  from { transform: translateX(100%); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes countUp {
-  from { opacity: 0; transform: translateY(5px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 5px rgba(139, 21, 56, 0.2); }
-  50%      { box-shadow: 0 0 20px rgba(139, 21, 56, 0.4); }
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(139, 21, 56, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(139, 21, 56, 0.4);
+  }
 }
 
 .glow-pulse {
@@ -112,13 +150,25 @@ body {
 }
 
 @keyframes live-dot {
-  0%, 100% { transform: scale(1);   opacity: 1; }
-  50%      { transform: scale(1.5); opacity: 0.5; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.5;
+  }
 }
 
 @keyframes pulse-slow {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .animate-pulse-slow {
@@ -126,8 +176,16 @@ body {
 }
 
 @keyframes slide-in-top {
-  from { transform: translateY(-20px); opacity: 0; max-height: 0; }
-  to   { transform: translateY(0);     opacity: 1; max-height: 200px; }
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+    max-height: 200px;
+  }
 }
 
 .slide-in-top {
@@ -135,8 +193,12 @@ body {
 }
 
 @keyframes slide-in-right {
-  from { transform: translateX(100%); }
-  to   { transform: translateX(0); }
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 .animate-slide-in-right {
@@ -144,8 +206,12 @@ body {
 }
 
 @keyframes skeleton-loading {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* ==========================================================================
@@ -200,11 +266,15 @@ body {
 }
 
 .card-shadow {
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+  box-shadow:
+    0 1px 3px 0 rgb(0 0 0 / 0.06),
+    0 1px 2px -1px rgb(0 0 0 / 0.06);
 }
 
 .card-shadow-hover:hover {
-  box-shadow: 0 4px 12px -1px rgb(0 0 0 / 0.08), 0 2px 6px -2px rgb(0 0 0 / 0.04);
+  box-shadow:
+    0 4px 12px -1px rgb(0 0 0 / 0.08),
+    0 2px 6px -2px rgb(0 0 0 / 0.04);
 }
 
 /* ==========================================================================
@@ -222,8 +292,8 @@ body {
    ========================================================================== */
 
 .code-block {
-  font-family: 'JetBrains Mono', 'Fira Code', Consolas, Monaco,
-    'Andale Mono', 'Ubuntu Mono', monospace;
+  font-family:
+    'JetBrains Mono', 'Fira Code', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
   font-size: 0.875rem;
   line-height: 1.5;
 }
@@ -264,7 +334,9 @@ body {
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.2s, visibility 0.2s;
+  transition:
+    opacity 0.2s,
+    visibility 0.2s;
   z-index: 50;
 }
 

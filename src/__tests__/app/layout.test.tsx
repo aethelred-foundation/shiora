@@ -34,7 +34,9 @@ describe('RootLayout', () => {
 
   it('returns a JSX tree containing html and body elements', () => {
     // Call the RootLayout function directly to exercise its code path
-    const result = RootLayout({ children: React.createElement('div', { 'data-testid': 'child' }, 'test') });
+    const result = RootLayout({
+      children: React.createElement('div', { 'data-testid': 'child' }, 'test'),
+    });
     // The result is a React element representing <html>...</html>
     expect(result).toBeTruthy();
     expect(result.type).toBe('html');
@@ -44,9 +46,9 @@ describe('RootLayout', () => {
   it('renders children via Providers wrapper', () => {
     // Render the Providers component (which layout.tsx wraps children with)
     // along with a sentinel child to confirm the tree is wired correctly.
-    const { Providers } = jest.requireActual(
-      '@/components/layout/Providers',
-    ) as { Providers: React.ComponentType<{ children: React.ReactNode }> };
+    const { Providers } = jest.requireActual('@/components/layout/Providers') as {
+      Providers: React.ComponentType<{ children: React.ReactNode }>;
+    };
 
     const qc = new QueryClient({
       defaultOptions: { queries: { retry: false, gcTime: 0 } },

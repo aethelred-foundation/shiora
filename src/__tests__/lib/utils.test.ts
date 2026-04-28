@@ -245,7 +245,8 @@ describe('copyToClipboard', () => {
   });
 
   it('suppresses clipboard errors', async () => {
-    const writeTextMock = jest.spyOn(navigator.clipboard, 'writeText')
+    const writeTextMock = jest
+      .spyOn(navigator.clipboard, 'writeText')
       .mockRejectedValueOnce(new Error('clipboard access denied'));
 
     // Should not throw

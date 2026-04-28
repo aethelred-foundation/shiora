@@ -6,16 +6,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import type {
-  ProviderReputation,
-  TrustLevel,
-  ApiResponse,
-} from '@/types';
-import {
-  seededInt,
-  seededPick,
-  seededAddress,
-} from '@/lib/utils';
+import type { ProviderReputation, TrustLevel, ApiResponse } from '@/types';
+import { seededInt, seededPick, seededAddress } from '@/lib/utils';
 import { PROVIDER_NAMES, SPECIALTIES } from '@/lib/constants';
 
 // ---------------------------------------------------------------------------
@@ -71,9 +63,7 @@ export async function GET(request: NextRequest) {
   if (search) {
     const q = search.toLowerCase();
     filtered = filtered.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.specialty.toLowerCase().includes(q),
+      (p) => p.name.toLowerCase().includes(q) || p.specialty.toLowerCase().includes(q),
     );
   }
 

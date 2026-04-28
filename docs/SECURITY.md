@@ -60,6 +60,9 @@ User Master Key
 - Health records stored on IPFS as encrypted blobs
 - Encryption metadata (algorithm, IV length) stored on-chain
 - No plaintext data exists outside the user's browser or TEE enclaves
+- Local demo API state, when enabled outside production, is schema-versioned and can be encrypted with AES-256-GCM via `SHIORA_DEMO_STORE_ENCRYPTION_KEY`
+- Regulated production deployments must use a durable audited datastore; the demo store is fail-closed in production unless explicitly overridden
+- Local/demo store mutations are appended to `.shiora-data/store-audit.jsonl` with a `previousHash` -> `entryHash` chain and operation metadata only; labels and descriptions are not journaled
 
 ### Data in Transit
 
@@ -81,11 +84,11 @@ Trusted Execution Environments (TEEs) provide hardware-enforced isolation for pr
 
 ### Supported Platforms
 
-| Platform   | Hardware                     | Use Case                     |
-|------------|------------------------------|------------------------------|
-| Intel SGX  | Intel Xeon with SGX support  | Primary inference platform   |
-| AWS Nitro  | AWS EC2 instances            | Cloud-native deployments     |
-| AMD SEV    | AMD EPYC processors         | Alternative compute          |
+| Platform  | Hardware                    | Use Case                   |
+| --------- | --------------------------- | -------------------------- |
+| Intel SGX | Intel Xeon with SGX support | Primary inference platform |
+| AWS Nitro | AWS EC2 instances           | Cloud-native deployments   |
+| AMD SEV   | AMD EPYC processors         | Alternative compute        |
 
 ### Attestation Protocol
 
@@ -160,12 +163,12 @@ Patient (Data Owner)
 
 ### Grant Properties
 
-| Property    | Description                                   |
-|-------------|-----------------------------------------------|
-| Scope       | Which record types the provider can access     |
-| Duration    | Time-limited expiry (e.g., 90 days)            |
-| canView     | Permission to view records inside TEE          |
-| canDownload | Permission to export decrypted data from TEE   |
+| Property    | Description                                      |
+| ----------- | ------------------------------------------------ |
+| Scope       | Which record types the provider can access       |
+| Duration    | Time-limited expiry (e.g., 90 days)              |
+| canView     | Permission to view records inside TEE            |
+| canDownload | Permission to export decrypted data from TEE     |
 | canShare    | Permission to share records with other providers |
 
 ### Smart Contract Enforcement
@@ -201,17 +204,17 @@ Patients can instantly revoke provider access:
 
 ### Covered Areas
 
-| HIPAA Requirement          | Shiora Implementation                     |
-|----------------------------|-------------------------------------------|
+| HIPAA Requirement          | Shiora Implementation                      |
+| -------------------------- | ------------------------------------------ |
 | Access controls            | Smart contract-enforced, wallet-based auth |
-| Audit controls             | Immutable on-chain audit trail            |
-| Integrity controls         | CID content-addressing, TEE attestations  |
-| Transmission security      | TLS 1.3, E2E encryption (AES-256-GCM)    |
-| Encryption at rest         | AES-256-GCM, keys derived from wallet     |
-| Unique user identification | Aethelred wallet addresses                |
-| Emergency access           | Multi-sig emergency recovery mechanism    |
-| Automatic logoff           | JWT expiry, session timeout               |
-| Backup and recovery        | IPFS multi-node pinning, on-chain CIDs    |
+| Audit controls             | Immutable on-chain audit trail             |
+| Integrity controls         | CID content-addressing, TEE attestations   |
+| Transmission security      | TLS 1.3, E2E encryption (AES-256-GCM)      |
+| Encryption at rest         | AES-256-GCM, keys derived from wallet      |
+| Unique user identification | Aethelred wallet addresses                 |
+| Emergency access           | Multi-sig emergency recovery mechanism     |
+| Automatic logoff           | JWT expiry, session timeout                |
+| Backup and recovery        | IPFS multi-node pinning, on-chain CIDs     |
 | Risk analysis              | Regular security audits, penetration tests |
 
 ### PHI Handling
@@ -234,14 +237,14 @@ Shiora operates with the following data handling guarantees:
 
 The application sets the following security headers via `next.config.js`:
 
-| Header                    | Value                                    |
-|---------------------------|------------------------------------------|
-| X-Frame-Options           | DENY                                     |
-| X-Content-Type-Options    | nosniff                                  |
-| X-XSS-Protection          | 1; mode=block                            |
-| Referrer-Policy           | strict-origin-when-cross-origin          |
-| Strict-Transport-Security | max-age=31536000; includeSubDomains      |
-| Permissions-Policy        | camera=(), microphone=(), geolocation=(), payment=() |
+| Header                    | Value                                                         |
+| ------------------------- | ------------------------------------------------------------- |
+| X-Frame-Options           | DENY                                                          |
+| X-Content-Type-Options    | nosniff                                                       |
+| X-XSS-Protection          | 1; mode=block                                                 |
+| Referrer-Policy           | strict-origin-when-cross-origin                               |
+| Strict-Transport-Security | max-age=31536000; includeSubDomains                           |
+| Permissions-Policy        | camera=(), microphone=(), geolocation=(), payment=()          |
 | Content-Security-Policy   | default-src 'self'; frame-ancestors 'none'; object-src 'none' |
 
 ## Bug Bounty Program
@@ -258,8 +261,8 @@ The following assets are in scope for the bug bounty program:
 
 ### Severity Levels and Rewards
 
-| Severity | Description                                           | Reward Range     |
-|----------|-------------------------------------------------------|------------------|
+| Severity | Description                                            | Reward Range     |
+| -------- | ------------------------------------------------------ | ---------------- |
 | Critical | Unauthorized access to PHI, key compromise, TEE bypass | $5,000 - $25,000 |
 | High     | Authentication bypass, privilege escalation            | $2,000 - $5,000  |
 | Medium   | Information disclosure, CSRF, improper access control  | $500 - $2,000    |
@@ -270,6 +273,7 @@ The following assets are in scope for the bug bounty program:
 Report vulnerabilities to: security@shiora.health
 
 Include in your report:
+
 1. Description of the vulnerability
 2. Steps to reproduce
 3. Potential impact assessment
@@ -277,12 +281,12 @@ Include in your report:
 
 ### Response Timeline
 
-| Action              | Target Time |
-|---------------------|-------------|
-| Acknowledgement     | 24 hours    |
-| Triage              | 72 hours    |
-| Fix deployed        | 7-14 days   |
-| Reward payout       | 30 days     |
+| Action          | Target Time |
+| --------------- | ----------- |
+| Acknowledgement | 24 hours    |
+| Triage          | 72 hours    |
+| Fix deployed    | 7-14 days   |
+| Reward payout   | 30 days     |
 
 ### Out of Scope
 
@@ -354,12 +358,12 @@ Include in your report:
 
 ### Severity Classification
 
-| Level    | Description                                       | Response Time |
-|----------|---------------------------------------------------|---------------|
-| P0       | PHI exposure, key compromise, TEE bypass          | Immediate     |
-| P1       | Authentication bypass, unauthorized access         | 1 hour        |
-| P2       | Data integrity issues, service degradation         | 4 hours       |
-| P3       | Minor vulnerabilities, non-critical bugs           | 24 hours      |
+| Level | Description                                | Response Time |
+| ----- | ------------------------------------------ | ------------- |
+| P0    | PHI exposure, key compromise, TEE bypass   | Immediate     |
+| P1    | Authentication bypass, unauthorized access | 1 hour        |
+| P2    | Data integrity issues, service degradation | 4 hours       |
+| P3    | Minor vulnerabilities, non-critical bugs   | 24 hours      |
 
 ### Response Steps
 

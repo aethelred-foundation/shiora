@@ -14,17 +14,15 @@ import {
   CreateConsentModal,
   SmartContractStatus,
 } from '@/components/consent/ConsentComponents';
-import type {
-  ConsentGrant,
-  ConsentAuditEntry,
-  ConsentScope,
-  ConsentPolicy,
-} from '@/types';
+import type { ConsentGrant, ConsentAuditEntry, ConsentScope, ConsentPolicy } from '@/types';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return React.createElement(QueryClientProvider, { client: qc },
-    React.createElement(AppProvider, null, children));
+  return React.createElement(
+    QueryClientProvider,
+    { client: qc },
+    React.createElement(AppProvider, null, children),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -92,7 +90,7 @@ describe('ConsentCard', () => {
     render(
       <TestWrapper>
         <ConsentCard consent={mockActiveConsent} onRevoke={jest.fn()} onModify={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('City Medical Center')).toBeInTheDocument();
   });
@@ -101,7 +99,7 @@ describe('ConsentCard', () => {
     render(
       <TestWrapper>
         <ConsentCard consent={mockActiveConsent} onRevoke={jest.fn()} onModify={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Active')).toBeInTheDocument();
   });
@@ -110,7 +108,7 @@ describe('ConsentCard', () => {
     render(
       <TestWrapper>
         <ConsentCard consent={mockActiveConsent} onRevoke={jest.fn()} onModify={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Lab Results')).toBeInTheDocument();
     expect(screen.getByText('Vitals')).toBeInTheDocument();
@@ -120,7 +118,7 @@ describe('ConsentCard', () => {
     render(
       <TestWrapper>
         <ConsentCard consent={mockActiveConsent} onRevoke={jest.fn()} onModify={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Modify')).toBeInTheDocument();
     expect(screen.getByText('Revoke')).toBeInTheDocument();
@@ -131,7 +129,7 @@ describe('ConsentCard', () => {
     render(
       <TestWrapper>
         <ConsentCard consent={mockActiveConsent} onRevoke={onRevoke} onModify={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Revoke'));
     expect(onRevoke).toHaveBeenCalled();
@@ -142,7 +140,7 @@ describe('ConsentCard', () => {
     render(
       <TestWrapper>
         <ConsentCard consent={mockActiveConsent} onRevoke={jest.fn()} onModify={onModify} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Modify'));
     expect(onModify).toHaveBeenCalled();
@@ -152,7 +150,7 @@ describe('ConsentCard', () => {
     render(
       <TestWrapper>
         <ConsentCard consent={mockRevokedConsent} onRevoke={jest.fn()} onModify={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('Revoke')).not.toBeInTheDocument();
     expect(screen.queryByText('Modify')).not.toBeInTheDocument();
@@ -163,7 +161,7 @@ describe('ConsentCard', () => {
     render(
       <TestWrapper>
         <ConsentCard consent={autoRenewConsent} onRevoke={jest.fn()} onModify={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/Auto-renew/)).toBeInTheDocument();
   });
@@ -178,7 +176,7 @@ describe('ConsentTimeline', () => {
     render(
       <TestWrapper>
         <ConsentTimeline auditEntries={mockAuditEntries} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('granted')).toBeInTheDocument();
     expect(screen.getByText('accessed')).toBeInTheDocument();
@@ -188,7 +186,7 @@ describe('ConsentTimeline', () => {
     render(
       <TestWrapper>
         <ConsentTimeline auditEntries={mockAuditEntries} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Consent granted to City Medical Center')).toBeInTheDocument();
   });
@@ -197,7 +195,7 @@ describe('ConsentTimeline', () => {
     render(
       <TestWrapper>
         <ConsentTimeline auditEntries={[]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('No audit entries found')).toBeInTheDocument();
   });
@@ -213,7 +211,7 @@ describe('ConsentScopeSelector', () => {
     render(
       <TestWrapper>
         <ConsentScopeSelector selected={[]} onChange={onChange} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Data Scopes')).toBeInTheDocument();
   });
@@ -223,7 +221,7 @@ describe('ConsentScopeSelector', () => {
     render(
       <TestWrapper>
         <ConsentScopeSelector selected={['lab_results' as ConsentScope]} onChange={onChange} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('1/10 selected')).toBeInTheDocument();
   });
@@ -233,7 +231,7 @@ describe('ConsentScopeSelector', () => {
     render(
       <TestWrapper>
         <ConsentScopeSelector selected={[]} onChange={onChange} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const firstButton = screen.getAllByRole('button')[0];
     fireEvent.click(firstButton);
@@ -245,11 +243,11 @@ describe('ConsentScopeSelector', () => {
     render(
       <TestWrapper>
         <ConsentScopeSelector selected={['lab_results' as ConsentScope]} onChange={onChange} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Click the Lab Results button to deselect it
     const buttons = screen.getAllByRole('button');
-    const labButton = buttons.find(b => b.textContent?.includes('Lab Results'));
+    const labButton = buttons.find((b) => b.textContent?.includes('Lab Results'));
     if (labButton) fireEvent.click(labButton);
     expect(onChange).toHaveBeenCalled();
   });
@@ -263,11 +261,11 @@ describe('ConsentScopeSelector', () => {
           onChange={onChange}
           maxScopes={1}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
-    const vitalsButton = screen.getAllByRole('button').find((button) =>
-      button.textContent?.includes('Vitals')
-    );
+    const vitalsButton = screen
+      .getAllByRole('button')
+      .find((button) => button.textContent?.includes('Vitals'));
     expect(vitalsButton).toBeDisabled();
     if (vitalsButton) fireEvent.click(vitalsButton);
     expect(onChange).not.toHaveBeenCalled();
@@ -284,7 +282,7 @@ describe('ConsentExpiryPicker', () => {
     render(
       <TestWrapper>
         <ConsentExpiryPicker durationDays={90} onChange={onChange} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Duration')).toBeInTheDocument();
   });
@@ -294,7 +292,7 @@ describe('ConsentExpiryPicker', () => {
     render(
       <TestWrapper>
         <ConsentExpiryPicker durationDays={90} onChange={onChange} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('7 days')).toBeInTheDocument();
     expect(screen.getByText('30 days')).toBeInTheDocument();
@@ -309,7 +307,7 @@ describe('ConsentExpiryPicker', () => {
     render(
       <TestWrapper>
         <ConsentExpiryPicker durationDays={30} onChange={onChange} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/Expires/)).toBeInTheDocument();
   });
@@ -319,7 +317,7 @@ describe('ConsentExpiryPicker', () => {
     render(
       <TestWrapper>
         <ConsentExpiryPicker durationDays={90} onChange={onChange} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('30 days'));
     expect(onChange).toHaveBeenCalledWith(30);
@@ -330,7 +328,7 @@ describe('ConsentExpiryPicker', () => {
     render(
       <TestWrapper>
         <ConsentExpiryPicker durationDays={90} onChange={onChange} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Custom'));
     expect(screen.getByRole('spinbutton')).toBeInTheDocument();
@@ -341,7 +339,7 @@ describe('ConsentExpiryPicker', () => {
     render(
       <TestWrapper>
         <ConsentExpiryPicker durationDays={90} onChange={onChange} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Custom'));
     const customInput = screen.getByRole('spinbutton');
@@ -365,7 +363,7 @@ describe('CreateConsentModal', () => {
           policies={[]}
           isLoading={false}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Create Consent Grant')).toBeInTheDocument();
   });
@@ -380,7 +378,7 @@ describe('CreateConsentModal', () => {
           policies={[]}
           isLoading={false}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('Create Consent Grant')).not.toBeInTheDocument();
   });
@@ -395,7 +393,7 @@ describe('CreateConsentModal', () => {
           policies={[]}
           isLoading={false}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Provider')).toBeInTheDocument();
     expect(screen.getByText('Scopes')).toBeInTheDocument();
@@ -413,7 +411,7 @@ describe('CreateConsentModal', () => {
           policies={mockPolicies}
           isLoading={false}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Policy Template (optional)')).toBeInTheDocument();
     expect(screen.getByText('Standard Research')).toBeInTheDocument();
@@ -429,7 +427,7 @@ describe('CreateConsentModal', () => {
           policies={[]}
           isLoading={false}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Cancel')).toBeInTheDocument();
   });
@@ -445,7 +443,7 @@ describe('CreateConsentModal', () => {
           policies={[]}
           isLoading={false}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Cancel'));
     expect(onClose).toHaveBeenCalled();
@@ -462,7 +460,7 @@ describe('CreateConsentModal', () => {
           policies={mockPolicies}
           isLoading={false}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Step 1: Apply policy template (auto-selects scopes) and enter provider name
     fireEvent.click(screen.getByText('Standard Research'));
@@ -492,7 +490,7 @@ describe('CreateConsentModal', () => {
           policies={[]}
           isLoading={false}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Enter provider name
     const searchInput = screen.getByPlaceholderText('Search or enter provider name...');
@@ -513,7 +511,7 @@ describe('CreateConsentModal', () => {
           policies={mockPolicies}
           isLoading={false}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Standard Research'));
     expect(screen.getByText('Standard Research')).toBeInTheDocument();
@@ -529,7 +527,7 @@ describe('CreateConsentModal', () => {
           policies={mockPolicies}
           isLoading={true}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Apply policy template to enable Continue on scopes step
     fireEvent.click(screen.getByText('Standard Research'));
@@ -551,7 +549,7 @@ describe('CreateConsentModal', () => {
           policies={[]}
           isLoading={false}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const searchInput = screen.getByPlaceholderText('Search or enter provider name...');
     fireEvent.change(searchInput, { target: { value: 'C' } });
@@ -569,7 +567,7 @@ describe('CreateConsentModal', () => {
           policies={[]}
           isLoading={false}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const searchInput = screen.getByPlaceholderText('Search or enter provider name...');
     fireEvent.change(searchInput, { target: { value: 'Sarah' } });
@@ -590,7 +588,7 @@ describe('CreateConsentModal', () => {
           policies={[]}
           isLoading={false}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const addressInput = screen.getByPlaceholderText('aeth1...');
     fireEvent.change(addressInput, { target: { value: 'aeth1abc123456789' } });
@@ -607,7 +605,7 @@ describe('CreateConsentModal', () => {
           policies={[]}
           isLoading={false}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Enter provider name
     const searchInput = screen.getByPlaceholderText('Search or enter provider name...');
@@ -630,7 +628,7 @@ describe('CreateConsentModal', () => {
           policies={[]}
           isLoading={false}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Step 0: Enter provider
     const searchInput = screen.getByPlaceholderText('Search or enter provider name...');
@@ -667,7 +665,7 @@ describe('SmartContractStatus', () => {
           status="active"
           expiresAt={Date.now() + 86400000 * 60}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Smart Contract Status')).toBeInTheDocument();
   });
@@ -681,7 +679,7 @@ describe('SmartContractStatus', () => {
           status="active"
           expiresAt={Date.now() + 86400000 * 60}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('On-Chain Status')).toBeInTheDocument();
     expect(screen.getByText('Active')).toBeInTheDocument();
@@ -696,7 +694,7 @@ describe('SmartContractStatus', () => {
           status="active"
           expiresAt={Date.now() + 86400000 * 60}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('TEE Attestation')).toBeInTheDocument();
     expect(screen.getByText('Verified')).toBeInTheDocument();
@@ -711,7 +709,7 @@ describe('SmartContractStatus', () => {
           status="active"
           expiresAt={Date.now() + 86400000 * 60}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Block Confirmations')).toBeInTheDocument();
     expect(screen.getByText(/blocks/)).toBeInTheDocument();
@@ -726,7 +724,7 @@ describe('SmartContractStatus', () => {
           status="active"
           expiresAt={Date.now() + 86400000 * 30}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Expires In')).toBeInTheDocument();
     expect(screen.getByText(/days/)).toBeInTheDocument();
@@ -741,7 +739,7 @@ describe('SmartContractStatus', () => {
           status="revoked"
           expiresAt={Date.now() - 86400000}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Revoked')).toBeInTheDocument();
   });
@@ -755,7 +753,7 @@ describe('SmartContractStatus', () => {
           status="pending"
           expiresAt={Date.now() + 86400000 * 30}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Pending')).toBeInTheDocument();
   });
@@ -769,7 +767,7 @@ describe('SmartContractStatus', () => {
           status="expired"
           expiresAt={Date.now() - 86400000 * 10}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Expired')).toBeInTheDocument();
   });
@@ -783,7 +781,7 @@ describe('SmartContractStatus', () => {
           status="active"
           expiresAt={Date.now() + 86400000 * 5}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Expires In')).toBeInTheDocument();
   });
@@ -797,7 +795,7 @@ describe('SmartContractStatus', () => {
           status="active"
           expiresAt={Date.now() + 86400000 * 1.5}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Expires In')).toBeInTheDocument();
   });
@@ -817,7 +815,7 @@ describe('ConsentCard — branch coverage', () => {
     render(
       <TestWrapper>
         <ConsentCard consent={expired} onRevoke={jest.fn()} onModify={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/Expired/)).toBeInTheDocument();
   });
@@ -831,7 +829,7 @@ describe('ConsentCard — branch coverage', () => {
     render(
       <TestWrapper>
         <ConsentCard consent={today} onRevoke={jest.fn()} onModify={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Expires today')).toBeInTheDocument();
   });
@@ -845,7 +843,7 @@ describe('ConsentCard — branch coverage', () => {
     render(
       <TestWrapper>
         <ConsentCard consent={oneDay} onRevoke={jest.fn()} onModify={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('1 day remaining')).toBeInTheDocument();
   });
@@ -859,7 +857,7 @@ describe('ConsentCard — branch coverage', () => {
     render(
       <TestWrapper>
         <ConsentCard consent={expiringSoon} onRevoke={jest.fn()} onModify={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Expiring soon')).toBeInTheDocument();
   });
@@ -868,7 +866,7 @@ describe('ConsentCard — branch coverage', () => {
     render(
       <TestWrapper>
         <ConsentCard consent={mockRevokedConsent} onRevoke={jest.fn()} onModify={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const revokedTexts = screen.getAllByText(/Revoked/);
     expect(revokedTexts.length).toBeGreaterThan(0);
@@ -879,7 +877,7 @@ describe('ConsentCard — branch coverage', () => {
     render(
       <TestWrapper>
         <ConsentCard consent={revokedNoDate} onRevoke={jest.fn()} onModify={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const revokedTexts = screen.getAllByText(/Revoked/);
     expect(revokedTexts.length).toBeGreaterThan(0);
@@ -896,7 +894,7 @@ describe('SmartContractStatus — daysLeft singular', () => {
           status="active"
           expiresAt={Date.now() + 86400000 * 1}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/1 day$/)).toBeInTheDocument();
   });
@@ -916,12 +914,12 @@ describe('ConsentScopeSelector — branch coverage', () => {
           onChange={onChange}
           maxScopes={2}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('2/2 selected')).toBeInTheDocument();
     // Non-selected buttons should be disabled
     const buttons = screen.getAllByRole('button');
-    const disabledButtons = buttons.filter(b => (b as HTMLButtonElement).disabled);
+    const disabledButtons = buttons.filter((b) => (b as HTMLButtonElement).disabled);
     expect(disabledButtons.length).toBeGreaterThan(0);
   });
 });
@@ -936,7 +934,7 @@ describe('ConsentExpiryPicker — branch coverage', () => {
     render(
       <TestWrapper>
         <ConsentExpiryPicker durationDays={45} onChange={onChange} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Custom mode should be active, showing the input
     expect(screen.getByRole('spinbutton')).toBeInTheDocument();
@@ -958,7 +956,7 @@ describe('CreateConsentModal — branch coverage', () => {
           policies={[]}
           isLoading={false}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Try clicking "Scopes" step (step 1) from step 0 — should not navigate
     fireEvent.click(screen.getByText('Scopes'));

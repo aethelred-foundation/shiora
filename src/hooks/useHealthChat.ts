@@ -5,11 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 import { CHAT_SUGGESTED_PROMPTS } from '@/lib/constants';
 
-import type {
-  ChatMessage,
-  ChatConversation,
-  ChatModelConfig,
-} from '@/types';
+import type { ChatMessage, ChatConversation, ChatModelConfig } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Query keys

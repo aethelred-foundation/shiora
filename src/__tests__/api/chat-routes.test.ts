@@ -2,7 +2,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { GET as getChat, POST as postChat } from '@/app/api/chat/route';
-import { GET as getConversations, POST as postConversation } from '@/app/api/chat/conversations/route';
+import {
+  GET as getConversations,
+  POST as postConversation,
+} from '@/app/api/chat/conversations/route';
 import { GET as getChatById, DELETE as deleteChatById } from '@/app/api/chat/[id]/route';
 
 const actualMiddleware = jest.requireActual('@/lib/api/middleware');
@@ -20,7 +23,9 @@ import { runMiddleware } from '@/lib/api/middleware';
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
 
 afterEach(() => {
-  mockedRunMiddleware.mockImplementation((...args: unknown[]) => actualMiddleware.runMiddleware(...args));
+  mockedRunMiddleware.mockImplementation((...args: unknown[]) =>
+    actualMiddleware.runMiddleware(...args),
+  );
 });
 
 describe('/api/chat', () => {
@@ -36,7 +41,10 @@ describe('/api/chat', () => {
     const req = new NextRequest('http://localhost:3000/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ conversationId: 'conv-c205925529d6', content: 'What are my latest lab results?' }),
+      body: JSON.stringify({
+        conversationId: 'conv-c205925529d6',
+        content: 'What are my latest lab results?',
+      }),
     });
     const res = await postChat(req);
     expect(res.status).toBe(201);

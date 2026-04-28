@@ -39,7 +39,12 @@ const DIFFERENTIAL_DEFS: DifferentialDef[] = [
       'No ketones in urine (argues against Type 1)',
       'Age of onset 52 (typical for T2DM)',
     ],
-    tests: ['Fasting insulin level', 'C-peptide', 'GAD-65 antibodies', 'Oral glucose tolerance test'],
+    tests: [
+      'Fasting insulin level',
+      'C-peptide',
+      'GAD-65 antibodies',
+      'Oral glucose tolerance test',
+    ],
     urgency: 'urgent',
   },
   {
@@ -57,7 +62,12 @@ const DIFFERENTIAL_DEFS: DifferentialDef[] = [
       'Normal renal artery duplex',
       'Normal aldosterone-renin ratio',
     ],
-    tests: ['24-hour ABPM', 'Renal artery duplex ultrasound', 'Aldosterone/renin ratio', 'Echocardiogram'],
+    tests: [
+      '24-hour ABPM',
+      'Renal artery duplex ultrasound',
+      'Aldosterone/renin ratio',
+      'Echocardiogram',
+    ],
     urgency: 'routine',
   },
   {
@@ -75,7 +85,12 @@ const DIFFERENTIAL_DEFS: DifferentialDef[] = [
       'No evidence of GI bleeding on history',
       'Normal peripheral smear (no target cells)',
     ],
-    tests: ['Iron studies (TIBC, transferrin saturation)', 'Reticulocyte count', 'Stool occult blood test', 'Upper/lower endoscopy if occult positive'],
+    tests: [
+      'Iron studies (TIBC, transferrin saturation)',
+      'Reticulocyte count',
+      'Stool occult blood test',
+      'Upper/lower endoscopy if occult positive',
+    ],
     urgency: 'routine',
   },
   {
@@ -110,7 +125,12 @@ const DIFFERENTIAL_DEFS: DifferentialDef[] = [
       'Normal kidney size on ultrasound',
       'No proteinuria in nephrotic range',
     ],
-    tests: ['Cystatin C-based eGFR', 'Urine protein-creatinine ratio', 'Renal ultrasound', 'Serum phosphorus and calcium'],
+    tests: [
+      'Cystatin C-based eGFR',
+      'Urine protein-creatinine ratio',
+      'Renal ultrasound',
+      'Serum phosphorus and calcium',
+    ],
     urgency: 'urgent',
   },
   {
@@ -123,11 +143,13 @@ const DIFFERENTIAL_DEFS: DifferentialDef[] = [
       'HDL 38 mg/dL (low)',
       'Fasting glucose 112 mg/dL (impaired)',
     ],
-    contradicting: [
-      'Blood pressure controlled on medication',
-      'Regular physical activity 3x/week',
+    contradicting: ['Blood pressure controlled on medication', 'Regular physical activity 3x/week'],
+    tests: [
+      'Fasting lipid panel',
+      'Fasting insulin',
+      'HOMA-IR calculation',
+      'Liver ultrasound for NAFLD screening',
     ],
-    tests: ['Fasting lipid panel', 'Fasting insulin', 'HOMA-IR calculation', 'Liver ultrasound for NAFLD screening'],
     urgency: 'elective',
   },
 ];

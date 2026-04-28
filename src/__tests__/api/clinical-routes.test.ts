@@ -54,9 +54,7 @@ describe('/api/clinical', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
+    mockRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
     const res = await getClinical(new NextRequest('http://localhost:3000/api/clinical'));
     expect(res.status).toBe(429);
   });
@@ -73,9 +71,7 @@ describe('/api/clinical/differentials', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
+    mockRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
     const res = await getDifferentials(
       new NextRequest('http://localhost:3000/api/clinical/differentials'),
     );
@@ -94,9 +90,7 @@ describe('/api/clinical/interactions', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
+    mockRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
     const res = await getInteractions(
       new NextRequest('http://localhost:3000/api/clinical/interactions'),
     );
@@ -106,42 +100,30 @@ describe('/api/clinical/interactions', () => {
 
 describe('/api/clinical/pathways', () => {
   it('GET returns clinical pathways', async () => {
-    const res = await getPathways(
-      new NextRequest('http://localhost:3000/api/clinical/pathways'),
-    );
+    const res = await getPathways(new NextRequest('http://localhost:3000/api/clinical/pathways'));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
-    const res = await getPathways(
-      new NextRequest('http://localhost:3000/api/clinical/pathways'),
-    );
+    mockRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
+    const res = await getPathways(new NextRequest('http://localhost:3000/api/clinical/pathways'));
     expect(res.status).toBe(429);
   });
 });
 
 describe('/api/clinical/audit', () => {
   it('GET returns clinical audit log', async () => {
-    const res = await getAudit(
-      new NextRequest('http://localhost:3000/api/clinical/audit'),
-    );
+    const res = await getAudit(new NextRequest('http://localhost:3000/api/clinical/audit'));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
-    const res = await getAudit(
-      new NextRequest('http://localhost:3000/api/clinical/audit'),
-    );
+    mockRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
+    const res = await getAudit(new NextRequest('http://localhost:3000/api/clinical/audit'));
     expect(res.status).toBe(429);
   });
 });

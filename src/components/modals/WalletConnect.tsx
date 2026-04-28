@@ -9,16 +9,32 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import {
-  Wallet, Globe, ChevronRight, ChevronDown,
-  LogOut, ArrowDownLeft, ArrowUpRight, Clock, Shield,
-  FileSignature, Compass,
+  Wallet,
+  Globe,
+  ChevronRight,
+  ChevronDown,
+  LogOut,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Clock,
+  Shield,
+  FileSignature,
+  Compass,
 } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
 import { useWallet } from '@/hooks/useWallet';
 import { Modal, Badge, Drawer } from '@/components/ui/SharedComponents';
 import { CopyButton } from '@/components/ui/PagePrimitives';
-import { formatNumber, truncateAddress, seededHex, seededRandom, formatDate, generateTxHash, timeAgo } from '@/lib/utils';
+import {
+  formatNumber,
+  truncateAddress,
+  seededHex,
+  seededRandom,
+  formatDate,
+  generateTxHash,
+  timeAgo,
+} from '@/lib/utils';
 
 // ============================================================
 // Types
@@ -72,7 +88,13 @@ const SEED = 700;
 
 function generateMockTransactions(): Transaction[] {
   const types: Transaction['type'][] = ['send', 'receive', 'contract', 'receive', 'send'];
-  const statuses: Transaction['status'][] = ['confirmed', 'confirmed', 'confirmed', 'pending', 'confirmed'];
+  const statuses: Transaction['status'][] = [
+    'confirmed',
+    'confirmed',
+    'confirmed',
+    'pending',
+    'confirmed',
+  ];
   return Array.from({ length: 8 }, (_, i) => ({
     id: `tx-${i}`,
     type: types[i % types.length],
@@ -92,7 +114,13 @@ function generateMockTransactions(): Transaction[] {
 
 export function WalletConnect() {
   const { wallet, realTime } = useApp();
-  const { connect, disconnect, signMessage: walletSignMessage, isLoading: walletLoading, error: walletError } = useWallet();
+  const {
+    connect,
+    disconnect,
+    signMessage: walletSignMessage,
+    isLoading: walletLoading,
+    error: walletError,
+  } = useWallet();
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [showTxDrawer, setShowTxDrawer] = useState(false);
   const [showSignModal, setShowSignModal] = useState(false);
@@ -105,16 +133,19 @@ export function WalletConnect() {
 
   const transactions = useMemo(() => generateMockTransactions(), []);
 
-  const handleConnect = useCallback(async (type: WalletType) => {
-    setSelectedWalletType(type);
-    setConnectError(null);
-    try {
-      await connect(type, network);
-      setShowConnectModal(false);
-    } catch (err) {
-      setConnectError(err instanceof Error ? err.message : 'Connection failed');
-    }
-  }, [connect, network]);
+  const handleConnect = useCallback(
+    async (type: WalletType) => {
+      setSelectedWalletType(type);
+      setConnectError(null);
+      try {
+        await connect(type, network);
+        setShowConnectModal(false);
+      } catch (err) {
+        setConnectError(err instanceof Error ? err.message : 'Connection failed');
+      }
+    },
+    [connect, network],
+  );
 
   const handleDisconnect = useCallback(() => {
     disconnect();
@@ -184,11 +215,15 @@ export function WalletConnect() {
                 disabled={walletLoading}
                 className="w-full flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-brand-300 hover:bg-brand-50 transition-colors text-left disabled:opacity-50"
               >
-                <div className={`w-10 h-10 rounded-xl ${opt.color} flex items-center justify-center shrink-0`}>
+                <div
+                  className={`w-10 h-10 rounded-xl ${opt.color} flex items-center justify-center shrink-0`}
+                >
                   {(() => {
                     /* istanbul ignore next -- loading state is transient */
                     if (walletLoading && selectedWalletType === opt.id) {
-                      return <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />;
+                      return (
+                        <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                      );
                     }
                     return opt.icon;
                   })()}
@@ -210,7 +245,9 @@ export function WalletConnect() {
 
             {/* Network info */}
             <div className="pt-2 flex items-center justify-center gap-2 text-xs text-slate-400">
-              <div className={`w-2 h-2 rounded-full ${network === 'mainnet' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+              <div
+                className={`w-2 h-2 rounded-full ${network === 'mainnet' ? 'bg-emerald-500' : 'bg-amber-500'}`}
+              />
               Aethelred {network === 'mainnet' ? 'Mainnet' : 'Testnet'}
             </div>
           </div>
@@ -250,7 +287,9 @@ export function WalletConnect() {
             <div className="mb-3">
               <div className="bg-slate-50 rounded-lg p-2.5 text-center">
                 <p className="text-xs text-slate-500">$AETHEL</p>
-                <p className="text-sm font-bold text-slate-900">{formatNumber(wallet.aethelBalance)}</p>
+                <p className="text-sm font-bold text-slate-900">
+                  {formatNumber(wallet.aethelBalance)}
+                </p>
               </div>
             </div>
 
@@ -302,27 +341,46 @@ export function WalletConnect() {
         <div className="space-y-3">
           {transactions.map((tx) => (
             <div key={tx.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                tx.type === 'receive' ? 'bg-emerald-100 text-emerald-600' :
-                tx.type === 'send' ? 'bg-brand-100 text-brand-600' :
-                'bg-violet-100 text-violet-600'
-              }`}>
-                {tx.type === 'receive' ? <ArrowDownLeft className="w-4 h-4" /> :
-                 tx.type === 'send' ? <ArrowUpRight className="w-4 h-4" /> :
-                 <Shield className="w-4 h-4" />}
+              <div
+                className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                  tx.type === 'receive'
+                    ? 'bg-emerald-100 text-emerald-600'
+                    : tx.type === 'send'
+                      ? 'bg-brand-100 text-brand-600'
+                      : 'bg-violet-100 text-violet-600'
+                }`}
+              >
+                {tx.type === 'receive' ? (
+                  <ArrowDownLeft className="w-4 h-4" />
+                ) : tx.type === 'send' ? (
+                  <ArrowUpRight className="w-4 h-4" />
+                ) : (
+                  <Shield className="w-4 h-4" />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-medium text-slate-900 capitalize">{tx.type}</p>
-                  <Badge variant={tx.status === 'confirmed' ? 'success' : tx.status === 'pending' ? 'warning' : /* istanbul ignore next */ 'error'}>
+                  <Badge
+                    variant={
+                      tx.status === 'confirmed'
+                        ? 'success'
+                        : tx.status === 'pending'
+                          ? 'warning'
+                          : /* istanbul ignore next */ 'error'
+                    }
+                  >
                     {tx.status}
                   </Badge>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5">{timeAgo(tx.timestamp)}</p>
               </div>
               <div className="text-right shrink-0">
-                <p className={`text-sm font-medium ${tx.type === 'receive' ? 'text-emerald-600' : 'text-slate-900'}`}>
-                  {tx.type === 'receive' ? '+' : '-'}{tx.amount}
+                <p
+                  className={`text-sm font-medium ${tx.type === 'receive' ? 'text-emerald-600' : 'text-slate-900'}`}
+                >
+                  {tx.type === 'receive' ? '+' : '-'}
+                  {tx.amount}
                 </p>
                 <p className="text-xs text-slate-400">{tx.token}</p>
               </div>
@@ -341,7 +399,11 @@ export function WalletConnect() {
       {/* Sign Message Modal */}
       <Modal
         open={showSignModal}
-        onClose={() => { setShowSignModal(false); setSignMessageText(''); setSignResult(''); }}
+        onClose={() => {
+          setShowSignModal(false);
+          setSignMessageText('');
+          setSignResult('');
+        }}
         title="Sign Message"
         description="Sign a message with your wallet to prove ownership"
         size="md"

@@ -53,10 +53,6 @@ export async function POST(request: NextRequest) {
 
     return successResponse(privacyRequest, HTTP.CREATED);
   } catch {
-    return errorResponse(
-      'INTERNAL_ERROR',
-      'Failed to submit portability request',
-      HTTP.INTERNAL,
-    );
+    return errorResponse('INTERNAL_ERROR', 'Failed to submit portability request', HTTP.INTERNAL);
   }
 }

@@ -55,7 +55,8 @@ export async function POST(request: NextRequest) {
     const vote = {
       id: `vote-${seededHex(seed, 8)}`,
       proposalId,
-      voter: request.headers.get('x-wallet-address') ?? 'aeth1demo000000000000000000000000000000000',
+      voter:
+        request.headers.get('x-wallet-address') ?? 'aeth1demo000000000000000000000000000000000',
       support,
       weight: 5000,
       timestamp: Date.now(),

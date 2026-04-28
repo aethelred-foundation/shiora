@@ -9,10 +9,7 @@ function createValidChallenge(address: string) {
   const issuedAt = Date.now();
   const expiresAt = issuedAt + 5 * 60 * 1000;
   const payload = `${address}:${nonce}:${issuedAt}:${expiresAt}`;
-  const hmac = crypto
-    .createHmac('sha256', serverEnv.sessionSecret)
-    .update(payload)
-    .digest('hex');
+  const hmac = crypto.createHmac('sha256', serverEnv.sessionSecret).update(payload).digest('hex');
   return { nonce, issuedAt, expiresAt, hmac };
 }
 
@@ -31,10 +28,7 @@ describe('verifyChallenge', () => {
     const issuedAt = Date.now() - 10 * 60 * 1000;
     const expiresAt = issuedAt + 5 * 60 * 1000; // Already expired
     const payload = `${address}:${nonce}:${issuedAt}:${expiresAt}`;
-    const hmac = crypto
-      .createHmac('sha256', serverEnv.sessionSecret)
-      .update(payload)
-      .digest('hex');
+    const hmac = crypto.createHmac('sha256', serverEnv.sessionSecret).update(payload).digest('hex');
 
     const result = verifyChallenge(address, nonce, issuedAt, expiresAt, hmac);
     expect(result.valid).toBe(false);

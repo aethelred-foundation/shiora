@@ -31,6 +31,9 @@ Thumbs.db
 tsconfig.tsbuildinfo
 *.tsbuildinfo
 
+# Runtime data
+.shiora-data/
+
 # Coverage
 coverage/
 
@@ -50,4 +53,3 @@ contracts/typechain-types/
 
 # Misc
 *.log
-.claude/

@@ -7,12 +7,7 @@
 import { NextRequest } from 'next/server';
 import { z, ZodError } from 'zod';
 import { runMiddleware } from '@/lib/api/middleware';
-import {
-  successResponse,
-  notFoundResponse,
-  validationError,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, notFoundResponse, validationError, HTTP } from '@/lib/api/responses';
 import { seededInt, seededHex, seededPick } from '@/lib/utils';
 
 const SEED = 700;
@@ -24,8 +19,14 @@ interface RouteContext {
 // Simple mock lookup
 function findCompartmentById(id: string) {
   const categories = [
-    'cycle_tracking', 'fertility_data', 'hormone_levels',
-    'medications', 'lab_results', 'imaging', 'symptoms', 'pregnancy',
+    'cycle_tracking',
+    'fertility_data',
+    'hormone_levels',
+    'medications',
+    'lab_results',
+    'imaging',
+    'symptoms',
+    'pregnancy',
   ];
   const labels: Record<string, string> = {
     cycle_tracking: 'Cycle Tracking',
@@ -47,7 +48,8 @@ function findCompartmentById(id: string) {
         category: catId,
         label: labels[catId],
         description: `Encrypted ${labels[catId].toLowerCase()} compartment with TEE-verified access controls`,
-        lockStatus: i < 3 ? 'locked' : seededPick(SEED + i * 3, ['locked', 'unlocked', 'partial'] as const),
+        lockStatus:
+          i < 3 ? 'locked' : seededPick(SEED + i * 3, ['locked', 'unlocked', 'partial'] as const),
         recordCount: seededInt(SEED + i * 7, 5, 120),
         storageUsed: seededInt(SEED + i * 13, 50, 5000) * 1024,
         lastAccessed: Date.now() - seededInt(SEED + i * 17, 1, 30) * 86400000,

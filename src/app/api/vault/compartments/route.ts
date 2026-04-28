@@ -13,8 +13,14 @@ import { seededInt, seededHex, seededPick, seededRandom, generateAttestation } f
 const SEED = 700;
 
 const VAULT_CATEGORY_IDS = [
-  'cycle_tracking', 'fertility_data', 'hormone_levels',
-  'medications', 'lab_results', 'imaging', 'symptoms', 'pregnancy',
+  'cycle_tracking',
+  'fertility_data',
+  'hormone_levels',
+  'medications',
+  'lab_results',
+  'imaging',
+  'symptoms',
+  'pregnancy',
 ] as const;
 
 const VAULT_CATEGORY_LABELS: Record<string, string> = {
@@ -34,7 +40,8 @@ function generateMockCompartments() {
     category: catId,
     label: VAULT_CATEGORY_LABELS[catId],
     description: `Encrypted ${VAULT_CATEGORY_LABELS[catId].toLowerCase()} compartment with TEE-verified access controls`,
-    lockStatus: i < 3 ? 'locked' : seededPick(SEED + i * 3, ['locked', 'unlocked', 'partial'] as const),
+    lockStatus:
+      i < 3 ? 'locked' : seededPick(SEED + i * 3, ['locked', 'unlocked', 'partial'] as const),
     recordCount: seededInt(SEED + i * 7, 5, 120),
     storageUsed: seededInt(SEED + i * 13, 50, 5000) * 1024,
     lastAccessed: Date.now() - seededInt(SEED + i * 17, 1, 30) * 86400000,
@@ -84,7 +91,8 @@ export async function POST(request: NextRequest) {
       id: `vault-${seededHex(seed, 12)}`,
       category: validated.category,
       label: validated.label,
-      description: validated.description ?? `Encrypted ${validated.label.toLowerCase()} compartment`,
+      description:
+        validated.description ?? `Encrypted ${validated.label.toLowerCase()} compartment`,
       lockStatus: 'locked',
       recordCount: 0,
       storageUsed: 0,

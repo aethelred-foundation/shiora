@@ -139,13 +139,13 @@ export function useWearables(): UseWearablesReturn {
   // ---- Computed ----
 
   const devices = useMemo(() => devicesQuery.data ?? [], [devicesQuery.data]);
-  const connectedDeviceCount = devices.filter((d) => d.status === 'connected' || d.status === 'syncing').length;
+  const connectedDeviceCount = devices.filter(
+    (d) => d.status === 'connected' || d.status === 'syncing',
+  ).length;
   const totalDataPoints = devices.reduce((sum, d) => sum + d.dataPointsSynced, 0);
 
   const syncAllDevices = useCallback(() => {
-    devices
-      .filter((d) => d.status === 'connected')
-      .forEach((d) => syncMutation.mutate(d.id));
+    devices.filter((d) => d.status === 'connected').forEach((d) => syncMutation.mutate(d.id));
   }, [devices, syncMutation]);
 
   const refetch = useCallback(() => {

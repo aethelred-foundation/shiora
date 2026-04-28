@@ -5,11 +5,7 @@
 
 import { NextRequest } from 'next/server';
 import { z, ZodError } from 'zod';
-import {
-  successResponse,
-  validationError,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, validationError, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededHex, seededInt, generateAttestation } from '@/lib/utils';
 

@@ -77,7 +77,11 @@ describe('Badge', () => {
   });
 
   it('renders a dot when dot prop is true', () => {
-    const { container } = render(<Badge dot variant="success">Dotted</Badge>);
+    const { container } = render(
+      <Badge dot variant="success">
+        Dotted
+      </Badge>,
+    );
     // The dot is a small span with rounded-full
     const dots = container.querySelectorAll('.rounded-full');
     expect(dots.length).toBeGreaterThan(0);
@@ -112,7 +116,7 @@ describe('ProgressRing', () => {
     render(
       <ProgressRing value={50}>
         <span>50%</span>
-      </ProgressRing>
+      </ProgressRing>,
     );
     expect(screen.getByText('50%')).toBeInTheDocument();
   });
@@ -210,7 +214,7 @@ describe('Modal', () => {
     render(
       <Modal open={false} onClose={jest.fn()}>
         <p>Content</p>
-      </Modal>
+      </Modal>,
     );
     expect(screen.queryByText('Content')).not.toBeInTheDocument();
   });
@@ -219,7 +223,7 @@ describe('Modal', () => {
     render(
       <Modal open={true} onClose={jest.fn()} title="Test Modal">
         <p>Content</p>
-      </Modal>
+      </Modal>,
     );
     expect(screen.getByText('Content')).toBeInTheDocument();
     expect(screen.getByText('Test Modal')).toBeInTheDocument();
@@ -229,7 +233,7 @@ describe('Modal', () => {
     render(
       <Modal open={true} onClose={jest.fn()} title="Title" description="Desc">
         <p>Body</p>
-      </Modal>
+      </Modal>,
     );
     expect(screen.getByText('Desc')).toBeInTheDocument();
   });
@@ -239,7 +243,7 @@ describe('Modal', () => {
     render(
       <Modal open={true} onClose={onClose}>
         <p>Content</p>
-      </Modal>
+      </Modal>,
     );
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(onClose).toHaveBeenCalled();
@@ -250,7 +254,7 @@ describe('Modal', () => {
     render(
       <Modal open={true} onClose={onClose}>
         <p>Content</p>
-      </Modal>
+      </Modal>,
     );
     // The backdrop is the fixed inset div with bg-black
     const backdrop = document.querySelector('.bg-black\\/30');
@@ -262,7 +266,7 @@ describe('Modal', () => {
     render(
       <Modal open={true} onClose={jest.fn()} title="Dialog">
         <p>Body</p>
-      </Modal>
+      </Modal>,
     );
     const dialog = screen.getByRole('dialog');
     expect(dialog).toHaveAttribute('aria-modal', 'true');
@@ -272,7 +276,7 @@ describe('Modal', () => {
     render(
       <Modal open={true} onClose={jest.fn()} title="Title">
         <p>Body</p>
-      </Modal>
+      </Modal>,
     );
     expect(screen.getByLabelText('Close')).toBeInTheDocument();
   });
@@ -290,7 +294,7 @@ describe('ConfirmDialog', () => {
         onConfirm={jest.fn()}
         title="Confirm Action"
         description="Are you sure?"
-      />
+      />,
     );
     expect(screen.getByText('Confirm Action')).toBeInTheDocument();
     expect(screen.getByText('Are you sure?')).toBeInTheDocument();
@@ -307,7 +311,7 @@ describe('ConfirmDialog', () => {
         title="Delete?"
         confirmLabel="Delete"
         cancelLabel="Cancel"
-      />
+      />,
     );
     fireEvent.click(screen.getByText('Delete'));
     expect(onConfirm).toHaveBeenCalled();
@@ -316,14 +320,7 @@ describe('ConfirmDialog', () => {
 
   it('calls onClose when cancel button is clicked', () => {
     const onClose = jest.fn();
-    render(
-      <ConfirmDialog
-        open={true}
-        onClose={onClose}
-        onConfirm={jest.fn()}
-        title="Delete?"
-      />
-    );
+    render(<ConfirmDialog open={true} onClose={onClose} onConfirm={jest.fn()} title="Delete?" />);
     fireEvent.click(screen.getByText('Cancel'));
     expect(onClose).toHaveBeenCalled();
   });
@@ -337,7 +334,7 @@ describe('ConfirmDialog', () => {
         title="Test"
         confirmLabel="Yes, do it"
         cancelLabel="Nope"
-      />
+      />,
     );
     expect(screen.getByText('Yes, do it')).toBeInTheDocument();
     expect(screen.getByText('Nope')).toBeInTheDocument();
@@ -352,7 +349,7 @@ describe('ToastContainer', () => {
     const { container } = render(
       <TestWrapper>
         <ToastContainer />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container).toBeTruthy();
   });
@@ -361,7 +358,7 @@ describe('ToastContainer', () => {
     render(
       <TestWrapper>
         <ToastContainer />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByRole('status')).toBeInTheDocument();
   });
@@ -381,7 +378,7 @@ describe('ToastContainer', () => {
       <TestWrapper>
         <TriggerNotification />
         <ToastContainer />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Add a notification
@@ -402,7 +399,9 @@ describe('ToastContainer', () => {
       return (
         <>
           <button onClick={() => addNotification('error', 'Error', 'err msg')}>AddError</button>
-          <button onClick={() => addNotification('warning', 'Warning', 'warn msg')}>AddWarning</button>
+          <button onClick={() => addNotification('warning', 'Warning', 'warn msg')}>
+            AddWarning
+          </button>
           <button onClick={() => addNotification('info', 'Info', 'info msg')}>AddInfo</button>
         </>
       );
@@ -412,7 +411,7 @@ describe('ToastContainer', () => {
       <TestWrapper>
         <TriggerNotifications />
         <ToastContainer />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.click(screen.getByText('AddError'));
@@ -434,7 +433,7 @@ describe('SearchOverlay', () => {
     render(
       <TestWrapper>
         <SearchOverlay />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Initially closed
@@ -451,7 +450,7 @@ describe('SearchOverlay', () => {
     render(
       <TestWrapper>
         <SearchOverlay />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
@@ -462,7 +461,7 @@ describe('SearchOverlay', () => {
     render(
       <TestWrapper>
         <SearchOverlay />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.keyDown(document, { key: 'k', metaKey: true });
@@ -477,7 +476,7 @@ describe('SearchOverlay', () => {
     render(
       <TestWrapper>
         <SearchOverlay />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.keyDown(document, { key: 'k', metaKey: true });
@@ -492,7 +491,7 @@ describe('SearchOverlay', () => {
     render(
       <TestWrapper>
         <SearchOverlay />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.keyDown(document, { key: 'k', metaKey: true });
@@ -511,7 +510,7 @@ describe('TopNav', () => {
     render(
       <TestWrapper>
         <TopNav />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // PRIMARY_NAV_LINKS are rendered directly in the nav bar
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
@@ -524,7 +523,7 @@ describe('TopNav', () => {
     render(
       <TestWrapper>
         <TopNav />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('SHIORA')).toBeInTheDocument();
   });
@@ -533,7 +532,7 @@ describe('TopNav', () => {
     render(
       <TestWrapper>
         <TopNav />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Connect Wallet')).toBeInTheDocument();
   });
@@ -542,7 +541,7 @@ describe('TopNav', () => {
     render(
       <TestWrapper>
         <TopNav />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByLabelText('Search')).toBeInTheDocument();
   });
@@ -551,7 +550,7 @@ describe('TopNav', () => {
     render(
       <TestWrapper>
         <TopNav />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
   });
@@ -565,7 +564,7 @@ describe('Footer', () => {
     render(
       <TestWrapper>
         <Footer />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Platform')).toBeInTheDocument();
     expect(screen.getByText('Resources')).toBeInTheDocument();
@@ -577,7 +576,7 @@ describe('Footer', () => {
     render(
       <TestWrapper>
         <Footer />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Shiora')).toBeInTheDocument();
     expect(screen.getByText('on Aethelred')).toBeInTheDocument();
@@ -587,7 +586,7 @@ describe('Footer', () => {
     render(
       <TestWrapper>
         <Footer />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Documentation')).toBeInTheDocument();
     expect(screen.getByText('HIPAA Compliance')).toBeInTheDocument();
@@ -598,7 +597,7 @@ describe('Footer', () => {
     render(
       <TestWrapper>
         <Footer />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Network Operational')).toBeInTheDocument();
   });
@@ -607,7 +606,7 @@ describe('Footer', () => {
     render(
       <TestWrapper>
         <Footer />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   });
@@ -642,7 +641,11 @@ describe('Badge dot colors', () => {
     ['medical', 'bg-violet-500'],
     ['neutral', 'bg-slate-400'],
   ] as const)('renders dot with %s variant having %s color', (variant, expectedDotClass) => {
-    const { container } = render(<Badge dot variant={variant as any}>Test</Badge>);
+    const { container } = render(
+      <Badge dot variant={variant as any}>
+        Test
+      </Badge>,
+    );
     expect(container.querySelector(`.${expectedDotClass}`)).toBeInTheDocument();
   });
 });
@@ -698,7 +701,7 @@ describe('Modal showClose=false', () => {
     render(
       <Modal open={true} onClose={jest.fn()} title="No Close" showClose={false}>
         <p>Body</p>
-      </Modal>
+      </Modal>,
     );
     expect(screen.queryByLabelText('Close')).not.toBeInTheDocument();
   });
@@ -707,7 +710,7 @@ describe('Modal showClose=false', () => {
     render(
       <Modal open={true} onClose={jest.fn()} showClose={false}>
         <p>Body Only</p>
-      </Modal>
+      </Modal>,
     );
     expect(screen.getByText('Body Only')).toBeInTheDocument();
   });
@@ -725,7 +728,7 @@ describe('ConfirmDialog danger variant', () => {
         onConfirm={jest.fn()}
         title="Danger"
         variant="danger"
-      />
+      />,
     );
     expect(container.querySelector('.bg-red-50')).toBeInTheDocument();
   });
@@ -739,7 +742,7 @@ describe('Drawer', () => {
     render(
       <Drawer open={false} onClose={jest.fn()} title="Test Drawer">
         <p>Drawer content</p>
-      </Drawer>
+      </Drawer>,
     );
     expect(screen.queryByText('Drawer content')).not.toBeInTheDocument();
   });
@@ -748,7 +751,7 @@ describe('Drawer', () => {
     render(
       <Drawer open={true} onClose={jest.fn()} title="Test Drawer">
         <p>Drawer content</p>
-      </Drawer>
+      </Drawer>,
     );
     expect(screen.getByText('Drawer content')).toBeInTheDocument();
     expect(screen.getByText('Test Drawer')).toBeInTheDocument();
@@ -759,7 +762,7 @@ describe('Drawer', () => {
     render(
       <Drawer open={true} onClose={onClose} title="Test">
         <p>Content</p>
-      </Drawer>
+      </Drawer>,
     );
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(onClose).toHaveBeenCalled();
@@ -770,7 +773,7 @@ describe('Drawer', () => {
     render(
       <Drawer open={true} onClose={onClose} title="Test">
         <p>Content</p>
-      </Drawer>
+      </Drawer>,
     );
     fireEvent.keyDown(document, { key: 'Enter' });
     expect(onClose).not.toHaveBeenCalled();
@@ -781,7 +784,7 @@ describe('Drawer', () => {
     render(
       <Drawer open={true} onClose={onClose} title="Test">
         <p>Content</p>
-      </Drawer>
+      </Drawer>,
     );
     const backdrop = document.querySelector('.bg-black\\/30');
     if (backdrop) fireEvent.click(backdrop);
@@ -792,7 +795,7 @@ describe('Drawer', () => {
     render(
       <Drawer open={true} onClose={jest.fn()} title="Test">
         <p>Content</p>
-      </Drawer>
+      </Drawer>,
     );
     expect(screen.getByLabelText('Close')).toBeInTheDocument();
   });
@@ -802,7 +805,7 @@ describe('Drawer', () => {
     render(
       <Drawer open={true} onClose={onClose} title="Test">
         <p>Content</p>
-      </Drawer>
+      </Drawer>,
     );
     fireEvent.click(screen.getByLabelText('Close'));
     expect(onClose).toHaveBeenCalled();
@@ -812,7 +815,7 @@ describe('Drawer', () => {
     render(
       <Drawer open={true} onClose={jest.fn()}>
         <p>No title</p>
-      </Drawer>
+      </Drawer>,
     );
     expect(screen.getByText('No title')).toBeInTheDocument();
   });
@@ -826,7 +829,7 @@ describe('SearchOverlay interactions', () => {
     render(
       <TestWrapper>
         <SearchOverlay />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Open overlay
@@ -845,7 +848,7 @@ describe('SearchOverlay interactions', () => {
     render(
       <TestWrapper>
         <SearchOverlay />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Open overlay
@@ -863,7 +866,7 @@ describe('SearchOverlay interactions', () => {
     render(
       <TestWrapper>
         <SearchOverlay />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Open
@@ -880,10 +883,12 @@ describe('SearchOverlay interactions', () => {
     render(
       <TestWrapper>
         <SearchOverlay />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.keyDown(document, { key: 'k', metaKey: true });
-    act(() => { jest.advanceTimersByTime(150); });
+    act(() => {
+      jest.advanceTimersByTime(150);
+    });
     expect(screen.getByPlaceholderText('Search pages, actions...')).toBeInTheDocument();
     jest.useRealTimers();
   });
@@ -897,7 +902,7 @@ describe('TopNav interactions', () => {
     render(
       <TestWrapper>
         <TopNav />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const menuBtn = screen.getByLabelText('Toggle menu');
     fireEvent.click(menuBtn);
@@ -912,7 +917,7 @@ describe('TopNav interactions', () => {
     render(
       <TestWrapper>
         <TopNav />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Platform'));
     // Should show secondary nav links
@@ -928,7 +933,7 @@ describe('TopNav interactions', () => {
     render(
       <TestWrapper>
         <TopNav />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('More'));
     // Should show tertiary nav links
@@ -942,7 +947,7 @@ describe('TopNav interactions', () => {
     render(
       <TestWrapper>
         <TopNav />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Platform'));
     fireEvent.click(screen.getByText('Vault'));
@@ -953,7 +958,7 @@ describe('TopNav interactions', () => {
     render(
       <TestWrapper>
         <TopNav />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Platform'));
     const vaultLink = screen.getByText('Vault');
@@ -965,7 +970,7 @@ describe('TopNav interactions', () => {
     render(
       <TestWrapper>
         <TopNav />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('More'));
     fireEvent.click(screen.getByText('Wearables'));
@@ -975,7 +980,7 @@ describe('TopNav interactions', () => {
     render(
       <TestWrapper>
         <TopNav />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('More'));
     const wearablesLink = screen.getByText('Wearables');
@@ -987,7 +992,7 @@ describe('TopNav interactions', () => {
     render(
       <TestWrapper>
         <TopNav />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Open Platform
     fireEvent.click(screen.getByText('Platform'));
@@ -1007,7 +1012,7 @@ describe('TopNav interactions', () => {
       <TestWrapper>
         <TopNav />
         <SearchOverlay />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByLabelText('Search'));
     expect(screen.getByPlaceholderText('Search pages, actions...')).toBeInTheDocument();
@@ -1017,7 +1022,7 @@ describe('TopNav interactions', () => {
     render(
       <TestWrapper>
         <TopNav />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Open Platform dropdown
     fireEvent.click(screen.getByText('Platform'));
@@ -1031,7 +1036,7 @@ describe('TopNav interactions', () => {
     render(
       <TestWrapper>
         <TopNav />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Open More dropdown
     fireEvent.click(screen.getByText('More'));
@@ -1044,7 +1049,7 @@ describe('TopNav interactions', () => {
     render(
       <TestWrapper>
         <TopNav />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const menuBtn = screen.getByLabelText('Toggle menu');
     fireEvent.click(menuBtn);

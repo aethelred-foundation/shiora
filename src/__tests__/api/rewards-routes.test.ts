@@ -38,9 +38,7 @@ describe('/api/rewards', () => {
   });
 
   it('GET filters by claimed=true', async () => {
-    const res = await getRewards(
-      new NextRequest('http://localhost:3000/api/rewards?claimed=true'),
-    );
+    const res = await getRewards(new NextRequest('http://localhost:3000/api/rewards?claimed=true'));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -60,7 +58,6 @@ describe('/api/rewards', () => {
       expect(r.claimedAt).toBeUndefined();
     });
   });
-
 });
 
 describe('/api/rewards/history', () => {

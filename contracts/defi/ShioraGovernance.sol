@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraGovernance
@@ -173,8 +173,12 @@ contract ShioraGovernance is Ownable, ReentrancyGuard, Pausable {
     // ────────────────────────────────────────────────────────
 
     modifier proposalExists(uint256 proposalId) {
-        if (_proposals[proposalId].proposer == address(0)) revert ProposalNotFound();
+        _proposalExists(proposalId);
         _;
+    }
+
+    function _proposalExists(uint256 proposalId) internal view {
+        if (_proposals[proposalId].proposer == address(0)) revert ProposalNotFound();
     }
 
     // ────────────────────────────────────────────────────────

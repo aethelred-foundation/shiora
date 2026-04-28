@@ -109,9 +109,12 @@ function getLeap(): KeplrProvider | null {
 
 function getCosmosProvider(provider: WalletProvider): KeplrProvider | null {
   switch (provider) {
-    case 'keplr': return getKeplr();
-    case 'leap': return getLeap();
-    default: return null;
+    case 'keplr':
+      return getKeplr();
+    case 'leap':
+      return getLeap();
+    default:
+      return null;
   }
 }
 
@@ -134,12 +137,7 @@ function base64ToHex(b64: string): string {
 // ---------------------------------------------------------------------------
 
 export function useWallet(): UseWalletReturn {
-  const {
-    wallet,
-    connectWalletWithData,
-    disconnectWallet,
-    addNotification,
-  } = useApp();
+  const { wallet, connectWalletWithData, disconnectWallet, addNotification } = useApp();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -149,9 +147,7 @@ export function useWallet(): UseWalletReturn {
   const [activeProvider, setActiveProvider] = useState<WalletProvider | null>(
     (wallet.provider as WalletProvider | null) ?? null,
   );
-  const [activeChainId, setActiveChainId] = useState<string>(
-    wallet.chainId ?? CHAIN_IDS.mainnet,
-  );
+  const [activeChainId, setActiveChainId] = useState<string>(wallet.chainId ?? CHAIN_IDS.mainnet);
   const [providerRestored, setProviderRestored] = useState(false);
 
   // Ref to track the latest sign seed for mock tx hashes
@@ -207,9 +203,7 @@ export function useWallet(): UseWalletReturn {
       try {
         const cosmosProvider = getCosmosProvider(provider);
         if (!cosmosProvider) {
-          throw new Error(
-            `${provider} wallet is not supported. Please use Keplr or Leap.`,
-          );
+          throw new Error(`${provider} wallet is not supported. Please use Keplr or Leap.`);
         }
 
         const chainId = CHAIN_IDS[network] ?? CHAIN_IDS.mainnet;
@@ -225,11 +219,7 @@ export function useWallet(): UseWalletReturn {
         });
 
         // Step 3: Sign the challenge message with the wallet extension
-        const signResult = await cosmosProvider.signArbitrary(
-          chainId,
-          address,
-          challenge.message,
-        );
+        const signResult = await cosmosProvider.signArbitrary(chainId, address, challenge.message);
 
         // Convert base64 pub_key and signature to hex for the backend
         const pubKeyHex = base64ToHex(signResult.pub_key.value);

@@ -112,9 +112,7 @@ export interface UseHealthRecordsReturn {
  * const { records, isLoading, setSearch, nextPage } = useHealthRecords();
  * ```
  */
-export function useHealthRecords(
-  initialFilters?: Partial<RecordFilters>,
-): UseHealthRecordsReturn {
+export function useHealthRecords(initialFilters?: Partial<RecordFilters>): UseHealthRecordsReturn {
   const queryClient = useQueryClient();
 
   // ---- Filters (kept as react-query queryKey params) ---------------------
@@ -157,7 +155,8 @@ export function useHealthRecords(
     setFiltersRaw((prev) => ({
       ...prev,
       sortField: field,
-      sortDirection: direction ?? (prev.sortField === field && prev.sortDirection === 'desc' ? 'asc' : 'desc'),
+      sortDirection:
+        direction ?? (prev.sortField === field && prev.sortDirection === 'desc' ? 'asc' : 'desc'),
       page: 1,
     }));
   }, []);
@@ -196,29 +195,25 @@ export function useHealthRecords(
 
   // ---- Detail query (returned as a nested hook-like function) ------------
 
-  const useRecordDetail = useCallback(
-    (id: string | null) => {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const query = useQuery({
-        queryKey: [RECORD_DETAIL_KEY, id],
-        queryFn: () => api.get<HealthRecord>(`/api/records/${id}`),
-        enabled: id !== null,
-        staleTime: 30_000,
-      });
-      return {
-        record: query.data ?? null,
-        isLoading: query.isLoading,
-        error: query.error as Error | null,
-      };
-    },
-    [],
-  );
+  const useRecordDetail = useCallback((id: string | null) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const query = useQuery({
+      queryKey: [RECORD_DETAIL_KEY, id],
+      queryFn: () => api.get<HealthRecord>(`/api/records/${id}`),
+      enabled: id !== null,
+      staleTime: 30_000,
+    });
+    return {
+      record: query.data ?? null,
+      isLoading: query.isLoading,
+      error: query.error as Error | null,
+    };
+  }, []);
 
   // ---- Upload mutation ---------------------------------------------------
 
   const uploadMutation = useMutation({
-    mutationFn: (form: UploadRecordForm) =>
-      api.post<HealthRecord>('/api/records', form),
+    mutationFn: (form: UploadRecordForm) => api.post<HealthRecord>('/api/records', form),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [RECORDS_KEY] });
     },

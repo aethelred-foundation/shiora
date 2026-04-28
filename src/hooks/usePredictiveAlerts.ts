@@ -11,12 +11,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 
-import type {
-  AlertRule,
-  AlertSeverity,
-  PredictiveAlert,
-  AlertHistory,
-} from '@/types';
+import type { AlertRule, AlertSeverity, PredictiveAlert, AlertHistory } from '@/types';
 
 const ALERTS_KEY = 'predictive-alerts';
 const RULES_KEY = 'alert-rules';
@@ -81,9 +76,12 @@ export function usePredictiveAlerts(): UsePredictiveAlertsReturn {
     setFiltersRaw((prev) => ({ ...prev, severity }));
   }, []);
 
-  const setStatusFilter = useCallback((status: 'active' | 'acknowledged' | 'resolved' | undefined) => {
-    setFiltersRaw((prev) => ({ ...prev, status }));
-  }, []);
+  const setStatusFilter = useCallback(
+    (status: 'active' | 'acknowledged' | 'resolved' | undefined) => {
+      setFiltersRaw((prev) => ({ ...prev, status }));
+    },
+    [],
+  );
 
   // ---- Alerts query -------------------------------------------------------
 
@@ -147,16 +145,14 @@ export function usePredictiveAlerts(): UsePredictiveAlertsReturn {
   });
 
   const toggleRuleMutation = useMutation({
-    mutationFn: (id: string) =>
-      api.patch<AlertRule>(`/api/alerts/rules/${id}`, { toggle: true }),
+    mutationFn: (id: string) => api.patch<AlertRule>(`/api/alerts/rules/${id}`, { toggle: true }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [RULES_KEY] });
     },
   });
 
   const acknowledgeMutation = useMutation({
-    mutationFn: (id: string) =>
-      api.post<PredictiveAlert>(`/api/alerts/${id}/acknowledge`),
+    mutationFn: (id: string) => api.post<PredictiveAlert>(`/api/alerts/${id}/acknowledge`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [ALERTS_KEY] });
       queryClient.invalidateQueries({ queryKey: [HISTORY_KEY] });
@@ -164,8 +160,7 @@ export function usePredictiveAlerts(): UsePredictiveAlertsReturn {
   });
 
   const resolveMutation = useMutation({
-    mutationFn: (id: string) =>
-      api.post<PredictiveAlert>(`/api/alerts/${id}/resolve`),
+    mutationFn: (id: string) => api.post<PredictiveAlert>(`/api/alerts/${id}/resolve`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [ALERTS_KEY] });
       queryClient.invalidateQueries({ queryKey: [HISTORY_KEY] });

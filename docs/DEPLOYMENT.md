@@ -35,8 +35,11 @@ TEE_ATTESTATION_KEY=<attestation-verification-key>
 JWT_SECRET=<jwt-signing-secret>
 JWT_EXPIRY=24h
 
-# ── Database (optional, for caching/indexing) ─────────────────
+# ── Database / persistence ────────────────────────────────────
 DATABASE_URL=postgresql://user:password@localhost:5432/shiora
+
+# Local demo-store encryption only; use `openssl rand -base64 32`
+SHIORA_DEMO_STORE_ENCRYPTION_KEY=<local-demo-store-key>
 
 # ── Monitoring ────────────────────────────────────────────────
 NEXT_PUBLIC_SENTRY_DSN=<sentry-dsn>
@@ -45,22 +48,23 @@ LOG_LEVEL=info
 
 ### Environment Variable Reference
 
-| Variable                     | Required | Description                          |
-|------------------------------|----------|--------------------------------------|
-| NEXT_PUBLIC_RPC_URL          | Yes      | Aethelred L1 RPC endpoint           |
-| NEXT_PUBLIC_SHIORA_API_URL   | Yes      | Backend API base URL                 |
-| NEXT_PUBLIC_IPFS_GATEWAY     | Yes      | IPFS HTTP gateway URL                |
-| NEXT_PUBLIC_CHAIN_ID         | Yes      | Blockchain chain ID                  |
-| SHIORA_API_SECRET            | Yes      | Server-side API signing secret       |
-| IPFS_API_URL                 | Yes      | IPFS node API endpoint               |
-| IPFS_PINNING_SERVICE_KEY     | No       | Remote pinning service key           |
-| TEE_ENCLAVE_URL              | Yes      | TEE enclave service endpoint         |
-| TEE_ATTESTATION_KEY          | Yes      | Public key for attestation verification |
-| JWT_SECRET                   | Yes      | JWT token signing secret             |
-| JWT_EXPIRY                   | No       | JWT expiration time (default: 24h)   |
-| DATABASE_URL                 | No       | PostgreSQL connection string         |
-| NEXT_PUBLIC_SENTRY_DSN       | No       | Sentry error tracking DSN            |
-| LOG_LEVEL                    | No       | Logging level (debug, info, warn, error) |
+| Variable                         | Required | Description                              |
+| -------------------------------- | -------- | ---------------------------------------- |
+| NEXT_PUBLIC_RPC_URL              | Yes      | Aethelred L1 RPC endpoint                |
+| NEXT_PUBLIC_SHIORA_API_URL       | Yes      | Backend API base URL                     |
+| NEXT_PUBLIC_IPFS_GATEWAY         | Yes      | IPFS HTTP gateway URL                    |
+| NEXT_PUBLIC_CHAIN_ID             | Yes      | Blockchain chain ID                      |
+| SHIORA_API_SECRET                | Yes      | Server-side API signing secret           |
+| IPFS_API_URL                     | Yes      | IPFS node API endpoint                   |
+| IPFS_PINNING_SERVICE_KEY         | No       | Remote pinning service key               |
+| TEE_ENCLAVE_URL                  | Yes      | TEE enclave service endpoint             |
+| TEE_ATTESTATION_KEY              | Yes      | Public key for attestation verification  |
+| JWT_SECRET                       | Yes      | JWT token signing secret                 |
+| JWT_EXPIRY                       | No       | JWT expiration time (default: 24h)       |
+| DATABASE_URL                     | Yes      | Production PostgreSQL connection string  |
+| SHIORA_DEMO_STORE_ENCRYPTION_KEY | No       | AES-GCM key for local demo-store state   |
+| NEXT_PUBLIC_SENTRY_DSN           | No       | Sentry error tracking DSN                |
+| LOG_LEVEL                        | No       | Logging level (debug, info, warn, error) |
 
 ## Development Setup
 
@@ -101,6 +105,9 @@ npm run test:coverage
 
 # Full validation (type-check + lint + format + test)
 npm run validate
+
+# Release gate (validation + production smoke + high-severity prod audit)
+npm run release:check
 ```
 
 ### 5. Code Quality
@@ -120,6 +127,74 @@ npm run format:check
 ```
 
 ## Production Deployment
+
+### Production Persistence Gate
+
+The built-in `.shiora-data/state.json` store is a demo/staging fallback only. It is
+schema-versioned, atomically written, and can be encrypted with
+`SHIORA_DEMO_STORE_ENCRYPTION_KEY`, but it is still process-local and is not a
+substitute for a replicated, backed-up, migration-controlled production database.
+Mutations also append minimal metadata to `.shiora-data/store-audit.jsonl`,
+which is hash-chained (`previousHash` -> `entryHash`) and intentionally avoids
+record labels/descriptions. This makes local/demo mutations tamper-evident, but
+it is still not a substitute for managed database audit logging.
+
+For regulated workloads:
+
+- Keep `SHIORA_ALLOW_DEMO_STORE_IN_PRODUCTION=false`.
+- Configure `DATABASE_URL` against managed PostgreSQL or an equivalent audited datastore.
+- Start from `db/migrations/001_shiora_core_store.sql` for the audited core persistence schema, including forced row-level security policies keyed by `app.wallet_address` and `app.is_admin` session settings.
+- Run application traffic with a least-privilege `NOSUPERUSER NOBYPASSRLS` database role; reserve owner/admin roles for migrations only.
+- Keep the Postgres integration smoke enabled in CI so the migration, adapter, and RLS policies are tested against a live database before merge.
+- Require encrypted volumes, point-in-time recovery, database audit logging, and tested restore drills.
+- Treat any deployment that enables the demo store in production as a non-regulated emergency/demo deployment.
+- If the demo store is explicitly enabled for an emergency production-like drill, `SHIORA_DEMO_STORE_ENCRYPTION_KEY` is mandatory.
+
+For local live-database verification, run:
+
+```bash
+npm run test:postgres:docker
+```
+
+This starts a disposable Postgres 16 container on `127.0.0.1:55432`, applies
+the regulated migration, provisions a least-privilege `NOBYPASSRLS` app role,
+and executes the RLS/data-sanitization integration suite. In CI, the Postgres
+smoke is fail-closed: `npm run test:postgres` exits non-zero if `DATABASE_URL`
+is missing.
+
+### Regulated Production Readiness Gate
+
+The runtime configuration exposes `serverEnv.assertProductionReady()` for
+regulated deployment promotion checks. A regulated production deployment must
+have:
+
+- `NODE_ENV=production`.
+- `SHIORA_SESSION_SECRET` set to a 32+ character secret.
+- `SHIORA_ADMIN_WALLETS` set to at least one authorized admin wallet.
+- `SHIORA_ENABLE_HSTS=true`.
+- `SHIORA_ALLOW_INSECURE_WALLET_HEADER` unset or `false`.
+- `SHIORA_ALLOW_DEMO_STORE_IN_PRODUCTION=false`.
+- `SHIORA_STORE_BACKEND=postgres`.
+- `DATABASE_URL` configured for a durable audited datastore.
+- `SHIORA_ALLOWED_ORIGINS` set to HTTPS-only, non-local origins.
+
+This is intentionally stricter than local/demo mode. If the demo store escape
+hatch is enabled, the deployment may be useful for emergency drills or demos,
+but it should not be treated as regulated production.
+
+`GET /api/health` also evaluates these regulated readiness checks at runtime.
+In production, failed readiness checks return `503 PRODUCTION_READINESS_FAILED`
+with a bounded failure count so load balancers and monitors do not promote a
+misconfigured deployment. Individual missing configuration names are not
+returned in production health responses.
+
+### Dependency Audit Gate
+
+Run `npm run audit:prod` in CI to fail on production dependency advisories. The
+project pins a patched PostCSS line with an npm override so Next.js' transitive
+PostCSS dependency stays on the audited version without downgrading the
+framework. Do not run `npm audit fix --force` unless the resulting framework
+version is reviewed.
 
 ### Option 1: Vercel (Recommended)
 
@@ -206,12 +281,12 @@ services:
         NEXT_PUBLIC_SHIORA_API_URL: ${NEXT_PUBLIC_SHIORA_API_URL}
         NEXT_PUBLIC_IPFS_GATEWAY: ${NEXT_PUBLIC_IPFS_GATEWAY}
     ports:
-      - "3001:3001"
+      - '3001:3001'
     env_file:
       - .env.local
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/"]
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:3001/']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -219,8 +294,8 @@ services:
   ipfs:
     image: ipfs/kubo:latest
     ports:
-      - "5001:5001"
-      - "8080:8080"
+      - '5001:5001'
+      - '8080:8080'
     volumes:
       - ipfs_data:/data/ipfs
     restart: unless-stopped
@@ -259,21 +334,23 @@ npx pm2 start ecosystem.config.js
 
 ```javascript
 module.exports = {
-  apps: [{
-    name: 'shiora',
-    script: 'npm',
-    args: 'start',
-    instances: 'max',
-    exec_mode: 'cluster',
-    env: {
-      NODE_ENV: 'production',
-      PORT: 3001,
+  apps: [
+    {
+      name: 'shiora',
+      script: 'npm',
+      args: 'start',
+      instances: 'max',
+      exec_mode: 'cluster',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3001,
+      },
+      max_memory_restart: '500M',
+      error_file: './logs/error.log',
+      out_file: './logs/out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     },
-    max_memory_restart: '500M',
-    error_file: './logs/error.log',
-    out_file: './logs/out.log',
-    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-  }],
+  ],
 };
 ```
 
@@ -313,12 +390,12 @@ aethel-cli verify --network testnet \
 
 ### Contract Addresses (Mainnet)
 
-| Contract                 | Address                                    |
-|--------------------------|--------------------------------------------|
-| HealthRecordRegistry     | `aeth1contract_health_registry...`         |
-| AccessControlManager     | `aeth1contract_access_control...`          |
-| TEEAttestationVerifier   | `aeth1contract_tee_verifier...`            |
-| ShioraToken ($SHIO)      | `aeth1contract_shio_token...`              |
+| Contract               | Address                            |
+| ---------------------- | ---------------------------------- |
+| HealthRecordRegistry   | `aeth1contract_health_registry...` |
+| AccessControlManager   | `aeth1contract_access_control...`  |
+| TEEAttestationVerifier | `aeth1contract_tee_verifier...`    |
+| ShioraToken ($SHIO)    | `aeth1contract_shio_token...`      |
 
 ## IPFS Node Setup
 
@@ -372,16 +449,16 @@ GET /api/tee/status     # TEE enclave health
 
 ### Key Metrics to Monitor
 
-| Metric                    | Threshold        | Alert Level |
-|---------------------------|------------------|-------------|
-| Response time (p95)       | < 500ms          | Warning     |
-| Response time (p99)       | < 1000ms         | Critical    |
-| Error rate (5xx)          | < 0.1%           | Critical    |
-| TEE enclave uptime        | > 99.9%          | Critical    |
-| IPFS node availability    | > 95%            | Warning     |
-| Block height sync lag     | < 10 blocks      | Warning     |
-| Memory usage              | < 80%            | Warning     |
-| CPU usage                 | < 70%            | Warning     |
+| Metric                 | Threshold   | Alert Level |
+| ---------------------- | ----------- | ----------- |
+| Response time (p95)    | < 500ms     | Warning     |
+| Response time (p99)    | < 1000ms    | Critical    |
+| Error rate (5xx)       | < 0.1%      | Critical    |
+| TEE enclave uptime     | > 99.9%     | Critical    |
+| IPFS node availability | > 95%       | Warning     |
+| Block height sync lag  | < 10 blocks | Warning     |
+| Memory usage           | < 80%       | Warning     |
+| CPU usage              | < 70%       | Warning     |
 
 ### Logging
 

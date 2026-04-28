@@ -159,7 +159,9 @@ describe('GrantAccessModal', () => {
   it('accepts valid address and proceeds', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
     const addressInput = screen.getByPlaceholderText('aeth1...');
-    fireEvent.change(addressInput, { target: { value: 'aeth1abcdefghijklmnopqrstuvwxyz12345678' } });
+    fireEvent.change(addressInput, {
+      target: { value: 'aeth1abcdefghijklmnopqrstuvwxyz12345678' },
+    });
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByText('Set Permissions')).toBeInTheDocument();
   });
@@ -225,7 +227,7 @@ describe('GrantAccessModal', () => {
     expect(onGrantComplete).toHaveBeenCalledWith(
       expect.objectContaining({
         provider: 'Dr. Sarah Chen, OB-GYN',
-      })
+      }),
     );
   });
 
@@ -239,7 +241,9 @@ describe('GrantAccessModal', () => {
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Review'));
     fireEvent.click(screen.getByText('Grant Access'));
-    await act(async () => { jest.advanceTimersByTime(3000); });
+    await act(async () => {
+      jest.advanceTimersByTime(3000);
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Access Granted')).toBeInTheDocument();
@@ -328,7 +332,9 @@ describe('GrantAccessModal', () => {
   it('shows Custom Address in review when manual address is used', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
     const addressInput = screen.getByPlaceholderText('aeth1...');
-    fireEvent.change(addressInput, { target: { value: 'aeth1abcdefghijklmnopqrstuvwxyz12345678' } });
+    fireEvent.change(addressInput, {
+      target: { value: 'aeth1abcdefghijklmnopqrstuvwxyz12345678' },
+    });
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Review'));
     expect(screen.getByText('Custom Address')).toBeInTheDocument();
@@ -352,7 +358,9 @@ describe('GrantAccessModal', () => {
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Review'));
     fireEvent.click(screen.getByText('Grant Access'));
-    await act(async () => { jest.advanceTimersByTime(3000); });
+    await act(async () => {
+      jest.advanceTimersByTime(3000);
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Access Granted')).toBeInTheDocument();
@@ -393,7 +401,7 @@ describe('GrantAccessModal', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
     // With empty search, all providers should be shown
     expect(screen.getByText('Dr. Sarah Chen, OB-GYN')).toBeInTheDocument();
-    expect(screen.getByText('Metro Women\'s Health')).toBeInTheDocument();
+    expect(screen.getByText("Metro Women's Health")).toBeInTheDocument();
   });
 
   // ─── goToPermissions with provider address validation (line 133) ───

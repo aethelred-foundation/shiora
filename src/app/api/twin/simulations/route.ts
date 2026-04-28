@@ -24,16 +24,44 @@ const SCENARIOS: Array<{
   scenario: string;
   description: string;
   status: TwinSimulation['status'];
-  params: Array<{ name: string; category: string; unit: string; current: number; simulated: number; min: number; max: number; step: number }>;
+  params: Array<{
+    name: string;
+    category: string;
+    unit: string;
+    current: number;
+    simulated: number;
+    min: number;
+    max: number;
+    step: number;
+  }>;
   metrics: Array<{ metric: string; unit: string; beforeBase: number; afterBase: number }>;
 }> = [
   {
     scenario: 'Increase Exercise',
-    description: 'Simulate the impact of increasing daily exercise from 30 to 60 minutes per day over 90 days.',
+    description:
+      'Simulate the impact of increasing daily exercise from 30 to 60 minutes per day over 90 days.',
     status: 'completed',
     params: [
-      { name: 'Exercise Minutes/Week', category: 'Activity', unit: 'min', current: 210, simulated: 420, min: 0, max: 600, step: 30 },
-      { name: 'Steps/Day', category: 'Activity', unit: 'steps', current: 8000, simulated: 12000, min: 2000, max: 20000, step: 500 },
+      {
+        name: 'Exercise Minutes/Week',
+        category: 'Activity',
+        unit: 'min',
+        current: 210,
+        simulated: 420,
+        min: 0,
+        max: 600,
+        step: 30,
+      },
+      {
+        name: 'Steps/Day',
+        category: 'Activity',
+        unit: 'steps',
+        current: 8000,
+        simulated: 12000,
+        min: 2000,
+        max: 20000,
+        step: 500,
+      },
     ],
     metrics: [
       { metric: 'Resting Heart Rate', unit: 'bpm', beforeBase: 72, afterBase: 65 },
@@ -44,10 +72,20 @@ const SCENARIOS: Array<{
   },
   {
     scenario: 'Add Statin Medication',
-    description: 'Simulate adding 20mg atorvastatin daily and its projected effect on lipid panel over 90 days.',
+    description:
+      'Simulate adding 20mg atorvastatin daily and its projected effect on lipid panel over 90 days.',
     status: 'completed',
     params: [
-      { name: 'Atorvastatin Dose', category: 'Medication', unit: 'mg', current: 0, simulated: 20, min: 0, max: 80, step: 10 },
+      {
+        name: 'Atorvastatin Dose',
+        category: 'Medication',
+        unit: 'mg',
+        current: 0,
+        simulated: 20,
+        min: 0,
+        max: 80,
+        step: 10,
+      },
     ],
     metrics: [
       { metric: 'LDL Cholesterol', unit: 'mg/dL', beforeBase: 145, afterBase: 98 },
@@ -58,11 +96,30 @@ const SCENARIOS: Array<{
   },
   {
     scenario: 'Improve Sleep',
-    description: 'Simulate improving sleep duration from 6 to 8 hours and sleep quality from 65 to 85 over 90 days.',
+    description:
+      'Simulate improving sleep duration from 6 to 8 hours and sleep quality from 65 to 85 over 90 days.',
     status: 'completed',
     params: [
-      { name: 'Sleep Hours/Night', category: 'Sleep', unit: 'hrs', current: 6, simulated: 8, min: 4, max: 10, step: 0.5 },
-      { name: 'Sleep Quality Score', category: 'Sleep', unit: 'pts', current: 65, simulated: 85, min: 0, max: 100, step: 5 },
+      {
+        name: 'Sleep Hours/Night',
+        category: 'Sleep',
+        unit: 'hrs',
+        current: 6,
+        simulated: 8,
+        min: 4,
+        max: 10,
+        step: 0.5,
+      },
+      {
+        name: 'Sleep Quality Score',
+        category: 'Sleep',
+        unit: 'pts',
+        current: 65,
+        simulated: 85,
+        min: 0,
+        max: 100,
+        step: 5,
+      },
     ],
     metrics: [
       { metric: 'Cortisol Level', unit: 'mcg/dL', beforeBase: 18.5, afterBase: 13.2 },
@@ -73,10 +130,20 @@ const SCENARIOS: Array<{
   },
   {
     scenario: 'Reduce Sodium',
-    description: 'Simulate reducing daily sodium intake from 3400mg to 2000mg and its cardiovascular impact.',
+    description:
+      'Simulate reducing daily sodium intake from 3400mg to 2000mg and its cardiovascular impact.',
     status: 'completed',
     params: [
-      { name: 'Sodium Intake', category: 'Diet', unit: 'mg/day', current: 3400, simulated: 2000, min: 500, max: 5000, step: 100 },
+      {
+        name: 'Sodium Intake',
+        category: 'Diet',
+        unit: 'mg/day',
+        current: 3400,
+        simulated: 2000,
+        min: 500,
+        max: 5000,
+        step: 100,
+      },
     ],
     metrics: [
       { metric: 'Blood Pressure Systolic', unit: 'mmHg', beforeBase: 132, afterBase: 122 },
@@ -87,11 +154,30 @@ const SCENARIOS: Array<{
   },
   {
     scenario: 'Start Meditation',
-    description: 'Simulate adding 20 minutes of daily meditation and mindfulness practice for stress reduction.',
+    description:
+      'Simulate adding 20 minutes of daily meditation and mindfulness practice for stress reduction.',
     status: 'simulating',
     params: [
-      { name: 'Meditation Minutes/Day', category: 'Wellness', unit: 'min', current: 0, simulated: 20, min: 0, max: 60, step: 5 },
-      { name: 'Stress Score', category: 'Stress', unit: 'pts', current: 72, simulated: 45, min: 0, max: 100, step: 5 },
+      {
+        name: 'Meditation Minutes/Day',
+        category: 'Wellness',
+        unit: 'min',
+        current: 0,
+        simulated: 20,
+        min: 0,
+        max: 60,
+        step: 5,
+      },
+      {
+        name: 'Stress Score',
+        category: 'Stress',
+        unit: 'pts',
+        current: 72,
+        simulated: 45,
+        min: 0,
+        max: 100,
+        step: 5,
+      },
     ],
     metrics: [
       { metric: 'Cortisol Level', unit: 'mcg/dL', beforeBase: 19.8, afterBase: 12.5 },
@@ -157,7 +243,10 @@ function buildSimulation(scenarioIdx: number): TwinSimulation {
     parameters,
     status: s.status,
     startedAt,
-    completedAt: s.status === 'completed' ? startedAt + seededInt(baseSeed + 21, 3600000, 86400000) : undefined,
+    completedAt:
+      s.status === 'completed'
+        ? startedAt + seededInt(baseSeed + 21, 3600000, 86400000)
+        : undefined,
     beforeMetrics,
     afterMetrics,
     confidenceInterval: Math.round(seededRandom(baseSeed + 22) * 8 + 88), // 88-96
@@ -192,7 +281,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate a mock new simulation from the request
-    const newSeed = SEED + 500 + Date.now() % 1000;
+    const newSeed = SEED + 500 + (Date.now() % 1000);
 
     const newSimulation: TwinSimulation = {
       id: `sim-${seededHex(newSeed, 12)}`,
@@ -222,10 +311,6 @@ export async function POST(request: NextRequest) {
 
     return successResponse(newSimulation, HTTP.CREATED);
   } catch {
-    return errorResponse(
-      'INVALID_BODY',
-      'Invalid JSON in request body',
-      HTTP.BAD_REQUEST,
-    );
+    return errorResponse('INVALID_BODY', 'Invalid JSON in request body', HTTP.BAD_REQUEST);
   }
 }

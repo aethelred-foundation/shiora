@@ -15,37 +15,65 @@ const SEED = 2530;
 const TRIAGE_HISTORY = [
   {
     symptoms: ['Chest tightness', 'Shortness of breath'],
-    vitalSigns: { heartRate: 102, bloodPressure: 148, temperature: 98.6, respiratoryRate: 22, oxygenSaturation: 95 },
+    vitalSigns: {
+      heartRate: 102,
+      bloodPressure: 148,
+      temperature: 98.6,
+      respiratoryRate: 22,
+      oxygenSaturation: 95,
+    },
     esiLevel: 2 as const,
     disposition: 'emergency_room' as const,
-    reasoning: 'Chest tightness with shortness of breath in a patient with known hypertension indicates potential cardiac event. Elevated heart rate and blood pressure support emergent classification requiring immediate ED evaluation.',
+    reasoning:
+      'Chest tightness with shortness of breath in a patient with known hypertension indicates potential cardiac event. Elevated heart rate and blood pressure support emergent classification requiring immediate ED evaluation.',
     confidence: 94,
     modelId: 'triage-transformer-v2.1',
   },
   {
     symptoms: ['Dizziness', 'Blurred vision', 'Headache'],
-    vitalSigns: { heartRate: 88, bloodPressure: 172, temperature: 98.4, respiratoryRate: 18, oxygenSaturation: 97 },
+    vitalSigns: {
+      heartRate: 88,
+      bloodPressure: 172,
+      temperature: 98.4,
+      respiratoryRate: 18,
+      oxygenSaturation: 97,
+    },
     esiLevel: 3 as const,
     disposition: 'urgent_care' as const,
-    reasoning: 'Dizziness with blurred vision and significantly elevated blood pressure suggests hypertensive urgency. Multiple resources needed for evaluation including labs and imaging. Urgent care with monitoring capability recommended.',
+    reasoning:
+      'Dizziness with blurred vision and significantly elevated blood pressure suggests hypertensive urgency. Multiple resources needed for evaluation including labs and imaging. Urgent care with monitoring capability recommended.',
     confidence: 91,
     modelId: 'triage-transformer-v2.1',
   },
   {
     symptoms: ['Mild nausea', 'Fatigue', 'Increased thirst'],
-    vitalSigns: { heartRate: 78, bloodPressure: 132, temperature: 98.2, respiratoryRate: 16, oxygenSaturation: 98 },
+    vitalSigns: {
+      heartRate: 78,
+      bloodPressure: 132,
+      temperature: 98.2,
+      respiratoryRate: 16,
+      oxygenSaturation: 98,
+    },
     esiLevel: 4 as const,
     disposition: 'primary_care' as const,
-    reasoning: 'Symptoms consistent with suboptimal blood glucose management in known diabetic patient. Stable vital signs with mild symptoms. Primary care follow-up recommended for medication adjustment.',
+    reasoning:
+      'Symptoms consistent with suboptimal blood glucose management in known diabetic patient. Stable vital signs with mild symptoms. Primary care follow-up recommended for medication adjustment.',
     confidence: 89,
     modelId: 'triage-transformer-v2.1',
   },
   {
     symptoms: ['Mild headache', 'Neck stiffness'],
-    vitalSigns: { heartRate: 72, bloodPressure: 126, temperature: 98.8, respiratoryRate: 14, oxygenSaturation: 99 },
+    vitalSigns: {
+      heartRate: 72,
+      bloodPressure: 126,
+      temperature: 98.8,
+      respiratoryRate: 14,
+      oxygenSaturation: 99,
+    },
     esiLevel: 4 as const,
     disposition: 'primary_care' as const,
-    reasoning: 'Tension-type headache with mild neck stiffness. No red flag symptoms. Vital signs within normal limits for this patient. Recommend primary care evaluation if symptoms persist beyond 48 hours.',
+    reasoning:
+      'Tension-type headache with mild neck stiffness. No red flag symptoms. Vital signs within normal limits for this patient. Recommend primary care evaluation if symptoms persist beyond 48 hours.',
     confidence: 87,
     modelId: 'triage-transformer-v2.1',
   },
@@ -84,10 +112,19 @@ export async function POST(request: NextRequest) {
     const seed = Date.now();
 
     // Determine severity based on symptom keywords
-    const criticalSymptoms = ['chest pain', 'shortness of breath', 'unconscious', 'severe bleeding'];
+    const criticalSymptoms = [
+      'chest pain',
+      'shortness of breath',
+      'unconscious',
+      'severe bleeding',
+    ];
     const urgentSymptoms = ['dizziness', 'high fever', 'abdominal pain', 'confusion'];
-    const hasCritical = symptoms.some((s: string) => criticalSymptoms.some((c) => s.toLowerCase().includes(c)));
-    const hasUrgent = symptoms.some((s: string) => urgentSymptoms.some((u) => s.toLowerCase().includes(u)));
+    const hasCritical = symptoms.some((s: string) =>
+      criticalSymptoms.some((c) => s.toLowerCase().includes(c)),
+    );
+    const hasUrgent = symptoms.some((s: string) =>
+      urgentSymptoms.some((u) => s.toLowerCase().includes(u)),
+    );
 
     const esiLevel = hasCritical ? 2 : hasUrgent ? 3 : 4;
     const dispositions = {
@@ -109,7 +146,9 @@ export async function POST(request: NextRequest) {
         oxygenSaturation: seededInt(seed + 5, 92, 100),
       },
       esiLevel: esiLevel as 1 | 2 | 3 | 4 | 5,
-      disposition: dispositions[esiLevel as keyof typeof dispositions] ?? /* istanbul ignore next */ 'primary_care',
+      disposition:
+        dispositions[esiLevel as keyof typeof dispositions] ??
+        /* istanbul ignore next */ 'primary_care',
       reasoning: `Based on the reported symptoms (${symptoms.join(', ')}), the AI triage model assessed the patient's condition using the Emergency Severity Index (ESI). ${hasCritical ? 'Critical symptoms detected requiring emergent evaluation.' : hasUrgent ? 'Urgent symptoms detected that may require multiple resources for evaluation.' : 'Symptoms suggest a less urgent condition that can be managed in a primary care setting.'} Vital signs ${vitalSigns ? 'were provided and factored into the assessment' : 'were estimated based on symptom correlation'}. This assessment was processed within a TEE enclave for privacy and verified through on-chain attestation.`,
       confidence: hasCritical ? 95 : hasUrgent ? 92 : 88,
       attestation: generateAttestation(seed + 10),

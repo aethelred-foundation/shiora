@@ -6,13 +6,7 @@
 import { NextRequest } from 'next/server';
 import { successResponse, errorResponse } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
-import {
-  seededRandom,
-  seededInt,
-  seededHex,
-  seededPick,
-  generateAttestation,
-} from '@/lib/utils';
+import { seededRandom, seededInt, seededHex, seededPick, generateAttestation } from '@/lib/utils';
 import type { ClinicalStats, ClinicalAlert, AlertSeverity } from '@/types';
 
 const SEED = 2100;
@@ -156,7 +150,9 @@ export async function GET(request: NextRequest) {
       const type = ALERT_TYPES[i % ALERT_TYPES.length];
       const titleIdx = Math.floor(seededRandom(SEED + 10 + i * 3) * ALERT_TITLES[type].length);
       const msgIdx = Math.floor(seededRandom(SEED + 10 + i * 5) * ALERT_MESSAGES[type].length);
-      const recIdx = Math.floor(seededRandom(SEED + 10 + i * 7) * ALERT_RECOMMENDATIONS[type].length);
+      const recIdx = Math.floor(
+        seededRandom(SEED + 10 + i * 7) * ALERT_RECOMMENDATIONS[type].length,
+      );
 
       return {
         id: `alert-${seededHex(SEED + 100 + i * 13, 12)}`,
@@ -164,8 +160,14 @@ export async function GET(request: NextRequest) {
         severity: seededPick(SEED + 10 + i * 11, ALERT_SEVERITIES),
         title: ALERT_TITLES[type][titleIdx],
         message: ALERT_MESSAGES[type][msgIdx],
-        relatedDrugs: ALERT_DRUGS[i % ALERT_DRUGS.length].length > 0 ? ALERT_DRUGS[i % ALERT_DRUGS.length] : undefined,
-        relatedConditions: ALERT_CONDITIONS[i % ALERT_CONDITIONS.length].length > 0 ? ALERT_CONDITIONS[i % ALERT_CONDITIONS.length] : undefined,
+        relatedDrugs:
+          ALERT_DRUGS[i % ALERT_DRUGS.length].length > 0
+            ? ALERT_DRUGS[i % ALERT_DRUGS.length]
+            : undefined,
+        relatedConditions:
+          ALERT_CONDITIONS[i % ALERT_CONDITIONS.length].length > 0
+            ? ALERT_CONDITIONS[i % ALERT_CONDITIONS.length]
+            : undefined,
         recommendation: ALERT_RECOMMENDATIONS[type][recIdx],
         triggeredAt: Date.now() - seededInt(SEED + 10 + i * 17, 1, 72) * 3600000,
         attestation: generateAttestation(SEED + 100 + i * 19),

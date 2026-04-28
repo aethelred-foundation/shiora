@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraConsentManager
@@ -129,9 +129,13 @@ contract ShioraConsentManager is Ownable, ReentrancyGuard, Pausable {
     // ────────────────────────────────────────────────────────
 
     modifier onlyConsentOwner(bytes32 consentId) {
+        _onlyConsentOwner(consentId);
+        _;
+    }
+
+    function _onlyConsentOwner(bytes32 consentId) internal view {
         if (_consents[consentId].patient == address(0)) revert ConsentNotFound();
         if (_consents[consentId].patient != msg.sender) revert NotConsentOwner();
-        _;
     }
 
     // ────────────────────────────────────────────────────────

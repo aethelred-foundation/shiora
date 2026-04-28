@@ -2,7 +2,11 @@
 
 import { NextRequest } from 'next/server';
 import { GET as listConsents, POST as createConsent } from '@/app/api/consent/route';
-import { GET as getConsent, PATCH as patchConsent, DELETE as deleteConsent } from '@/app/api/consent/[id]/route';
+import {
+  GET as getConsent,
+  PATCH as patchConsent,
+  DELETE as deleteConsent,
+} from '@/app/api/consent/[id]/route';
 import { GET as getPolicies } from '@/app/api/consent/policies/route';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
@@ -37,9 +41,15 @@ const mockedStoreListConsents = storeListConsents as jest.MockedFunction<typeof 
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
 
 afterEach(() => {
-  mockedUpdateConsent.mockImplementation((...args: unknown[]) => actualStore.updateConsent(...args));
-  mockedStoreListConsents.mockImplementation((...args: unknown[]) => actualStore.listConsents(...args));
-  mockedRunMiddleware.mockImplementation((...args: unknown[]) => actualMiddleware.runMiddleware(...args));
+  mockedUpdateConsent.mockImplementation((...args: unknown[]) =>
+    actualStore.updateConsent(...args),
+  );
+  mockedStoreListConsents.mockImplementation((...args: unknown[]) =>
+    actualStore.listConsents(...args),
+  );
+  mockedRunMiddleware.mockImplementation((...args: unknown[]) =>
+    actualMiddleware.runMiddleware(...args),
+  );
 });
 
 const addr = seededAddress(6666);
@@ -168,7 +178,9 @@ describe('/api/consent', () => {
 
   it('POST returns middleware error when blocked', async () => {
     const { NextResponse } = require('next/server');
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await createConsent(
       new NextRequest('http://localhost:3000/api/consent', {
         method: 'POST',
@@ -205,9 +217,9 @@ describe('/api/consent', () => {
     mockedStoreListConsents.mockImplementationOnce(() => {
       throw new Error('Unexpected DB error in list');
     });
-    await expect(
-      listConsents(authed('http://localhost:3000/api/consent')),
-    ).rejects.toThrow('Unexpected DB error in list');
+    await expect(listConsents(authed('http://localhost:3000/api/consent'))).rejects.toThrow(
+      'Unexpected DB error in list',
+    );
   });
 
   it('POST creates consent with providerAddress', async () => {
@@ -253,10 +265,9 @@ describe('/api/consent/[id]', () => {
   });
 
   it('GET returns a specific consent', async () => {
-    const res = await getConsent(
-      authed(`http://localhost:3000/api/consent/${consentId}`),
-      { params: Promise.resolve({ id: consentId }) },
-    );
+    const res = await getConsent(authed(`http://localhost:3000/api/consent/${consentId}`), {
+      params: Promise.resolve({ id: consentId }),
+    });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -290,18 +301,16 @@ describe('/api/consent/[id]', () => {
   });
 
   it('GET returns 401 for unauthenticated request', async () => {
-    const res = await getConsent(
-      new NextRequest('http://localhost:3000/api/consent/some-id'),
-      { params: Promise.resolve({ id: 'some-id' }) },
-    );
+    const res = await getConsent(new NextRequest('http://localhost:3000/api/consent/some-id'), {
+      params: Promise.resolve({ id: 'some-id' }),
+    });
     expect(res.status).toBe(401);
   });
 
   it('GET returns 404 for nonexistent consent', async () => {
-    const res = await getConsent(
-      authed('http://localhost:3000/api/consent/nonexistent'),
-      { params: Promise.resolve({ id: 'nonexistent' }) },
-    );
+    const res = await getConsent(authed('http://localhost:3000/api/consent/nonexistent'), {
+      params: Promise.resolve({ id: 'nonexistent' }),
+    });
     expect(res.status).toBe(404);
     const body = await res.json();
     expect(body.error.code).toBe('NOT_FOUND');
@@ -506,10 +515,9 @@ describe('/api/consent/[id]', () => {
 
   it('GET returns 401 from inner requireAuth when middleware is bypassed', async () => {
     mockedRunMiddleware.mockReturnValueOnce(null);
-    const res = await getConsent(
-      new NextRequest('http://localhost:3000/api/consent/some-id'),
-      { params: Promise.resolve({ id: 'some-id' }) },
-    );
+    const res = await getConsent(new NextRequest('http://localhost:3000/api/consent/some-id'), {
+      params: Promise.resolve({ id: 'some-id' }),
+    });
     expect(res.status).toBe(401);
   });
 

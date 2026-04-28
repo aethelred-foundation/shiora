@@ -5,10 +5,15 @@ import { AppProvider } from '@/contexts/AppContext';
 import { useHealthRecords } from '@/hooks/useHealthRecords';
 
 function createWrapper() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } } });
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
+  });
   return ({ children }: { children: React.ReactNode }) =>
-    React.createElement(QueryClientProvider, { client: qc },
-      React.createElement(AppProvider, null, children));
+    React.createElement(
+      QueryClientProvider,
+      { client: qc },
+      React.createElement(AppProvider, null, children),
+    );
 }
 
 describe('useHealthRecords', () => {
@@ -206,11 +211,14 @@ describe('useHealthRecords', () => {
 
   it('useRecordDetail fetches a single record by ID', async () => {
     const wrapper = createWrapper();
-    const { result } = renderHook(() => {
-      const records = useHealthRecords();
-      const detail = records.useRecordDetail('rec-0001');
-      return { records, detail };
-    }, { wrapper });
+    const { result } = renderHook(
+      () => {
+        const records = useHealthRecords();
+        const detail = records.useRecordDetail('rec-0001');
+        return { records, detail };
+      },
+      { wrapper },
+    );
 
     await waitFor(() => expect(result.current.records.isLoading).toBe(false));
     await waitFor(() => expect(result.current.detail.isLoading).toBe(false));
@@ -221,11 +229,14 @@ describe('useHealthRecords', () => {
 
   it('useRecordDetail returns null record when id is null', async () => {
     const wrapper = createWrapper();
-    const { result } = renderHook(() => {
-      const records = useHealthRecords();
-      const detail = records.useRecordDetail(null);
-      return { records, detail };
-    }, { wrapper });
+    const { result } = renderHook(
+      () => {
+        const records = useHealthRecords();
+        const detail = records.useRecordDetail(null);
+        return { records, detail };
+      },
+      { wrapper },
+    );
 
     await waitFor(() => expect(result.current.records.isLoading).toBe(false));
 

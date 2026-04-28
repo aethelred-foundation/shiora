@@ -3,10 +3,7 @@
 import { useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
-import type {
-  ProviderReputation,
-  ProviderReview,
-} from '@/types';
+import type { ProviderReputation, ProviderReview } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Query keys
@@ -81,23 +78,20 @@ export function useProviderReputation(): UseProviderReputationReturn {
   const providers = useMemo(() => providersQuery.data ?? [], [providersQuery.data]);
 
   // Nested hook for reviews by provider address
-  const useReviews = useCallback(
-    (address: string | null) => {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const query = useQuery({
-        queryKey: [REVIEWS_KEY, address],
-        queryFn: () => api.get<ProviderReview[]>(`/api/providers/${address}`),
-        enabled: address !== null,
-        staleTime: 30_000,
-      });
-      return {
-        reviews: query.data ?? [],
-        isLoading: query.isLoading,
-        error: query.error as Error | null,
-      };
-    },
-    [],
-  );
+  const useReviews = useCallback((address: string | null) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const query = useQuery({
+      queryKey: [REVIEWS_KEY, address],
+      queryFn: () => api.get<ProviderReview[]>(`/api/providers/${address}`),
+      enabled: address !== null,
+      staleTime: 30_000,
+    });
+    return {
+      reviews: query.data ?? [],
+      isLoading: query.isLoading,
+      error: query.error as Error | null,
+    };
+  }, []);
 
   const submitMutation = useMutation({
     mutationFn: (params: {

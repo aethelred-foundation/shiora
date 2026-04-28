@@ -51,10 +51,34 @@ const mockProofFailed: ZKProof = {
 };
 
 const mockClaims: ZKClaim[] = [
-  { id: 'claim-1', claimType: 'age_range', description: 'Age between 25-35', status: 'verified', createdAt: Date.now() },
-  { id: 'claim-2', claimType: 'medication_active', description: 'On active medication', status: 'proving', createdAt: Date.now() },
-  { id: 'claim-3', claimType: 'condition_present', description: 'Condition exists', status: 'expired', createdAt: Date.now() },
-  { id: 'claim-4', claimType: 'data_quality', description: 'Data quality met', status: 'verified', createdAt: Date.now() },
+  {
+    id: 'claim-1',
+    claimType: 'age_range',
+    description: 'Age between 25-35',
+    status: 'verified',
+    createdAt: Date.now(),
+  },
+  {
+    id: 'claim-2',
+    claimType: 'medication_active',
+    description: 'On active medication',
+    status: 'proving',
+    createdAt: Date.now(),
+  },
+  {
+    id: 'claim-3',
+    claimType: 'condition_present',
+    description: 'Condition exists',
+    status: 'expired',
+    createdAt: Date.now(),
+  },
+  {
+    id: 'claim-4',
+    claimType: 'data_quality',
+    description: 'Data quality met',
+    status: 'verified',
+    createdAt: Date.now(),
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -62,65 +86,54 @@ const mockClaims: ZKClaim[] = [
 // ---------------------------------------------------------------------------
 describe('ProofGenerator', () => {
   it('renders claim type label', () => {
-    render(
-      <ProofGenerator claimType="age_range" onGenerate={jest.fn()} isLoading={false} />
-    );
+    render(<ProofGenerator claimType="age_range" onGenerate={jest.fn()} isLoading={false} />);
     expect(screen.getByText('Age Range')).toBeInTheDocument();
   });
 
   it('renders explainer text', () => {
-    render(
-      <ProofGenerator claimType="age_range" onGenerate={jest.fn()} isLoading={false} />
-    );
+    render(<ProofGenerator claimType="age_range" onGenerate={jest.fn()} isLoading={false} />);
     expect(screen.getByText('Proves you are between 25-35 years old')).toBeInTheDocument();
   });
 
   it('renders estimated gas', () => {
-    render(
-      <ProofGenerator claimType="age_range" onGenerate={jest.fn()} isLoading={false} />
-    );
+    render(<ProofGenerator claimType="age_range" onGenerate={jest.fn()} isLoading={false} />);
     expect(screen.getByText(/~85,000/)).toBeInTheDocument();
   });
 
   it('renders Generate Proof button', () => {
-    render(
-      <ProofGenerator claimType="age_range" onGenerate={jest.fn()} isLoading={false} />
-    );
+    render(<ProofGenerator claimType="age_range" onGenerate={jest.fn()} isLoading={false} />);
     expect(screen.getByText('Generate Proof')).toBeInTheDocument();
   });
 
   it('calls onGenerate when button is clicked', () => {
     const onGenerate = jest.fn();
-    render(
-      <ProofGenerator claimType="age_range" onGenerate={onGenerate} isLoading={false} />
-    );
+    render(<ProofGenerator claimType="age_range" onGenerate={onGenerate} isLoading={false} />);
     fireEvent.click(screen.getByText('Generate Proof'));
     expect(onGenerate).toHaveBeenCalled();
   });
 
   it('shows loading state when isLoading is true', () => {
-    render(
-      <ProofGenerator claimType="age_range" onGenerate={jest.fn()} isLoading={true} />
-    );
+    render(<ProofGenerator claimType="age_range" onGenerate={jest.fn()} isLoading={true} />);
     expect(screen.getByText('Generating Proof...')).toBeInTheDocument();
   });
 
   it('disables button when loading', () => {
-    render(
-      <ProofGenerator claimType="age_range" onGenerate={jest.fn()} isLoading={true} />
-    );
+    render(<ProofGenerator claimType="age_range" onGenerate={jest.fn()} isLoading={true} />);
     const button = screen.getByText('Generating Proof...').closest('button');
     expect(button).toBeDisabled();
   });
 
   it('renders for different claim types', () => {
     const claimTypes: ZKClaimType[] = [
-      'condition_present', 'medication_active', 'data_quality',
-      'provider_verified', 'fertility_window',
+      'condition_present',
+      'medication_active',
+      'data_quality',
+      'provider_verified',
+      'fertility_window',
     ];
     for (const ct of claimTypes) {
       const { unmount } = render(
-        <ProofGenerator claimType={ct} onGenerate={jest.fn()} isLoading={false} />
+        <ProofGenerator claimType={ct} onGenerate={jest.fn()} isLoading={false} />,
       );
       expect(screen.getByText('Generate Proof')).toBeInTheDocument();
       unmount();
@@ -242,7 +255,11 @@ describe('ZKPExplainer', () => {
   });
 
   it('renders for different claim types', () => {
-    const claimTypes: ZKClaimType[] = ['condition_present', 'medication_active', 'fertility_window'];
+    const claimTypes: ZKClaimType[] = [
+      'condition_present',
+      'medication_active',
+      'fertility_window',
+    ];
     for (const ct of claimTypes) {
       const { unmount } = render(<ZKPExplainer claimType={ct} />);
       expect(screen.getByText('How This ZK Proof Works')).toBeInTheDocument();

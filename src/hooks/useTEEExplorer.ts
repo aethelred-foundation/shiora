@@ -71,7 +71,10 @@ export function useTEEExplorer(): UseTEEExplorerReturn {
     isLoadingAttestations: attestationsQuery.isLoading,
     isLoadingJobs: jobsQuery.isLoading,
     isLoadingEnclaves: enclavesQuery.isLoading,
-    error: (statsQuery.error ?? attestationsQuery.error ?? jobsQuery.error ?? enclavesQuery.error) as Error | null,
+    error: (statsQuery.error ??
+      attestationsQuery.error ??
+      jobsQuery.error ??
+      enclavesQuery.error) as Error | null,
     refetch,
   };
 }

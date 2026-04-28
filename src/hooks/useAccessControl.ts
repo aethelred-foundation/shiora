@@ -161,11 +161,14 @@ export function useAccessControl(): UseAccessControlReturn {
   // ---- Create mutation ---------------------------------------------------
 
   const createMutation = useMutation({
-    mutationFn: (form: GrantAccessForm) =>
-      api.post<AccessGrant>('/api/access', form),
+    mutationFn: (form: GrantAccessForm) => api.post<AccessGrant>('/api/access', form),
     onSuccess: (grant) => {
       queryClient.invalidateQueries({ queryKey: [GRANTS_KEY] });
-      addNotification('success', 'Access Granted', `Granted ${grant.scope} access to ${grant.provider}`);
+      addNotification(
+        'success',
+        'Access Granted',
+        `Granted ${grant.scope} access to ${grant.provider}`,
+      );
     },
     onError: (err: Error) => {
       addNotification('error', 'Grant Failed', err.message);

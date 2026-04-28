@@ -6,17 +6,8 @@
 
 import { NextRequest } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
-import {
-  successResponse,
-  notFoundResponse,
-  HTTP,
-} from '@/lib/api/responses';
-import {
-  seededHex,
-  seededInt,
-  seededPick,
-  generateAttestation,
-} from '@/lib/utils';
+import { successResponse, notFoundResponse, HTTP } from '@/lib/api/responses';
+import { seededHex, seededInt, seededPick, generateAttestation } from '@/lib/utils';
 import { AI_MODELS, TEE_PLATFORMS } from '@/lib/constants';
 import type { TEEPlatform } from '@/types';
 
@@ -44,9 +35,7 @@ const ASSISTANT_RESPONSES = [
   'Your sleep data shows an average sleep score of 72 over the past 14 days, down from your baseline of 81.',
 ];
 
-const VALID_CONV_IDS = Array.from({ length: 8 }, (_, i) =>
-  `conv-${seededHex(SEED + i * 100, 12)}`,
-);
+const VALID_CONV_IDS = Array.from({ length: 8 }, (_, i) => `conv-${seededHex(SEED + i * 100, 12)}`);
 
 function generateMockMessages(convId: string) {
   const convIndex = VALID_CONV_IDS.indexOf(convId);

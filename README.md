@@ -72,6 +72,7 @@ Shiora is a decentralized women's health AI platform built on **Aethelred** — 
 <td width="50%">
 
 **Health Records & Privacy**
+
 - Encrypted health records with IPFS content addressing
 - FHIR-compatible bridge for clinical interoperability
 - Granular consent management with on-chain audit trails
@@ -81,6 +82,7 @@ Shiora is a decentralized women's health AI platform built on **Aethelred** — 
 <td width="50%">
 
 **Reproductive Health Vault**
+
 - Compartmentalized encrypted storage for sensitive data
 - Cycle tracking with privacy-preserving analytics
 - ZK attestations for selective health disclosure
@@ -92,6 +94,7 @@ Shiora is a decentralized women's health AI platform built on **Aethelred** — 
 <td width="50%">
 
 **AI & Clinical Intelligence**
+
 - AI health chat with explainability and verifiable inference
 - Clinical decision support with evidence-based pathways
 - Predictive health alerts with anomaly detection
@@ -101,6 +104,7 @@ Shiora is a decentralized women's health AI platform built on **Aethelred** — 
 <td width="50%">
 
 **Community & Governance**
+
 - DAO governance with proposal voting and execution
 - Decentralized data marketplace with revenue sharing
 - Research data contributions with anonymization controls
@@ -176,10 +180,10 @@ Shiora is a decentralized women's health AI platform built on **Aethelred** — 
 
 ### Prerequisites
 
-| Tool | Version |
-|------|---------|
+| Tool    | Version   |
+| ------- | --------- |
 | Node.js | >= 18.0.0 |
-| npm | >= 9.0.0 |
+| npm     | >= 9.0.0  |
 
 ### Installation
 
@@ -328,43 +332,43 @@ All contracts target the Aethelred L1 EVM and are written in Solidity 0.8.20 wit
 <tr>
 <td width="50%" valign="top">
 
-| Route | Domain |
-|-------|--------|
-| `/api/health` | Core health data |
-| `/api/records` | Health record CRUD |
-| `/api/consent` | Consent management |
-| `/api/vault` | Reproductive health vault |
-| `/api/chat` | AI health chat inference |
-| `/api/alerts` | Predictive health alerts |
-| `/api/clinical` | Clinical decision support |
-| `/api/community` | Community features |
-| `/api/compliance` | Regulatory compliance |
-| `/api/emergency` | Emergency protocols |
-| `/api/fhir` | FHIR bridge operations |
-| `/api/genomics` | Genomic data pipelines |
+| Route             | Domain                    |
+| ----------------- | ------------------------- |
+| `/api/health`     | Core health data          |
+| `/api/records`    | Health record CRUD        |
+| `/api/consent`    | Consent management        |
+| `/api/vault`      | Reproductive health vault |
+| `/api/chat`       | AI health chat inference  |
+| `/api/alerts`     | Predictive health alerts  |
+| `/api/clinical`   | Clinical decision support |
+| `/api/community`  | Community features        |
+| `/api/compliance` | Regulatory compliance     |
+| `/api/emergency`  | Emergency protocols       |
+| `/api/fhir`       | FHIR bridge operations    |
+| `/api/genomics`   | Genomic data pipelines    |
 
 </td>
 <td width="50%" valign="top">
 
-| Route | Domain |
-|-------|--------|
-| `/api/governance` | DAO governance |
-| `/api/insights` | Health analytics |
-| `/api/ipfs` | IPFS pinning & retrieval |
-| `/api/marketplace` | Data marketplace |
-| `/api/mpc` | MPC orchestration |
-| `/api/network` | Blockchain network status |
-| `/api/privacy` | Privacy rights operations |
-| `/api/providers` | Healthcare provider data |
-| `/api/research` | Research data operations |
-| `/api/rewards` | Platform rewards |
-| `/api/staking` | Staking operations |
-| `/api/tee` | TEE attestation |
-| `/api/twin` | Digital twin |
-| `/api/wallet` | Wallet operations |
-| `/api/wearables` | Wearable device data |
-| `/api/xai` | Explainable AI |
-| `/api/zkp` | ZKP generation & verification |
+| Route              | Domain                        |
+| ------------------ | ----------------------------- |
+| `/api/governance`  | DAO governance                |
+| `/api/insights`    | Health analytics              |
+| `/api/ipfs`        | IPFS pinning & retrieval      |
+| `/api/marketplace` | Data marketplace              |
+| `/api/mpc`         | MPC orchestration             |
+| `/api/network`     | Blockchain network status     |
+| `/api/privacy`     | Privacy rights operations     |
+| `/api/providers`   | Healthcare provider data      |
+| `/api/research`    | Research data operations      |
+| `/api/rewards`     | Platform rewards              |
+| `/api/staking`     | Staking operations            |
+| `/api/tee`         | TEE attestation               |
+| `/api/twin`        | Digital twin                  |
+| `/api/wallet`      | Wallet operations             |
+| `/api/wearables`   | Wearable device data          |
+| `/api/xai`         | Explainable AI                |
+| `/api/zkp`         | ZKP generation & verification |
 
 </td>
 </tr>
@@ -392,11 +396,11 @@ npm test -- --testPathPattern=api
 ```
 
 | Suite Category | Suites | Tests |
-|----------------|--------|-------|
-| Custom Hooks | 8 | 156 |
-| API Routes | 6 | 124 |
-| Components | 4 | 78 |
-| Integration | 2 | 35 |
+| -------------- | ------ | ----- |
+| Custom Hooks   | 8      | 156   |
+| API Routes     | 6      | 124   |
+| Components     | 4      | 78    |
+| Integration    | 2      | 35    |
 
 ---
 
@@ -418,14 +422,14 @@ Zod input validation on all API routes, CORS policy, CSP headers, XSS sanitisati
 
 ## Performance
 
-| Metric | Target | Current |
-|--------|--------|---------|
-| First Contentful Paint | < 1.5 s | 1.1 s |
-| Largest Contentful Paint | < 2.5 s | 2.0 s |
-| Time to Interactive | < 3.5 s | 2.4 s |
-| API Response Time (p95) | < 200 ms | 140 ms |
-| ZK Proof Generation | < 5 s | 3.2 s |
-| TEE Attestation Verify | < 500 ms | 320 ms |
+| Metric                   | Target   | Current |
+| ------------------------ | -------- | ------- |
+| First Contentful Paint   | < 1.5 s  | 1.1 s   |
+| Largest Contentful Paint | < 2.5 s  | 2.0 s   |
+| Time to Interactive      | < 3.5 s  | 2.4 s   |
+| API Response Time (p95)  | < 200 ms | 140 ms  |
+| ZK Proof Generation      | < 5 s    | 3.2 s   |
+| TEE Attestation Verify   | < 500 ms | 320 ms  |
 
 Optimisations: Next.js App Router streaming, React Server Components, code splitting, TanStack Query caching, Tailwind CSS purging, Brotli compression.
 
@@ -442,18 +446,18 @@ npm run validate                    # All checks (type-check + lint + format + t
 
 ### Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server on port 3001 |
-| `npm run build` | Create production build |
-| `npm start` | Start production server |
-| `npm test` | Run test suite |
-| `npm run test:coverage` | Run tests with coverage report |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run lint` | Run ESLint |
-| `npm run type-check` | Run TypeScript compiler checks |
-| `npm run format` | Format code with Prettier |
-| `npm run validate` | Run all checks |
+| Command                 | Description                           |
+| ----------------------- | ------------------------------------- |
+| `npm run dev`           | Start development server on port 3001 |
+| `npm run build`         | Create production build               |
+| `npm start`             | Start production server               |
+| `npm test`              | Run test suite                        |
+| `npm run test:coverage` | Run tests with coverage report        |
+| `npm run test:watch`    | Run tests in watch mode               |
+| `npm run lint`          | Run ESLint                            |
+| `npm run type-check`    | Run TypeScript compiler checks        |
+| `npm run format`        | Format code with Prettier             |
+| `npm run validate`      | Run all checks                        |
 
 ### CI/CD Pipeline
 
@@ -498,13 +502,13 @@ Full reference: [api.shiora.health](https://api.shiora.health)
 
 We welcome contributions. Please see the [Contributing Guide](CONTRIBUTING.md) before opening a PR.
 
-| Standard | Requirement |
-|----------|-------------|
-| Commits | [Conventional Commits](https://www.conventionalcommits.org/) |
-| Types | TypeScript strict mode, no `any` |
-| Tests | All new code must include tests |
-| Lint | Zero warnings on `npm run validate` |
-| Privacy | No PII in logs, tests, or mock data |
+| Standard | Requirement                                                  |
+| -------- | ------------------------------------------------------------ |
+| Commits  | [Conventional Commits](https://www.conventionalcommits.org/) |
+| Types    | TypeScript strict mode, no `any`                             |
+| Tests    | All new code must include tests                              |
+| Lint     | Zero warnings on `npm run validate`                          |
+| Privacy  | No PII in logs, tests, or mock data                          |
 
 1. Fork the repository
 2. Create a feature branch &mdash; `git checkout -b feature/my-feature`

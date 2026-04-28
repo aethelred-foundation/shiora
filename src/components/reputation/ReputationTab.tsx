@@ -10,8 +10,16 @@
 
 import React, { useState } from 'react';
 import {
-  Search, ChevronDown, ChevronLeft, Loader2,
-  Shield, ShieldCheck, Star, AlertTriangle, X, Filter,
+  Search,
+  ChevronDown,
+  ChevronLeft,
+  Loader2,
+  Shield,
+  ShieldCheck,
+  Star,
+  AlertTriangle,
+  X,
+  Filter,
 } from 'lucide-react';
 
 import type { ProviderReputation, ProviderReview, TrustLevel } from '@/types';
@@ -87,11 +95,7 @@ function SubmitReviewModal({
           <label className="text-sm font-medium text-slate-700 mb-2 block">Overall Rating</label>
           <div className="flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                onClick={() => setRating(n)}
-                className="p-0.5"
-              >
+              <button key={n} onClick={() => setRating(n)} className="p-0.5">
                 <Star
                   className={`w-7 h-7 transition-colors ${
                     n <= rating ? 'text-amber-400' : 'text-slate-200'
@@ -111,11 +115,7 @@ function SubmitReviewModal({
               <span className="text-sm text-slate-600">{cat.label}</span>
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => cat.set(n)}
-                    className="p-0.5"
-                  >
+                  <button key={n} onClick={() => cat.set(n)} className="p-0.5">
                     <Star
                       className={`w-5 h-5 transition-colors ${
                         n <= cat.value ? 'text-amber-400' : 'text-slate-200'
@@ -204,9 +204,8 @@ export default function ReputationTab() {
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      result = result.filter((p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.specialty.toLowerCase().includes(q)
+      result = result.filter(
+        (p) => p.name.toLowerCase().includes(q) || p.specialty.toLowerCase().includes(q),
       );
     }
     return result;
@@ -256,22 +255,31 @@ export default function ReputationTab() {
                 </div>
                 <div className="bg-slate-50 rounded-xl p-3">
                   <p className="text-xs text-slate-400">Accesses</p>
-                  <p className="text-sm font-bold text-slate-900">{selectedProvider.totalAccesses}</p>
+                  <p className="text-sm font-bold text-slate-900">
+                    {selectedProvider.totalAccesses}
+                  </p>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-3">
                   <p className="text-xs text-slate-400">On-Time Revocations</p>
-                  <p className="text-sm font-bold text-slate-900">{selectedProvider.onTimeRevocations}%</p>
+                  <p className="text-sm font-bold text-slate-900">
+                    {selectedProvider.onTimeRevocations}%
+                  </p>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-3">
                   <p className="text-xs text-slate-400">Data Breaches</p>
-                  <p className={`text-sm font-bold ${selectedProvider.dataBreaches > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                  <p
+                    className={`text-sm font-bold ${selectedProvider.dataBreaches > 0 ? 'text-red-600' : 'text-emerald-600'}`}
+                  >
                     {selectedProvider.dataBreaches}
                   </p>
                 </div>
               </div>
             </div>
             <button
-              onClick={() => { setReviewTarget(selectedProvider); setReviewModalOpen(true); }}
+              onClick={() => {
+                setReviewTarget(selectedProvider);
+                setReviewModalOpen(true);
+              }}
               className="px-4 py-2 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors shrink-0"
             >
               Write Review
@@ -383,7 +391,9 @@ export default function ReputationTab() {
               className="inline-flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors"
             >
               <Filter className="w-3.5 h-3.5 text-slate-400" />
-              {trustFilter === 'all' ? 'All Trust Levels' : trustOptions.find((o) => o.value === trustFilter)?.label}
+              {trustFilter === 'all'
+                ? 'All Trust Levels'
+                : trustOptions.find((o) => o.value === trustFilter)?.label}
               <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
             </button>
             {filterOpen && (
@@ -393,7 +403,10 @@ export default function ReputationTab() {
                   {trustOptions.map((opt) => (
                     <button
                       key={opt.value}
-                      onClick={() => { setTrustFilter(opt.value); setFilterOpen(false); }}
+                      onClick={() => {
+                        setTrustFilter(opt.value);
+                        setFilterOpen(false);
+                      }}
                       className={`w-full text-left px-3 py-2 text-sm transition-colors ${
                         trustFilter === opt.value
                           ? 'bg-brand-50 text-brand-700'

@@ -23,7 +23,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Welcome to Shiora')).toBeInTheDocument();
     expect(screen.getByText('Step 1 of 6')).toBeInTheDocument();
@@ -33,7 +33,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('End-to-End Encryption')).toBeInTheDocument();
     expect(screen.getByText('TEE Verified')).toBeInTheDocument();
@@ -44,7 +44,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByText('Connect Your Wallet')).toBeInTheDocument();
@@ -55,7 +55,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Step 1: no Back button
     expect(screen.queryByText('Back')).not.toBeInTheDocument();
@@ -69,7 +69,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByText('Connect Your Wallet')).toBeInTheDocument();
@@ -82,7 +82,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Skip')).toBeInTheDocument();
   });
@@ -92,7 +92,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={onComplete} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Skip'));
     expect(onComplete).toHaveBeenCalled();
@@ -102,7 +102,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Step 1: Welcome
     expect(screen.getByText('Welcome to Shiora')).toBeInTheDocument();
@@ -132,7 +132,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Navigate to step 6
     for (let i = 0; i < 5; i++) {
@@ -146,7 +146,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={onComplete} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Navigate to step 6
     for (let i = 0; i < 5; i++) {
@@ -162,7 +162,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={onComplete} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(onComplete).toHaveBeenCalled();
   });
@@ -171,7 +171,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByText('Keplr Wallet')).toBeInTheDocument();
@@ -182,7 +182,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Keplr Wallet'));
@@ -193,7 +193,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Leap Wallet'));
@@ -204,7 +204,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Navigate to step 3
     fireEvent.click(screen.getByText('Next'));
@@ -229,7 +229,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Navigate to step 4
     for (let i = 0; i < 3; i++) {
@@ -251,7 +251,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Navigate to step 5
     for (let i = 0; i < 4; i++) {
@@ -277,7 +277,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={onComplete} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Navigate to step 6
     for (let i = 0; i < 5; i++) {
@@ -293,7 +293,7 @@ describe('Onboarding', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Navigate to step 6
     for (let i = 0; i < 5; i++) {

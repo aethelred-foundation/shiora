@@ -2,7 +2,10 @@
 
 jest.mock('@/lib/api/middleware', () => {
   const actual = jest.requireActual('@/lib/api/middleware');
-  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+  return {
+    ...actual,
+    runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)),
+  };
 });
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -31,7 +34,9 @@ describe('/api/twin', () => {
   });
 
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await getTwin(new NextRequest('http://localhost:3000/api/twin'));
     expect(res.status).toBe(403);
   });
@@ -47,7 +52,9 @@ describe('/api/twin/parameters', () => {
   });
 
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await getParameters(new NextRequest('http://localhost:3000/api/twin/parameters'));
     expect(res.status).toBe(403);
   });
@@ -63,7 +70,9 @@ describe('/api/twin/predictions', () => {
   });
 
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await getPredictions(new NextRequest('http://localhost:3000/api/twin/predictions'));
     expect(res.status).toBe(403);
   });
@@ -71,13 +80,17 @@ describe('/api/twin/predictions', () => {
 
 describe('/api/twin/simulations', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await getSimulations(new NextRequest('http://localhost:3000/api/twin/simulations'));
     expect(res.status).toBe(403);
   });
 
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await createSimulation(
       new NextRequest('http://localhost:3000/api/twin/simulations', {
         method: 'POST',

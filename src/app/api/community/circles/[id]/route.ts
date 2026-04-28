@@ -12,10 +12,7 @@ import { runMiddleware } from '@/lib/api/middleware';
 // GET /api/community/circles/[id]
 // ────────────────────────────────────────────────────────────
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const blocked = runMiddleware(request);
   if (blocked) return blocked;
 
@@ -40,10 +37,7 @@ export async function GET(
 // POST /api/community/circles/[id] — Join or leave
 // ────────────────────────────────────────────────────────────
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const blocked = runMiddleware(request);
   if (blocked) return blocked;
 
@@ -54,16 +48,24 @@ export async function POST(
     const { action } = body;
 
     if (!['join', 'leave'].includes(action)) {
-      return errorResponse('VALIDATION_ERROR', 'action must be "join" or "leave"', HTTP.UNPROCESSABLE);
+      return errorResponse(
+        'VALIDATION_ERROR',
+        'action must be "join" or "leave"',
+        HTTP.UNPROCESSABLE,
+      );
     }
 
-    return successResponse({
-      circleId: id,
-      action,
-      timestamp: Date.now(),
-    }, HTTP.OK, {
-      message: action === 'join' ? 'Successfully joined circle.' : 'Left circle.',
-    });
+    return successResponse(
+      {
+        circleId: id,
+        action,
+        timestamp: Date.now(),
+      },
+      HTTP.OK,
+      {
+        message: action === 'join' ? 'Successfully joined circle.' : 'Left circle.',
+      },
+    );
   } catch {
     return errorResponse('INVALID_REQUEST', 'Invalid request body', HTTP.BAD_REQUEST);
   }

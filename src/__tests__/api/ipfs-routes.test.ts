@@ -2,7 +2,10 @@
 
 jest.mock('@/lib/api/middleware', () => {
   const actual = jest.requireActual('@/lib/api/middleware');
-  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+  return {
+    ...actual,
+    runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)),
+  };
 });
 
 const actualUtils = jest.requireActual('@/lib/utils');
@@ -44,27 +47,26 @@ describe('/api/ipfs/[cid]', () => {
   const validCid = 'QmYwAPJzv5CZsnANr8SSVkFhVbXViqnbi9HbcJdDgi1a2b';
 
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await getIPFS(
-      authed(`http://localhost:3000/api/ipfs/${validCid}`),
-      { params: Promise.resolve({ cid: validCid }) },
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
     );
+    const res = await getIPFS(authed(`http://localhost:3000/api/ipfs/${validCid}`), {
+      params: Promise.resolve({ cid: validCid }),
+    });
     expect(res.status).toBe(403);
   });
 
   it('GET returns 401 for unauthenticated request', async () => {
-    const res = await getIPFS(
-      new NextRequest(`http://localhost:3000/api/ipfs/${validCid}`),
-      { params: Promise.resolve({ cid: validCid }) },
-    );
+    const res = await getIPFS(new NextRequest(`http://localhost:3000/api/ipfs/${validCid}`), {
+      params: Promise.resolve({ cid: validCid }),
+    });
     expect(res.status).toBe(401);
   });
 
   it('GET returns IPFS metadata for valid CID (authenticated)', async () => {
-    const res = await getIPFS(
-      authed(`http://localhost:3000/api/ipfs/${validCid}`),
-      { params: Promise.resolve({ cid: validCid }) },
-    );
+    const res = await getIPFS(authed(`http://localhost:3000/api/ipfs/${validCid}`), {
+      params: Promise.resolve({ cid: validCid }),
+    });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -79,10 +81,9 @@ describe('/api/ipfs/[cid]', () => {
   it('GET returns pinning status when seededRandom returns low value', async () => {
     // Force seededRandom to return 0.05 so pinned = false (0.05 <= 0.1)
     mockSeededRandom.mockReturnValue(0.05);
-    const res = await getIPFS(
-      authed(`http://localhost:3000/api/ipfs/${validCid}`),
-      { params: Promise.resolve({ cid: validCid }) },
-    );
+    const res = await getIPFS(authed(`http://localhost:3000/api/ipfs/${validCid}`), {
+      params: Promise.resolve({ cid: validCid }),
+    });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.pinStatus).toBe('pinning');
@@ -91,10 +92,9 @@ describe('/api/ipfs/[cid]', () => {
   });
 
   it('GET returns 400 for invalid CID format', async () => {
-    const res = await getIPFS(
-      authed('http://localhost:3000/api/ipfs/invalid-cid'),
-      { params: Promise.resolve({ cid: 'invalid-cid' }) },
-    );
+    const res = await getIPFS(authed('http://localhost:3000/api/ipfs/invalid-cid'), {
+      params: Promise.resolve({ cid: 'invalid-cid' }),
+    });
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error.code).toBe('INVALID_CID');
@@ -103,7 +103,9 @@ describe('/api/ipfs/[cid]', () => {
 
 describe('/api/ipfs/upload', () => {
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const formData = new FormData();
     formData.append('file', new File(['test'], 'test.txt', { type: 'text/plain' }));
     const req = new NextRequest('http://localhost:3000/api/ipfs/upload', {

@@ -22,19 +22,89 @@ const BIOMARKER_DEFS: Array<{
   refRange: { low: number; high: number };
   decimals: number;
 }> = [
-  { id: 'hba1c', name: 'HbA1c', category: 'Metabolic', unit: '%', refRange: { low: 4.0, high: 5.6 }, decimals: 1 },
-  { id: 'ldl', name: 'LDL Cholesterol', category: 'Lipid', unit: 'mg/dL', refRange: { low: 0, high: 100 }, decimals: 0 },
-  { id: 'hdl', name: 'HDL Cholesterol', category: 'Lipid', unit: 'mg/dL', refRange: { low: 40, high: 100 }, decimals: 0 },
-  { id: 'triglycerides', name: 'Triglycerides', category: 'Lipid', unit: 'mg/dL', refRange: { low: 0, high: 150 }, decimals: 0 },
-  { id: 'tsh', name: 'TSH', category: 'Thyroid', unit: 'mIU/L', refRange: { low: 0.4, high: 4.0 }, decimals: 1 },
-  { id: 'cortisol', name: 'Cortisol', category: 'Endocrine', unit: 'mcg/dL', refRange: { low: 6, high: 23 }, decimals: 1 },
-  { id: 'vitamin_d', name: 'Vitamin D', category: 'Nutritional', unit: 'ng/mL', refRange: { low: 30, high: 100 }, decimals: 0 },
-  { id: 'creatinine', name: 'Creatinine', category: 'Renal', unit: 'mg/dL', refRange: { low: 0.6, high: 1.2 }, decimals: 1 },
-  { id: 'alt', name: 'ALT', category: 'Hepatic', unit: 'U/L', refRange: { low: 7, high: 56 }, decimals: 0 },
-  { id: 'crp', name: 'CRP', category: 'Inflammatory', unit: 'mg/L', refRange: { low: 0, high: 3.0 }, decimals: 1 },
+  {
+    id: 'hba1c',
+    name: 'HbA1c',
+    category: 'Metabolic',
+    unit: '%',
+    refRange: { low: 4.0, high: 5.6 },
+    decimals: 1,
+  },
+  {
+    id: 'ldl',
+    name: 'LDL Cholesterol',
+    category: 'Lipid',
+    unit: 'mg/dL',
+    refRange: { low: 0, high: 100 },
+    decimals: 0,
+  },
+  {
+    id: 'hdl',
+    name: 'HDL Cholesterol',
+    category: 'Lipid',
+    unit: 'mg/dL',
+    refRange: { low: 40, high: 100 },
+    decimals: 0,
+  },
+  {
+    id: 'triglycerides',
+    name: 'Triglycerides',
+    category: 'Lipid',
+    unit: 'mg/dL',
+    refRange: { low: 0, high: 150 },
+    decimals: 0,
+  },
+  {
+    id: 'tsh',
+    name: 'TSH',
+    category: 'Thyroid',
+    unit: 'mIU/L',
+    refRange: { low: 0.4, high: 4.0 },
+    decimals: 1,
+  },
+  {
+    id: 'cortisol',
+    name: 'Cortisol',
+    category: 'Endocrine',
+    unit: 'mcg/dL',
+    refRange: { low: 6, high: 23 },
+    decimals: 1,
+  },
+  {
+    id: 'vitamin_d',
+    name: 'Vitamin D',
+    category: 'Nutritional',
+    unit: 'ng/mL',
+    refRange: { low: 30, high: 100 },
+    decimals: 0,
+  },
+  {
+    id: 'creatinine',
+    name: 'Creatinine',
+    category: 'Renal',
+    unit: 'mg/dL',
+    refRange: { low: 0.6, high: 1.2 },
+    decimals: 1,
+  },
+  {
+    id: 'alt',
+    name: 'ALT',
+    category: 'Hepatic',
+    unit: 'U/L',
+    refRange: { low: 7, high: 56 },
+    decimals: 0,
+  },
+  {
+    id: 'crp',
+    name: 'CRP',
+    category: 'Inflammatory',
+    unit: 'mg/L',
+    refRange: { low: 0, high: 3.0 },
+    decimals: 1,
+  },
 ];
 
-function buildBiomarker(def: typeof BIOMARKER_DEFS[number]): Biomarker {
+function buildBiomarker(def: (typeof BIOMARKER_DEFS)[number]): Biomarker {
   const markerSeedOffset = def.id.split('').reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
   const baseSeed = SEED + 300 + markerSeedOffset;
   const { low, high } = def.refRange;

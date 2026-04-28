@@ -2,7 +2,10 @@
 
 jest.mock('@/lib/api/middleware', () => {
   const actual = jest.requireActual('@/lib/api/middleware');
-  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+  return {
+    ...actual,
+    runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)),
+  };
 });
 
 const actualUtils = jest.requireActual('@/lib/utils');
@@ -31,13 +34,17 @@ afterEach(() => {
 
 describe('/api/mpc/sessions', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await getSessions(new NextRequest('http://localhost:3000/api/mpc/sessions'));
     expect(res.status).toBe(403);
   });
 
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await createSession(
       new NextRequest('http://localhost:3000/api/mpc/sessions', {
         method: 'POST',
@@ -159,11 +166,12 @@ describe('/api/mpc/sessions', () => {
 
 describe('/api/mpc/sessions/[id]', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await getSession(
-      new NextRequest('http://localhost:3000/api/mpc/sessions/any-id'),
-      { params: Promise.resolve({ id: 'any-id' }) },
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
     );
+    const res = await getSession(new NextRequest('http://localhost:3000/api/mpc/sessions/any-id'), {
+      params: Promise.resolve({ id: 'any-id' }),
+    });
     expect(res.status).toBe(403);
   });
 
@@ -245,7 +253,9 @@ describe('/api/mpc/datasets', () => {
   });
 
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await getDatasets(new NextRequest('http://localhost:3000/api/mpc/datasets'));
     expect(res.status).toBe(403);
   });
@@ -267,7 +277,9 @@ describe('/api/mpc/results', () => {
   });
 
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await getResults(new NextRequest('http://localhost:3000/api/mpc/results'));
     expect(res.status).toBe(403);
   });

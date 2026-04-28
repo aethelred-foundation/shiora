@@ -74,9 +74,7 @@ describe('RecordCreateSchema', () => {
   });
 
   it('rejects empty label', () => {
-    expect(() =>
-      RecordCreateSchema.parse({ type: 'vitals', label: '', provider: 'P' }),
-    ).toThrow();
+    expect(() => RecordCreateSchema.parse({ type: 'vitals', label: '', provider: 'P' })).toThrow();
   });
 });
 
@@ -217,7 +215,12 @@ describe('Additional schema coverage', () => {
   } = require('@/lib/api/validation');
 
   it('RecordListQuerySchema accepts valid input', () => {
-    const result = RecordListQuerySchema.parse({ type: 'lab_result', sort: 'date', order: 'asc', q: 'blood' });
+    const result = RecordListQuerySchema.parse({
+      type: 'lab_result',
+      sort: 'date',
+      order: 'asc',
+      q: 'blood',
+    });
     expect(result.type).toBe('lab_result');
     expect(result.sort).toBe('date');
   });

@@ -10,12 +10,7 @@
 import { useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-import type {
-  IPFSFile,
-  PinStatus,
-  StorageMetrics,
-  EncryptionType,
-} from '@/types';
+import type { IPFSFile, PinStatus, StorageMetrics, EncryptionType } from '@/types';
 import { useApp } from '@/contexts/AppContext';
 import { api } from '@/lib/api/client';
 
@@ -125,22 +120,18 @@ export function useIPFS(): UseIPFSReturn {
 
   // ---- Download function ------------------------------------------------
 
-  const download = useCallback(
-    async (cid: string): Promise<string> => {
-      const result = await api.get<{ url: string }>(`/api/ipfs/${cid}`);
-      return result.url;
-    },
-    [],
-  );
+  const download = useCallback(async (cid: string): Promise<string> => {
+    const result = await api.get<{ url: string }>(`/api/ipfs/${cid}`);
+    return result.url;
+  }, []);
 
   // ---- Pin status check -------------------------------------------------
 
   const checkPinStatusFn = useCallback(
     async (cid: string): Promise<{ cid: string; status: PinStatus; pinCount: number }> => {
-      return api.get<{ cid: string; status: PinStatus; pinCount: number }>(
-        `/api/ipfs/${cid}`,
-        { pinStatus: true },
-      );
+      return api.get<{ cid: string; status: PinStatus; pinCount: number }>(`/api/ipfs/${cid}`, {
+        pinStatus: true,
+      });
     },
     [],
   );

@@ -52,7 +52,11 @@ export async function POST(request: NextRequest) {
     const { circleId, content } = body;
 
     if (!circleId || !content) {
-      return errorResponse('VALIDATION_ERROR', 'circleId and content are required', HTTP.UNPROCESSABLE);
+      return errorResponse(
+        'VALIDATION_ERROR',
+        'circleId and content are required',
+        HTTP.UNPROCESSABLE,
+      );
     }
 
     const seed = Date.now();

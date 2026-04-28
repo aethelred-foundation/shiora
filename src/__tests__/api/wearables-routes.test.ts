@@ -2,7 +2,10 @@
 
 jest.mock('@/lib/api/middleware', () => {
   const actual = jest.requireActual('@/lib/api/middleware');
-  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+  return {
+    ...actual,
+    runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)),
+  };
 });
 
 const actualUtils = jest.requireActual('@/lib/utils');
@@ -17,7 +20,10 @@ import { runMiddleware } from '@/lib/api/middleware';
 
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
 import { GET as getWearables } from '@/app/api/wearables/route';
-import { POST as connectDevice, DELETE as disconnectDevice } from '@/app/api/wearables/[provider]/route';
+import {
+  POST as connectDevice,
+  DELETE as disconnectDevice,
+} from '@/app/api/wearables/[provider]/route';
 import { GET as getSyncBatches, POST as syncWearables } from '@/app/api/wearables/sync/route';
 
 afterEach(() => {
@@ -30,7 +36,9 @@ afterEach(() => {
 
 describe('/api/wearables', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await getWearables(new NextRequest('http://localhost:3000/api/wearables'));
     expect(res.status).toBe(403);
   });
@@ -45,7 +53,9 @@ describe('/api/wearables', () => {
   });
 
   it('GET returns data-points view with default metric', async () => {
-    const res = await getWearables(new NextRequest('http://localhost:3000/api/wearables?view=data-points'));
+    const res = await getWearables(
+      new NextRequest('http://localhost:3000/api/wearables?view=data-points'),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -54,7 +64,9 @@ describe('/api/wearables', () => {
   });
 
   it('GET returns data-points view with specific metric', async () => {
-    const res = await getWearables(new NextRequest('http://localhost:3000/api/wearables?view=data-points&metric=sleep_duration'));
+    const res = await getWearables(
+      new NextRequest('http://localhost:3000/api/wearables?view=data-points&metric=sleep_duration'),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data[0].metric).toBe('sleep_duration');
@@ -73,7 +85,9 @@ describe('/api/wearables', () => {
   });
 
   it('GET returns data-points view with unknown metric (falls back to heart_rate config)', async () => {
-    const res = await getWearables(new NextRequest('http://localhost:3000/api/wearables?view=data-points&metric=unknown_metric'));
+    const res = await getWearables(
+      new NextRequest('http://localhost:3000/api/wearables?view=data-points&metric=unknown_metric'),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data[0].metric).toBe('unknown_metric');
@@ -84,7 +98,9 @@ describe('/api/wearables', () => {
 
 describe('/api/wearables/[provider]', () => {
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await connectDevice(
       new NextRequest('http://localhost:3000/api/wearables/apple_health', { method: 'POST' }),
       { params: Promise.resolve({ provider: 'apple_health' }) },
@@ -93,7 +109,9 @@ describe('/api/wearables/[provider]', () => {
   });
 
   it('DELETE returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await disconnectDevice(
       new NextRequest('http://localhost:3000/api/wearables/apple_health', { method: 'DELETE' }),
       { params: Promise.resolve({ provider: 'apple_health' }) },
@@ -143,7 +161,9 @@ describe('/api/wearables/[provider]', () => {
 
 describe('/api/wearables/sync', () => {
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await syncWearables(
       new NextRequest('http://localhost:3000/api/wearables/sync', {
         method: 'POST',
@@ -204,7 +224,9 @@ describe('/api/wearables/sync', () => {
   });
 
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await getSyncBatches(new NextRequest('http://localhost:3000/api/wearables/sync'));
     expect(res.status).toBe(403);
   });

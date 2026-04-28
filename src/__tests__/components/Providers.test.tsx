@@ -23,7 +23,7 @@ describe('Providers', () => {
     render(
       <Providers>
         <TestChild />
-      </Providers>
+      </Providers>,
     );
     expect(screen.getByText('Child rendered')).toBeInTheDocument();
   });
@@ -32,7 +32,7 @@ describe('Providers', () => {
     render(
       <Providers>
         <QueryConsumer />
-      </Providers>
+      </Providers>,
     );
     expect(screen.getByText('Query client exists: yes')).toBeInTheDocument();
   });
@@ -43,7 +43,7 @@ describe('Providers', () => {
     const { container } = render(
       <Providers>
         <div data-testid="wrapped">Content</div>
-      </Providers>
+      </Providers>,
     );
     expect(screen.getByTestId('wrapped')).toBeInTheDocument();
     expect(container).toBeTruthy();
@@ -54,7 +54,7 @@ describe('Providers', () => {
       <Providers>
         <div>First</div>
         <div>Second</div>
-      </Providers>
+      </Providers>,
     );
     expect(screen.getByText('First')).toBeInTheDocument();
     expect(screen.getByText('Second')).toBeInTheDocument();

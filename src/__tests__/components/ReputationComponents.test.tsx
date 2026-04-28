@@ -47,8 +47,11 @@ import type { ProviderReputation, ProviderReview, TrustLevel } from '@/types';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return React.createElement(QueryClientProvider, { client: qc },
-    React.createElement(AppProvider, null, children));
+  return React.createElement(
+    QueryClientProvider,
+    { client: qc },
+    React.createElement(AppProvider, null, children),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -120,7 +123,7 @@ describe('ReputationScore', () => {
     render(
       <TestWrapper>
         <ReputationScore score={85} trustLevel="gold" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('85')).toBeInTheDocument();
   });
@@ -129,7 +132,7 @@ describe('ReputationScore', () => {
     render(
       <TestWrapper>
         <ReputationScore score={85} trustLevel="silver" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('/ 100')).toBeInTheDocument();
   });
@@ -138,7 +141,7 @@ describe('ReputationScore', () => {
     render(
       <TestWrapper>
         <ReputationScore score={72} trustLevel="bronze" size="sm" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('/ 100')).not.toBeInTheDocument();
   });
@@ -147,7 +150,7 @@ describe('ReputationScore', () => {
     const { container } = render(
       <TestWrapper>
         <ReputationScore score={40} trustLevel="unrated" size="lg" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.firstChild).toBeTruthy();
     expect(screen.getByText('40')).toBeInTheDocument();
@@ -157,7 +160,7 @@ describe('ReputationScore', () => {
     const { container } = render(
       <TestWrapper>
         <ReputationScore score={82} trustLevel="silver" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('82')).toBeInTheDocument();
   });
@@ -166,7 +169,7 @@ describe('ReputationScore', () => {
     const { container } = render(
       <TestWrapper>
         <ReputationScore score={65} trustLevel="bronze" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('65')).toBeInTheDocument();
   });
@@ -181,7 +184,7 @@ describe('StarRating', () => {
     const { container } = render(
       <TestWrapper>
         <StarRating rating={4} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.firstChild).toBeTruthy();
   });
@@ -190,7 +193,7 @@ describe('StarRating', () => {
     const { container } = render(
       <TestWrapper>
         <StarRating rating={3.5} size="md" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.firstChild).toBeTruthy();
   });
@@ -205,7 +208,7 @@ describe('ReviewCard', () => {
     render(
       <TestWrapper>
         <ReviewCard review={mockReview} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('anon-reviewer-abc')).toBeInTheDocument();
     expect(screen.getByText('Excellent provider, highly recommended.')).toBeInTheDocument();
@@ -215,7 +218,7 @@ describe('ReviewCard', () => {
     render(
       <TestWrapper>
         <ReviewCard review={mockReview} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Verified')).toBeInTheDocument();
   });
@@ -224,7 +227,7 @@ describe('ReviewCard', () => {
     render(
       <TestWrapper>
         <ReviewCard review={mockUnverifiedReview} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('Verified')).not.toBeInTheDocument();
   });
@@ -243,7 +246,7 @@ describe('TrustBadge', () => {
       render(
         <TestWrapper>
           <TrustBadge trustLevel={level} />
-        </TestWrapper>
+        </TestWrapper>,
       );
       expect(screen.getByText(expectedLabels[idx])).toBeInTheDocument();
     });
@@ -253,7 +256,7 @@ describe('TrustBadge', () => {
     const { container } = render(
       <TestWrapper>
         <TrustBadge trustLevel="gold" size="md" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.firstChild).toBeTruthy();
   });
@@ -268,7 +271,7 @@ describe('ReputationHistory', () => {
     render(
       <TestWrapper>
         <ReputationHistory data={mockScoreHistory} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Reputation History')).toBeInTheDocument();
   });
@@ -277,7 +280,7 @@ describe('ReputationHistory', () => {
     const { container } = render(
       <TestWrapper>
         <ReputationHistory data={[]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.firstChild).toBeTruthy();
   });
@@ -292,7 +295,7 @@ describe('ProviderProfile', () => {
     render(
       <TestWrapper>
         <ProviderProfile provider={mockProvider} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Dr. Sarah Chen')).toBeInTheDocument();
     expect(screen.getByText('OB-GYN')).toBeInTheDocument();
@@ -302,7 +305,7 @@ describe('ProviderProfile', () => {
     render(
       <TestWrapper>
         <ProviderProfile provider={mockProvider} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('42 reviews')).toBeInTheDocument();
     expect(screen.getByText('95/100')).toBeInTheDocument();
@@ -312,7 +315,7 @@ describe('ProviderProfile', () => {
     render(
       <TestWrapper>
         <ProviderProfile provider={mockProviderWithBreach} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('2 breaches')).toBeInTheDocument();
   });
@@ -321,7 +324,7 @@ describe('ProviderProfile', () => {
     render(
       <TestWrapper>
         <ProviderProfile provider={mockProvider} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText(/breach/)).not.toBeInTheDocument();
   });
@@ -330,7 +333,7 @@ describe('ProviderProfile', () => {
     render(
       <TestWrapper>
         <ProviderProfile provider={mockProvider} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Gold')).toBeInTheDocument();
   });
@@ -340,7 +343,7 @@ describe('ProviderProfile', () => {
     render(
       <TestWrapper>
         <ProviderProfile provider={mockProvider} onClick={onClick} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Card is rendered with cursor-pointer; basic render check
     const card = screen.getByText('Dr. Sarah Chen').closest('div');
@@ -352,7 +355,7 @@ describe('ProviderProfile', () => {
     render(
       <TestWrapper>
         <ProviderProfile provider={singleBreach} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('1 breach')).toBeInTheDocument();
   });
@@ -361,7 +364,7 @@ describe('ProviderProfile', () => {
     render(
       <TestWrapper>
         <ProviderProfile provider={mockProvider} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Dr. Sarah Chen')).toBeInTheDocument();
   });

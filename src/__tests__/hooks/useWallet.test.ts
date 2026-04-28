@@ -75,9 +75,9 @@ describe('useWallet', () => {
 
   it('signMessage throws when not connected', async () => {
     const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-    await expect(
-      result.current.signMessage({ message: 'test' }),
-    ).rejects.toThrow('Wallet not connected');
+    await expect(result.current.signMessage({ message: 'test' })).rejects.toThrow(
+      'Wallet not connected',
+    );
   });
 
   it('signTransaction throws when not connected', async () => {
@@ -110,20 +110,30 @@ describe('useWallet', () => {
 
   it('connect throws for unsupported provider', async () => {
     const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-    await expect(
-      result.current.connect('unknown' as 'keplr'),
-    ).rejects.toThrow('not supported');
+    let caughtError: Error | undefined;
+    await act(async () => {
+      try {
+        await result.current.connect('unknown' as 'keplr');
+      } catch (e) {
+        caughtError = e as Error;
+      }
+    });
+    expect(caughtError?.message).toContain('not supported');
   });
 
   it('disconnect clears state', () => {
-    const { result } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
 
     // First connect via AppContext to simulate connected state
     act(() => {
-      result.current.app.connectWalletWithData('aeth1longaddressfortruncation', 1000, 'keplr', 'aethelred-1');
+      result.current.app.connectWalletWithData(
+        'aeth1longaddressfortruncation',
+        1000,
+        'keplr',
+        'aethelred-1',
+      );
     });
     expect(result.current.wallet.isConnected).toBe(true);
 
@@ -136,26 +146,21 @@ describe('useWallet', () => {
   });
 
   it('displayAddress truncates long addresses', () => {
-    const { result } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
 
     act(() => {
-      result.current.app.connectWalletWithData(
-        'aeth1abcdef1234567890xyzxyzxyz',
-        1000,
-      );
+      result.current.app.connectWalletWithData('aeth1abcdef1234567890xyzxyzxyz', 1000);
     });
 
     expect(result.current.wallet.displayAddress).toMatch(/^aeth1abcde\.\.\.xyzxyz$/);
   });
 
   it('displayAddress returns short address as-is', () => {
-    const { result } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
 
     act(() => {
       result.current.app.connectWalletWithData('aeth1short', 100);
@@ -184,26 +189,30 @@ describe('useWallet', () => {
   });
 
   it('signMessage throws when no provider even if connected', async () => {
-    const { result } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
 
     // Connect without a real provider
     act(() => {
       result.current.app.connectWalletWithData('aeth1abc123def456ghi', 1000);
     });
 
-    await expect(
-      result.current.wallet.signMessage({ message: 'test' }),
-    ).rejects.toThrow('No wallet provider available');
+    let caughtError: Error | undefined;
+    await act(async () => {
+      try {
+        await result.current.wallet.signMessage({ message: 'test' });
+      } catch (e) {
+        caughtError = e as Error;
+      }
+    });
+    expect(caughtError?.message).toContain('No wallet provider available');
   });
 
   it('signTransaction returns hash when connected', async () => {
-    const { result } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
 
     act(() => {
       result.current.app.connectWalletWithData('aeth1abc123def456ghi', 1000);
@@ -279,10 +288,9 @@ describe('useWallet', () => {
     (window as unknown as Record<string, unknown>).keplr = mockKeplr;
 
     // First connect to set persisted state
-    const { result: r1, unmount } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
+    const { result: r1, unmount } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
 
     act(() => {
       r1.current.app.connectWalletWithData('aeth1mockaddress', 1000, 'keplr', 'aethelred-1');
@@ -427,10 +435,9 @@ describe('useWallet', () => {
     (window as unknown as Record<string, unknown>).keplr = mockKeplr;
 
     // Simulate persisted state by connecting first
-    const { result: r1, unmount: u1 } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
+    const { result: r1, unmount: u1 } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
 
     // Connect via keplr
     await act(async () => {
@@ -456,13 +463,16 @@ describe('useWallet', () => {
     // Pre-set localStorage so wallet initializes with provider='keplr' and connected=true
     // but don't inject keplr into window. This hits line 165: if (!cosmosProvider) return;
     // Use address 'aeth1mock' to match the GET /api/wallet/connect mock response.
-    localStorage.setItem('shiora_wallet', JSON.stringify({
-      connected: true,
-      address: 'aeth1mock',
-      balance: 1000,
-      provider: 'keplr',
-      chainId: 'aethelred-1',
-    }));
+    localStorage.setItem(
+      'shiora_wallet',
+      JSON.stringify({
+        connected: true,
+        address: 'aeth1mock',
+        balance: 1000,
+        provider: 'keplr',
+        chainId: 'aethelred-1',
+      }),
+    );
 
     const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
 
@@ -474,5 +484,4 @@ describe('useWallet', () => {
 
     localStorage.removeItem('shiora_wallet');
   });
-
 });

@@ -65,15 +65,13 @@ export function audit(entry: Omit<AuditEntry, 'timestamp'>): void {
   }
 }
 
-export function getAuditLog(
-  filters?: {
-    actor?: string;
-    action?: AuditAction;
-    resource?: string;
-    since?: string;
-    limit?: number;
-  },
-): AuditEntry[] {
+export function getAuditLog(filters?: {
+  actor?: string;
+  action?: AuditAction;
+  resource?: string;
+  since?: string;
+  limit?: number;
+}): AuditEntry[] {
   let entries = [...auditLog];
 
   if (filters?.actor) {

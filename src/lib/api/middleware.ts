@@ -22,7 +22,7 @@ const rateLimitStore = new Map<string, RateLimitEntry>();
 let lastRateLimitCleanupAt = 0;
 
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 100;  // per window
+const RATE_LIMIT_MAX_REQUESTS = 100; // per window
 
 /**
  * Simple in-memory rate limiter keyed by IP address.
@@ -100,9 +100,7 @@ export function logRequest(request: NextRequest): void {
   const userAgent = request.headers.get('user-agent')?.slice(0, 80) ?? 'unknown';
 
   // eslint-disable-next-line no-console
-  console.log(
-    `[API] ${requestId} ${method} ${url} — IP: ${ip} — UA: ${userAgent}`,
-  );
+  console.log(`[API] ${requestId} ${method} ${url} — IP: ${ip} — UA: ${userAgent}`);
 }
 
 // ────────────────────────────────────────────────────────────
@@ -138,7 +136,21 @@ export interface AuthContext {
   sessionToken: string | null;
   authSource: 'session' | 'wallet-header' | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   invalidReason?: string;
+}
+
+function isConfiguredAdmin(walletAddress: string | null): boolean {
+  if (!walletAddress) return false;
+  const normalized = walletAddress.toLowerCase();
+
+  if (serverEnv.adminWallets.length > 0) {
+    return serverEnv.adminWallets.includes(normalized);
+  }
+
+  // Dev/test environments can exercise admin routes without a production
+  // allowlist. Production fails closed until SHIORA_ADMIN_WALLETS is set.
+  return !serverEnv.isProduction;
 }
 
 /**
@@ -154,6 +166,7 @@ export function extractAuth(request: NextRequest): AuthContext {
       sessionToken,
       authSource: 'session',
       isAuthenticated: true,
+      isAdmin: isConfiguredAdmin(session.sub),
     };
   }
 
@@ -164,6 +177,7 @@ export function extractAuth(request: NextRequest): AuthContext {
       sessionToken: null,
       authSource: 'wallet-header',
       isAuthenticated: true,
+      isAdmin: isConfiguredAdmin(walletAddressHeader),
     };
   }
 
@@ -172,6 +186,7 @@ export function extractAuth(request: NextRequest): AuthContext {
     sessionToken,
     authSource: null,
     isAuthenticated: false,
+    isAdmin: false,
     ...(sessionToken ? { invalidReason: 'Session is missing, expired, or invalid.' } : {}),
   };
 }
@@ -184,11 +199,33 @@ export function requireAuth(request: NextRequest): NextResponse | AuthContext {
   if (!auth.isAuthenticated) {
     return errorResponse(
       'UNAUTHORIZED',
-      auth.invalidReason
-        ?? 'Authentication required. Connect a wallet and present a valid signed session.',
+      auth.invalidReason ??
+        'Authentication required. Connect a wallet and present a valid signed session.',
       HTTP.UNAUTHORIZED,
     );
   }
+  return auth;
+}
+
+/**
+ * Require an authenticated admin wallet.
+ */
+export function requireAdmin(request: NextRequest): NextResponse | AuthContext {
+  const auth = requireAuth(request);
+  if (auth instanceof NextResponse) {
+    return auth;
+  }
+
+  if (!auth.isAdmin) {
+    return errorResponse(
+      'FORBIDDEN',
+      serverEnv.hasConfiguredAdminWallets
+        ? 'Admin wallet authorization is required for this endpoint.'
+        : 'Admin wallet allowlist is not configured.',
+      HTTP.FORBIDDEN,
+    );
+  }
+
   return auth;
 }
 
@@ -196,6 +233,7 @@ interface MiddlewareOptions {
   maxRequests?: number;
   windowMs?: number;
   requireAuth?: boolean;
+  requireAdmin?: boolean;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -229,14 +267,15 @@ export function runMiddlewareWithOptions(
     );
   }
 
-  const rateLimited = checkRateLimit(
-    request,
-    options.maxRequests,
-    options.windowMs,
-  );
+  const rateLimited = checkRateLimit(request, options.maxRequests, options.windowMs);
   if (rateLimited) return rateLimited;
 
-  if (options.requireAuth) {
+  if (options.requireAdmin) {
+    const auth = requireAdmin(request);
+    if (auth instanceof NextResponse) {
+      return auth;
+    }
+  } else if (options.requireAuth) {
     const auth = requireAuth(request);
     if (auth instanceof NextResponse) {
       return auth;

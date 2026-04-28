@@ -58,16 +58,11 @@ export function verifyWalletSignature(
 
     // Convert raw (r || s) signature to DER if needed
     const sigBytes = Buffer.from(sigHex, 'hex');
-    const derSig = sigBytes.length === 64
-      ? rawToDer(sigBytes)
-      : sigBytes;
+    const derSig = sigBytes.length === 64 ? rawToDer(sigBytes) : sigBytes;
 
     // Build SPKI DER for compressed secp256k1 key:
     // SEQUENCE { SEQUENCE { OID ecPublicKey, OID secp256k1 }, BIT STRING { compressed key } }
-    const spkiPrefix = Buffer.from(
-      '3036301006072a8648ce3d020106052b8104000a032200',
-      'hex',
-    );
+    const spkiPrefix = Buffer.from('3036301006072a8648ce3d020106052b8104000a032200', 'hex');
     const keyObject = crypto.createPublicKey({
       key: Buffer.concat([spkiPrefix, pubKeyBytes]),
       format: 'der',
@@ -114,7 +109,9 @@ function bech32Encode(hrp: string, data: Buffer): string {
     }
   }
   /* istanbul ignore next -- RIPEMD-160 is always 20 bytes; 160/5=0 remainder */
-  if (bits > 0) { words.push((acc << (5 - bits)) & 0x1f); }
+  if (bits > 0) {
+    words.push((acc << (5 - bits)) & 0x1f);
+  }
 
   // Compute checksum
   const values = [...hrpExpand(hrp), ...words, 0, 0, 0, 0, 0, 0];
@@ -178,4 +175,3 @@ function rawToDer(raw: Buffer): Buffer {
   const sDer = encodeInteger(s);
   return Buffer.concat([Buffer.from([0x30, rDer.length + sDer.length]), rDer, sDer]);
 }
-

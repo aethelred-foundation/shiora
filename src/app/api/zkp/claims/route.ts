@@ -5,19 +5,9 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  successResponse,
-  errorResponse,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
-import {
-  seededInt,
-  seededHex,
-  seededPick,
-  seededRandom,
-  generateTxHash,
-} from '@/lib/utils';
+import { seededInt, seededHex, seededPick, seededRandom, generateTxHash } from '@/lib/utils';
 import type { ZKClaim, ZKClaimType, ZKProof } from '@/types';
 
 // ────────────────────────────────────────────────────────────
@@ -27,24 +17,35 @@ import type { ZKClaim, ZKClaimType, ZKProof } from '@/types';
 const SEED = 1300;
 
 const CLAIM_TYPES: ZKClaimType[] = [
-  'age_range', 'condition_present', 'medication_active',
-  'data_quality', 'provider_verified', 'fertility_window',
+  'age_range',
+  'condition_present',
+  'medication_active',
+  'data_quality',
+  'provider_verified',
+  'fertility_window',
 ];
 
 const DESCRIPTIONS: Record<ZKClaimType, string> = {
-  age_range: 'Proves you are within a specific age range without revealing your exact date of birth',
-  condition_present: 'Proves a medical condition is present in your records without revealing which condition',
-  medication_active: 'Proves you are on an active medication without revealing the specific medication',
-  data_quality: 'Proves your health data meets a minimum quality score without revealing the data itself',
-  provider_verified: 'Proves you have been verified by a licensed healthcare provider without revealing provider details',
-  fertility_window: 'Proves you are within a predicted fertile window without revealing cycle details',
+  age_range:
+    'Proves you are within a specific age range without revealing your exact date of birth',
+  condition_present:
+    'Proves a medical condition is present in your records without revealing which condition',
+  medication_active:
+    'Proves you are on an active medication without revealing the specific medication',
+  data_quality:
+    'Proves your health data meets a minimum quality score without revealing the data itself',
+  provider_verified:
+    'Proves you have been verified by a licensed healthcare provider without revealing provider details',
+  fertility_window:
+    'Proves you are within a predicted fertile window without revealing cycle details',
 };
 
 function generateMockClaims(): ZKClaim[] {
   return Array.from({ length: 10 }, (_, i) => {
     const s = SEED + i * 17;
     const claimType = CLAIM_TYPES[i % CLAIM_TYPES.length];
-    const status: ZKClaim['status'] = i < 6 ? 'verified' : i < 8 ? 'proving' : seededPick(s + 3, ['unproven', 'expired'] as const);
+    const status: ZKClaim['status'] =
+      i < 6 ? 'verified' : i < 8 ? 'proving' : seededPick(s + 3, ['unproven', 'expired'] as const);
 
     let proof: ZKProof | undefined;
     if (status === 'verified') {
@@ -101,7 +102,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (!CLAIM_TYPES.includes(claimType)) {
-      return errorResponse('VALIDATION_ERROR', `Invalid claimType. Must be one of: ${CLAIM_TYPES.join(', ')}`, HTTP.BAD_REQUEST);
+      return errorResponse(
+        'VALIDATION_ERROR',
+        `Invalid claimType. Must be one of: ${CLAIM_TYPES.join(', ')}`,
+        HTTP.BAD_REQUEST,
+      );
     }
 
     const seed = Date.now();

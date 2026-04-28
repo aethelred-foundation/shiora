@@ -162,7 +162,11 @@ describe('verifyWalletSignature', () => {
     const testMessage = 'Address mismatch test';
     const { signatureField } = generateTestWalletSignature(testMessage);
 
-    const result = verifyWalletSignature(testMessage, signatureField, 'aeth1wrongaddresswrongaddresswrongaddresswro');
+    const result = verifyWalletSignature(
+      testMessage,
+      signatureField,
+      'aeth1wrongaddresswrongaddresswrongaddresswro',
+    );
     expect(result).toBe(false);
   });
 

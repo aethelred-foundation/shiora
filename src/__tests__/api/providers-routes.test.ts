@@ -95,7 +95,9 @@ describe('/api/providers/[address]', () => {
 
 describe('/api/providers/reputation', () => {
   it('GET returns reputation data', async () => {
-    const res = await getReputation(new NextRequest('http://localhost:3000/api/providers/reputation'));
+    const res = await getReputation(
+      new NextRequest('http://localhost:3000/api/providers/reputation'),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);

@@ -6,12 +6,7 @@
 import { NextRequest } from 'next/server';
 import { ZodError } from 'zod';
 import { WalletConnectSchema } from '@/lib/api/validation';
-import {
-  successResponse,
-  errorResponse,
-  validationError,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, errorResponse, validationError, HTTP } from '@/lib/api/responses';
 import { runMiddleware, extractAuth } from '@/lib/api/middleware';
 import {
   applySessionCookie,

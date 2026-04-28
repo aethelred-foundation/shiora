@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraRecordRegistry
@@ -130,16 +130,24 @@ contract ShioraRecordRegistry is Ownable, ReentrancyGuard, Pausable {
     // ────────────────────────────────────────────────────────
 
     modifier onlyRecordOwner(bytes32 recordId) {
-        if (_records[recordId].owner == address(0)) revert RecordNotFound();
-        if (_records[recordId].owner != msg.sender) revert NotRecordOwner();
+        _onlyRecordOwner(recordId);
         _;
     }
 
     modifier onlyVerifier() {
+        _onlyVerifier();
+        _;
+    }
+
+    function _onlyRecordOwner(bytes32 recordId) internal view {
+        if (_records[recordId].owner == address(0)) revert RecordNotFound();
+        if (_records[recordId].owner != msg.sender) revert NotRecordOwner();
+    }
+
+    function _onlyVerifier() internal view {
         if (!authorizedVerifiers[msg.sender] && msg.sender != owner()) {
             revert NotAuthorizedVerifier();
         }
-        _;
     }
 
     // ────────────────────────────────────────────────────────

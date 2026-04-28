@@ -3,12 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
-import type {
-  ModelCard,
-  ExplainabilityResult,
-  BiasReport,
-  FeatureImportance,
-} from '@/types';
+import type { ModelCard, ExplainabilityResult, BiasReport, FeatureImportance } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Query keys
@@ -67,8 +62,7 @@ export function useExplainableAI(): UseExplainableAIReturn {
 
   const featureQuery = useQuery({
     queryKey: [FEATURE_IMPORTANCE_KEY, selectedModelId],
-    queryFn: () =>
-      api.get<FeatureImportance[]>('/api/xai/shap', { modelId: selectedModelId }),
+    queryFn: () => api.get<FeatureImportance[]>('/api/xai/shap', { modelId: selectedModelId }),
     staleTime: 30_000,
   });
 

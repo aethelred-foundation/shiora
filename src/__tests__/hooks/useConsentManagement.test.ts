@@ -119,9 +119,7 @@ describe('useConsentManagement', () => {
 
     // Wait for filtered data to arrive where all consents include the scope
     await waitFor(() => {
-      const allInclude = result.current.consents.every((c) =>
-        c.scopes.includes('lab_results'),
-      );
+      const allInclude = result.current.consents.every((c) => c.scopes.includes('lab_results'));
       expect(allInclude).toBe(true);
     });
   });

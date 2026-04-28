@@ -105,9 +105,7 @@ describe('useLocalStorage', () => {
   });
 
   it('works with objects', () => {
-    const { result } = renderHook(() =>
-      useLocalStorage('obj-key', { name: 'initial' }),
-    );
+    const { result } = renderHook(() => useLocalStorage('obj-key', { name: 'initial' }));
     act(() => result.current[1]({ name: 'updated' }));
     expect(result.current[0]).toEqual({ name: 'updated' });
   });

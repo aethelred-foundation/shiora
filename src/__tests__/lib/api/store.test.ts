@@ -453,7 +453,31 @@ describe('File persistence and serialization internals', () => {
 
     // Simulate a persisted state file
     const serialized = JSON.stringify({
-      recordsByOwner: { 'aeth1test': [{ id: 'r1', type: 'vitals', label: 'Test', description: '', date: 1, uploadDate: 1, encrypted: true, encryption: 'AES-256-GCM', cid: 'Qm', txHash: '0x', attestation: '0x', size: 1, provider: 'P', status: 'Verified', ipfsNodes: 1, tags: ['a'], deleted: false, ownerAddress: 'aeth1test', blockHeight: 1 }] },
+      recordsByOwner: {
+        aeth1test: [
+          {
+            id: 'r1',
+            type: 'vitals',
+            label: 'Test',
+            description: '',
+            date: 1,
+            uploadDate: 1,
+            encrypted: true,
+            encryption: 'AES-256-GCM',
+            cid: 'Qm',
+            txHash: '0x',
+            attestation: '0x',
+            size: 1,
+            provider: 'P',
+            status: 'Verified',
+            ipfsNodes: 1,
+            tags: ['a'],
+            deleted: false,
+            ownerAddress: 'aeth1test',
+            blockHeight: 1,
+          },
+        ],
+      },
       grantsByOwner: {},
       consentsByPatient: {},
       marketplace: [],
@@ -632,7 +656,9 @@ describe('File persistence and serialization internals', () => {
       return existsSyncOriginal(p);
     });
     fs.mkdirSync = jest.fn();
-    fs.writeFileSync = jest.fn(() => { throw new Error('write failed'); });
+    fs.writeFileSync = jest.fn(() => {
+      throw new Error('write failed');
+    });
 
     process.env.NODE_ENV = 'development';
 
@@ -696,7 +722,9 @@ describe('File persistence and serialization internals', () => {
       return existsSyncOriginal(p);
     });
     fs.mkdirSync = jest.fn();
-    fs.writeFileSync = jest.fn(() => { throw new Error('write failed after env flip'); });
+    fs.writeFileSync = jest.fn(() => {
+      throw new Error('write failed after env flip');
+    });
 
     process.env.NODE_ENV = 'development';
 
@@ -758,7 +786,9 @@ describe('File persistence and serialization internals', () => {
       if (p.includes('.shiora-data')) return false; // directory doesn't exist
       return existsSyncOriginal(p);
     });
-    fs.mkdirSync = jest.fn(() => { mkdirCalled = true; });
+    fs.mkdirSync = jest.fn(() => {
+      mkdirCalled = true;
+    });
     fs.writeFileSync = jest.fn();
 
     process.env.NODE_ENV = 'development';
@@ -817,7 +847,9 @@ describe('File persistence and serialization internals', () => {
       if (p.includes('.shiora-data')) return false;
       return existsSyncOriginal(p);
     });
-    fs.mkdirSync = jest.fn(() => { throw new Error('permission denied'); });
+    fs.mkdirSync = jest.fn(() => {
+      throw new Error('permission denied');
+    });
     fs.writeFileSync = jest.fn();
 
     process.env.NODE_ENV = 'development';
@@ -957,6 +989,90 @@ describe('File persistence and serialization internals', () => {
     }
   });
 
+  it('encrypts and reloads persisted state when a demo-store key is configured', () => {
+    const fs = require('node:fs');
+    const originalEnv = process.env.NODE_ENV;
+    const originalKey = process.env.SHIORA_DEMO_STORE_ENCRYPTION_KEY;
+
+    const existsSyncOriginal = fs.existsSync;
+    const mkdirSyncOriginal = fs.mkdirSync;
+    const readFileSyncOriginal = fs.readFileSync;
+    const writeFileSyncOriginal = fs.writeFileSync;
+
+    let writtenData: string | null = null;
+
+    fs.existsSync = jest.fn((p: string) => {
+      if (p.includes('.shiora-data')) return true;
+      if (p.includes('state.json')) return writtenData !== null;
+      return existsSyncOriginal(p);
+    });
+    fs.mkdirSync = jest.fn();
+    fs.writeFileSync = jest.fn((_p: string, data: string) => {
+      writtenData = data;
+    });
+    fs.readFileSync = jest.fn((p: string, encoding: string) => {
+      if (p.includes('state.json') && writtenData !== null) return writtenData;
+      return readFileSyncOriginal(p, encoding);
+    });
+
+    process.env.NODE_ENV = 'development';
+    process.env.SHIORA_DEMO_STORE_ENCRYPTION_KEY =
+      '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+
+    try {
+      delete globalState.__SHIORA_API_STATE__;
+
+      jest.useFakeTimers();
+      createRecord(seededAddress(24242), {
+        id: 'encrypted-rec',
+        type: 'vitals',
+        label: 'Encrypted Persist',
+        description: 'Test',
+        provider: 'Test',
+        date: Date.now(),
+        uploadDate: Date.now(),
+        encrypted: true,
+        encryption: 'AES-256-GCM',
+        cid: 'QmEncrypted',
+        txHash: '0x' + 'ee'.repeat(32),
+        attestation: '0x' + 'ff'.repeat(32),
+        size: 1024,
+        status: 'Verified',
+        ipfsNodes: 10,
+        tags: [],
+        deleted: false,
+        ownerAddress: seededAddress(24242),
+        blockHeight: 1000,
+      });
+      jest.advanceTimersByTime(3000);
+      jest.useRealTimers();
+
+      const encryptedEnvelope = JSON.parse(writtenData!);
+      expect(encryptedEnvelope).toMatchObject({
+        schemaVersion: 1,
+        encrypted: true,
+        algorithm: 'aes-256-gcm',
+      });
+      expect(encryptedEnvelope).not.toHaveProperty('recordsByOwner');
+
+      delete globalState.__SHIORA_API_STATE__;
+      const records = listRecords(seededAddress(24242));
+      expect(records.some((record) => record.id === 'encrypted-rec')).toBe(true);
+    } finally {
+      fs.existsSync = existsSyncOriginal;
+      fs.mkdirSync = mkdirSyncOriginal;
+      fs.readFileSync = readFileSyncOriginal;
+      fs.writeFileSync = writeFileSyncOriginal;
+      process.env.NODE_ENV = originalEnv;
+      if (originalKey === undefined) {
+        delete process.env.SHIORA_DEMO_STORE_ENCRYPTION_KEY;
+      } else {
+        process.env.SHIORA_DEMO_STORE_ENCRYPTION_KEY = originalKey;
+      }
+      delete globalState.__SHIORA_API_STATE__;
+    }
+  });
+
   it('schedulePersist debounces multiple calls', () => {
     const fs = require('node:fs');
     const originalEnv = process.env.NODE_ENV;
@@ -968,7 +1084,9 @@ describe('File persistence and serialization internals', () => {
     let writeCount = 0;
     fs.existsSync = jest.fn(() => true);
     fs.mkdirSync = jest.fn();
-    fs.writeFileSync = jest.fn(() => { writeCount++; });
+    fs.writeFileSync = jest.fn(() => {
+      writeCount++;
+    });
 
     process.env.NODE_ENV = 'development';
 
@@ -1007,8 +1125,10 @@ describe('File persistence and serialization internals', () => {
       jest.advanceTimersByTime(3000);
       jest.useRealTimers();
 
-      // Only 1 write should happen due to debouncing
-      expect(writeCount).toBe(1);
+      // Only one logical persist should happen due to debouncing. The atomic
+      // write path can make a fallback final-file write in mocked filesystems.
+      expect(writeCount).toBeGreaterThanOrEqual(1);
+      expect(writeCount).toBeLessThanOrEqual(2);
     } finally {
       fs.existsSync = existsSyncOriginal;
       fs.mkdirSync = mkdirSyncOriginal;
@@ -1043,5 +1163,250 @@ describe('Marketplace seed data covers all categories', () => {
       expect(typeof l.teeVerified).toBe('boolean');
       expect(l.dateRange.start).toBeLessThan(l.dateRange.end);
     });
+  });
+});
+
+describe('Production demo-store guard', () => {
+  afterEach(() => {
+    jest.resetModules();
+    delete globalState.__SHIORA_API_STATE__;
+  });
+
+  it('fails closed in production unless demo store is explicitly allowed', () => {
+    jest.resetModules();
+    jest.doMock('@/lib/api/env', () => ({
+      serverEnv: {
+        isProduction: true,
+        allowDemoStoreInProduction: false,
+      },
+    }));
+
+    const { listRecords: listRecordsWithProdEnv } = require('@/lib/api/store');
+
+    expect(() => listRecordsWithProdEnv(owner)).toThrow(
+      'The Shiora demo file store is disabled in production',
+    );
+  });
+
+  it('allows the demo store in production only when explicitly configured', () => {
+    jest.resetModules();
+    jest.doMock('@/lib/api/env', () => ({
+      serverEnv: {
+        isProduction: true,
+        allowDemoStoreInProduction: true,
+        hasDemoStoreEncryptionKey: true,
+      },
+    }));
+
+    const { listRecords: listRecordsWithProdEnv } = require('@/lib/api/store');
+
+    expect(listRecordsWithProdEnv(owner).length).toBeGreaterThan(0);
+  });
+
+  it('requires encryption when demo store is explicitly enabled in production', () => {
+    jest.resetModules();
+    jest.doMock('@/lib/api/env', () => ({
+      serverEnv: {
+        isProduction: true,
+        allowDemoStoreInProduction: true,
+        hasDemoStoreEncryptionKey: false,
+      },
+    }));
+
+    const { listRecords: listRecordsWithProdEnv } = require('@/lib/api/store');
+
+    expect(() => listRecordsWithProdEnv(owner)).toThrow(
+      'SHIORA_DEMO_STORE_ENCRYPTION_KEY is required',
+    );
+  });
+
+  it('refuses to serve the demo store when a durable backend is selected', () => {
+    jest.resetModules();
+    jest.doMock('@/lib/api/env', () => ({
+      serverEnv: {
+        isProduction: true,
+        storeBackend: 'postgres',
+        allowDemoStoreInProduction: false,
+        hasDemoStoreEncryptionKey: false,
+      },
+    }));
+
+    const { listRecords: listRecordsWithPostgresBackend } = require('@/lib/api/store');
+
+    expect(() => listRecordsWithPostgresBackend(owner)).toThrow(
+      'The Shiora demo store cannot serve SHIORA_STORE_BACKEND=postgres',
+    );
+  });
+});
+
+describe('Demo-store audit journal', () => {
+  afterEach(() => {
+    jest.resetModules();
+    jest.dontMock('@/lib/api/env');
+    delete globalState.__SHIORA_API_STATE__;
+  });
+
+  it('writes a hash-chained audit entry for each mutation without PHI fields', () => {
+    jest.resetModules();
+
+    const fs = require('node:fs');
+    const existsSyncOriginal = fs.existsSync;
+    const readFileSyncOriginal = fs.readFileSync;
+    const appendFileSyncOriginal = fs.appendFileSync;
+    const mkdirSyncOriginal = fs.mkdirSync;
+
+    let journal = '';
+
+    fs.existsSync = jest.fn((p: string) => {
+      const target = String(p);
+      if (target.includes('store-audit.jsonl')) return journal.length > 0;
+      if (target.includes('state.json')) return false;
+      if (target.includes('.shiora-data')) return true;
+      return existsSyncOriginal(p);
+    });
+    fs.readFileSync = jest.fn((p: string, encoding: string) => {
+      if (String(p).includes('store-audit.jsonl')) return journal;
+      return readFileSyncOriginal(p, encoding);
+    });
+    fs.appendFileSync = jest.fn((_p: string, data: string) => {
+      journal += data;
+    });
+    fs.mkdirSync = jest.fn();
+
+    jest.doMock('@/lib/api/env', () => ({
+      serverEnv: {
+        isTest: false,
+        isProduction: false,
+        allowDemoStoreInProduction: false,
+        hasDemoStoreEncryptionKey: false,
+      },
+    }));
+
+    try {
+      const {
+        createRecord: createRecordWithAudit,
+        updateRecord: updateRecordWithAudit,
+      } = require('@/lib/api/store');
+      const testOwner = seededAddress(19191);
+
+      createRecordWithAudit(testOwner, {
+        id: 'journal-rec-1',
+        type: 'vitals',
+        label: 'Sensitive Journal Label',
+        description: 'Sensitive description should not be journaled',
+        provider: 'Test',
+        date: Date.now(),
+        uploadDate: Date.now(),
+        encrypted: true,
+        encryption: 'AES-256-GCM',
+        cid: 'QmJournal',
+        txHash: '0x' + 'ee'.repeat(32),
+        attestation: '0x' + 'ff'.repeat(32),
+        size: 1024,
+        status: 'Verified',
+        ipfsNodes: 10,
+        tags: [],
+        deleted: false,
+        ownerAddress: testOwner,
+        blockHeight: 1000,
+      });
+      updateRecordWithAudit(testOwner, 'journal-rec-1', { label: 'Updated sensitive label' });
+
+      const entries = journal
+        .trim()
+        .split('\n')
+        .map((line) => JSON.parse(line));
+
+      expect(entries).toHaveLength(2);
+      expect(entries[0]).toMatchObject({
+        schemaVersion: 1,
+        sequence: 1,
+        operation: 'record.create',
+        ownerAddress: testOwner,
+        entityId: 'journal-rec-1',
+      });
+      expect(entries[1]).toMatchObject({
+        schemaVersion: 1,
+        sequence: 2,
+        operation: 'record.update',
+        ownerAddress: testOwner,
+        entityId: 'journal-rec-1',
+        changedFields: ['label'],
+      });
+      expect(entries[0].entryHash).toMatch(/^[a-f0-9]{64}$/);
+      expect(entries[1].previousHash).toBe(entries[0].entryHash);
+      expect(entries[1].entryHash).toMatch(/^[a-f0-9]{64}$/);
+      expect(journal).not.toContain('Sensitive Journal Label');
+      expect(journal).not.toContain('Sensitive description should not be journaled');
+      expect(journal).not.toContain('Updated sensitive label');
+    } finally {
+      fs.existsSync = existsSyncOriginal;
+      fs.readFileSync = readFileSyncOriginal;
+      fs.appendFileSync = appendFileSyncOriginal;
+      fs.mkdirSync = mkdirSyncOriginal;
+      jest.dontMock('@/lib/api/env');
+      delete globalState.__SHIORA_API_STATE__;
+    }
+  });
+
+  it('fails closed in production if the demo-store audit journal cannot be written', () => {
+    jest.resetModules();
+
+    const fs = require('node:fs');
+    const existsSyncOriginal = fs.existsSync;
+    const appendFileSyncOriginal = fs.appendFileSync;
+    const mkdirSyncOriginal = fs.mkdirSync;
+
+    fs.existsSync = jest.fn((p: string) => {
+      if (String(p).includes('state.json')) return false;
+      return existsSyncOriginal(p);
+    });
+    fs.mkdirSync = jest.fn();
+    fs.appendFileSync = jest.fn(() => {
+      throw new Error('journal unavailable');
+    });
+
+    jest.doMock('@/lib/api/env', () => ({
+      serverEnv: {
+        isTest: false,
+        isProduction: true,
+        allowDemoStoreInProduction: true,
+        hasDemoStoreEncryptionKey: true,
+      },
+    }));
+
+    try {
+      const {
+        createMarketplaceListing: createMarketplaceListingWithAudit,
+      } = require('@/lib/api/store');
+
+      expect(() =>
+        createMarketplaceListingWithAudit({
+          seller: owner,
+          sellerReputation: 99,
+          category: 'vitals',
+          title: 'Audit Failure Dataset',
+          description: 'Test',
+          dataPoints: 100,
+          dateRange: { start: Date.now() - 1000, end: Date.now() },
+          qualityScore: 95,
+          anonymizationLevel: 'k-anonymity',
+          price: 10,
+          currency: 'AETHEL',
+          status: 'active',
+          teeVerified: true,
+          attestation: '0x' + 'aa'.repeat(32),
+          createdAt: Date.now(),
+          expiresAt: Date.now() + 86400000,
+          purchaseCount: 0,
+        }),
+      ).toThrow('Failed to write Shiora demo-store audit journal');
+    } finally {
+      fs.existsSync = existsSyncOriginal;
+      fs.appendFileSync = appendFileSyncOriginal;
+      fs.mkdirSync = mkdirSyncOriginal;
+      jest.dontMock('@/lib/api/env');
+      delete globalState.__SHIORA_API_STATE__;
+    }
   });
 });

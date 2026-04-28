@@ -4,11 +4,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  successResponse,
-  errorResponse,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
 import { CIDSchema } from '@/lib/api/validation';
 import { seededInt, seededHex, seededRandom, seededPick } from '@/lib/utils';
@@ -30,11 +26,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
   // Validate CID format
   if (!CIDSchema.safeParse(cid).success) {
-    return errorResponse(
-      'INVALID_CID',
-      'Invalid IPFS CID format.',
-      HTTP.BAD_REQUEST,
-    );
+    return errorResponse('INVALID_CID', 'Invalid IPFS CID format.', HTTP.BAD_REQUEST);
   }
 
   // Generate deterministic metadata from the CID
@@ -56,8 +48,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
     nodes: Array.from({ length: Math.min(nodeCount, 5) }, (_, i) => ({
       peerId: `12D3KooW${seededHex(seed + i * 100, 44)}`,
       region: seededPick(seed + i, [
-        'us-east-1', 'us-west-2', 'eu-west-1',
-        'eu-central-1', 'ap-southeast-1',
+        'us-east-1',
+        'us-west-2',
+        'eu-west-1',
+        'eu-central-1',
+        'ap-southeast-1',
       ] as const),
       latency: `${seededInt(seed + i * 50, 10, 200)}ms`,
     })),

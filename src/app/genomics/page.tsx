@@ -11,20 +11,47 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Dna, TestTube2, Activity, Shield, ShieldCheck,
-  AlertTriangle, CheckCircle, TrendingUp, TrendingDown, Minus,
-  ChevronRight, Eye, FileText, Pill, Heart, Brain,
-  Droplets, CircleDot, Ribbon, Zap,
+  Dna,
+  TestTube2,
+  Activity,
+  Shield,
+  ShieldCheck,
+  AlertTriangle,
+  CheckCircle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  ChevronRight,
+  Eye,
+  FileText,
+  Pill,
+  Heart,
+  Brain,
+  Droplets,
+  CircleDot,
+  Ribbon,
+  Zap,
 } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
 import {
-  TopNav, Footer, ToastContainer, SearchOverlay,
-  Badge, Tabs, ProgressRing,
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  Tabs,
+  ProgressRing,
 } from '@/components/ui/SharedComponents';
 import {
-  MedicalCard, HealthMetricCard, SectionHeader,
-  ChartTooltip, TEEBadge, StatusBadge, TruncatedHash, EncryptionBadge,
+  MedicalCard,
+  HealthMetricCard,
+  SectionHeader,
+  ChartTooltip,
+  TEEBadge,
+  StatusBadge,
+  TruncatedHash,
+  EncryptionBadge,
 } from '@/components/ui/PagePrimitives';
 import {
   GenomicProfileCard,
@@ -40,13 +67,32 @@ import {
 import { useGenomics } from '@/hooks/useGenomics';
 import { BRAND, CHART_COLORS, GENOMIC_RISK_CATEGORIES, BIOMARKER_TYPES } from '@/lib/constants';
 import {
-  seededRandom, seededInt, seededHex, seededPick,
-  generateTxHash, formatNumber, timeAgo, formatDateTime, generateAttestation,
+  seededRandom,
+  seededInt,
+  seededHex,
+  seededPick,
+  generateTxHash,
+  formatNumber,
+  timeAgo,
+  formatDateTime,
+  generateAttestation,
 } from '@/lib/utils';
 import {
-  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, CartesianGrid, ReferenceLine,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  ReferenceLine,
 } from 'recharts';
 
 // ============================================================
@@ -81,7 +127,6 @@ export default function GenomicsPage() {
 
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-
           {/* ---- Header ---- */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
@@ -90,7 +135,8 @@ export default function GenomicsPage() {
                 <h1 className="text-2xl font-bold text-slate-900">Genomics & Biomarker Lab</h1>
               </div>
               <p className="text-sm text-slate-500">
-                Pharmacogenomics, biomarker tracking, and polygenic risk analysis with TEE attestation
+                Pharmacogenomics, biomarker tracking, and polygenic risk analysis with TEE
+                attestation
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -135,12 +181,7 @@ export default function GenomicsPage() {
           </div>
 
           {/* ---- Tabs ---- */}
-          <Tabs
-            tabs={TAB_ITEMS}
-            activeTab={activeTab}
-            onChange={setActiveTab}
-            className="mb-8"
-          />
+          <Tabs tabs={TAB_ITEMS} activeTab={activeTab} onChange={setActiveTab} className="mb-8" />
 
           {/* ---- Tab Content ---- */}
           {activeTab === 'overview' && <OverviewTab genomics={genomics} />}
@@ -148,7 +189,6 @@ export default function GenomicsPage() {
           {activeTab === 'biomarkers' && <BiomarkersTab genomics={genomics} />}
           {activeTab === 'risk-scores' && <RiskScoresTab genomics={genomics} />}
           {activeTab === 'reports' && <ReportsTab genomics={genomics} />}
-
         </div>
       </main>
 
@@ -181,7 +221,9 @@ function OverviewTab({ genomics }: { genomics: ReturnType<typeof useGenomics> })
             <Pill className="w-5 h-5 text-brand-600" />
             <span className="text-sm font-medium text-slate-700">Pharmacogenomics</span>
           </div>
-          <p className="text-2xl font-bold text-slate-900">{genomics.overview.pharmacogenomicCount}</p>
+          <p className="text-2xl font-bold text-slate-900">
+            {genomics.overview.pharmacogenomicCount}
+          </p>
           <p className="text-xs text-slate-400">drug-gene interactions analyzed</p>
         </MedicalCard>
         <MedicalCard>
@@ -250,13 +292,27 @@ function PharmacogenomicsTab({ genomics }: { genomics: ReturnType<typeof useGeno
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/50">
-                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Gene / Variant</th>
-                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">RS ID</th>
-                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Drug / Category</th>
-                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Metabolism</th>
-                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Recommendation</th>
-                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Evidence</th>
-                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">TEE</th>
+                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Gene / Variant
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  RS ID
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Drug / Category
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Metabolism
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Recommendation
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Evidence
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  TEE
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -277,9 +333,15 @@ function PharmacogenomicsTab({ genomics }: { genomics: ReturnType<typeof useGeno
       {/* Guideline source legend */}
       {genomics.pharmacogenomics.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500">
-          <span><strong>CPIC</strong> — Clinical Pharmacogenetics Implementation Consortium</span>
-          <span><strong>DPWG</strong> — Dutch Pharmacogenetics Working Group</span>
-          <span><strong>PharmGKB</strong> — Pharmacogenomics Knowledge Base</span>
+          <span>
+            <strong>CPIC</strong> — Clinical Pharmacogenetics Implementation Consortium
+          </span>
+          <span>
+            <strong>DPWG</strong> — Dutch Pharmacogenetics Working Group
+          </span>
+          <span>
+            <strong>PharmGKB</strong> — Pharmacogenomics Knowledge Base
+          </span>
         </div>
       )}
     </div>

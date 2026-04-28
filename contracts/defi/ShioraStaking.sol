@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraStaking
@@ -134,9 +134,13 @@ contract ShioraStaking is Ownable, ReentrancyGuard, Pausable {
     // ────────────────────────────────────────────────────────
 
     modifier onlyPositionOwner(uint256 positionId) {
+        _onlyPositionOwner(positionId);
+        _;
+    }
+
+    function _onlyPositionOwner(uint256 positionId) internal view {
         if (_positions[positionId].staker == address(0)) revert PositionNotFound();
         if (_positions[positionId].staker != msg.sender) revert NotPositionOwner();
-        _;
     }
 
     // ────────────────────────────────────────────────────────

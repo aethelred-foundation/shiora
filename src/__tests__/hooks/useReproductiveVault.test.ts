@@ -126,10 +126,11 @@ describe('useReproductiveVault', () => {
           ok: true,
           status: 200,
           headers: { get: () => 'application/json' },
-          json: () => Promise.resolve({
-            success: true,
-            data: [{ id: 'entry-1', date: Date.now() }],
-          }),
+          json: () =>
+            Promise.resolve({
+              success: true,
+              data: [{ id: 'entry-1', date: Date.now() }],
+            }),
         });
       }
       return realFetch(url, init);

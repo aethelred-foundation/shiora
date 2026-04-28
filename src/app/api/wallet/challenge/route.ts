@@ -39,10 +39,7 @@ function createChallenge(address: string): {
 
   // HMAC binds the challenge to our server secret so it cannot be forged
   const payload = `${address}:${nonce}:${issuedAt}:${expiresAt}`;
-  const hmac = crypto
-    .createHmac('sha256', serverEnv.sessionSecret)
-    .update(payload)
-    .digest('hex');
+  const hmac = crypto.createHmac('sha256', serverEnv.sessionSecret).update(payload).digest('hex');
 
   return { message, nonce, issuedAt, expiresAt, hmac };
 }

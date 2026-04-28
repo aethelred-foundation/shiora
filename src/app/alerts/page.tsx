@@ -9,26 +9,59 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Bell, AlertTriangle, AlertCircle, Info, CheckCircle,
-  ShieldCheck, Brain, Plus, Filter, Clock,
-  TrendingUp, Zap, Activity, Shield,
-  ChevronDown, X,
+  Bell,
+  AlertTriangle,
+  AlertCircle,
+  Info,
+  CheckCircle,
+  ShieldCheck,
+  Brain,
+  Plus,
+  Filter,
+  Clock,
+  TrendingUp,
+  Zap,
+  Activity,
+  Shield,
+  ChevronDown,
+  X,
 } from 'lucide-react';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-} from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 import { useApp } from '@/contexts/AppContext';
-import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, Tabs } from '@/components/ui/SharedComponents';
-import { MedicalCard, SectionHeader, StatusBadge, HealthMetricCard } from '@/components/ui/PagePrimitives';
-import { AlertCard, AlertRuleCard, AlertTimeline, ThresholdSlider, ChannelSelector } from '@/components/alerts/AlertComponents';
+import {
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  Tabs,
+} from '@/components/ui/SharedComponents';
+import {
+  MedicalCard,
+  SectionHeader,
+  StatusBadge,
+  HealthMetricCard,
+} from '@/components/ui/PagePrimitives';
+import {
+  AlertCard,
+  AlertRuleCard,
+  AlertTimeline,
+  ThresholdSlider,
+  ChannelSelector,
+} from '@/components/alerts/AlertComponents';
 /* istanbul ignore next -- no-op handler for edit modal stub */
 const noop = () => {};
 import { usePredictiveAlerts } from '@/hooks/usePredictiveAlerts';
 import { BRAND, ALERT_METRICS, ALERT_CHANNELS } from '@/lib/constants';
 import {
-  seededRandom, seededInt, seededPick,
-  formatNumber, formatDateTime, timeAgo, generateDayLabel,
+  seededRandom,
+  seededInt,
+  seededPick,
+  formatNumber,
+  formatDateTime,
+  timeAgo,
+  generateDayLabel,
 } from '@/lib/utils';
 import type { AlertRule, AlertSeverity, AlertChannel, AlertMetric } from '@/types';
 
@@ -112,7 +145,9 @@ function CreateRuleModal({
               className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               {ALERT_METRICS.map((m) => (
-                <option key={m.id} value={m.id}>{m.label} ({m.unit})</option>
+                <option key={m.id} value={m.id}>
+                  {m.label} ({m.unit})
+                </option>
               ))}
             </select>
           </div>
@@ -143,12 +178,22 @@ function CreateRuleModal({
               Threshold: {threshold} {selectedMetric?.unit}
             </label>
             <ThresholdSlider
-              min={selectedMetric ? selectedMetric.defaultThreshold * 0.5 : /* istanbul ignore next */ 0}
-              max={selectedMetric ? selectedMetric.defaultThreshold * 1.5 : /* istanbul ignore next */ 200}
+              min={
+                selectedMetric
+                  ? selectedMetric.defaultThreshold * 0.5
+                  : /* istanbul ignore next */ 0
+              }
+              max={
+                selectedMetric
+                  ? selectedMetric.defaultThreshold * 1.5
+                  : /* istanbul ignore next */ 200
+              }
               threshold={threshold}
-              unit={selectedMetric?.unit ??
+              unit={
+                selectedMetric?.unit ??
                 /* istanbul ignore next */
-                ''}
+                ''
+              }
               onChange={setThreshold}
               condition={condition}
             />
@@ -164,9 +209,11 @@ function CreateRuleModal({
                   onClick={() => setSeverity(s)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
                     severity === s
-                      ? s === 'critical' ? 'bg-red-500 text-white'
-                        : s === 'warning' ? 'bg-amber-500 text-white'
-                        : 'bg-brand-500 text-white'
+                      ? s === 'critical'
+                        ? 'bg-red-500 text-white'
+                        : s === 'warning'
+                          ? 'bg-amber-500 text-white'
+                          : 'bg-brand-500 text-white'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
@@ -178,20 +225,26 @@ function CreateRuleModal({
 
           {/* Channels */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Notification Channels</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Notification Channels
+            </label>
             <ChannelSelector selected={channels} onChange={setChannels} />
           </div>
 
           {/* Cooldown */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Cooldown (minutes)</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Cooldown (minutes)
+            </label>
             <select
               value={cooldown}
               onChange={(e) => setCooldown(Number(e.target.value))}
               className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               {[15, 30, 60, 120, 240].map((m) => (
-                <option key={m} value={m}>{m} minutes</option>
+                <option key={m} value={m}>
+                  {m} minutes
+                </option>
               ))}
             </select>
           </div>
@@ -266,7 +319,6 @@ export default function AlertsPage() {
 
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-
           {/* ─── Hero Section ─── */}
           <div className="bg-gradient-to-br from-rose-500 via-rose-600 to-amber-600 rounded-2xl p-8 mb-8 text-white relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/3 translate-x-1/3" />
@@ -276,12 +328,14 @@ export default function AlertsPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <Bell className="w-6 h-6 text-white/80" />
-                    <span className="text-sm font-medium text-white/70">Predictive Health Alerts</span>
+                    <span className="text-sm font-medium text-white/70">
+                      Predictive Health Alerts
+                    </span>
                   </div>
                   <h1 className="text-3xl font-bold mb-2">Health Alert Center</h1>
                   <p className="text-rose-100 max-w-xl">
-                    AI-powered health monitoring with TEE-verified predictions.
-                    Get notified when your health metrics deviate from safe ranges.
+                    AI-powered health monitoring with TEE-verified predictions. Get notified when
+                    your health metrics deviate from safe ranges.
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
@@ -347,8 +401,12 @@ export default function AlertsPage() {
             <div className="p-5 pb-0">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-base font-semibold text-slate-900">Alert Frequency (14 Days)</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">Distribution of alerts by severity over time</p>
+                  <h3 className="text-base font-semibold text-slate-900">
+                    Alert Frequency (14 Days)
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Distribution of alerts by severity over time
+                  </p>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1.5">
@@ -370,12 +428,39 @@ export default function AlertsPage() {
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={alertFrequency} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="day" tick={{ fontSize: 9, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
-                  <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+                  <XAxis
+                    dataKey="day"
+                    tick={{ fontSize: 9, fill: '#94a3b8' }}
+                    tickLine={false}
+                    axisLine={{ stroke: '#e2e8f0' }}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: '#94a3b8' }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <Tooltip />
-                  <Bar dataKey="critical" stackId="alerts" fill="#ef4444" radius={[0, 0, 0, 0]} name="Critical" />
-                  <Bar dataKey="warning" stackId="alerts" fill="#f59e0b" radius={[0, 0, 0, 0]} name="Warning" />
-                  <Bar dataKey="info" stackId="alerts" fill="#8B1538" radius={[3, 3, 0, 0]} name="Info" />
+                  <Bar
+                    dataKey="critical"
+                    stackId="alerts"
+                    fill="#ef4444"
+                    radius={[0, 0, 0, 0]}
+                    name="Critical"
+                  />
+                  <Bar
+                    dataKey="warning"
+                    stackId="alerts"
+                    fill="#f59e0b"
+                    radius={[0, 0, 0, 0]}
+                    name="Warning"
+                  />
+                  <Bar
+                    dataKey="info"
+                    stackId="alerts"
+                    fill="#8B1538"
+                    radius={[3, 3, 0, 0]}
+                    name="Info"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -393,9 +478,14 @@ export default function AlertsPage() {
               <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => { setSeverityFilter(undefined); setStatusFilter(undefined); }}
+                    onClick={() => {
+                      setSeverityFilter(undefined);
+                      setStatusFilter(undefined);
+                    }}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      !filters.severity && !filters.status ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      !filters.severity && !filters.status
+                        ? 'bg-slate-900 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
                     All
@@ -406,9 +496,11 @@ export default function AlertsPage() {
                       onClick={() => setSeverityFilter(filters.severity === s ? undefined : s)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize ${
                         filters.severity === s
-                          ? s === 'critical' ? 'bg-red-500 text-white'
-                            : s === 'warning' ? 'bg-amber-500 text-white'
-                            : 'bg-brand-500 text-white'
+                          ? s === 'critical'
+                            ? 'bg-red-500 text-white'
+                            : s === 'warning'
+                              ? 'bg-amber-500 text-white'
+                              : 'bg-brand-500 text-white'
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                     >
@@ -553,7 +645,8 @@ export default function AlertsPage() {
                       <div>
                         <h4 className="text-sm font-semibold text-slate-900 mb-1">TEE-Verified</h4>
                         <p className="text-xs text-slate-500">
-                          All alert predictions are generated inside secure TEE enclaves and verified on the Aethelred blockchain.
+                          All alert predictions are generated inside secure TEE enclaves and
+                          verified on the Aethelred blockchain.
                         </p>
                       </div>
                     </div>
@@ -562,7 +655,6 @@ export default function AlertsPage() {
               </div>
             </div>
           )}
-
         </div>
       </main>
 

@@ -143,8 +143,11 @@ jest.mock('@/hooks/useConsentManagement', () => ({
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return React.createElement(QueryClientProvider, { client: qc },
-    React.createElement(AppProvider, null, children));
+  return React.createElement(
+    QueryClientProvider,
+    { client: qc },
+    React.createElement(AppProvider, null, children),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -160,7 +163,11 @@ describe('ConsentTab', () => {
   // ---- Stats bar ----
 
   it('renders stats bar with correct stat labels', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     expect(screen.getByText('Active Consents')).toBeInTheDocument();
     // "Pending" appears as stat label AND as consent card badge
     expect(screen.getAllByText('Pending').length).toBeGreaterThanOrEqual(1);
@@ -171,32 +178,54 @@ describe('ConsentTab', () => {
   // ---- Filter controls ----
 
   it('renders filter controls', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     expect(screen.getByText('All Statuses')).toBeInTheDocument();
     expect(screen.getByText('All Scopes')).toBeInTheDocument();
   });
 
   it('renders New Consent and Timeline buttons', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     expect(screen.getByText('New Consent')).toBeInTheDocument();
     expect(screen.getByText('Timeline')).toBeInTheDocument();
   });
 
   it('renders search input', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     expect(screen.getByPlaceholderText('Search providers...')).toBeInTheDocument();
   });
 
   it('calls setSearchQuery on search input change', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
-    fireEvent.change(screen.getByPlaceholderText('Search providers...'), { target: { value: 'City' } });
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
+    fireEvent.change(screen.getByPlaceholderText('Search providers...'), {
+      target: { value: 'City' },
+    });
     expect(mockSetSearchQuery).toHaveBeenCalledWith('City');
   });
 
   // ---- Status filter dropdown ----
 
   it('opens status dropdown and shows options', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('All Statuses'));
     expect(screen.getAllByText('Active').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Expired').length).toBeGreaterThan(0);
@@ -204,19 +233,27 @@ describe('ConsentTab', () => {
   });
 
   it('selects a status filter option and closes dropdown', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('All Statuses'));
     // Find dropdown items by querying within the dropdown container
     const dropdownItems = document.querySelectorAll('.absolute.left-0.top-full button');
     // Click the "Expired" option (4th item: All Statuses, Active, Pending, Expired)
-    const expiredBtn = Array.from(dropdownItems).find(btn => btn.textContent === 'Expired');
+    const expiredBtn = Array.from(dropdownItems).find((btn) => btn.textContent === 'Expired');
     expect(expiredBtn).toBeTruthy();
     fireEvent.click(expiredBtn!);
     expect(mockSetStatusFilter).toHaveBeenCalledWith('expired');
   });
 
   it('closes status dropdown via overlay', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('All Statuses'));
     const overlay = document.querySelector('.fixed.inset-0.z-10');
     expect(overlay).toBeTruthy();
@@ -226,7 +263,11 @@ describe('ConsentTab', () => {
 
   it('shows status label when filter is set', () => {
     mockHookReturn.statusFilter = 'active';
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     // The filter button should show "Active" instead of "All Statuses"
     // Active appears multiple times (stat label + filter + consent card badge)
     const activeElements = screen.getAllByText('Active');
@@ -236,27 +277,45 @@ describe('ConsentTab', () => {
   // ---- Scope filter dropdown ----
 
   it('opens scope dropdown on click', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('All Scopes'));
     // Look for scope options in the dropdown
-    const scopeDropdownItems = document.querySelectorAll('.absolute.left-0.top-full.mt-1.z-20 button');
+    const scopeDropdownItems = document.querySelectorAll(
+      '.absolute.left-0.top-full.mt-1.z-20 button',
+    );
     expect(scopeDropdownItems.length).toBeGreaterThan(0);
   });
 
   it('selects a scope filter option from dropdown', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('All Scopes'));
     // Find the scope option in the dropdown container
-    const scopeDropdownItems = document.querySelectorAll('.absolute.left-0.top-full.mt-1.z-20 button');
+    const scopeDropdownItems = document.querySelectorAll(
+      '.absolute.left-0.top-full.mt-1.z-20 button',
+    );
     // Find one that says "Wearable Data" (unlikely to appear elsewhere)
-    const wearableBtn = Array.from(scopeDropdownItems).find(btn => btn.textContent === 'Wearable Data');
+    const wearableBtn = Array.from(scopeDropdownItems).find(
+      (btn) => btn.textContent === 'Wearable Data',
+    );
     expect(wearableBtn).toBeTruthy();
     fireEvent.click(wearableBtn!);
     expect(mockSetScopeFilter).toHaveBeenCalledWith('wearable_data');
   });
 
   it('closes scope dropdown via overlay', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('All Scopes'));
     const overlays = document.querySelectorAll('.fixed.inset-0.z-10');
     expect(overlays.length).toBeGreaterThan(0);
@@ -265,25 +324,39 @@ describe('ConsentTab', () => {
 
   it('shows scope label when filter is set', () => {
     mockHookReturn.scopeFilter = 'wearable_data';
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     expect(screen.getByText('Wearable Data')).toBeInTheDocument();
   });
 
   // ---- Dropdown mutual exclusion ----
 
   it('closes status dropdown when scope dropdown is opened', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('All Statuses'));
     // Verify status dropdown is open
     expect(document.querySelector('.fixed.inset-0.z-10')).toBeTruthy();
     // Open scope dropdown (should close status)
     fireEvent.click(screen.getByText('All Scopes'));
-    const scopeDropdownItems = document.querySelectorAll('.absolute.left-0.top-full.mt-1.z-20 button');
+    const scopeDropdownItems = document.querySelectorAll(
+      '.absolute.left-0.top-full.mt-1.z-20 button',
+    );
     expect(scopeDropdownItems.length).toBeGreaterThan(0);
   });
 
   it('closes scope dropdown when status dropdown is opened', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('All Scopes'));
     // Verify scope dropdown is open
     const scopeItems = document.querySelectorAll('.absolute.left-0.top-full.mt-1.z-20 button');
@@ -297,7 +370,11 @@ describe('ConsentTab', () => {
   // ---- Timeline ----
 
   it('toggles timeline view on and off', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Timeline'));
     expect(screen.getByText('Consent Audit Timeline')).toBeInTheDocument();
     // Audit entries should render
@@ -310,7 +387,11 @@ describe('ConsentTab', () => {
 
   it('shows loading spinner in timeline when audit is loading', () => {
     mockHookReturn.isLoadingAudit = true;
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Timeline'));
     expect(screen.getByText('Consent Audit Timeline')).toBeInTheDocument();
     // Loading spinner should render (Loader2 component)
@@ -320,7 +401,11 @@ describe('ConsentTab', () => {
 
   it('shows empty audit timeline message', () => {
     mockHookReturn.auditLog = [];
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Timeline'));
     expect(screen.getByText('No audit entries found')).toBeInTheDocument();
   });
@@ -328,7 +413,11 @@ describe('ConsentTab', () => {
   // ---- Consent Cards ----
 
   it('renders consent cards with provider names', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     expect(screen.getByText('City Hospital')).toBeInTheDocument();
     expect(screen.getByText('Dr. Smith Clinic')).toBeInTheDocument();
     expect(screen.getByText('Breach Lab')).toBeInTheDocument();
@@ -336,7 +425,11 @@ describe('ConsentTab', () => {
   });
 
   it('shows Revoke and Modify buttons on active consent', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     expect(screen.getByText('Revoke')).toBeInTheDocument();
     expect(screen.getByText('Modify')).toBeInTheDocument();
   });
@@ -344,7 +437,11 @@ describe('ConsentTab', () => {
   // ---- Revoke flow ----
 
   it('opens revoke confirm dialog and confirms', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Revoke'));
     expect(screen.getByText('Revoke Consent')).toBeInTheDocument();
     expect(screen.getByText(/permanently revoke/)).toBeInTheDocument();
@@ -355,7 +452,11 @@ describe('ConsentTab', () => {
   });
 
   it('opens revoke dialog and cancels via Keep Active', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Revoke'));
     expect(screen.getByText('Revoke Consent')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Keep Active'));
@@ -365,7 +466,11 @@ describe('ConsentTab', () => {
   // ---- Modify flow ----
 
   it('fires onModify callback on Modify button click', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Modify'));
     // setSelectedConsent is called - this is internal state; just verify no crash
   });
@@ -373,17 +478,27 @@ describe('ConsentTab', () => {
   // ---- Create modal ----
 
   it('opens create consent modal', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('New Consent'));
     expect(screen.getByText('Create Consent Grant')).toBeInTheDocument();
   });
 
   it('submits create consent form through modal', () => {
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('New Consent'));
     expect(screen.getByText('Create Consent Grant')).toBeInTheDocument();
     // Step 1: Enter provider name
-    fireEvent.change(screen.getByPlaceholderText('Search or enter provider name...'), { target: { value: 'Test Provider' } });
+    fireEvent.change(screen.getByPlaceholderText('Search or enter provider name...'), {
+      target: { value: 'Test Provider' },
+    });
     fireEvent.click(screen.getByText('Continue'));
     // Step 2: Select a scope
     const labResultBtns = screen.getAllByText('Lab Results');
@@ -400,7 +515,11 @@ describe('ConsentTab', () => {
 
   it('shows loading spinner when isLoading is true', () => {
     mockHookReturn.isLoading = true;
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     const spinner = document.querySelector('.animate-spin');
     expect(spinner).toBeTruthy();
   });
@@ -410,7 +529,11 @@ describe('ConsentTab', () => {
   it('shows error message when error is present', () => {
     mockHookReturn.error = new Error('Network error');
     mockHookReturn.consents = [];
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     expect(screen.getByText('Failed to load consents')).toBeInTheDocument();
   });
 
@@ -418,7 +541,11 @@ describe('ConsentTab', () => {
 
   it('shows empty state when consents is empty array and no error', () => {
     mockHookReturn.consents = [];
-    render(<TestWrapper><ConsentTab /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ConsentTab />
+      </TestWrapper>,
+    );
     expect(screen.getByText('No consent grants match your filters')).toBeInTheDocument();
   });
 });

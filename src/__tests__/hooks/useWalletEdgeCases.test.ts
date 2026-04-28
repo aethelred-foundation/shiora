@@ -120,7 +120,13 @@ describe('useWallet re-enable useEffect edge cases', () => {
   });
 
   it('isProviderAvailable returns false for unknown provider (line 175/182)', () => {
-    mockWallet = { connected: false, address: '', balance: 0, provider: undefined, chainId: undefined };
+    mockWallet = {
+      connected: false,
+      address: '',
+      balance: 0,
+      provider: undefined,
+      chainId: undefined,
+    };
     const { result } = renderHook(() => useWallet(), { wrapper: makeWrapper() });
     expect(result.current.isProviderAvailable('unknown' as any)).toBe(false);
   });
@@ -129,10 +135,18 @@ describe('useWallet re-enable useEffect edge cases', () => {
     const mockLeap = createMockKeplr();
     (window as unknown as Record<string, unknown>).leap = mockLeap;
 
-    mockWallet = { connected: false, address: '', balance: 0, provider: undefined, chainId: undefined };
+    mockWallet = {
+      connected: false,
+      address: '',
+      balance: 0,
+      provider: undefined,
+      chainId: undefined,
+    };
     const { result } = renderHook(() => useWallet(), { wrapper: makeWrapper() });
 
-    await result.current.connect('leap', 'testnet');
+    await act(async () => {
+      await result.current.connect('leap', 'testnet');
+    });
 
     expect(mockLeap.enable).toHaveBeenCalled();
     expect(mockConnectWalletWithData).toHaveBeenCalled();
@@ -142,11 +156,23 @@ describe('useWallet re-enable useEffect edge cases', () => {
 
   it('connect with leap when leap is not injected throws error (exercises getLeap null path)', async () => {
     // No leap extension injected in window
-    mockWallet = { connected: false, address: '', balance: 0, provider: undefined, chainId: undefined };
+    mockWallet = {
+      connected: false,
+      address: '',
+      balance: 0,
+      provider: undefined,
+      chainId: undefined,
+    };
     const { result } = renderHook(() => useWallet(), { wrapper: makeWrapper() });
 
     let caughtError: Error | undefined;
-    await result.current.connect('leap').catch((e: Error) => { caughtError = e; });
+    await act(async () => {
+      try {
+        await result.current.connect('leap');
+      } catch (e) {
+        caughtError = e as Error;
+      }
+    });
 
     expect(caughtError).toBeDefined();
     expect(caughtError!.message).toMatch(/not supported/);
@@ -171,11 +197,19 @@ describe('useWallet re-enable useEffect edge cases', () => {
     const mockKeplr = createMockKeplr();
     (window as unknown as Record<string, unknown>).keplr = mockKeplr;
 
-    mockWallet = { connected: false, address: '', balance: 0, provider: undefined, chainId: undefined };
+    mockWallet = {
+      connected: false,
+      address: '',
+      balance: 0,
+      provider: undefined,
+      chainId: undefined,
+    };
     const { result } = renderHook(() => useWallet(), { wrapper: makeWrapper() });
 
     // Calling connect() with no args uses default provider='keplr', network='mainnet'
-    await result.current.connect();
+    await act(async () => {
+      await result.current.connect();
+    });
 
     expect(mockKeplr.enable).toHaveBeenCalledWith('aethelred-1');
 

@@ -34,9 +34,7 @@ const mockEmergencyCard: EmergencyCard = {
   bloodType: 'O+',
   allergies: ['Penicillin', 'Sulfa'],
   conditions: ['Type 2 Diabetes', 'Hypertension'],
-  currentMedications: [
-    { name: 'Metformin', dosage: '500mg', frequency: 'Twice daily' },
-  ],
+  currentMedications: [{ name: 'Metformin', dosage: '500mg', frequency: 'Twice daily' }],
   emergencyContacts: [
     {
       id: 'contact-1',
@@ -73,7 +71,13 @@ const mockProtocol: EmergencyProtocol = {
   name: 'Anaphylaxis Response',
   severity: 'critical',
   steps: [
-    { order: 1, instruction: 'Administer epinephrine IM', medication: 'Epinephrine', dosage: '0.3mg', timeLimit: '< 2 min' },
+    {
+      order: 1,
+      instruction: 'Administer epinephrine IM',
+      medication: 'Epinephrine',
+      dosage: '0.3mg',
+      timeLimit: '< 2 min',
+    },
     { order: 2, instruction: 'Call 911 and prepare for CPR', timeLimit: '< 1 min' },
   ],
   teeVerifiedDoses: true,
@@ -138,7 +142,7 @@ describe('EmergencyInfoCard', () => {
     render(
       <TestWrapper>
         <EmergencyInfoCard card={mockEmergencyCard} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('O+')).toBeInTheDocument();
     expect(screen.getByText('Emergency Information Card')).toBeInTheDocument();
@@ -148,7 +152,7 @@ describe('EmergencyInfoCard', () => {
     render(
       <TestWrapper>
         <EmergencyInfoCard card={mockEmergencyCard} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Penicillin')).toBeInTheDocument();
     expect(screen.getByText('Sulfa')).toBeInTheDocument();
@@ -158,7 +162,7 @@ describe('EmergencyInfoCard', () => {
     render(
       <TestWrapper>
         <EmergencyInfoCard card={mockEmergencyCard} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Type 2 Diabetes')).toBeInTheDocument();
     expect(screen.getByText('Hypertension')).toBeInTheDocument();
@@ -168,7 +172,7 @@ describe('EmergencyInfoCard', () => {
     render(
       <TestWrapper>
         <EmergencyInfoCard card={mockEmergencyCard} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Jane Doe')).toBeInTheDocument();
     expect(screen.getByText('Spouse')).toBeInTheDocument();
@@ -178,7 +182,7 @@ describe('EmergencyInfoCard', () => {
     render(
       <TestWrapper>
         <EmergencyInfoCard card={mockEmergencyCard} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Dr. Sarah Johnson')).toBeInTheDocument();
   });
@@ -193,7 +197,7 @@ describe('CareTeamMemberCard', () => {
     render(
       <TestWrapper>
         <CareTeamMemberCard member={mockCareTeamMember} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Dr. Emily Chen')).toBeInTheDocument();
     expect(screen.getByText('Cardiologist')).toBeInTheDocument();
@@ -203,7 +207,7 @@ describe('CareTeamMemberCard', () => {
     render(
       <TestWrapper>
         <CareTeamMemberCard member={mockCareTeamMember} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Aethelred Medical Center')).toBeInTheDocument();
     expect(screen.getByText('Interventional Cardiology')).toBeInTheDocument();
@@ -213,7 +217,7 @@ describe('CareTeamMemberCard', () => {
     render(
       <TestWrapper>
         <CareTeamMemberCard member={mockCareTeamMember} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Full Access')).toBeInTheDocument();
   });
@@ -228,7 +232,7 @@ describe('ProtocolAccordion', () => {
     render(
       <TestWrapper>
         <ProtocolAccordion protocol={mockProtocol} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Anaphylaxis Response')).toBeInTheDocument();
     expect(screen.getByText('critical')).toBeInTheDocument();
@@ -238,7 +242,7 @@ describe('ProtocolAccordion', () => {
     render(
       <TestWrapper>
         <ProtocolAccordion protocol={mockProtocol} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Steps should not be visible initially
     expect(screen.queryByText('Administer epinephrine IM')).not.toBeInTheDocument();
@@ -258,7 +262,7 @@ describe('TriageResult', () => {
     render(
       <TestWrapper>
         <TriageResult assessment={mockTriageAssessment} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('AI Triage Assessment')).toBeInTheDocument();
     expect(screen.getByText('triage-ai-v2')).toBeInTheDocument();
@@ -268,7 +272,7 @@ describe('TriageResult', () => {
     render(
       <TestWrapper>
         <TriageResult assessment={mockTriageAssessment} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Chest pain')).toBeInTheDocument();
     expect(screen.getByText('Shortness of breath')).toBeInTheDocument();
@@ -278,7 +282,7 @@ describe('TriageResult', () => {
     render(
       <TestWrapper>
         <TriageResult assessment={mockTriageAssessment} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('admit icu')).toBeInTheDocument();
   });
@@ -293,7 +297,7 @@ describe('HandoffCard', () => {
     render(
       <TestWrapper>
         <HandoffCard handoff={mockHandoff} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Dr. Chen (ED)')).toBeInTheDocument();
     expect(screen.getByText('Dr. Patel (ICU)')).toBeInTheDocument();
@@ -303,7 +307,7 @@ describe('HandoffCard', () => {
     render(
       <TestWrapper>
         <HandoffCard handoff={mockHandoff} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/55M with STEMI/)).toBeInTheDocument();
   });
@@ -312,7 +316,7 @@ describe('HandoffCard', () => {
     render(
       <TestWrapper>
         <HandoffCard handoff={mockHandoff} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Pending troponin trend')).toBeInTheDocument();
     expect(screen.getByText('Anticoagulation titration')).toBeInTheDocument();
@@ -322,7 +326,7 @@ describe('HandoffCard', () => {
     render(
       <TestWrapper>
         <HandoffCard handoff={mockHandoff} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Heparin drip')).toBeInTheDocument();
     expect(screen.getByText('Aspirin 325mg')).toBeInTheDocument();
@@ -333,7 +337,7 @@ describe('HandoffCard', () => {
     render(
       <TestWrapper>
         <HandoffCard handoff={handoff} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Pending acknowledgment')).toBeInTheDocument();
   });
@@ -343,7 +347,7 @@ describe('HandoffCard', () => {
     render(
       <TestWrapper>
         <HandoffCard handoff={handoff} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('Outstanding Issues')).not.toBeInTheDocument();
   });
@@ -353,7 +357,7 @@ describe('HandoffCard', () => {
     render(
       <TestWrapper>
         <HandoffCard handoff={handoff} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('Current Medications')).not.toBeInTheDocument();
   });
@@ -363,7 +367,7 @@ describe('HandoffCard', () => {
     render(
       <TestWrapper>
         <HandoffCard handoff={handoff} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('60')).toBeInTheDocument();
   });
@@ -373,7 +377,7 @@ describe('HandoffCard', () => {
     render(
       <TestWrapper>
         <HandoffCard handoff={handoff} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('80')).toBeInTheDocument();
   });
@@ -401,7 +405,7 @@ describe('EmergencyInfoCard — branch coverage', () => {
     render(
       <TestWrapper>
         <EmergencyInfoCard card={card} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('No')).toBeInTheDocument();
   });
@@ -409,14 +413,12 @@ describe('EmergencyInfoCard — branch coverage', () => {
   it('renders contact without isPrimary badge', () => {
     const card: EmergencyCard = {
       ...mockEmergencyCard,
-      emergencyContacts: [
-        { ...mockEmergencyCard.emergencyContacts[0], isPrimary: false },
-      ],
+      emergencyContacts: [{ ...mockEmergencyCard.emergencyContacts[0], isPrimary: false }],
     };
     render(
       <TestWrapper>
         <EmergencyInfoCard card={card} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('Primary')).not.toBeInTheDocument();
   });
@@ -424,14 +426,12 @@ describe('EmergencyInfoCard — branch coverage', () => {
   it('renders contact without notifyOnEmergency', () => {
     const card: EmergencyCard = {
       ...mockEmergencyCard,
-      emergencyContacts: [
-        { ...mockEmergencyCard.emergencyContacts[0], notifyOnEmergency: false },
-      ],
+      emergencyContacts: [{ ...mockEmergencyCard.emergencyContacts[0], notifyOnEmergency: false }],
     };
     render(
       <TestWrapper>
         <EmergencyInfoCard card={card} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('Auto-notify on emergency')).not.toBeInTheDocument();
   });
@@ -447,7 +447,7 @@ describe('CareTeamMemberCard — branch coverage', () => {
     render(
       <TestWrapper>
         <CareTeamMemberCard member={member} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Inactive')).toBeInTheDocument();
   });
@@ -457,7 +457,7 @@ describe('CareTeamMemberCard — branch coverage', () => {
     render(
       <TestWrapper>
         <CareTeamMemberCard member={member} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Partial Access')).toBeInTheDocument();
   });
@@ -467,7 +467,7 @@ describe('CareTeamMemberCard — branch coverage', () => {
     render(
       <TestWrapper>
         <CareTeamMemberCard member={member} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Emergency Only')).toBeInTheDocument();
   });
@@ -486,7 +486,7 @@ describe('ProtocolAccordion — branch coverage', () => {
     render(
       <TestWrapper>
         <ProtocolAccordion protocol={protocol} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Anaphylaxis Response')).toBeInTheDocument();
   });
@@ -494,14 +494,12 @@ describe('ProtocolAccordion — branch coverage', () => {
   it('renders steps without medication or timeLimit', () => {
     const protocol: EmergencyProtocol = {
       ...mockProtocol,
-      steps: [
-        { order: 1, instruction: 'Check vitals' },
-      ],
+      steps: [{ order: 1, instruction: 'Check vitals' }],
     };
     render(
       <TestWrapper>
         <ProtocolAccordion protocol={protocol} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByRole('button'));
     expect(screen.getByText('Check vitals')).toBeInTheDocument();
@@ -516,7 +514,7 @@ describe('ProtocolAccordion — branch coverage', () => {
     render(
       <TestWrapper>
         <ProtocolAccordion protocol={protocol} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByRole('button'));
     expect(screen.queryByText('TEE-Verified Doses')).not.toBeInTheDocument();
@@ -534,7 +532,7 @@ describe('TriageResult — branch coverage', () => {
     render(
       <TestWrapper>
         <TriageResult assessment={assessment} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('70')).toBeInTheDocument();
   });
@@ -544,7 +542,7 @@ describe('TriageResult — branch coverage', () => {
     render(
       <TestWrapper>
         <TriageResult assessment={assessment} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('85')).toBeInTheDocument();
   });
@@ -557,7 +555,7 @@ describe('TriageResult — branch coverage', () => {
     render(
       <TestWrapper>
         <TriageResult assessment={assessment} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('120/80')).toBeInTheDocument();
   });

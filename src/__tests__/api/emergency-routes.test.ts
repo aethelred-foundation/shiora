@@ -6,7 +6,8 @@ const mockRunMiddleware = jest.fn<NextResponse | null, [NextRequest, ...unknown[
 
 jest.mock('@/lib/api/middleware', () => ({
   ...jest.requireActual('@/lib/api/middleware'),
-  runMiddleware: (...args: unknown[]) => mockRunMiddleware(args[0] as NextRequest, ...args.slice(1)),
+  runMiddleware: (...args: unknown[]) =>
+    mockRunMiddleware(args[0] as NextRequest, ...args.slice(1)),
 }));
 
 // Mock utils so we can force errors inside try blocks for catch coverage
@@ -57,7 +58,9 @@ describe('/api/emergency', () => {
   });
 
   it('GET returns 500 when internal error occurs', async () => {
-    mockGenerateAttestation = () => { throw new Error('boom'); };
+    mockGenerateAttestation = () => {
+      throw new Error('boom');
+    };
     const res = await getEmergency(new NextRequest('http://localhost:3000/api/emergency'));
     expect(res.status).toBe(500);
     const body = await res.json();
@@ -87,7 +90,9 @@ describe('/api/emergency/triage', () => {
   });
 
   it('GET returns 500 when internal error occurs', async () => {
-    mockGenerateAttestation = () => { throw new Error('boom'); };
+    mockGenerateAttestation = () => {
+      throw new Error('boom');
+    };
     const res = await getTriage(new NextRequest('http://localhost:3000/api/emergency/triage'));
     expect(res.status).toBe(500);
     const body = await res.json();
@@ -225,7 +230,9 @@ describe('/api/emergency/triage', () => {
 
 describe('/api/emergency/protocols', () => {
   it('GET returns protocols', async () => {
-    const res = await getProtocols(new NextRequest('http://localhost:3000/api/emergency/protocols'));
+    const res = await getProtocols(
+      new NextRequest('http://localhost:3000/api/emergency/protocols'),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -235,13 +242,19 @@ describe('/api/emergency/protocols', () => {
     mockRunMiddleware.mockReturnValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
-    const res = await getProtocols(new NextRequest('http://localhost:3000/api/emergency/protocols'));
+    const res = await getProtocols(
+      new NextRequest('http://localhost:3000/api/emergency/protocols'),
+    );
     expect(res.status).toBe(429);
   });
 
   it('GET returns 500 when internal error occurs', async () => {
-    mockGenerateAttestation = () => { throw new Error('boom'); };
-    const res = await getProtocols(new NextRequest('http://localhost:3000/api/emergency/protocols'));
+    mockGenerateAttestation = () => {
+      throw new Error('boom');
+    };
+    const res = await getProtocols(
+      new NextRequest('http://localhost:3000/api/emergency/protocols'),
+    );
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error.code).toBe('INTERNAL_ERROR');
@@ -266,7 +279,9 @@ describe('/api/emergency/care-team', () => {
   });
 
   it('GET returns 500 when internal error occurs', async () => {
-    mockSeededHex = () => { throw new Error('boom'); };
+    mockSeededHex = () => {
+      throw new Error('boom');
+    };
     const res = await getCareTeam(new NextRequest('http://localhost:3000/api/emergency/care-team'));
     expect(res.status).toBe(500);
     const body = await res.json();
@@ -364,7 +379,9 @@ describe('/api/emergency/handoffs', () => {
   });
 
   it('GET returns 500 when internal error occurs', async () => {
-    mockSeededHex = () => { throw new Error('boom'); };
+    mockSeededHex = () => {
+      throw new Error('boom');
+    };
     const res = await getHandoffs(new NextRequest('http://localhost:3000/api/emergency/handoffs'));
     expect(res.status).toBe(500);
     const body = await res.json();

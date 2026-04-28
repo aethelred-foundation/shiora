@@ -25,7 +25,8 @@ export async function GET(request: NextRequest) {
       status: seededPick(SEED + i * 3, statuses),
       lastUpdated: Date.now() - seededInt(SEED + i * 5, 1, 90) * 86400000,
       rawJson: `{"resourceType":"${resourceType}","id":"${seededHex(SEED + i * 7, 8)}"}`,
-      mappedRecordId: seededRandom(SEED + i * 9) > 0.3 ? `rec-${seededHex(SEED + i * 11, 12)}` : null,
+      mappedRecordId:
+        seededRandom(SEED + i * 9) > 0.3 ? `rec-${seededHex(SEED + i * 11, 12)}` : null,
     };
   });
 

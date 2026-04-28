@@ -94,8 +94,7 @@ export function useReproductiveVault(): UseReproductiveVaultReturn {
 
   const vaultOverviewQuery = useQuery({
     queryKey: [VAULT_KEY, 'overview'],
-    queryFn: () =>
-      api.get<{ privacyScore: VaultPrivacyScore }>('/api/vault', { overview: true }),
+    queryFn: () => api.get<{ privacyScore: VaultPrivacyScore }>('/api/vault', { overview: true }),
     staleTime: 60_000,
   });
 

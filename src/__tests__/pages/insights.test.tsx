@@ -22,7 +22,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // "AI Insights" appears in both page heading and nav link
     expect(screen.getAllByText('AI Insights').length).toBeGreaterThanOrEqual(1);
@@ -32,10 +32,10 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(
-      screen.getByText(/TEE-verified health analytics powered by machine learning/)
+      screen.getByText(/TEE-verified health analytics powered by machine learning/),
     ).toBeInTheDocument();
   });
 
@@ -43,7 +43,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Next Period')).toBeInTheDocument();
     expect(screen.getByText('Fertile Window')).toBeInTheDocument();
@@ -56,7 +56,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Overview')).toBeInTheDocument();
     expect(screen.getByText('Cycle Tracking')).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Cycle Prediction')).toBeInTheDocument();
     // "Health Score" appears in metric card and overview section heading
@@ -83,7 +83,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.click(screen.getByText('Cycle Tracking'));
@@ -98,7 +98,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // "Anomalies" tab; there may be multiple elements with this text
@@ -114,7 +114,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const anomalyTabs = screen.getAllByText('Anomalies');
@@ -130,7 +130,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const modelTabs = screen.getAllByText('AI Models');
@@ -146,7 +146,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const modelTabs = screen.getAllByText('AI Models');
@@ -162,7 +162,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const modelTabs = screen.getAllByText('AI Models');
@@ -175,7 +175,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getAllByText('Operational').length).toBeGreaterThanOrEqual(1);
   });
@@ -184,7 +184,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.click(screen.getByText('Cycle Tracking'));
@@ -202,7 +202,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.click(screen.getByText('Clinical AI'));
@@ -216,7 +216,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.click(screen.getByText('Clinical AI'));
@@ -232,7 +232,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.click(screen.getByText('Clinical AI'));
@@ -248,7 +248,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.click(screen.getByText('Clinical AI'));
@@ -263,7 +263,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.click(screen.getByText('Clinical AI'));
@@ -279,7 +279,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const anomalyTabs = screen.getAllByText('Anomalies');
@@ -293,7 +293,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const anomalyTabs = screen.getAllByText('Anomalies');
@@ -308,7 +308,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const anomalyTabs = screen.getAllByText('Anomalies');
@@ -323,7 +323,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.click(screen.getByText('Explainability'));
@@ -338,7 +338,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Overview tab (default) shows recent inferences with result text
@@ -350,7 +350,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.click(screen.getByText('Cycle Tracking'));
@@ -365,7 +365,7 @@ describe('InsightsPage', () => {
     render(
       <TestWrapper>
         <InsightsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const modelTabs = screen.getAllByText('AI Models');

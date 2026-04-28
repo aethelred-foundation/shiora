@@ -9,18 +9,26 @@
 
 import React, { useState } from 'react';
 import {
-  Microscope, Building2, User, Calendar, Users,
-  Shield, ShieldCheck, CheckCircle, AlertTriangle,
-  Loader2, TestTube2, ScanLine, HeartPulse,
-  FileText, Clock, Coins, X,
+  Microscope,
+  Building2,
+  User,
+  Calendar,
+  Users,
+  Shield,
+  ShieldCheck,
+  CheckCircle,
+  AlertTriangle,
+  Loader2,
+  TestTube2,
+  ScanLine,
+  HeartPulse,
+  FileText,
+  Clock,
+  Coins,
+  X,
 } from 'lucide-react';
 
-import type {
-  ResearchStudy,
-  DataContribution,
-  RecordType,
-  StudyStatus,
-} from '@/types';
+import type { ResearchStudy, DataContribution, RecordType, StudyStatus } from '@/types';
 import { RECORD_TYPES } from '@/lib/constants';
 import { MedicalCard, StatusBadge } from '@/components/ui/PagePrimitives';
 import { Modal, Badge } from '@/components/ui/SharedComponents';
@@ -99,9 +107,7 @@ export function StudyCard({
         </span>
       </div>
 
-      <p className="text-xs text-slate-500 mb-3">
-        PI: {study.principalInvestigator}
-      </p>
+      <p className="text-xs text-slate-500 mb-3">PI: {study.principalInvestigator}</p>
 
       {/* Participant progress */}
       <div className="mb-3">
@@ -207,10 +213,16 @@ export function ContributionHistory({
           ) : (
             contributions.map((contrib) => {
               const study = studies.find((s) => s.id === contrib.studyId);
-              const statusStyle = CONTRIBUTION_STATUS_COLORS[contrib.status] ?? { bg: 'bg-slate-50', text: 'text-slate-600' };
+              const statusStyle = CONTRIBUTION_STATUS_COLORS[contrib.status] ?? {
+                bg: 'bg-slate-50',
+                text: 'text-slate-600',
+              };
 
               return (
-                <div key={contrib.id} className="px-5 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors">
+                <div
+                  key={contrib.id}
+                  className="px-5 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors"
+                >
                   <div className="w-9 h-9 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
                     <Microscope className="w-4 h-4" />
                   </div>
@@ -219,7 +231,9 @@ export function ContributionHistory({
                       {study?.title ?? 'Unknown Study'}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-slate-400">{timeAgo(contrib.contributedAt)}</span>
+                      <span className="text-xs text-slate-400">
+                        {timeAgo(contrib.contributedAt)}
+                      </span>
                       <span className="text-xs text-slate-300">|</span>
                       <span className="text-xs text-slate-400">
                         {contrib.dataTypes.map(getRecordTypeLabel).join(', ')}
@@ -227,10 +241,14 @@ export function ContributionHistory({
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`px-2 py-0.5 rounded-full text-2xs font-medium ${statusStyle.bg} ${statusStyle.text}`}>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-2xs font-medium ${statusStyle.bg} ${statusStyle.text}`}
+                    >
                       {contrib.status}
                     </span>
-                    <span className="text-sm font-medium text-slate-900">+{contrib.compensation} AETHEL</span>
+                    <span className="text-sm font-medium text-slate-900">
+                      +{contrib.compensation} AETHEL
+                    </span>
                   </div>
                 </div>
               );
@@ -273,7 +291,7 @@ export function EnrollModal({
 
   const toggleType = (type: RecordType) => {
     setSelectedTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
     );
   };
 
@@ -287,13 +305,17 @@ export function EnrollModal({
         {/* Study details */}
         <div className="bg-slate-50 rounded-xl p-4">
           <h4 className="text-sm font-semibold text-slate-900 mb-1">{study.title}</h4>
-          <p className="text-xs text-slate-500 mb-2">{study.institution} | PI: {study.principalInvestigator}</p>
+          <p className="text-xs text-slate-500 mb-2">
+            {study.institution} | PI: {study.principalInvestigator}
+          </p>
           <p className="text-xs text-slate-600 line-clamp-3">{study.description}</p>
         </div>
 
         {/* Data type selection */}
         <div>
-          <h5 className="text-sm font-medium text-slate-700 mb-2">Select Data Types to Contribute</h5>
+          <h5 className="text-sm font-medium text-slate-700 mb-2">
+            Select Data Types to Contribute
+          </h5>
           <div className="space-y-2">
             {study.dataTypesRequired.map((dt) => (
               <label
@@ -337,11 +359,14 @@ export function EnrollModal({
             <input
               type="checkbox"
               checked={consentChecks.dataUsage}
-              onChange={(e) => setConsentChecks((prev) => ({ ...prev, dataUsage: e.target.checked }))}
+              onChange={(e) =>
+                setConsentChecks((prev) => ({ ...prev, dataUsage: e.target.checked }))
+              }
               className="w-4 h-4 mt-0.5 text-brand-600 border-slate-300 rounded focus:ring-brand-500"
             />
             <span className="text-sm text-slate-600">
-              I consent to my anonymized health data being used for this research study under IRB approval <strong>{study.irbApprovalId}</strong>.
+              I consent to my anonymized health data being used for this research study under IRB
+              approval <strong>{study.irbApprovalId}</strong>.
             </span>
           </label>
           <label className="flex items-start gap-3 cursor-pointer">
@@ -352,14 +377,17 @@ export function EnrollModal({
               className="w-4 h-4 mt-0.5 text-brand-600 border-slate-300 rounded focus:ring-brand-500"
             />
             <span className="text-sm text-slate-600">
-              I understand my data will be processed inside TEE enclaves and only aggregate results will be shared with researchers.
+              I understand my data will be processed inside TEE enclaves and only aggregate results
+              will be shared with researchers.
             </span>
           </label>
           <label className="flex items-start gap-3 cursor-pointer">
             <input
               type="checkbox"
               checked={consentChecks.withdrawal}
-              onChange={(e) => setConsentChecks((prev) => ({ ...prev, withdrawal: e.target.checked }))}
+              onChange={(e) =>
+                setConsentChecks((prev) => ({ ...prev, withdrawal: e.target.checked }))
+              }
               className="w-4 h-4 mt-0.5 text-brand-600 border-slate-300 rounded focus:ring-brand-500"
             />
             <span className="text-sm text-slate-600">

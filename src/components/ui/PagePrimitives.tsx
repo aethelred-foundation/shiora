@@ -1,7 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Copy, Check, Lock, ShieldCheck, TrendingUp, TrendingDown, Minus, type LucideIcon } from 'lucide-react';
+import {
+  Copy,
+  Check,
+  Lock,
+  ShieldCheck,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  type LucideIcon,
+} from 'lucide-react';
 import { BRAND, STATUS_STYLES } from '@/lib/constants';
 import { copyToClipboard, formatFullNumber } from '@/lib/utils';
 
@@ -17,7 +26,13 @@ interface MedicalCardProps {
   padding?: boolean;
 }
 
-export function MedicalCard({ children, className = '', hover = true, onClick, padding = true }: MedicalCardProps) {
+export function MedicalCard({
+  children,
+  className = '',
+  hover = true,
+  onClick,
+  padding = true,
+}: MedicalCardProps) {
   return (
     <div
       onClick={onClick}
@@ -41,7 +56,12 @@ interface CopyButtonProps {
   stopPropagation?: boolean;
 }
 
-export function CopyButton({ text, onCopied, size = 'sm', stopPropagation = true }: CopyButtonProps) {
+export function CopyButton({
+  text,
+  onCopied,
+  size = 'sm',
+  stopPropagation = true,
+}: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
   const iconSize = size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4';
 
@@ -81,13 +101,21 @@ interface SectionHeaderProps {
   icon?: LucideIcon;
 }
 
-export function SectionHeader({ title, subtitle, action, size = 'lg', icon: Icon }: SectionHeaderProps) {
+export function SectionHeader({
+  title,
+  subtitle,
+  action,
+  size = 'lg',
+  icon: Icon,
+}: SectionHeaderProps) {
   return (
     <div className={`flex items-end justify-between ${size === 'lg' ? 'mb-8' : 'mb-6'}`}>
       <div className="flex items-center gap-2">
         {Icon && <Icon className={`${size === 'lg' ? 'w-6 h-6' : 'w-5 h-5'} text-brand-600`} />}
         <div>
-          <h2 className={`font-bold text-slate-900 tracking-tight ${size === 'lg' ? 'text-2xl' : 'text-xl'}`}>
+          <h2
+            className={`font-bold text-slate-900 tracking-tight ${size === 'lg' ? 'text-2xl' : 'text-xl'}`}
+          >
             {title}
           </h2>
           {subtitle && <p className="text-sm text-slate-500 mt-1">{subtitle}</p>}
@@ -110,7 +138,13 @@ interface SparklineProps {
   showGradient?: boolean;
 }
 
-export function Sparkline({ data, color = BRAND.sky, height = 32, width = 80, showGradient = false }: SparklineProps) {
+export function Sparkline({
+  data,
+  color = BRAND.sky,
+  height = 32,
+  width = 80,
+  showGradient = false,
+}: SparklineProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -120,7 +154,10 @@ export function Sparkline({ data, color = BRAND.sky, height = 32, width = 80, sh
   const max = Math.max(...data);
   const range = max - min || 1;
   const points = data
-    .map((v, i) => `${(i / (data.length - 1)) * width},${height - ((v - min) / range) * (height - 4) - 2}`)
+    .map(
+      (v, i) =>
+        `${(i / (data.length - 1)) * width},${height - ((v - min) / range) * (height - 4) - 2}`,
+    )
     .join(' ');
 
   const gradientId = `sparkGrad-${color.replace('#', '')}`;
@@ -160,7 +197,8 @@ interface ChartTooltipProps {
 
 export function ChartTooltip({ active, payload, label, formatValue }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
-  const fmt = formatValue || ((v: number | string) => (typeof v === 'number' ? formatFullNumber(v) : v));
+  const fmt =
+    formatValue || ((v: number | string) => (typeof v === 'number' ? formatFullNumber(v) : v));
   return (
     <div className="bg-white text-slate-900 px-3 py-2 rounded-lg text-xs shadow-xl border border-slate-200">
       {label && <p className="font-medium mb-1 text-slate-700">{label}</p>}
@@ -189,8 +227,12 @@ export function StatusBadge({ status, styles }: StatusBadgeProps) {
   const s = styleMap[status] || { bg: 'bg-slate-100', text: 'text-slate-600', dot: 'bg-slate-400' };
 
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${s.bg} ${s.text} ${(STATUS_STYLES as any)[status]?.border || 'border-slate-200'}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${s.dot} ${status === 'Active' || status === 'Operational' ? 'animate-pulse' : ''}`} />
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${s.bg} ${s.text} ${(STATUS_STYLES as any)[status]?.border || 'border-slate-200'}`}
+    >
+      <span
+        className={`w-1.5 h-1.5 rounded-full ${s.dot} ${status === 'Active' || status === 'Operational' ? 'animate-pulse' : ''}`}
+      />
       {status}
     </span>
   );
@@ -207,7 +249,9 @@ interface EncryptionBadgeProps {
 
 export function EncryptionBadge({ type = 'AES-256', className = '' }: EncryptionBadgeProps) {
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-50 text-brand-700 border border-brand-200 ${className}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-50 text-brand-700 border border-brand-200 ${className}`}
+    >
       <Lock className="w-3 h-3" />
       {type}
     </span>
@@ -224,13 +268,22 @@ interface TEEBadgeProps {
   className?: string;
 }
 
-export function TEEBadge({ platform = 'Intel SGX', verified = true, className = '' }: TEEBadgeProps) {
+export function TEEBadge({
+  platform = 'Intel SGX',
+  verified = true,
+  className = '',
+}: TEEBadgeProps) {
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-      verified ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
-    } ${className}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+        verified
+          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+          : 'bg-amber-50 text-amber-700 border border-amber-200'
+      } ${className}`}
+    >
       <ShieldCheck className="w-3 h-3" />
-      {platform}{verified ? ' Verified' : ' Pending'}
+      {platform}
+      {verified ? ' Verified' : ' Pending'}
     </span>
   );
 }
@@ -263,7 +316,12 @@ export function HealthMetricCard({
   className = '',
 }: HealthMetricCardProps) {
   const TrendIcon = trend && trend > 0 ? TrendingUp : trend && trend < 0 ? TrendingDown : Minus;
-  const trendColor = trend && trend > 0 ? 'text-emerald-600' : trend && trend < 0 ? 'text-rose-600' : 'text-slate-400';
+  const trendColor =
+    trend && trend > 0
+      ? 'text-emerald-600'
+      : trend && trend < 0
+        ? 'text-rose-600'
+        : 'text-slate-400';
 
   return (
     <MedicalCard className={className}>
@@ -304,14 +362,22 @@ interface TruncatedHashProps {
   className?: string;
 }
 
-export function TruncatedHash({ hash, startLen = 10, endLen = 6, className = '' }: TruncatedHashProps) {
+export function TruncatedHash({
+  hash,
+  startLen = 10,
+  endLen = 6,
+  className = '',
+}: TruncatedHashProps) {
   if (!hash) return null;
-  const display = hash.length <= startLen + endLen + 3
-    ? hash
-    : `${hash.slice(0, startLen)}...${hash.slice(-endLen)}`;
+  const display =
+    hash.length <= startLen + endLen + 3
+      ? hash
+      : `${hash.slice(0, startLen)}...${hash.slice(-endLen)}`;
 
   return (
-    <span className={`inline-flex items-center gap-1 font-mono text-xs text-slate-600 ${className}`}>
+    <span
+      className={`inline-flex items-center gap-1 font-mono text-xs text-slate-600 ${className}`}
+    >
       {display}
       <CopyButton text={hash} size="sm" />
     </span>
