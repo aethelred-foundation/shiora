@@ -742,6 +742,7 @@ export async function updateConsent(
 interface MarketplaceListingRow extends QueryResultRow {
   id: string;
   seller_address: string;
+  buyer_address: string | null;
   seller_reputation: number;
   category: string;
   title: string;
@@ -916,6 +917,13 @@ export async function updateMarketplaceListing(
     );
     const existing = existingResult.rows[0];
     if (!existing) return undefined;
+    const currentWallet = walletAddress?.toLowerCase();
+    const isBuyerPurchaseTransition =
+      currentWallet !== undefined &&
+      currentWallet !== existing.seller_address.toLowerCase() &&
+      updates.status === 'sold' &&
+      updates.purchaseCount === Number(existing.purchase_count) + 1 &&
+      Object.keys(updates).every((field) => field === 'status' || field === 'purchaseCount');
 
     const setClauses = ['updated_at = now()'];
     const values: unknown[] = [];
@@ -946,6 +954,7 @@ export async function updateMarketplaceListing(
     if (updates.attestation !== undefined) setColumn('attestation', updates.attestation);
     if (updates.expiresAt !== undefined) setColumn('expires_at_epoch', updates.expiresAt);
     if (updates.purchaseCount !== undefined) setColumn('purchase_count', updates.purchaseCount);
+    if (isBuyerPurchaseTransition) setColumn('buyer_address', currentWallet);
 
     values.push(id);
     const result = await client.query<MarketplaceListingRow>(

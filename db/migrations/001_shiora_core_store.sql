@@ -105,6 +105,7 @@ CREATE INDEX IF NOT EXISTS idx_shiora_consent_grants_provider
 CREATE TABLE IF NOT EXISTS shiora_marketplace_listings (
   id TEXT PRIMARY KEY,
   seller_address TEXT NOT NULL,
+  buyer_address TEXT,
   seller_reputation INTEGER NOT NULL,
   category TEXT NOT NULL,
   title TEXT NOT NULL,
@@ -144,6 +145,10 @@ CREATE INDEX IF NOT EXISTS idx_shiora_marketplace_status_category
 
 CREATE INDEX IF NOT EXISTS idx_shiora_marketplace_seller
   ON shiora_marketplace_listings (seller_address, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_shiora_marketplace_buyer
+  ON shiora_marketplace_listings (buyer_address, updated_at DESC)
+  WHERE buyer_address IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS shiora_store_audit_log (
   sequence BIGSERIAL PRIMARY KEY,
@@ -225,6 +230,8 @@ BEGIN
     AND OLD.status = 'active'
     AND NEW.status = 'sold'
     AND NEW.purchase_count = OLD.purchase_count + 1
+    AND OLD.buyer_address IS NULL
+    AND lower(NEW.buyer_address) = shiora_current_wallet()
     AND NEW.id IS NOT DISTINCT FROM OLD.id
     AND NEW.seller_address IS NOT DISTINCT FROM OLD.seller_address
     AND NEW.seller_reputation IS NOT DISTINCT FROM OLD.seller_reputation
@@ -328,6 +335,7 @@ CREATE POLICY shiora_marketplace_public_or_seller_select
   USING (
     status = 'active'
     OR lower(seller_address) = shiora_current_wallet()
+    OR lower(buyer_address) = shiora_current_wallet()
     OR shiora_is_admin()
   );
 
@@ -350,7 +358,7 @@ CREATE POLICY shiora_marketplace_active_purchase_update
   WITH CHECK (
     lower(seller_address) = shiora_current_wallet()
     OR shiora_is_admin()
-    OR (status = 'sold' AND shiora_current_wallet() IS NOT NULL)
+    OR (status = 'sold' AND lower(buyer_address) = shiora_current_wallet())
   );
 
 DROP POLICY IF EXISTS shiora_store_audit_owner_or_admin_select ON shiora_store_audit_log;
@@ -372,7 +380,7 @@ CREATE POLICY shiora_store_audit_append_only_insert
 INSERT INTO shiora_schema_migrations (version, checksum_sha256)
 VALUES (
   '001_shiora_core_store',
-  'b72c564ceaf14a98e22703119b01c724a13d5e1520c1f66ee8d933381f4bbfdc'
+  'fa1874f2c1a3e47007b3be96969f7f483a85eed55ee7d42644cd597564034950'
 )
 ON CONFLICT (version) DO NOTHING;
 

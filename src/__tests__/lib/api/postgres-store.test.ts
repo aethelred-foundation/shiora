@@ -29,6 +29,7 @@ function marketplaceListingRow(overrides: QueryResultRow = {}): QueryResultRow {
   return {
     id: 'listing-postgres-1',
     seller_address: seededAddress(30303),
+    buyer_address: null,
     seller_reputation: 95,
     category: 'vitals_timeseries',
     title: 'Synthetic Vitals',

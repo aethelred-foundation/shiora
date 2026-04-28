@@ -173,7 +173,7 @@ assertText('db/migrations/001_shiora_core_store.sql', [
     message: 'Marketplace RLS must permit constrained active-listing purchases.',
   },
   {
-    pattern: 'b72c564ceaf14a98e22703119b01c724a13d5e1520c1f66ee8d933381f4bbfdc',
+    pattern: 'fa1874f2c1a3e47007b3be96969f7f483a85eed55ee7d42644cd597564034950',
     message: 'Migration metadata must not ship with a placeholder checksum.',
   },
 ]);
