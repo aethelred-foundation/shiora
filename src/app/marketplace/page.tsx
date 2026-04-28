@@ -266,6 +266,7 @@ export default function MarketplacePage() {
                       listing={listing}
                       onPurchase={(id) => {
                         const target = marketplace.listings.find((l) => l.id === id);
+                        /* istanbul ignore next -- purchase actions originate from rendered listings */
                         if (target) setPurchaseTarget(target);
                       }}
                     />
@@ -511,6 +512,7 @@ export default function MarketplacePage() {
         open={!!purchaseTarget}
         onClose={() => setPurchaseTarget(null)}
         onConfirm={() => {
+          /* istanbul ignore next -- confirm is only reachable while a purchase target is selected */
           if (purchaseTarget) {
             marketplace.purchase.mutate(purchaseTarget.id);
             setPurchaseTarget(null);

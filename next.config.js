@@ -4,6 +4,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 const enableHsts = process.env.SHIORA_ENABLE_HSTS === 'true';
 
 const nextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
   poweredByHeader: false,
 

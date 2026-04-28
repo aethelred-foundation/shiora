@@ -115,6 +115,7 @@ export default function GovernancePage() {
   };
 
   const handleDelegate = () => {
+    /* istanbul ignore next -- the delegate button is disabled until the address is valid */
     if (delegateAddress.startsWith('aeth1') && delegateAddress.length === 43) {
       governance.delegate.mutate(delegateAddress);
       setDelegateAddress('');

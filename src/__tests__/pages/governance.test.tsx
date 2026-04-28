@@ -365,6 +365,25 @@ describe('GovernancePage', () => {
     expect(delegateButtons.length).toBeGreaterThanOrEqual(1);
   });
 
+  it('does not delegate when the address is invalid', () => {
+    render(
+      <TestWrapper>
+        <GovernancePage />
+      </TestWrapper>,
+    );
+
+    fireEvent.click(screen.getByText('Delegation'));
+    const input = screen.getByPlaceholderText(/aeth1\.\.\./i);
+    fireEvent.change(input, { target: { value: 'invalid-address' } });
+
+    const delegateButton = screen
+      .getAllByText('Delegate')
+      .find((element) => element.closest('button'));
+    expect(delegateButton).toBeTruthy();
+    fireEvent.click(delegateButton!.closest('button')!);
+    expect(mockDelegate.mutate).not.toHaveBeenCalled();
+  });
+
   it('switches to Treasury tab and shows treasury content', () => {
     render(
       <TestWrapper>

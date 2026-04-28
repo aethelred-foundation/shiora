@@ -244,6 +244,37 @@ describe('checkRateLimit cleanup', () => {
       Date.now = originalDateNow;
     }
   });
+
+  it('retains unexpired entries during cleanup', async () => {
+    jest.resetModules();
+    const { checkRateLimit: freshCheckRateLimit } = await import('@/lib/api/middleware');
+    const originalDateNow = Date.now;
+    const initialNow = originalDateNow();
+    const ip = `cleanup-retain-${initialNow}`;
+
+    Date.now = jest.fn(() => initialNow);
+    freshCheckRateLimit(makeReq('http://localhost:3000/api/test', { ip }), 1, 600_000);
+
+    const cleanupNow = initialNow + 120_000;
+    Date.now = jest.fn(() => cleanupNow);
+
+    try {
+      freshCheckRateLimit(
+        makeReq('http://localhost:3000/api/test', { ip: `cleanup-trigger-${cleanupNow}` }),
+        10,
+        600_000,
+      );
+      const result = freshCheckRateLimit(
+        makeReq('http://localhost:3000/api/test', { ip }),
+        1,
+        600_000,
+      );
+      expect(result).not.toBeNull();
+      expect(result!.status).toBe(429);
+    } finally {
+      Date.now = originalDateNow;
+    }
+  });
 });
 
 describe('logRequest in non-test environment', () => {

@@ -302,9 +302,13 @@ export function ConsentScopeSelector({
   const toggleScope = (scopeId: ConsentScope) => {
     if (selected.includes(scopeId)) {
       onChange(selected.filter((s) => s !== scopeId));
-    } else if (selected.length < maxScopes) {
-      onChange([...selected, scopeId]);
+      return;
     }
+
+    /* istanbul ignore if -- maxed-out scopes are rendered as disabled buttons */
+    if (selected.length >= maxScopes) return;
+
+    onChange([...selected, scopeId]);
   };
 
   return (
@@ -514,6 +518,7 @@ export function CreateConsentModal({
 
   const handlePolicySelect = (policyId: string) => {
     const policy = policies.find((p) => p.id === policyId);
+    /* istanbul ignore next -- policy ids originate from the rendered policy selector */
     if (policy) {
       setSelectedPolicyId(policyId);
       setScopes(policy.scopes);

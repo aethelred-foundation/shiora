@@ -212,6 +212,32 @@ describe('Wallet operations', () => {
 
     expect(localStorage.removeItem).toHaveBeenCalledWith('shiora_wallet');
   });
+
+  it('disconnects cleanly when fetch is unavailable', () => {
+    const originalFetch = global.fetch;
+    delete (global as typeof globalThis & { fetch?: typeof fetch }).fetch;
+
+    render(
+      <AppProvider>
+        <ContextConsumer />
+      </AppProvider>,
+    );
+
+    act(() => {
+      fireEvent.click(screen.getByTestId('connect-btn'));
+    });
+
+    act(() => {
+      fireEvent.click(screen.getByTestId('disconnect-btn'));
+    });
+
+    expect(screen.getByTestId('connected').textContent).toBe('false');
+    expect(localStorage.removeItem).toHaveBeenCalledWith('shiora_wallet');
+
+    if (originalFetch) {
+      (global as typeof globalThis & { fetch?: typeof fetch }).fetch = originalFetch;
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -472,6 +498,33 @@ describe('Notifications', () => {
     });
 
     expect(screen.getByTestId('notification-count').textContent).toBe('3');
+  });
+
+  it('ignores removal of an unknown notification id', () => {
+    function MissingNotificationRemover() {
+      const ctx = useApp();
+      return (
+        <button
+          data-testid="remove-missing-btn"
+          onClick={() => ctx.removeNotification('missing-id')}
+        >
+          Remove Missing
+        </button>
+      );
+    }
+
+    render(
+      <AppProvider>
+        <ContextConsumer />
+        <MissingNotificationRemover />
+      </AppProvider>,
+    );
+
+    act(() => {
+      fireEvent.click(screen.getByTestId('remove-missing-btn'));
+    });
+
+    expect(screen.getByTestId('notification-count').textContent).toBe('0');
   });
 });
 

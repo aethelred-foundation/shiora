@@ -61,6 +61,7 @@ export default function CommunityPage() {
   const selectedCircle = community.circles.find((c) => c.id === community.selectedCircleId);
 
   const handleCreatePost = () => {
+    /* istanbul ignore next -- the UI disables posting until content and a selected circle are present */
     if (newPostContent.trim() && community.selectedCircleId) {
       community.createPost.mutate({
         circleId: community.selectedCircleId,

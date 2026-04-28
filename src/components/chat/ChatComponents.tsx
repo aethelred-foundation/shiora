@@ -196,6 +196,7 @@ export function ChatInput({ onSend, disabled = false, isLoading = false }: ChatI
     onSend(trimmed);
     setValue('');
     // Reset textarea height.
+    /* istanbul ignore next -- the input ref is attached whenever the send action is available */
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }

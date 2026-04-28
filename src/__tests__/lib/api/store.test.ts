@@ -708,6 +708,71 @@ describe('File persistence and serialization internals', () => {
     }
   });
 
+  it('schedulePersist skips warning when environment changes to test before the timer fires', () => {
+    const fs = require('node:fs');
+    const originalEnv = process.env.NODE_ENV;
+
+    const existsSyncOriginal = fs.existsSync;
+    const mkdirSyncOriginal = fs.mkdirSync;
+    const writeFileSyncOriginal = fs.writeFileSync;
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    fs.existsSync = jest.fn((p: string) => {
+      if (p.includes('.shiora-data')) return true;
+      return existsSyncOriginal(p);
+    });
+    fs.mkdirSync = jest.fn();
+    fs.writeFileSync = jest.fn(() => {
+      throw new Error('write failed after env flip');
+    });
+
+    process.env.NODE_ENV = 'development';
+
+    try {
+      delete globalState.__SHIORA_API_STATE__;
+      listMarketplaceListings();
+
+      jest.useFakeTimers();
+
+      const testOwner = seededAddress(12345);
+      createRecord(testOwner, {
+        id: 'persist-env-flip-rec',
+        type: 'vitals',
+        label: 'Persist Env Flip',
+        description: 'Test',
+        provider: 'Test',
+        date: Date.now(),
+        uploadDate: Date.now(),
+        encrypted: true,
+        encryption: 'AES-256-GCM',
+        cid: 'QmTest',
+        txHash: '0x' + 'ee'.repeat(32),
+        attestation: '0x' + 'ff'.repeat(32),
+        size: 1024,
+        status: 'Verified',
+        ipfsNodes: 10,
+        tags: [],
+        deleted: false,
+        ownerAddress: testOwner,
+        blockHeight: 1000,
+      });
+
+      process.env.NODE_ENV = 'test';
+      jest.advanceTimersByTime(3000);
+      jest.useRealTimers();
+
+      expect(fs.writeFileSync).toHaveBeenCalled();
+      expect(warnSpy).not.toHaveBeenCalled();
+    } finally {
+      fs.existsSync = existsSyncOriginal;
+      fs.mkdirSync = mkdirSyncOriginal;
+      fs.writeFileSync = writeFileSyncOriginal;
+      process.env.NODE_ENV = originalEnv;
+      warnSpy.mockRestore();
+      delete globalState.__SHIORA_API_STATE__;
+    }
+  });
+
   it('ensureDataDir creates directory when it does not exist', () => {
     const fs = require('node:fs');
     const originalEnv = process.env.NODE_ENV;

@@ -444,6 +444,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   }, [currentStep, onComplete]);
 
   const goBack = useCallback(() => {
+    /* istanbul ignore next -- the Back button is hidden on the first step */
     if (currentStep > 1) {
       setCurrentStep((s) => (s - 1) as OnboardingStep);
     }

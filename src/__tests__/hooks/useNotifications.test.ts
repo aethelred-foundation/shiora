@@ -106,6 +106,29 @@ describe('useNotifications', () => {
     if (original) (window as unknown as Record<string, unknown>).Notification = original;
   });
 
+  it('requestDesktopPermission keeps desktop preference disabled when permission is denied', async () => {
+    Object.defineProperty(window, 'Notification', {
+      value: {
+        requestPermission: jest.fn().mockResolvedValue('denied'),
+        permission: 'default',
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    const { result } = renderHook(() => useNotifications(), { wrapper: createWrapper() });
+
+    act(() => result.current.setPreferences({ desktop: false }));
+
+    await act(async () => {
+      await result.current.requestDesktopPermission();
+    });
+
+    expect(result.current.preferences.desktop).toBe(false);
+
+    delete (window as unknown as Record<string, unknown>).Notification;
+  });
+
   it('unreadCount is computed', () => {
     const { result } = renderHook(() => useNotifications(), { wrapper: createWrapper() });
     expect(typeof result.current.unreadCount).toBe('number');

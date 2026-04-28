@@ -768,6 +768,17 @@ describe('Drawer', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
+  it('does not close on non-Escape keys', () => {
+    const onClose = jest.fn();
+    render(
+      <Drawer open={true} onClose={onClose} title="Test">
+        <p>Content</p>
+      </Drawer>,
+    );
+    fireEvent.keyDown(document, { key: 'Enter' });
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it('calls onClose when backdrop is clicked', () => {
     const onClose = jest.fn();
     render(
@@ -943,6 +954,18 @@ describe('TopNav interactions', () => {
     // Dropdown should close
   });
 
+  it('keeps Platform dropdown open when clicking inside the dropdown container', () => {
+    render(
+      <TestWrapper>
+        <TopNav />
+      </TestWrapper>,
+    );
+    fireEvent.click(screen.getByText('Platform'));
+    const vaultLink = screen.getByText('Vault');
+    fireEvent.mouseDown(vaultLink);
+    expect(screen.getByText('Vault')).toBeInTheDocument();
+  });
+
   it('closes More dropdown when clicking a link inside', () => {
     render(
       <TestWrapper>
@@ -951,6 +974,18 @@ describe('TopNav interactions', () => {
     );
     fireEvent.click(screen.getByText('More'));
     fireEvent.click(screen.getByText('Wearables'));
+  });
+
+  it('keeps More dropdown open when clicking inside the dropdown container', () => {
+    render(
+      <TestWrapper>
+        <TopNav />
+      </TestWrapper>,
+    );
+    fireEvent.click(screen.getByText('More'));
+    const wearablesLink = screen.getByText('Wearables');
+    fireEvent.mouseDown(wearablesLink);
+    expect(screen.getByText('Wearables')).toBeInTheDocument();
   });
 
   it('closes Platform dropdown when More is clicked and vice versa', () => {
