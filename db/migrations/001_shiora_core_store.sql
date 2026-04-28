@@ -338,18 +338,20 @@ CREATE POLICY shiora_marketplace_seller_insert
   WITH CHECK (lower(seller_address) = shiora_current_wallet() OR shiora_is_admin());
 
 DROP POLICY IF EXISTS shiora_marketplace_seller_update ON shiora_marketplace_listings;
-CREATE POLICY shiora_marketplace_seller_update
-  ON shiora_marketplace_listings
-  FOR UPDATE
-  USING (lower(seller_address) = shiora_current_wallet() OR shiora_is_admin())
-  WITH CHECK (lower(seller_address) = shiora_current_wallet() OR shiora_is_admin());
-
 DROP POLICY IF EXISTS shiora_marketplace_active_purchase_update ON shiora_marketplace_listings;
 CREATE POLICY shiora_marketplace_active_purchase_update
   ON shiora_marketplace_listings
   FOR UPDATE
-  USING (status = 'active' AND shiora_current_wallet() IS NOT NULL)
-  WITH CHECK (status = 'sold' AND shiora_current_wallet() IS NOT NULL);
+  USING (
+    lower(seller_address) = shiora_current_wallet()
+    OR shiora_is_admin()
+    OR (status = 'active' AND shiora_current_wallet() IS NOT NULL)
+  )
+  WITH CHECK (
+    lower(seller_address) = shiora_current_wallet()
+    OR shiora_is_admin()
+    OR (status = 'sold' AND shiora_current_wallet() IS NOT NULL)
+  );
 
 DROP POLICY IF EXISTS shiora_store_audit_owner_or_admin_select ON shiora_store_audit_log;
 CREATE POLICY shiora_store_audit_owner_or_admin_select
@@ -370,7 +372,7 @@ CREATE POLICY shiora_store_audit_append_only_insert
 INSERT INTO shiora_schema_migrations (version, checksum_sha256)
 VALUES (
   '001_shiora_core_store',
-  'a59c7995cf0b48b1eb776bec1fdeecddc7d5a4bd8b019b968a6a929c86a94ed7'
+  'b72c564ceaf14a98e22703119b01c724a13d5e1520c1f66ee8d933381f4bbfdc'
 )
 ON CONFLICT (version) DO NOTHING;
 
