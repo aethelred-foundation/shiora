@@ -30,9 +30,12 @@ jest.mock('recharts', () => {
     { color: undefined, name: undefined, value: undefined },
   ];
   return {
-    ResponsiveContainer: ({ children }: any) => React.createElement('div', { 'data-testid': 'responsive-container' }, children),
-    LineChart: ({ children }: any) => React.createElement('div', { 'data-testid': 'line-chart' }, children),
-    BarChart: ({ children }: any) => React.createElement('div', { 'data-testid': 'bar-chart' }, children),
+    ResponsiveContainer: ({ children }: any) =>
+      React.createElement('div', { 'data-testid': 'responsive-container' }, children),
+    LineChart: ({ children }: any) =>
+      React.createElement('div', { 'data-testid': 'line-chart' }, children),
+    BarChart: ({ children }: any) =>
+      React.createElement('div', { 'data-testid': 'bar-chart' }, children),
     Line: () => null,
     Bar: () => null,
     XAxis: () => null,
@@ -40,7 +43,9 @@ jest.mock('recharts', () => {
     CartesianGrid: () => null,
     Tooltip: ({ content }: any) => {
       if (typeof content === 'function') {
-        return React.createElement('div', { 'data-testid': 'tooltip-content' },
+        return React.createElement(
+          'div',
+          { 'data-testid': 'tooltip-content' },
           content({ active: true, payload: mockPayload, label: '5' }),
           // Call with undefined payload to cover the ?. branch
           content({ active: false, payload: undefined, label: undefined }),
@@ -118,7 +123,7 @@ describe('SessionCard', () => {
     render(
       <TestWrapper>
         <SessionCard session={mockSession} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Federated Diabetes Study')).toBeInTheDocument();
     expect(screen.getByText(/Cross-institutional analysis/)).toBeInTheDocument();
@@ -128,7 +133,7 @@ describe('SessionCard', () => {
     render(
       <TestWrapper>
         <SessionCard session={mockSession} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Federated Averaging')).toBeInTheDocument();
     expect(screen.getByText('2/5 participants')).toBeInTheDocument();
@@ -138,7 +143,7 @@ describe('SessionCard', () => {
     render(
       <TestWrapper>
         <SessionCard session={mockSession} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Round 15/50')).toBeInTheDocument();
     expect(screen.getByText('30%')).toBeInTheDocument();
@@ -154,7 +159,7 @@ describe('ConvergenceChart', () => {
     const { container } = render(
       <TestWrapper>
         <ConvergenceChart data={mockConvergenceData} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.firstChild).toBeTruthy();
   });
@@ -169,7 +174,7 @@ describe('ResultCard', () => {
     render(
       <TestWrapper>
         <ResultCard result={mockResult} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Average HbA1c by age group')).toBeInTheDocument();
     expect(screen.getByText('5 participants')).toBeInTheDocument();
@@ -180,7 +185,7 @@ describe('ResultCard', () => {
     render(
       <TestWrapper>
         <ResultCard result={mockResult} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Completed')).toBeInTheDocument();
   });
@@ -189,14 +194,16 @@ describe('ResultCard', () => {
     render(
       <TestWrapper>
         <ResultCard result={mockResult} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Initially collapsed - no privacy budget visible
     expect(screen.queryByText('Privacy Budget Used')).not.toBeInTheDocument();
 
     // Click to expand
-    const header = screen.getByText('Average HbA1c by age group').closest('div[class*="cursor-pointer"]');
+    const header = screen
+      .getByText('Average HbA1c by age group')
+      .closest('div[class*="cursor-pointer"]');
     fireEvent.click(header!);
 
     // Should show expanded details
@@ -211,10 +218,12 @@ describe('ResultCard', () => {
     render(
       <TestWrapper>
         <ResultCard result={mockResult} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
-    const header = screen.getByText('Average HbA1c by age group').closest('div[class*="cursor-pointer"]');
+    const header = screen
+      .getByText('Average HbA1c by age group')
+      .closest('div[class*="cursor-pointer"]');
     // Expand
     fireEvent.click(header!);
     expect(screen.getByText('Privacy Budget Used')).toBeInTheDocument();
@@ -228,7 +237,7 @@ describe('ResultCard', () => {
     render(
       <TestWrapper>
         <ResultCard result={zeroBudget} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Average HbA1c by age group')).toBeInTheDocument();
   });
@@ -243,7 +252,7 @@ describe('DatasetCard', () => {
     render(
       <TestWrapper>
         <DatasetCard dataset={mockDataset} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Cardiac Biomarkers Dataset')).toBeInTheDocument();
     expect(screen.getByText(/De-identified cardiac/)).toBeInTheDocument();
@@ -253,7 +262,7 @@ describe('DatasetCard', () => {
     render(
       <TestWrapper>
         <DatasetCard dataset={mockDataset} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/50\.0K records/)).toBeInTheDocument();
     expect(screen.getByText('12.5 AETHEL')).toBeInTheDocument();
@@ -263,7 +272,7 @@ describe('DatasetCard', () => {
     render(
       <TestWrapper>
         <DatasetCard dataset={mockDataset} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Enhanced')).toBeInTheDocument();
   });
@@ -279,7 +288,7 @@ describe('ProtocolSelector', () => {
     render(
       <TestWrapper>
         <ProtocolSelector selected="secure_sum" onChange={onChange} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Secure Sum')).toBeInTheDocument();
     expect(screen.getByText('Federated Averaging')).toBeInTheDocument();
@@ -290,7 +299,7 @@ describe('ProtocolSelector', () => {
     render(
       <TestWrapper>
         <ProtocolSelector selected="secure_sum" onChange={onChange} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Federated Averaging'));
     expect(onChange).toHaveBeenCalledWith('federated_averaging');
@@ -306,7 +315,7 @@ describe('PrivacyBudgetBar', () => {
     render(
       <TestWrapper>
         <PrivacyBudgetBar used={1.2} total={3.0} label="Privacy Budget" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('1.20 used')).toBeInTheDocument();
     expect(screen.getByText('1.80 remaining')).toBeInTheDocument();
@@ -317,7 +326,7 @@ describe('PrivacyBudgetBar', () => {
     render(
       <TestWrapper>
         <PrivacyBudgetBar used={0.5} total={1.0} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('0.50 used')).toBeInTheDocument();
     expect(screen.getByText('0.50 remaining')).toBeInTheDocument();
@@ -327,7 +336,7 @@ describe('PrivacyBudgetBar', () => {
     render(
       <TestWrapper>
         <PrivacyBudgetBar used={0} total={0} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('0.00 used')).toBeInTheDocument();
     expect(screen.getByText('0.00 remaining')).toBeInTheDocument();
@@ -337,7 +346,7 @@ describe('PrivacyBudgetBar', () => {
     render(
       <TestWrapper>
         <PrivacyBudgetBar used={9} total={10} label="Budget" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('9.00 used')).toBeInTheDocument();
   });
@@ -346,7 +355,7 @@ describe('PrivacyBudgetBar', () => {
     render(
       <TestWrapper>
         <PrivacyBudgetBar used={6} total={10} label="Budget" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('6.00 used')).toBeInTheDocument();
   });
@@ -358,7 +367,7 @@ describe('SessionCard edge cases', () => {
     render(
       <TestWrapper>
         <SessionCard session={completedSession} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText(/Round \d+\/\d+/)).not.toBeInTheDocument();
   });
@@ -368,7 +377,7 @@ describe('SessionCard edge cases', () => {
     render(
       <TestWrapper>
         <SessionCard session={zeroRounds} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Federated Diabetes Study')).toBeInTheDocument();
   });
@@ -378,7 +387,7 @@ describe('SessionCard edge cases', () => {
     render(
       <TestWrapper>
         <SessionCard session={mockSession} onClick={onClick} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Click on the session card
     fireEvent.click(screen.getByText('Federated Diabetes Study'));
@@ -389,7 +398,7 @@ describe('SessionCard edge cases', () => {
     render(
       <TestWrapper>
         <SessionCard session={unknownStatus} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Federated Diabetes Study')).toBeInTheDocument();
   });
@@ -401,7 +410,7 @@ describe('DatasetCard edge cases', () => {
     render(
       <TestWrapper>
         <DatasetCard dataset={standard} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Standard')).toBeInTheDocument();
   });
@@ -411,7 +420,7 @@ describe('DatasetCard edge cases', () => {
     render(
       <TestWrapper>
         <DatasetCard dataset={max} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Maximum')).toBeInTheDocument();
   });
@@ -421,7 +430,7 @@ describe('DatasetCard edge cases', () => {
     render(
       <TestWrapper>
         <DatasetCard dataset={low} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('45%')).toBeInTheDocument();
   });
@@ -431,7 +440,7 @@ describe('DatasetCard edge cases', () => {
     render(
       <TestWrapper>
         <DatasetCard dataset={mid} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('65%')).toBeInTheDocument();
   });

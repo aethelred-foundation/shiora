@@ -6,12 +6,7 @@
 import { NextRequest } from 'next/server';
 import { successResponse, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
-import {
-  seededRandom,
-  seededInt,
-  seededHex,
-  seededPick,
-} from '@/lib/utils';
+import { seededRandom, seededInt, seededHex, seededPick } from '@/lib/utils';
 import type { MPCDataset, RecordType } from '@/types';
 
 // ────────────────────────────────────────────────────────────

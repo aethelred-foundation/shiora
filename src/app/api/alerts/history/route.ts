@@ -4,17 +4,9 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  successResponse,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
-import {
-  seededInt,
-  seededHex,
-  seededPick,
-  formatDateTime,
-} from '@/lib/utils';
+import { seededInt, seededHex, seededPick, formatDateTime } from '@/lib/utils';
 import type { AlertHistory } from '@/types';
 
 // ────────────────────────────────────────────────────────────

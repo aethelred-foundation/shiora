@@ -6,18 +6,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import type {
-  RewardEntry,
-  RewardAction,
-  ApiResponse,
-} from '@/types';
-import {
-  seededHex,
-  seededPick,
-  seededRandom,
-  seededInt,
-  generateTxHash,
-} from '@/lib/utils';
+import type { RewardEntry, RewardAction, ApiResponse } from '@/types';
+import { seededHex, seededPick, seededRandom, seededInt, generateTxHash } from '@/lib/utils';
 import { REWARD_ACTIONS } from '@/lib/constants';
 
 // ---------------------------------------------------------------------------

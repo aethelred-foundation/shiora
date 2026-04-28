@@ -2,7 +2,9 @@ import { NextRequest } from 'next/server';
 import { successResponse, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
 
-interface RouteContext { params: Promise<{ postId: string }> }
+interface RouteContext {
+  params: Promise<{ postId: string }>;
+}
 
 export async function POST(request: NextRequest, context: RouteContext) {
   const blocked = runMiddleware(request);

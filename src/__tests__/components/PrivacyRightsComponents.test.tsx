@@ -67,7 +67,7 @@ describe('PrivacyRequestCard', () => {
     render(
       <TestWrapper>
         <PrivacyRequestCard request={mockRequest} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getAllByText('Data Access').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Completed')).toBeInTheDocument();
@@ -77,7 +77,7 @@ describe('PrivacyRequestCard', () => {
     render(
       <TestWrapper>
         <PrivacyRequestCard request={mockRequest} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/Request for all health records/)).toBeInTheDocument();
     expect(screen.getByText('Health Records')).toBeInTheDocument();
@@ -88,7 +88,7 @@ describe('PrivacyRequestCard', () => {
     render(
       <TestWrapper>
         <PrivacyRequestCard request={mockRequest} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('ID: priv-req-1')).toBeInTheDocument();
   });
@@ -98,7 +98,7 @@ describe('PrivacyRequestCard', () => {
     render(
       <TestWrapper>
         <PrivacyRequestCard request={mockRequest} onViewDetails={onViewDetails} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const button = screen.getByText('View Details');
     fireEvent.click(button);
@@ -109,7 +109,7 @@ describe('PrivacyRequestCard', () => {
     render(
       <TestWrapper>
         <PrivacyRequestCard request={mockRequest} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('View Details')).not.toBeInTheDocument();
   });
@@ -118,7 +118,7 @@ describe('PrivacyRequestCard', () => {
     render(
       <TestWrapper>
         <PrivacyRequestCard request={mockRequest} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // "Completed" badge + "Completed <date>" timestamp
     const completedElements = screen.getAllByText(/Completed/);
@@ -129,7 +129,7 @@ describe('PrivacyRequestCard', () => {
     render(
       <TestWrapper>
         <PrivacyRequestCard request={pendingRequest} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Should show time ago instead of completed date
     expect(screen.queryByText(/Completed /)).not.toBeInTheDocument();
@@ -139,7 +139,7 @@ describe('PrivacyRequestCard', () => {
     render(
       <TestWrapper>
         <PrivacyRequestCard request={pendingRequest} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getAllByText('Data Portability').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Pending')).toBeInTheDocument();
@@ -149,7 +149,7 @@ describe('PrivacyRequestCard', () => {
     render(
       <TestWrapper>
         <PrivacyRequestCard request={processingRequest} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getAllByText('Data Erasure').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Processing')).toBeInTheDocument();
@@ -159,7 +159,7 @@ describe('PrivacyRequestCard', () => {
     render(
       <TestWrapper>
         <PrivacyRequestCard request={deniedRequest} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getAllByText('Rectification').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Denied')).toBeInTheDocument();
@@ -175,7 +175,7 @@ describe('DataExportPanel', () => {
     render(
       <TestWrapper>
         <DataExportPanel onSubmit={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Export Your Data')).toBeInTheDocument();
     expect(screen.getByText(/GDPR Article 15/)).toBeInTheDocument();
@@ -185,7 +185,7 @@ describe('DataExportPanel', () => {
     render(
       <TestWrapper>
         <DataExportPanel onSubmit={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('JSON (FHIR R4)')).toBeInTheDocument();
     expect(screen.getByText('CSV')).toBeInTheDocument();
@@ -196,7 +196,7 @@ describe('DataExportPanel', () => {
     render(
       <TestWrapper>
         <DataExportPanel onSubmit={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Request Data Export')).toBeInTheDocument();
   });
@@ -205,7 +205,7 @@ describe('DataExportPanel', () => {
     render(
       <TestWrapper>
         <DataExportPanel onSubmit={jest.fn()} isLoading />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Submitting Request...')).toBeInTheDocument();
   });
@@ -216,7 +216,7 @@ describe('DataExportPanel', () => {
     render(
       <TestWrapper>
         <DataExportPanel onSubmit={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Open categories dropdown
     fireEvent.click(screen.getByText('Select categories...'));
@@ -237,7 +237,7 @@ describe('DataExportPanel', () => {
     render(
       <TestWrapper>
         <DataExportPanel onSubmit={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Click Select All
     fireEvent.click(screen.getByText('Select All'));
@@ -254,7 +254,7 @@ describe('DataExportPanel', () => {
     render(
       <TestWrapper>
         <DataExportPanel onSubmit={onSubmit} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Open categories and select some
     fireEvent.click(screen.getByText('Select categories...'));
@@ -273,7 +273,7 @@ describe('DataExportPanel', () => {
     render(
       <TestWrapper>
         <DataExportPanel onSubmit={onSubmit} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Request Data Export'));
     expect(onSubmit).not.toHaveBeenCalled();
@@ -284,7 +284,7 @@ describe('DataExportPanel', () => {
     render(
       <TestWrapper>
         <DataExportPanel onSubmit={onSubmit} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Select categories...'));
     fireEvent.click(screen.getByLabelText('Health Records'));
@@ -299,7 +299,7 @@ describe('DataExportPanel', () => {
     render(
       <TestWrapper>
         <DataExportPanel onSubmit={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Click on XML format
     fireEvent.click(screen.getByText('XML (CDA)'));
@@ -313,7 +313,7 @@ describe('DataExportPanel', () => {
     render(
       <TestWrapper>
         <DataExportPanel onSubmit={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Click to open
     fireEvent.click(screen.getByText('Select categories...'));
@@ -329,7 +329,7 @@ describe('DataExportPanel', () => {
     render(
       <TestWrapper>
         <DataExportPanel onSubmit={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Select categories...'));
     fireEvent.click(screen.getByLabelText('Health Records'));
@@ -346,7 +346,7 @@ describe('ErasureRequestPanel', () => {
     render(
       <TestWrapper>
         <ErasureRequestPanel onSubmit={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Request Data Erasure')).toBeInTheDocument();
     expect(screen.getByText(/GDPR Article 17/)).toBeInTheDocument();
@@ -356,7 +356,7 @@ describe('ErasureRequestPanel', () => {
     render(
       <TestWrapper>
         <ErasureRequestPanel onSubmit={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Permanent Deletion Warning')).toBeInTheDocument();
     expect(screen.getByText(/Data erasure is irreversible/)).toBeInTheDocument();
@@ -366,7 +366,7 @@ describe('ErasureRequestPanel', () => {
     render(
       <TestWrapper>
         <ErasureRequestPanel onSubmit={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Submit Erasure Request')).toBeInTheDocument();
   });
@@ -375,7 +375,7 @@ describe('ErasureRequestPanel', () => {
     render(
       <TestWrapper>
         <ErasureRequestPanel onSubmit={jest.fn()} isLoading />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Submitting Erasure Request...')).toBeInTheDocument();
   });
@@ -386,7 +386,7 @@ describe('ErasureRequestPanel', () => {
     render(
       <TestWrapper>
         <ErasureRequestPanel onSubmit={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Open categories
     fireEvent.click(screen.getByText('Select categories to erase...'));
@@ -401,7 +401,7 @@ describe('ErasureRequestPanel', () => {
     render(
       <TestWrapper>
         <ErasureRequestPanel onSubmit={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Open and select a category
     fireEvent.click(screen.getByText('Select categories to erase...'));
@@ -424,7 +424,7 @@ describe('ErasureRequestPanel', () => {
     render(
       <TestWrapper>
         <ErasureRequestPanel onSubmit={onSubmit} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Select categories
     fireEvent.click(screen.getByText('Select categories to erase...'));
@@ -444,7 +444,7 @@ describe('ErasureRequestPanel', () => {
     render(
       <TestWrapper>
         <ErasureRequestPanel onSubmit={onSubmit} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Select categories to erase...'));
     fireEvent.click(screen.getByLabelText('Health Records'));
@@ -458,7 +458,7 @@ describe('ErasureRequestPanel', () => {
     render(
       <TestWrapper>
         <ErasureRequestPanel onSubmit={onSubmit} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Submit Erasure Request'));
     expect(onSubmit).not.toHaveBeenCalled();
@@ -469,7 +469,7 @@ describe('ErasureRequestPanel', () => {
     render(
       <TestWrapper>
         <ErasureRequestPanel onSubmit={onSubmit} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Select categories to erase...'));
     fireEvent.click(screen.getByLabelText('Health Records'));
@@ -485,7 +485,7 @@ describe('ErasureRequestPanel', () => {
     render(
       <TestWrapper>
         <ErasureRequestPanel onSubmit={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Select categories to erase...'));
     expect(screen.getByLabelText('Health Records')).toBeInTheDocument();
@@ -499,7 +499,7 @@ describe('ErasureRequestPanel', () => {
     render(
       <TestWrapper>
         <ErasureRequestPanel onSubmit={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Initially no confirmation checkbox
     expect(screen.queryByLabelText(/I understand/)).not.toBeInTheDocument();
@@ -516,7 +516,7 @@ describe('ErasureRequestPanel', () => {
     render(
       <TestWrapper>
         <ErasureRequestPanel onSubmit={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Select categories to erase...'));
     fireEvent.click(screen.getByLabelText('Health Records'));

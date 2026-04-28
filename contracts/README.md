@@ -17,17 +17,17 @@ contracts/
 
 ## Contract Reference
 
-| Contract | Directory | Purpose |
-|---|---|---|
-| `ShioraAccessControl` | `core/` | Granular, time-limited access grants for encrypted health data. Only the record owner can grant, modify, or revoke provider access. Grants auto-expire based on specified duration. |
-| `ShioraRecordRegistry` | `core/` | On-chain registration of encrypted health record metadata. Records are stored on IPFS; only the CID, content hash, encryption type, and TEE attestation are registered on-chain for integrity verification and immutable audit trails. |
-| `ShioraTEEVerifier` | `core/` | Stores TEE attestations on-chain, verifies attestation signatures, manages a model registry, and tracks AI inferences inside secure enclaves (Intel SGX, AWS Nitro, AMD SEV). |
-| `ShioraConsentManager` | `privacy/` | Manages granular, time-limited, scope-limited, revocable consent permissions for health data sharing between patients and providers. Supports multiple scopes, auto-renewal, and off-chain privacy policy references. |
-| `ShioraReproductiveVault` | `privacy/` | Encrypted data compartments with per-compartment access control and jurisdictional compliance flags. Designed for sensitive reproductive and women's health data requiring enhanced privacy protections and jurisdiction-aware governance. |
-| `ShioraZKVerifier` | `privacy/` | On-chain verification of zero-knowledge proofs for health-related claims (age range, condition present, medication active, data quality, provider verified, fertility window). Only registered verifiers can verify claims; claims expire after their specified duration. |
-| `ShioraGovernance` | `defi/` | On-chain governance with proposal creation, weighted voting, vote delegation, configurable quorum thresholds, and timelock-style execution. Voting power is determined by staked SHIO tokens. |
-| `ShioraStaking` | `defi/` | SHIO token staking for governance voting weight and protocol rewards. Stake positions are time-locked with a 7-day cooldown for unstaking. 1 staked SHIO = 1 vote of governance power. |
-| `ShioraMarketplace` | `defi/` | Health data marketplace for anonymized, TEE-verified datasets. Revenue split: seller (85%), protocol treasury (10%), stakers (5%). Listings carry quality scores and expire after a configurable duration (max 90 days). |
+| Contract                  | Directory  | Purpose                                                                                                                                                                                                                                                                   |
+| ------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ShioraAccessControl`     | `core/`    | Granular, time-limited access grants for encrypted health data. Only the record owner can grant, modify, or revoke provider access. Grants auto-expire based on specified duration.                                                                                       |
+| `ShioraRecordRegistry`    | `core/`    | On-chain registration of encrypted health record metadata. Records are stored on IPFS; only the CID, content hash, encryption type, and TEE attestation are registered on-chain for integrity verification and immutable audit trails.                                    |
+| `ShioraTEEVerifier`       | `core/`    | Stores TEE attestations on-chain, verifies attestation signatures, manages a model registry, and tracks AI inferences inside secure enclaves (Intel SGX, AWS Nitro, AMD SEV).                                                                                             |
+| `ShioraConsentManager`    | `privacy/` | Manages granular, time-limited, scope-limited, revocable consent permissions for health data sharing between patients and providers. Supports multiple scopes, auto-renewal, and off-chain privacy policy references.                                                     |
+| `ShioraReproductiveVault` | `privacy/` | Encrypted data compartments with per-compartment access control and jurisdictional compliance flags. Designed for sensitive reproductive and women's health data requiring enhanced privacy protections and jurisdiction-aware governance.                                |
+| `ShioraZKVerifier`        | `privacy/` | On-chain verification of zero-knowledge proofs for health-related claims (age range, condition present, medication active, data quality, provider verified, fertility window). Only registered verifiers can verify claims; claims expire after their specified duration. |
+| `ShioraGovernance`        | `defi/`    | On-chain governance with proposal creation, weighted voting, vote delegation, configurable quorum thresholds, and timelock-style execution. Voting power is determined by staked SHIO tokens.                                                                             |
+| `ShioraStaking`           | `defi/`    | SHIO token staking for governance voting weight and protocol rewards. Stake positions are time-locked with a 7-day cooldown for unstaking. 1 staked SHIO = 1 vote of governance power.                                                                                    |
+| `ShioraMarketplace`       | `defi/`    | Health data marketplace for anonymized, TEE-verified datasets. Revenue split: seller (85%), protocol treasury (10%), stakers (5%). Listings carry quality scores and expire after a configurable duration (max 90 days).                                                  |
 
 ## Interfaces
 
@@ -35,14 +35,15 @@ contracts/
 
 ## Dependencies
 
-| Package | Version | Usage |
-|---|---|---|
-| `@openzeppelin/contracts` | 5.0.2 | `Ownable`, `ReentrancyGuard`, `Pausable`, `ECDSA`, `MessageHashUtils` |
+| Package                   | Version         | Usage                                                                 |
+| ------------------------- | --------------- | --------------------------------------------------------------------- |
+| `@openzeppelin/contracts` | 5.0.2           | `Ownable`, `ReentrancyGuard`, `Pausable`, `ECDSA`, `MessageHashUtils` |
+| Foundry                   | local toolchain | reproducible contract compilation via `foundry.toml`                  |
 
 Install dependencies:
 
 ```bash
-npm install @openzeppelin/contracts@5.0.2
+npm install
 ```
 
 ## Development
@@ -50,14 +51,18 @@ npm install @openzeppelin/contracts@5.0.2
 ### Compile
 
 ```bash
-npx hardhat compile
+npm run contracts:build
 ```
 
 ### Test
 
 ```bash
-npx hardhat test
+npm run contracts:test
 ```
+
+The Foundry harness covers authorization boundaries, expiry behavior, marketplace
+accounting, a token-callback reentrancy attempt, and ZK proof verification
+failure modes.
 
 ### Deploy
 

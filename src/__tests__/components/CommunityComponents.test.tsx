@@ -18,8 +18,11 @@ import type { CommunityCircle, AnonymousPost } from '@/types';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return React.createElement(QueryClientProvider, { client: qc },
-    React.createElement(AppProvider, null, children));
+  return React.createElement(
+    QueryClientProvider,
+    { client: qc },
+    React.createElement(AppProvider, null, children),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -70,12 +73,20 @@ const mockPost: AnonymousPost = {
 
 describe('CircleCategoryIcon', () => {
   it('renders without crashing for known categories', () => {
-    const categories = ['fertility', 'pregnancy', 'menopause', 'endometriosis', 'pcos', 'general_wellness', 'mental_health'];
+    const categories = [
+      'fertility',
+      'pregnancy',
+      'menopause',
+      'endometriosis',
+      'pcos',
+      'general_wellness',
+      'mental_health',
+    ];
     categories.forEach((cat) => {
       const { unmount } = render(
         <TestWrapper>
           <CircleCategoryIcon category={cat} />
-        </TestWrapper>
+        </TestWrapper>,
       );
       unmount();
     });
@@ -85,7 +96,7 @@ describe('CircleCategoryIcon', () => {
     const { container } = render(
       <TestWrapper>
         <CircleCategoryIcon category="unknown" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.querySelector('svg')).toBeInTheDocument();
   });
@@ -100,7 +111,7 @@ describe('CircleCard', () => {
     render(
       <TestWrapper>
         <CircleCard circle={mockCircle} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Fertility Support')).toBeInTheDocument();
     expect(screen.getByText(/supportive community/)).toBeInTheDocument();
@@ -110,7 +121,7 @@ describe('CircleCard', () => {
     render(
       <TestWrapper>
         <CircleCard circle={mockCircle} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('1,234')).toBeInTheDocument();
     expect(screen.getByText('567')).toBeInTheDocument();
@@ -120,7 +131,7 @@ describe('CircleCard', () => {
     render(
       <TestWrapper>
         <CircleCard circle={mockCircle} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Join Circle')).toBeInTheDocument();
   });
@@ -129,7 +140,7 @@ describe('CircleCard', () => {
     render(
       <TestWrapper>
         <CircleCard circle={mockJoinedCircle} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Leave Circle')).toBeInTheDocument();
   });
@@ -138,7 +149,7 @@ describe('CircleCard', () => {
     render(
       <TestWrapper>
         <CircleCard circle={mockJoinedCircle} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('ZKP')).toBeInTheDocument();
   });
@@ -147,7 +158,7 @@ describe('CircleCard', () => {
     render(
       <TestWrapper>
         <CircleCard circle={mockJoinedCircle} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Joined')).toBeInTheDocument();
   });
@@ -157,7 +168,7 @@ describe('CircleCard', () => {
     render(
       <TestWrapper>
         <CircleCard circle={mockCircle} onJoin={onJoin} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Join Circle'));
     expect(onJoin).toHaveBeenCalledWith('circle-1');
@@ -168,7 +179,7 @@ describe('CircleCard', () => {
     render(
       <TestWrapper>
         <CircleCard circle={mockJoinedCircle} onLeave={onLeave} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Leave Circle'));
     expect(onLeave).toHaveBeenCalledWith('circle-2');
@@ -179,7 +190,7 @@ describe('CircleCard', () => {
     render(
       <TestWrapper>
         <CircleCard circle={zkpCircle} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Join with ZKP')).toBeInTheDocument();
   });
@@ -189,7 +200,7 @@ describe('CircleCard', () => {
     render(
       <TestWrapper>
         <CircleCard circle={mockCircle} onSelect={onSelect} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Fertility Support'));
     expect(onSelect).toHaveBeenCalledWith('circle-1');
@@ -205,16 +216,18 @@ describe('AnonymousPostCard', () => {
     render(
       <TestWrapper>
         <AnonymousPostCard post={mockPost} />
-      </TestWrapper>
+      </TestWrapper>,
     );
-    expect(screen.getByText('Has anyone tried tracking their basal body temperature?')).toBeInTheDocument();
+    expect(
+      screen.getByText('Has anyone tried tracking their basal body temperature?'),
+    ).toBeInTheDocument();
   });
 
   it('renders anonymous ID', () => {
     render(
       <TestWrapper>
         <AnonymousPostCard post={mockPost} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('anon-x7f3')).toBeInTheDocument();
   });
@@ -223,7 +236,7 @@ describe('AnonymousPostCard', () => {
     render(
       <TestWrapper>
         <AnonymousPostCard post={mockPost} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('ZKP Verified')).toBeInTheDocument();
   });
@@ -232,7 +245,7 @@ describe('AnonymousPostCard', () => {
     render(
       <TestWrapper>
         <AnonymousPostCard post={mockPost} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('BBT')).toBeInTheDocument();
     expect(screen.getByText('tracking')).toBeInTheDocument();
@@ -243,7 +256,7 @@ describe('AnonymousPostCard', () => {
     render(
       <TestWrapper>
         <AnonymousPostCard post={mockPost} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('12')).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();
@@ -253,7 +266,7 @@ describe('AnonymousPostCard', () => {
     render(
       <TestWrapper>
         <AnonymousPostCard post={mockPost} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('3 replies')).toBeInTheDocument();
   });
@@ -263,7 +276,7 @@ describe('AnonymousPostCard', () => {
     render(
       <TestWrapper>
         <AnonymousPostCard post={mockPost} onReact={onReact} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Click the first reaction button
     const reactionButtons = screen.getAllByRole('button');
@@ -276,7 +289,7 @@ describe('AnonymousPostCard', () => {
     render(
       <TestWrapper>
         <AnonymousPostCard post={mockPost} onReact={onReact} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // The last reaction button is the standalone heart button
     const reactionButtons = screen.getAllByRole('button');
@@ -294,16 +307,18 @@ describe('DiscussionThread', () => {
     render(
       <TestWrapper>
         <DiscussionThread post={mockPost} />
-      </TestWrapper>
+      </TestWrapper>,
     );
-    expect(screen.getByText('Has anyone tried tracking their basal body temperature?')).toBeInTheDocument();
+    expect(
+      screen.getByText('Has anyone tried tracking their basal body temperature?'),
+    ).toBeInTheDocument();
   });
 
   it('shows reply count indicator when replies exist', () => {
     render(
       <TestWrapper>
         <DiscussionThread post={mockPost} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/3 replies in this thread/)).toBeInTheDocument();
   });
@@ -313,7 +328,7 @@ describe('DiscussionThread', () => {
     render(
       <TestWrapper>
         <DiscussionThread post={noRepliesPost} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText(/replies in this thread/)).not.toBeInTheDocument();
   });
@@ -328,7 +343,7 @@ describe('ZKPMembershipProof', () => {
     render(
       <TestWrapper>
         <ZKPMembershipProof circleId="circle-1" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('ZKP Membership Verified')).toBeInTheDocument();
   });
@@ -337,7 +352,7 @@ describe('ZKPMembershipProof', () => {
     render(
       <TestWrapper>
         <ZKPMembershipProof circleId="circle-1" proofId="zkp-proof-abc123def456" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/zkp-proof-ab/)).toBeInTheDocument();
   });
@@ -359,7 +374,7 @@ describe('CircleBrowser', () => {
           onLeave={jest.fn()}
           onSelect={jest.fn()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('All')).toBeInTheDocument();
   });
@@ -375,7 +390,7 @@ describe('CircleBrowser', () => {
           onLeave={jest.fn()}
           onSelect={jest.fn()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('All')).toBeInTheDocument();
     // Should have at least a few category buttons from COMMUNITY_CATEGORIES
@@ -393,7 +408,7 @@ describe('CircleBrowser', () => {
           onLeave={jest.fn()}
           onSelect={jest.fn()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Fertility Support')).toBeInTheDocument();
   });
@@ -410,7 +425,7 @@ describe('CircleBrowser', () => {
           onLeave={jest.fn()}
           onSelect={jest.fn()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('All'));
     expect(onCategoryChange).toHaveBeenCalledWith(undefined);
@@ -428,7 +443,7 @@ describe('CircleBrowser', () => {
           onLeave={jest.fn()}
           onSelect={jest.fn()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Click a specific category button (not All)
     const buttons = screen.getAllByRole('button');
@@ -450,7 +465,7 @@ describe('CircleBrowser', () => {
           onLeave={jest.fn()}
           onSelect={jest.fn()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Fertility Support')).toBeInTheDocument();
   });
@@ -465,7 +480,7 @@ describe('CircleCategoryIcon — branch coverage', () => {
     const { container } = render(
       <TestWrapper>
         <CircleCategoryIcon category="fertility" className="w-8 h-8 text-red-500" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const svg = container.querySelector('svg');
     expect(svg).toHaveClass('w-8', 'h-8', 'text-red-500');
@@ -491,7 +506,7 @@ describe('AnonymousPostCard — reaction type branch coverage', () => {
     render(
       <TestWrapper>
         <AnonymousPostCard post={post} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('3')).toBeInTheDocument();
     expect(screen.getByText('4')).toBeInTheDocument();
@@ -505,7 +520,7 @@ describe('AnonymousPostCard — reaction type branch coverage', () => {
     render(
       <TestWrapper>
         <AnonymousPostCard post={post} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('ZKP Verified')).not.toBeInTheDocument();
   });
@@ -515,7 +530,7 @@ describe('AnonymousPostCard — reaction type branch coverage', () => {
     render(
       <TestWrapper>
         <AnonymousPostCard post={post} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('BBT')).not.toBeInTheDocument();
   });
@@ -530,7 +545,7 @@ describe('ZKPMembershipProof — branch coverage', () => {
     render(
       <TestWrapper>
         <ZKPMembershipProof circleId="circle-1" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('ZKP Membership Verified')).toBeInTheDocument();
     expect(screen.queryByText(/Proof:/)).not.toBeInTheDocument();

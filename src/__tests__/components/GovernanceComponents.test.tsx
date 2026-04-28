@@ -17,8 +17,11 @@ import type { Proposal, Delegation } from '@/types';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return React.createElement(QueryClientProvider, { client: qc },
-    React.createElement(AppProvider, null, children));
+  return React.createElement(
+    QueryClientProvider,
+    { client: qc },
+    React.createElement(AppProvider, null, children),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -83,7 +86,7 @@ describe('ProposalCard', () => {
     render(
       <TestWrapper>
         <ProposalCard proposal={mockActiveProposal} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Enable Genomics Data Sharing')).toBeInTheDocument();
     expect(screen.getByText(/Allow users to share genomic data/)).toBeInTheDocument();
@@ -93,7 +96,7 @@ describe('ProposalCard', () => {
     render(
       <TestWrapper>
         <ProposalCard proposal={mockActiveProposal} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Feature Proposal')).toBeInTheDocument();
   });
@@ -102,7 +105,7 @@ describe('ProposalCard', () => {
     render(
       <TestWrapper>
         <ProposalCard proposal={mockActiveProposal} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Active')).toBeInTheDocument();
   });
@@ -111,7 +114,7 @@ describe('ProposalCard', () => {
     render(
       <TestWrapper>
         <ProposalCard proposal={mockActiveProposal} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Quorum')).toBeInTheDocument();
   });
@@ -120,7 +123,7 @@ describe('ProposalCard', () => {
     render(
       <TestWrapper>
         <ProposalCard proposal={mockActiveProposal} onVote={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('For')).toBeInTheDocument();
     expect(screen.getByText('Against')).toBeInTheDocument();
@@ -132,7 +135,7 @@ describe('ProposalCard', () => {
     render(
       <TestWrapper>
         <ProposalCard proposal={mockActiveProposal} onVote={onVote} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('For'));
     expect(onVote).toHaveBeenCalledWith('prop-1', 'for');
@@ -143,7 +146,7 @@ describe('ProposalCard', () => {
     render(
       <TestWrapper>
         <ProposalCard proposal={mockActiveProposal} onVote={onVote} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Against'));
     expect(onVote).toHaveBeenCalledWith('prop-1', 'against');
@@ -154,7 +157,7 @@ describe('ProposalCard', () => {
     render(
       <TestWrapper>
         <ProposalCard proposal={mockActiveProposal} onVote={onVote} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Abstain'));
     expect(onVote).toHaveBeenCalledWith('prop-1', 'abstain');
@@ -164,7 +167,7 @@ describe('ProposalCard', () => {
     render(
       <TestWrapper>
         <ProposalCard proposal={mockPassedProposal} onVote={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('For')).not.toBeInTheDocument();
   });
@@ -179,7 +182,7 @@ describe('VotingBar', () => {
     render(
       <TestWrapper>
         <VotingBar forVotes={75000} againstVotes={15000} abstainVotes={5000} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // 75000/95000 = ~78.9% for
     expect(screen.getByText(/For/)).toBeInTheDocument();
@@ -191,7 +194,7 @@ describe('VotingBar', () => {
     render(
       <TestWrapper>
         <VotingBar forVotes={0} againstVotes={0} abstainVotes={0} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('No votes yet')).toBeInTheDocument();
   });
@@ -205,11 +208,8 @@ describe('DelegationPanel', () => {
   it('renders Delegation heading', () => {
     render(
       <TestWrapper>
-        <DelegationPanel
-          delegations={mockDelegations}
-          userVotingPower={10000}
-        />
-      </TestWrapper>
+        <DelegationPanel delegations={mockDelegations} userVotingPower={10000} />
+      </TestWrapper>,
     );
     expect(screen.getByText('Delegation')).toBeInTheDocument();
   });
@@ -217,11 +217,8 @@ describe('DelegationPanel', () => {
   it('renders user voting power badge', () => {
     render(
       <TestWrapper>
-        <DelegationPanel
-          delegations={mockDelegations}
-          userVotingPower={10000}
-        />
-      </TestWrapper>
+        <DelegationPanel delegations={mockDelegations} userVotingPower={10000} />
+      </TestWrapper>,
     );
     // formatNumber uses K abbreviation; text may be split across child nodes
     expect(screen.getByText(/10\.0K/)).toBeInTheDocument();
@@ -230,11 +227,8 @@ describe('DelegationPanel', () => {
   it('shows no active delegation message when user has not delegated', () => {
     render(
       <TestWrapper>
-        <DelegationPanel
-          delegations={mockDelegations}
-          userVotingPower={5000}
-        />
-      </TestWrapper>
+        <DelegationPanel delegations={mockDelegations} userVotingPower={5000} />
+      </TestWrapper>,
     );
     expect(screen.getByText(/No active delegation/)).toBeInTheDocument();
   });
@@ -242,11 +236,8 @@ describe('DelegationPanel', () => {
   it('renders Recent Delegations section', () => {
     render(
       <TestWrapper>
-        <DelegationPanel
-          delegations={mockDelegations}
-          userVotingPower={5000}
-        />
-      </TestWrapper>
+        <DelegationPanel delegations={mockDelegations} userVotingPower={5000} />
+      </TestWrapper>,
     );
     expect(screen.getByText('Recent Delegations')).toBeInTheDocument();
   });
@@ -254,11 +245,8 @@ describe('DelegationPanel', () => {
   it('renders delegation entries', () => {
     render(
       <TestWrapper>
-        <DelegationPanel
-          delegations={mockDelegations}
-          userVotingPower={5000}
-        />
-      </TestWrapper>
+        <DelegationPanel delegations={mockDelegations} userVotingPower={5000} />
+      </TestWrapper>,
     );
     // formatNumber abbreviates thousands — 5000 -> 5.0K
     expect(screen.getAllByText(/5\.0K/).length).toBeGreaterThan(0);
@@ -283,7 +271,7 @@ describe('DelegationPanel', () => {
           userVotingPower={8000}
           onUndelegate={jest.fn()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Delegated to')).toBeInTheDocument();
     expect(screen.getByText('Undelegate')).toBeInTheDocument();
@@ -299,7 +287,7 @@ describe('ProposalTimeline', () => {
     render(
       <TestWrapper>
         <ProposalTimeline proposal={mockActiveProposal} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Created')).toBeInTheDocument();
     expect(screen.getByText('Voting')).toBeInTheDocument();
@@ -310,7 +298,7 @@ describe('ProposalTimeline', () => {
     render(
       <TestWrapper>
         <ProposalTimeline proposal={mockDefeatedProposal} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Defeated')).toBeInTheDocument();
   });
@@ -319,7 +307,7 @@ describe('ProposalTimeline', () => {
     render(
       <TestWrapper>
         <ProposalTimeline proposal={mockPassedProposal} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Passed proposals show 'Passed' as the outcome step label
     expect(screen.getByText('Passed')).toBeInTheDocument();
@@ -335,7 +323,7 @@ describe('ProposalTimeline', () => {
     render(
       <TestWrapper>
         <ProposalTimeline proposal={cancelledProposal} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Cancelled')).toBeInTheDocument();
   });
@@ -350,7 +338,7 @@ describe('QuorumMeter', () => {
     render(
       <TestWrapper>
         <QuorumMeter currentVotes={50000} quorum={100000} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Quorum Progress')).toBeInTheDocument();
   });
@@ -359,7 +347,7 @@ describe('QuorumMeter', () => {
     render(
       <TestWrapper>
         <QuorumMeter currentVotes={100000} quorum={100000} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Quorum Reached')).toBeInTheDocument();
   });
@@ -368,7 +356,7 @@ describe('QuorumMeter', () => {
     render(
       <TestWrapper>
         <QuorumMeter currentVotes={50000} quorum={100000} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // formatNumber uses K abbreviation for thousands
     expect(screen.getByText(/50\.0K/)).toBeInTheDocument();
@@ -379,7 +367,7 @@ describe('QuorumMeter', () => {
     render(
       <TestWrapper>
         <QuorumMeter currentVotes={50000} quorum={100000} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('50%')).toBeInTheDocument();
   });

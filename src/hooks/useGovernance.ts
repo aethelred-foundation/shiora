@@ -53,7 +53,11 @@ export interface UseGovernanceReturn {
   };
 
   vote: {
-    mutate: (params: { proposalId: string; support: 'for' | 'against' | 'abstain'; reason?: string }) => void;
+    mutate: (params: {
+      proposalId: string;
+      support: 'for' | 'against' | 'abstain';
+      reason?: string;
+    }) => void;
     isLoading: boolean;
     error: Error | null;
   };
@@ -128,16 +132,18 @@ export function useGovernance(): UseGovernanceReturn {
   // ---- Mutations ----
 
   const createMutation = useMutation({
-    mutationFn: (form: CreateProposalForm) =>
-      api.post<Proposal>('/api/governance/proposals', form),
+    mutationFn: (form: CreateProposalForm) => api.post<Proposal>('/api/governance/proposals', form),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [PROPOSALS_KEY] });
     },
   });
 
   const voteMutation = useMutation({
-    mutationFn: (params: { proposalId: string; support: 'for' | 'against' | 'abstain'; reason?: string }) =>
-      api.post<Vote>('/api/governance/vote', params),
+    mutationFn: (params: {
+      proposalId: string;
+      support: 'for' | 'against' | 'abstain';
+      reason?: string;
+    }) => api.post<Vote>('/api/governance/vote', params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [PROPOSALS_KEY] });
       queryClient.invalidateQueries({ queryKey: [VOTES_KEY] });
@@ -153,8 +159,7 @@ export function useGovernance(): UseGovernanceReturn {
   });
 
   const undelegateMutation = useMutation({
-    mutationFn: () =>
-      api.post<void>('/api/governance/proposals', { action: 'undelegate' }),
+    mutationFn: () => api.post<void>('/api/governance/proposals', { action: 'undelegate' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [DELEGATIONS_KEY] });
     },

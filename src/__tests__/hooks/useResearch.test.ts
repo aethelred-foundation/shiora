@@ -4,7 +4,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useResearch } from '@/hooks/useResearch';
 
 function createWrapper() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } } });
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
+  });
   return ({ children }: { children: React.ReactNode }) =>
     React.createElement(QueryClientProvider, { client: qc }, children);
 }
@@ -49,7 +51,10 @@ describe('useResearch', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     await act(async () => {
-      result.current.contributeMutation.mutate({ studyId: 'study-0001', dataTypes: ['lab_result'] });
+      result.current.contributeMutation.mutate({
+        studyId: 'study-0001',
+        dataTypes: ['lab_result'],
+      });
     });
     await waitFor(() => expect(result.current.contributeMutation.isLoading).toBe(false));
   });
@@ -60,7 +65,10 @@ describe('useResearch', () => {
 
     let contribution: unknown;
     await act(async () => {
-      contribution = await result.current.contributeMutation.mutateAsync({ studyId: 'study-0001', dataTypes: ['lab_result'] });
+      contribution = await result.current.contributeMutation.mutateAsync({
+        studyId: 'study-0001',
+        dataTypes: ['lab_result'],
+      });
     });
     expect(contribution).toBeDefined();
   });

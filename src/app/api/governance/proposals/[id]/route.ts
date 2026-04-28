@@ -13,10 +13,7 @@ import { seededHex, generateTxHash } from '@/lib/utils';
 // GET /api/governance/proposals/[id]
 // ────────────────────────────────────────────────────────────
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const blocked = runMiddleware(request);
   if (blocked) return blocked;
 
@@ -45,10 +42,7 @@ export async function GET(
 // POST /api/governance/proposals/[id] — Vote
 // ────────────────────────────────────────────────────────────
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const blocked = runMiddleware(request);
   if (blocked) return blocked;
 
@@ -59,14 +53,19 @@ export async function POST(
     const { support, reason } = body;
 
     if (!['for', 'against', 'abstain'].includes(support)) {
-      return errorResponse('VALIDATION_ERROR', 'support must be "for", "against", or "abstain"', HTTP.UNPROCESSABLE);
+      return errorResponse(
+        'VALIDATION_ERROR',
+        'support must be "for", "against", or "abstain"',
+        HTTP.UNPROCESSABLE,
+      );
     }
 
     const seed = Date.now();
     const vote = {
       id: `vote-${seededHex(seed, 8)}`,
       proposalId: id,
-      voter: request.headers.get('x-wallet-address') ?? 'aeth1demo000000000000000000000000000000000',
+      voter:
+        request.headers.get('x-wallet-address') ?? 'aeth1demo000000000000000000000000000000000',
       support,
       weight: 5000,
       timestamp: Date.now(),

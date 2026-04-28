@@ -2,14 +2,19 @@
 
 jest.mock('@/lib/api/middleware', () => {
   const actual = jest.requireActual('@/lib/api/middleware');
-  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+  return {
+    ...actual,
+    runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)),
+  };
 });
 
 jest.mock('@/lib/api/mock-data', () => {
   const actual = jest.requireActual('@/lib/api/mock-data');
   return {
     ...actual,
-    generateMockAttestations: jest.fn((...args: unknown[]) => actual.generateMockAttestations(...args)),
+    generateMockAttestations: jest.fn((...args: unknown[]) =>
+      actual.generateMockAttestations(...args),
+    ),
   };
 });
 
@@ -26,7 +31,9 @@ import { generateMockAttestations } from '@/lib/api/mock-data';
 import { GET as getStatus } from '@/app/api/tee/status/route';
 
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
-const mockedGenerateMockAttestations = generateMockAttestations as jest.MockedFunction<typeof generateMockAttestations>;
+const mockedGenerateMockAttestations = generateMockAttestations as jest.MockedFunction<
+  typeof generateMockAttestations
+>;
 const actualMockData = jest.requireActual('@/lib/api/mock-data');
 import { GET as getAttestations } from '@/app/api/tee/attestations/route';
 import { GET as getExplorer } from '@/app/api/tee/explorer/route';
@@ -37,12 +44,13 @@ afterEach(() => {
     const actual = jest.requireActual('@/lib/api/middleware');
     return actual.runMiddleware(...args);
   });
-  mockedGenerateMockAttestations.mockImplementation((...args: unknown[]) => actualMockData.generateMockAttestations(...args));
+  mockedGenerateMockAttestations.mockImplementation((...args: unknown[]) =>
+    actualMockData.generateMockAttestations(...args),
+  );
   mockSeededPick.mockImplementation(actualUtilsMod.seededPick);
 });
 
 describe('/api/tee/status', () => {
-
   it('returns TEE status', async () => {
     const req = new NextRequest('http://localhost:3000/api/tee/status');
     const res = await getStatus(req);
@@ -53,7 +61,9 @@ describe('/api/tee/status', () => {
   });
 
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const req = new NextRequest('http://localhost:3000/api/tee/status');
     const res = await getStatus(req);
     expect(res.status).toBe(403);
@@ -107,7 +117,9 @@ describe('/api/tee/attestations', () => {
   });
 
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const req = new NextRequest('http://localhost:3000/api/tee/attestations');
     const res = await getAttestations(req);
     expect(res.status).toBe(403);
@@ -125,7 +137,9 @@ describe('/api/tee/attestations', () => {
 
 describe('/api/tee/explorer', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const req = new NextRequest('http://localhost:3000/api/tee/explorer');
     const res = await getExplorer(req);
     expect(res.status).toBe(403);
@@ -174,7 +188,9 @@ describe('/api/tee/explorer', () => {
 
 describe('/api/tee/explorer/[id]', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await getExplorerById(
       new NextRequest('http://localhost:3000/api/tee/explorer/any-id'),
       { params: Promise.resolve({ id: 'any-id' }) },
@@ -231,7 +247,14 @@ describe('/api/tee/explorer/[id]', () => {
     // (i.e. AI_MODELS), return a fake model with an unknown id
     mockSeededPick.mockImplementation((seed: number, arr: Array<Record<string, unknown>>) => {
       if (arr.length > 0 && typeof arr[0] === 'object' && arr[0] !== null && 'accuracy' in arr[0]) {
-        return { id: 'unknown-model', name: 'X', version: 'X', type: 'X', accuracy: 0, description: '' };
+        return {
+          id: 'unknown-model',
+          name: 'X',
+          version: 'X',
+          type: 'X',
+          accuracy: 0,
+          description: '',
+        };
       }
       return actualUtilsMod.seededPick(seed, arr);
     });

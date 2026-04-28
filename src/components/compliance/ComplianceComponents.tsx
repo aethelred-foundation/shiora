@@ -2,8 +2,16 @@
 
 import React from 'react';
 import {
-  ShieldCheck, Shield, CheckCircle, XCircle, AlertTriangle,
-  Clock, Eye, FileText, BarChart3, MinusCircle,
+  ShieldCheck,
+  Shield,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Clock,
+  Eye,
+  FileText,
+  BarChart3,
+  MinusCircle,
 } from 'lucide-react';
 
 import type {
@@ -30,21 +38,40 @@ interface ComplianceScoreCardProps {
 
 export function ComplianceScoreCard({ framework, onClick }: ComplianceScoreCardProps) {
   const meta = COMPLIANCE_FRAMEWORKS.find((f) => f.id === framework.id);
-  const scoreColor = framework.overallScore >= 90 ? 'text-emerald-600' : framework.overallScore >= 75 ? 'text-amber-600' : 'text-red-600';
-  const bgColor = framework.overallScore >= 90 ? 'bg-emerald-50' : framework.overallScore >= 75 ? 'bg-amber-50' : 'bg-red-50';
-  const borderColor = framework.overallScore >= 90 ? 'border-emerald-200' : framework.overallScore >= 75 ? 'border-amber-200' : 'border-red-200';
+  const scoreColor =
+    framework.overallScore >= 90
+      ? 'text-emerald-600'
+      : framework.overallScore >= 75
+        ? 'text-amber-600'
+        : 'text-red-600';
+  const bgColor =
+    framework.overallScore >= 90
+      ? 'bg-emerald-50'
+      : framework.overallScore >= 75
+        ? 'bg-amber-50'
+        : 'bg-red-50';
+  const borderColor =
+    framework.overallScore >= 90
+      ? 'border-emerald-200'
+      : framework.overallScore >= 75
+        ? 'border-amber-200'
+        : 'border-red-200';
 
   return (
     <MedicalCard onClick={onClick} className="min-w-[180px]">
       <div className="flex items-center gap-2 mb-3">
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${bgColor} ${borderColor} border`}>
+        <div
+          className={`w-8 h-8 rounded-lg flex items-center justify-center ${bgColor} ${borderColor} border`}
+        >
           <ShieldCheck className={`w-4 h-4 ${scoreColor}`} />
         </div>
         <span className="text-xs font-medium text-slate-500">{meta?.name ?? framework.name}</span>
       </div>
       <div className={`text-2xl font-bold ${scoreColor} mb-1`}>{framework.overallScore}%</div>
       <div className="flex items-center gap-1 text-xs text-slate-400">
-        <span>{framework.passedControls}/{framework.totalControls} controls</span>
+        <span>
+          {framework.passedControls}/{framework.totalControls} controls
+        </span>
       </div>
     </MedicalCard>
   );
@@ -66,13 +93,29 @@ export function ComplianceGauge({ score, size = 120 }: ComplianceGaugeProps) {
   const color = score >= 90 ? '#10b981' : score >= 75 ? '#f59e0b' : '#ef4444';
 
   return (
-    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+    <div
+      className="relative inline-flex items-center justify-center"
+      style={{ width: size, height: size }}
+    >
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#f1f5f9" strokeWidth="8" />
         <circle
-          cx={size / 2} cy={size / 2} r={radius} fill="none"
-          stroke={color} strokeWidth="8" strokeLinecap="round"
-          strokeDasharray={circumference} strokeDashoffset={circumference - progress}
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#f1f5f9"
+          strokeWidth="8"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference - progress}
           className="transition-all duration-700"
         />
       </svg>
@@ -117,19 +160,33 @@ export function FrameworkChecklist({ checks, isLoading }: FrameworkChecklistProp
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-slate-200 text-left">
-            <th className="pb-3 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Control ID</th>
-            <th className="pb-3 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Control Name</th>
-            <th className="pb-3 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Category</th>
-            <th className="pb-3 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-            <th className="pb-3 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Last Checked</th>
-            <th className="pb-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">TEE Verified</th>
+            <th className="pb-3 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Control ID
+            </th>
+            <th className="pb-3 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Control Name
+            </th>
+            <th className="pb-3 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Category
+            </th>
+            <th className="pb-3 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Status
+            </th>
+            <th className="pb-3 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Last Checked
+            </th>
+            <th className="pb-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              TEE Verified
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
           {checks.map((check) => (
             <tr key={check.id} className="hover:bg-slate-50/50 transition-colors">
               <td className="py-3 pr-4">
-                <code className="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded">{check.controlId}</code>
+                <code className="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded">
+                  {check.controlId}
+                </code>
               </td>
               <td className="py-3 pr-4 font-medium text-slate-700">{check.controlName}</td>
               <td className="py-3 pr-4 text-slate-500">{check.category}</td>
@@ -139,7 +196,9 @@ export function FrameworkChecklist({ checks, isLoading }: FrameworkChecklistProp
                   <span className="capitalize text-xs">{check.status.replace('_', ' ')}</span>
                 </div>
               </td>
-              <td className="py-3 pr-4 text-slate-500 text-xs">{formatDate(check.lastCheckedAt)}</td>
+              <td className="py-3 pr-4 text-slate-500 text-xs">
+                {formatDate(check.lastCheckedAt)}
+              </td>
               <td className="py-3">
                 {check.teeVerified ? (
                   <TEEBadge platform="Intel SGX" verified />
@@ -172,7 +231,9 @@ const RISK_COLORS: Record<string, string> = {
 export function AuditLogRow({ entry }: AuditLogRowProps) {
   return (
     <tr className="hover:bg-slate-50/50 transition-colors border-b border-slate-100">
-      <td className="py-3 pr-4 text-xs text-slate-500 whitespace-nowrap">{formatDateTime(entry.timestamp)}</td>
+      <td className="py-3 pr-4 text-xs text-slate-500 whitespace-nowrap">
+        {formatDateTime(entry.timestamp)}
+      </td>
       <td className="py-3 pr-4 text-sm text-slate-700 font-medium">{entry.action}</td>
       <td className="py-3 pr-4">
         <TruncatedHash hash={entry.actor} startLen={8} endLen={4} />
@@ -182,7 +243,9 @@ export function AuditLogRow({ entry }: AuditLogRowProps) {
         <Badge variant="medical">{entry.resourceType}</Badge>
       </td>
       <td className="py-3 pr-4">
-        <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${RISK_COLORS[entry.riskLevel]}`}>
+        <span
+          className={`text-xs font-medium px-2 py-0.5 rounded-full border ${RISK_COLORS[entry.riskLevel]}`}
+        >
           {entry.riskLevel}
         </span>
       </td>
@@ -213,24 +276,34 @@ export function ViolationCard({ violation }: ViolationCardProps) {
 
   return (
     <tr className="hover:bg-slate-50/50 transition-colors border-b border-slate-100">
-      <td className="py-3 pr-4 text-xs text-slate-500">{frameworkMeta?.name ??
-        /* istanbul ignore next -- frameworkMeta always found for seeded violations */
-        violation.frameworkId}</td>
-      <td className="py-3 pr-4">
-        <code className="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded">{violation.controlId}</code>
+      <td className="py-3 pr-4 text-xs text-slate-500">
+        {frameworkMeta?.name ??
+          /* istanbul ignore next -- frameworkMeta always found for seeded violations */
+          violation.frameworkId}
       </td>
       <td className="py-3 pr-4">
-        <span className={`text-xs font-medium px-2 py-0.5 rounded-full border capitalize ${SEVERITY_COLORS[violation.severity]}`}>
+        <code className="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded">
+          {violation.controlId}
+        </code>
+      </td>
+      <td className="py-3 pr-4">
+        <span
+          className={`text-xs font-medium px-2 py-0.5 rounded-full border capitalize ${SEVERITY_COLORS[violation.severity]}`}
+        >
           {violation.severity}
         </span>
       </td>
-      <td className="py-3 pr-4 text-sm text-slate-700 font-medium max-w-xs truncate">{violation.title}</td>
+      <td className="py-3 pr-4 text-sm text-slate-700 font-medium max-w-xs truncate">
+        {violation.title}
+      </td>
       <td className="py-3 pr-4 text-xs text-slate-500">{formatDate(violation.detectedAt)}</td>
       <td className="py-3 pr-4">
         <StatusBadge status={violation.status.replace('_', ' ')} />
       </td>
       <td className="py-3 pr-4 text-xs text-slate-500">{violation.assignedTo ?? '--'}</td>
-      <td className="py-3 text-xs text-slate-500 max-w-[200px] truncate">{violation.remediationPlan}</td>
+      <td className="py-3 text-xs text-slate-500 max-w-[200px] truncate">
+        {violation.remediationPlan}
+      </td>
     </tr>
   );
 }
@@ -256,7 +329,9 @@ export function ReportCard({ report }: ReportCardProps) {
     <MedicalCard>
       <div className="flex items-start justify-between mb-3">
         <Badge variant="medical">{frameworkMeta?.name ?? report.frameworkId}</Badge>
-        <span className={`text-xs font-medium px-2 py-0.5 rounded-full border capitalize ${REPORT_STATUS_COLORS[report.status]}`}>
+        <span
+          className={`text-xs font-medium px-2 py-0.5 rounded-full border capitalize ${REPORT_STATUS_COLORS[report.status]}`}
+        >
           {report.status}
         </span>
       </div>
@@ -268,7 +343,9 @@ export function ReportCard({ report }: ReportCardProps) {
         </div>
         <div className="flex justify-between">
           <span>Overall Score</span>
-          <span className={`font-bold ${report.overallScore >= 90 ? 'text-emerald-600' : report.overallScore >= 75 ? 'text-amber-600' : 'text-red-600'}`}>
+          <span
+            className={`font-bold ${report.overallScore >= 90 ? 'text-emerald-600' : report.overallScore >= 75 ? 'text-amber-600' : 'text-red-600'}`}
+          >
             {report.overallScore}%
           </span>
         </div>
@@ -278,7 +355,9 @@ export function ReportCard({ report }: ReportCardProps) {
         </div>
         <div className="flex justify-between">
           <span>Critical Gaps</span>
-          <span className={`font-bold ${report.criticalGaps > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+          <span
+            className={`font-bold ${report.criticalGaps > 0 ? 'text-red-600' : 'text-emerald-600'}`}
+          >
             {report.criticalGaps}
           </span>
         </div>

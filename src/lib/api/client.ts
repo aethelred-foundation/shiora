@@ -9,10 +9,7 @@ export class ApiError extends Error {
   readonly status: number;
   readonly details?: unknown;
 
-  constructor(
-    error: { code?: string; message?: string; details?: unknown },
-    status: number,
-  ) {
+  constructor(error: { code?: string; message?: string; details?: unknown }, status: number) {
     super(error.message ?? 'An unexpected error occurred');
     this.name = 'ApiError';
     this.code = error.code ?? 'UNKNOWN_ERROR';
@@ -59,10 +56,7 @@ export interface PaginatedResult<T> {
 
 // ---- Core request helper ----------------------------------------------------
 
-async function request<T>(
-  path: string,
-  options?: RequestInit,
-): Promise<T> {
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     ...options,
     credentials: 'include',
@@ -126,9 +120,7 @@ async function requestPaginated<T>(
 
 // ---- Query-string builder ---------------------------------------------------
 
-function buildQuery(
-  params?: Record<string, string | number | boolean | undefined | null>,
-): string {
+function buildQuery(params?: Record<string, string | number | boolean | undefined | null>): string {
   if (!params) return '';
   const sp = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => {

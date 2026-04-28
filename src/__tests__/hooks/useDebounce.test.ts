@@ -11,10 +11,9 @@ describe('useDebounce', () => {
   });
 
   it('updates value after delay', () => {
-    const { result, rerender } = renderHook(
-      ({ value }) => useDebounce(value, 300),
-      { initialProps: { value: 'hello' } },
-    );
+    const { result, rerender } = renderHook(({ value }) => useDebounce(value, 300), {
+      initialProps: { value: 'hello' },
+    });
 
     rerender({ value: 'world' });
     expect(result.current).toBe('hello');
@@ -24,10 +23,9 @@ describe('useDebounce', () => {
   });
 
   it('resets timer on rapid changes', () => {
-    const { result, rerender } = renderHook(
-      ({ value }) => useDebounce(value, 300),
-      { initialProps: { value: 'a' } },
-    );
+    const { result, rerender } = renderHook(({ value }) => useDebounce(value, 300), {
+      initialProps: { value: 'a' },
+    });
 
     rerender({ value: 'b' });
     act(() => jest.advanceTimersByTime(100));
@@ -43,10 +41,9 @@ describe('useDebounce', () => {
   });
 
   it('uses default delay of 300ms', () => {
-    const { result, rerender } = renderHook(
-      ({ value }) => useDebounce(value),
-      { initialProps: { value: 'first' } },
-    );
+    const { result, rerender } = renderHook(({ value }) => useDebounce(value), {
+      initialProps: { value: 'first' },
+    });
     rerender({ value: 'second' });
 
     act(() => jest.advanceTimersByTime(299));

@@ -9,17 +9,46 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Microscope, FlaskConical, Shield, ShieldCheck,
-  Lock, Users, BookOpen, FileText, Coins,
-  Search, Loader2, AlertTriangle, CheckCircle,
-  Brain, Database, Eye, KeyRound,
+  Microscope,
+  FlaskConical,
+  Shield,
+  ShieldCheck,
+  Lock,
+  Users,
+  BookOpen,
+  FileText,
+  Coins,
+  Search,
+  Loader2,
+  AlertTriangle,
+  CheckCircle,
+  Brain,
+  Database,
+  Eye,
+  KeyRound,
 } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
-import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, Tabs } from '@/components/ui/SharedComponents';
-import { MedicalCard, SectionHeader, StatusBadge, HealthMetricCard } from '@/components/ui/PagePrimitives';
+import {
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  Tabs,
+} from '@/components/ui/SharedComponents';
+import {
+  MedicalCard,
+  SectionHeader,
+  StatusBadge,
+  HealthMetricCard,
+} from '@/components/ui/PagePrimitives';
 import { useResearch } from '@/hooks/useResearch';
-import { StudyCard, ContributionHistory, EnrollModal } from '@/components/research/ResearchComponents';
+import {
+  StudyCard,
+  ContributionHistory,
+  EnrollModal,
+} from '@/components/research/ResearchComponents';
 
 import type { ResearchStudy, RecordType, StudyStatus } from '@/types';
 
@@ -57,7 +86,11 @@ export default function ResearchPage() {
 
   const statusTabs = [
     { id: 'all', label: 'All' },
-    { id: 'recruiting', label: 'Recruiting', count: studies.filter((s) => s.status === 'recruiting').length },
+    {
+      id: 'recruiting',
+      label: 'Recruiting',
+      count: studies.filter((s) => s.status === 'recruiting').length,
+    },
     { id: 'active', label: 'Active', count: studies.filter((s) => s.status === 'active').length },
     { id: 'completed', label: 'Completed' },
     { id: 'suspended', label: 'Suspended' },
@@ -70,10 +103,11 @@ export default function ResearchPage() {
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      result = result.filter((s) =>
-        s.title.toLowerCase().includes(q) ||
-        s.institution.toLowerCase().includes(q) ||
-        s.principalInvestigator.toLowerCase().includes(q)
+      result = result.filter(
+        (s) =>
+          s.title.toLowerCase().includes(q) ||
+          s.institution.toLowerCase().includes(q) ||
+          s.principalInvestigator.toLowerCase().includes(q),
       );
     }
     return result;
@@ -111,7 +145,6 @@ export default function ResearchPage() {
 
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-
           {/* ---- Header ---- */}
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
             <div>
@@ -120,7 +153,8 @@ export default function ResearchPage() {
                 <h1 className="text-2xl font-bold text-slate-900">Research Portal</h1>
               </div>
               <p className="text-sm text-slate-500">
-                Contribute your anonymized health data to IRB-approved research studies and earn AETHEL compensation
+                Contribute your anonymized health data to IRB-approved research studies and earn
+                AETHEL compensation
               </p>
             </div>
           </div>
@@ -249,36 +283,39 @@ export default function ResearchPage() {
                   <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center">
                     <BookOpen className="w-5 h-5 text-brand-600" />
                   </div>
-                  <h3 className="text-base font-semibold text-slate-900">How Research Works on Shiora</h3>
+                  <h3 className="text-base font-semibold text-slate-900">
+                    How Research Works on Shiora
+                  </h3>
                 </div>
                 <p className="text-sm text-slate-600 mb-4">
-                  Shiora enables privacy-preserving health research by allowing you to contribute anonymized data
-                  to IRB-approved studies. All data processing happens inside Trusted Execution Environment (TEE)
-                  enclaves, ensuring your individual records are never exposed to researchers.
+                  Shiora enables privacy-preserving health research by allowing you to contribute
+                  anonymized data to IRB-approved studies. All data processing happens inside
+                  Trusted Execution Environment (TEE) enclaves, ensuring your individual records are
+                  never exposed to researchers.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-slate-50 rounded-xl p-4">
                     <Lock className="w-5 h-5 text-brand-500 mb-2" />
                     <h4 className="text-sm font-semibold text-slate-900 mb-1">Privacy First</h4>
                     <p className="text-xs text-slate-500">
-                      Your data never leaves TEE enclaves. Researchers only receive aggregate, anonymized results
-                      verified by blockchain attestations.
+                      Your data never leaves TEE enclaves. Researchers only receive aggregate,
+                      anonymized results verified by blockchain attestations.
                     </p>
                   </div>
                   <div className="bg-slate-50 rounded-xl p-4">
                     <ShieldCheck className="w-5 h-5 text-emerald-500 mb-2" />
                     <h4 className="text-sm font-semibold text-slate-900 mb-1">IRB Compliance</h4>
                     <p className="text-xs text-slate-500">
-                      Every study on Shiora has been reviewed and approved by an Institutional Review Board (IRB)
-                      to ensure ethical research practices.
+                      Every study on Shiora has been reviewed and approved by an Institutional
+                      Review Board (IRB) to ensure ethical research practices.
                     </p>
                   </div>
                   <div className="bg-slate-50 rounded-xl p-4">
                     <Coins className="w-5 h-5 text-amber-500 mb-2" />
                     <h4 className="text-sm font-semibold text-slate-900 mb-1">Fair Compensation</h4>
                     <p className="text-xs text-slate-500">
-                      Earn AETHEL tokens for your data contributions. Compensation is paid directly to your wallet
-                      upon acceptance of your contribution.
+                      Earn AETHEL tokens for your data contributions. Compensation is paid directly
+                      to your wallet upon acceptance of your contribution.
                     </p>
                   </div>
                 </div>
@@ -292,8 +329,8 @@ export default function ResearchPage() {
                     <div>
                       <h4 className="text-sm font-medium text-slate-900">Zero-Knowledge Proofs</h4>
                       <p className="text-xs text-slate-500">
-                        ZKP verification ensures your data meets study requirements without revealing your identity
-                        or individual health records.
+                        ZKP verification ensures your data meets study requirements without
+                        revealing your identity or individual health records.
                       </p>
                     </div>
                   </div>
@@ -302,8 +339,8 @@ export default function ResearchPage() {
                     <div>
                       <h4 className="text-sm font-medium text-slate-900">TEE Processing</h4>
                       <p className="text-xs text-slate-500">
-                        All data aggregation and analysis happens inside hardware-secured Trusted Execution Environments.
-                        Data is encrypted at rest and in transit.
+                        All data aggregation and analysis happens inside hardware-secured Trusted
+                        Execution Environments. Data is encrypted at rest and in transit.
                       </p>
                     </div>
                   </div>
@@ -312,8 +349,8 @@ export default function ResearchPage() {
                     <div>
                       <h4 className="text-sm font-medium text-slate-900">Revocable Consent</h4>
                       <p className="text-xs text-slate-500">
-                        You can withdraw your participation and revoke data access at any time. Smart contracts enforce
-                        your consent preferences on-chain.
+                        You can withdraw your participation and revoke data access at any time.
+                        Smart contracts enforce your consent preferences on-chain.
                       </p>
                     </div>
                   </div>
@@ -322,8 +359,9 @@ export default function ResearchPage() {
                     <div>
                       <h4 className="text-sm font-medium text-slate-900">Differential Privacy</h4>
                       <p className="text-xs text-slate-500">
-                        Statistical noise is added to query results to prevent re-identification of individual participants.
-                        Results are mathematically guaranteed to be privacy-preserving.
+                        Statistical noise is added to query results to prevent re-identification of
+                        individual participants. Results are mathematically guaranteed to be
+                        privacy-preserving.
                       </p>
                     </div>
                   </div>
@@ -338,8 +376,9 @@ export default function ResearchPage() {
                     <div>
                       <h4 className="text-sm font-medium text-slate-900">What data is used?</h4>
                       <p className="text-xs text-slate-500">
-                        Only the specific data types you select for each study are contributed. You choose exactly
-                        which health records to share, and each contribution requires explicit consent.
+                        Only the specific data types you select for each study are contributed. You
+                        choose exactly which health records to share, and each contribution requires
+                        explicit consent.
                       </p>
                     </div>
                   </div>
@@ -348,19 +387,22 @@ export default function ResearchPage() {
                     <div>
                       <h4 className="text-sm font-medium text-slate-900">Who sees my data?</h4>
                       <p className="text-xs text-slate-500">
-                        No one sees your individual data. Researchers only access aggregate statistics computed inside
-                        TEE enclaves. Every access is logged on-chain for full audit transparency.
+                        No one sees your individual data. Researchers only access aggregate
+                        statistics computed inside TEE enclaves. Every access is logged on-chain for
+                        full audit transparency.
                       </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Brain className="w-5 h-5 text-brand-500 mt-0.5 shrink-0" />
                     <div>
-                      <h4 className="text-sm font-medium text-slate-900">How does it advance science?</h4>
+                      <h4 className="text-sm font-medium text-slate-900">
+                        How does it advance science?
+                      </h4>
                       <p className="text-xs text-slate-500">
-                        Your contributions enable groundbreaking research into reproductive health, fertility,
-                        and personalized medicine -- all while maintaining the highest standards of data privacy
-                        through the Aethelred blockchain.
+                        Your contributions enable groundbreaking research into reproductive health,
+                        fertility, and personalized medicine -- all while maintaining the highest
+                        standards of data privacy through the Aethelred blockchain.
                       </p>
                     </div>
                   </div>
@@ -374,11 +416,14 @@ export default function ResearchPage() {
             <div className="flex items-start gap-3">
               <Lock className="w-5 h-5 text-brand-600 mt-0.5 shrink-0" />
               <div>
-                <h4 className="text-sm font-semibold text-brand-900 mb-1">Privacy-Preserving Research</h4>
+                <h4 className="text-sm font-semibold text-brand-900 mb-1">
+                  Privacy-Preserving Research
+                </h4>
                 <p className="text-sm text-brand-700">
                   All research data is processed inside TEE enclaves on the Aethelred blockchain.
-                  Your individual records are never exposed to researchers. Only aggregate, anonymized
-                  results leave the enclave, with each step producing a verifiable attestation on-chain.
+                  Your individual records are never exposed to researchers. Only aggregate,
+                  anonymized results leave the enclave, with each step producing a verifiable
+                  attestation on-chain.
                 </p>
               </div>
             </div>
@@ -392,7 +437,10 @@ export default function ResearchPage() {
       <EnrollModal
         study={enrollTarget}
         open={enrollOpen}
-        onClose={() => { setEnrollOpen(false); setEnrollTarget(null); }}
+        onClose={() => {
+          setEnrollOpen(false);
+          setEnrollTarget(null);
+        }}
         onConfirm={handleConfirmEnroll}
         isLoading={enrollMutation.isLoading}
       />

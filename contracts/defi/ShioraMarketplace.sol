@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraMarketplace
@@ -187,9 +187,13 @@ contract ShioraMarketplace is Ownable, ReentrancyGuard, Pausable {
     // ────────────────────────────────────────────────────────
 
     modifier onlyListingSeller(uint256 listingId) {
+        _onlyListingSeller(listingId);
+        _;
+    }
+
+    function _onlyListingSeller(uint256 listingId) internal view {
         if (_listings[listingId].seller == address(0)) revert ListingNotFound();
         if (_listings[listingId].seller != msg.sender) revert NotListingSeller();
-        _;
     }
 
     // ────────────────────────────────────────────────────────
@@ -321,15 +325,14 @@ contract ShioraMarketplace is Ownable, ReentrancyGuard, Pausable {
         totalPurchases++;
         purchaseId = totalPurchases;
 
-        bytes32 txHash = keccak256(
-            abi.encodePacked(msg.sender, listingId, block.timestamp, purchaseId)
-        );
+        uint256 purchasedAt = block.timestamp;
+        bytes32 txHash = _hashPurchase(msg.sender, listingId, purchasedAt, purchaseId);
 
         _purchases[purchaseId] = Purchase({
             buyer: msg.sender,
             listingId: listingId,
             price: price,
-            purchasedAt: block.timestamp,
+            purchasedAt: purchasedAt,
             txHash: txHash
         });
 
@@ -522,5 +525,22 @@ contract ShioraMarketplace is Ownable, ReentrancyGuard, Pausable {
             )
         );
         return success && (data.length == 0 || abi.decode(data, (bool)));
+    }
+
+    function _hashPurchase(
+        address buyer,
+        uint256 listingId,
+        uint256 purchasedAt,
+        uint256 purchaseId
+    ) internal pure returns (bytes32 txHash) {
+        assembly ("memory-safe") {
+            let ptr := mload(0x40)
+            mstore(ptr, shl(96, buyer))
+            mstore(add(ptr, 0x14), listingId)
+            mstore(add(ptr, 0x34), purchasedAt)
+            mstore(add(ptr, 0x54), purchaseId)
+            txHash := keccak256(ptr, 0x74)
+            mstore(0x40, add(ptr, 0x80))
+        }
     }
 }

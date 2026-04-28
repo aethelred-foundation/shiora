@@ -54,7 +54,7 @@ describe('AppProvider', () => {
     render(
       <AppProvider>
         <p>Child Content</p>
-      </AppProvider>
+      </AppProvider>,
     );
     expect(screen.getByText('Child Content')).toBeInTheDocument();
   });
@@ -73,9 +73,7 @@ describe('useApp', () => {
       return <div />;
     }
 
-    expect(() => render(<BadComponent />)).toThrow(
-      'useApp must be used within an <AppProvider>'
-    );
+    expect(() => render(<BadComponent />)).toThrow('useApp must be used within an <AppProvider>');
 
     consoleSpy.mockRestore();
   });
@@ -89,7 +87,7 @@ describe('Default context state', () => {
     render(
       <AppProvider>
         <ContextConsumer />
-      </AppProvider>
+      </AppProvider>,
     );
     expect(screen.getByTestId('connected').textContent).toBe('false');
     expect(screen.getByTestId('address').textContent).toBe('');
@@ -99,7 +97,7 @@ describe('Default context state', () => {
     render(
       <AppProvider>
         <ContextConsumer />
-      </AppProvider>
+      </AppProvider>,
     );
     expect(screen.getByTestId('total-records').textContent).toBe('147');
   });
@@ -108,7 +106,7 @@ describe('Default context state', () => {
     render(
       <AppProvider>
         <ContextConsumer />
-      </AppProvider>
+      </AppProvider>,
     );
     expect(screen.getByTestId('tee-status').textContent).toBe('operational');
   });
@@ -117,7 +115,7 @@ describe('Default context state', () => {
     render(
       <AppProvider>
         <ContextConsumer />
-      </AppProvider>
+      </AppProvider>,
     );
     const height = parseInt(screen.getByTestId('block-height').textContent || '0');
     expect(height).toBeGreaterThan(0);
@@ -127,7 +125,7 @@ describe('Default context state', () => {
     render(
       <AppProvider>
         <ContextConsumer />
-      </AppProvider>
+      </AppProvider>,
     );
     expect(screen.getByTestId('notification-count').textContent).toBe('0');
   });
@@ -136,7 +134,7 @@ describe('Default context state', () => {
     render(
       <AppProvider>
         <ContextConsumer />
-      </AppProvider>
+      </AppProvider>,
     );
     expect(screen.getByTestId('search-open').textContent).toBe('false');
   });
@@ -150,7 +148,7 @@ describe('Wallet operations', () => {
     render(
       <AppProvider>
         <ContextConsumer />
-      </AppProvider>
+      </AppProvider>,
     );
 
     act(() => {
@@ -167,24 +165,21 @@ describe('Wallet operations', () => {
     render(
       <AppProvider>
         <ContextConsumer />
-      </AppProvider>
+      </AppProvider>,
     );
 
     act(() => {
       fireEvent.click(screen.getByTestId('connect-btn'));
     });
 
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      'shiora_wallet',
-      expect.any(String)
-    );
+    expect(localStorage.setItem).toHaveBeenCalledWith('shiora_wallet', expect.any(String));
   });
 
   it('disconnects wallet and resets state', () => {
     render(
       <AppProvider>
         <ContextConsumer />
-      </AppProvider>
+      </AppProvider>,
     );
 
     // Connect first
@@ -205,7 +200,7 @@ describe('Wallet operations', () => {
     render(
       <AppProvider>
         <ContextConsumer />
-      </AppProvider>
+      </AppProvider>,
     );
 
     act(() => {
@@ -236,15 +231,25 @@ describe('Session revalidation', () => {
     const fetchMock = global.fetch as jest.Mock;
     const originalImpl = fetchMock.getMockImplementation();
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === 'string' ? input : (input instanceof URL ? input.href : (input as Request).url);
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.href
+            : (input as Request).url;
       if (url.includes('/api/wallet/connect') && (!init?.method || init.method === 'GET')) {
         return {
           ok: true,
           status: 200,
           headers: { get: () => 'application/json' },
-          json: async () => ({ success: true, data: { address: 'aeth1validaddr', authenticated: true } }),
+          json: async () => ({
+            success: true,
+            data: { address: 'aeth1validaddr', authenticated: true },
+          }),
           text: async () => '{}',
-          clone: function () { return this; },
+          clone: function () {
+            return this;
+          },
         };
       }
       if (originalImpl) return originalImpl(input, init);
@@ -255,7 +260,7 @@ describe('Session revalidation', () => {
       render(
         <AppProvider>
           <ContextConsumer />
-        </AppProvider>
+        </AppProvider>,
       );
     });
 
@@ -283,15 +288,25 @@ describe('Session revalidation', () => {
     const fetchMock = global.fetch as jest.Mock;
     const originalImpl = fetchMock.getMockImplementation();
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === 'string' ? input : (input instanceof URL ? input.href : (input as Request).url);
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.href
+            : (input as Request).url;
       if (url.includes('/api/wallet/connect') && (!init?.method || init.method === 'GET')) {
         return {
           ok: true,
           status: 200,
           headers: { get: () => 'application/json' },
-          json: async () => ({ success: true, data: { address: 'aeth1walletB', authenticated: true } }),
+          json: async () => ({
+            success: true,
+            data: { address: 'aeth1walletB', authenticated: true },
+          }),
           text: async () => '{}',
-          clone: function () { return this; },
+          clone: function () {
+            return this;
+          },
         };
       }
       if (originalImpl) return originalImpl(input, init);
@@ -302,7 +317,7 @@ describe('Session revalidation', () => {
       render(
         <AppProvider>
           <ContextConsumer />
-        </AppProvider>
+        </AppProvider>,
       );
     });
 
@@ -329,7 +344,12 @@ describe('Session revalidation', () => {
     const fetchMock = global.fetch as jest.Mock;
     const originalImpl = fetchMock.getMockImplementation();
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === 'string' ? input : (input instanceof URL ? input.href : (input as Request).url);
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.href
+            : (input as Request).url;
       if (url.includes('/api/wallet/connect') && (!init?.method || init.method === 'GET')) {
         return {
           ok: false,
@@ -338,7 +358,9 @@ describe('Session revalidation', () => {
           headers: { get: () => 'application/json' },
           json: async () => ({ success: false, error: { code: 'UNAUTHORIZED' } }),
           text: async () => '{}',
-          clone: function () { return this; },
+          clone: function () {
+            return this;
+          },
         };
       }
       if (originalImpl) return originalImpl(input, init);
@@ -349,7 +371,7 @@ describe('Session revalidation', () => {
       render(
         <AppProvider>
           <ContextConsumer />
-        </AppProvider>
+        </AppProvider>,
       );
     });
 
@@ -383,7 +405,7 @@ describe('Notifications', () => {
     render(
       <AppProvider>
         <ContextConsumer />
-      </AppProvider>
+      </AppProvider>,
     );
 
     act(() => {
@@ -398,7 +420,7 @@ describe('Notifications', () => {
     render(
       <AppProvider>
         <ContextConsumer />
-      </AppProvider>
+      </AppProvider>,
     );
 
     act(() => {
@@ -419,7 +441,7 @@ describe('Notifications', () => {
     render(
       <AppProvider>
         <ContextConsumer />
-      </AppProvider>
+      </AppProvider>,
     );
 
     act(() => {
@@ -440,7 +462,7 @@ describe('Notifications', () => {
     render(
       <AppProvider>
         <ContextConsumer />
-      </AppProvider>
+      </AppProvider>,
     );
 
     act(() => {
@@ -469,7 +491,7 @@ describe('Real-time updates', () => {
     render(
       <AppProvider>
         <ContextConsumer />
-      </AppProvider>
+      </AppProvider>,
     );
 
     const initialHeight = parseInt(screen.getByTestId('block-height').textContent || '0');
@@ -517,7 +539,7 @@ describe('connectWalletWithData', () => {
     render(
       <AppProvider>
         <ConnectWithData />
-      </AppProvider>
+      </AppProvider>,
     );
 
     act(() => {
@@ -538,10 +560,7 @@ describe('connectWalletWithData', () => {
         <div>
           <span data-testid="ne-provider">{String(ctx.wallet.provider)}</span>
           <span data-testid="ne-chainId">{String(ctx.wallet.chainId)}</span>
-          <button
-            data-testid="ne-btn"
-            onClick={() => ctx.connectWalletWithData('aeth1abc', 500)}
-          >
+          <button data-testid="ne-btn" onClick={() => ctx.connectWalletWithData('aeth1abc', 500)}>
             Connect
           </button>
         </div>
@@ -551,7 +570,7 @@ describe('connectWalletWithData', () => {
     render(
       <AppProvider>
         <ConnectNoExtras />
-      </AppProvider>
+      </AppProvider>,
     );
 
     act(() => {
@@ -590,43 +609,71 @@ describe('Domain states', () => {
   }
 
   it('provides consent state', () => {
-    render(<AppProvider><DomainConsumer /></AppProvider>);
+    render(
+      <AppProvider>
+        <DomainConsumer />
+      </AppProvider>,
+    );
     expect(Number(screen.getByTestId('consent-active').textContent)).toBeGreaterThan(0);
     expect(Number(screen.getByTestId('consent-pending').textContent)).toBeGreaterThanOrEqual(0);
   });
 
   it('provides chat state', () => {
-    render(<AppProvider><DomainConsumer /></AppProvider>);
+    render(
+      <AppProvider>
+        <DomainConsumer />
+      </AppProvider>,
+    );
     expect(screen.getByTestId('chat-active').textContent).toBe('null');
     expect(Number(screen.getByTestId('chat-total').textContent)).toBeGreaterThan(0);
   });
 
   it('provides vault state', () => {
-    render(<AppProvider><DomainConsumer /></AppProvider>);
+    render(
+      <AppProvider>
+        <DomainConsumer />
+      </AppProvider>,
+    );
     expect(Number(screen.getByTestId('vault-compartments').textContent)).toBe(8);
     expect(Number(screen.getByTestId('vault-privacy').textContent)).toBeGreaterThan(0);
   });
 
   it('provides governance state', () => {
-    render(<AppProvider><DomainConsumer /></AppProvider>);
+    render(
+      <AppProvider>
+        <DomainConsumer />
+      </AppProvider>,
+    );
     expect(Number(screen.getByTestId('gov-active').textContent)).toBeGreaterThan(0);
     expect(Number(screen.getByTestId('gov-voting').textContent)).toBeGreaterThan(0);
   });
 
   it('provides staking state', () => {
-    render(<AppProvider><DomainConsumer /></AppProvider>);
+    render(
+      <AppProvider>
+        <DomainConsumer />
+      </AppProvider>,
+    );
     expect(Number(screen.getByTestId('staking-amount').textContent)).toBeGreaterThan(0);
     expect(Number(screen.getByTestId('staking-apy').textContent)).toBeGreaterThan(0);
   });
 
   it('provides marketplace state', () => {
-    render(<AppProvider><DomainConsumer /></AppProvider>);
+    render(
+      <AppProvider>
+        <DomainConsumer />
+      </AppProvider>,
+    );
     expect(Number(screen.getByTestId('market-listings').textContent)).toBeGreaterThan(0);
     expect(Number(screen.getByTestId('market-earnings').textContent)).toBeGreaterThan(0);
   });
 
   it('provides rewards state', () => {
-    render(<AppProvider><DomainConsumer /></AppProvider>);
+    render(
+      <AppProvider>
+        <DomainConsumer />
+      </AppProvider>,
+    );
     expect(Number(screen.getByTestId('rewards-total').textContent)).toBeGreaterThan(0);
     expect(Number(screen.getByTestId('rewards-level').textContent)).toBeGreaterThan(0);
   });
@@ -640,7 +687,7 @@ describe('Search state', () => {
     render(
       <AppProvider>
         <ContextConsumer />
-      </AppProvider>
+      </AppProvider>,
     );
 
     expect(screen.getByTestId('search-open').textContent).toBe('false');
@@ -671,7 +718,7 @@ describe('Real-time edge cases', () => {
     render(
       <AppProvider>
         <ContextConsumer />
-      </AppProvider>
+      </AppProvider>,
     );
 
     // Advance many 3-second intervals to increase the chance of hitting blockHeight % 1000 === 0
@@ -704,7 +751,12 @@ describe('Session revalidation network error', () => {
     const fetchMock = global.fetch as jest.Mock;
     const originalImpl = fetchMock.getMockImplementation();
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === 'string' ? input : (input instanceof URL ? input.href : (input as Request).url);
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.href
+            : (input as Request).url;
       if (url.includes('/api/wallet/connect') && (!init?.method || init.method === 'GET')) {
         throw new Error('Network error');
       }
@@ -716,7 +768,7 @@ describe('Session revalidation network error', () => {
       render(
         <AppProvider>
           <ContextConsumer />
-        </AppProvider>
+        </AppProvider>,
       );
     });
 
@@ -738,7 +790,7 @@ describe('Session revalidation network error', () => {
       render(
         <AppProvider>
           <ContextConsumer />
-        </AppProvider>
+        </AppProvider>,
       );
     });
 
@@ -758,7 +810,7 @@ describe('Session revalidation network error', () => {
       render(
         <AppProvider>
           <ContextConsumer />
-        </AppProvider>
+        </AppProvider>,
       );
     });
 
@@ -776,7 +828,12 @@ describe('Session revalidation network error', () => {
     const fetchMock = global.fetch as jest.Mock;
     const originalImpl = fetchMock.getMockImplementation();
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === 'string' ? input : (input instanceof URL ? input.href : (input as Request).url);
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.href
+            : (input as Request).url;
       if (url.includes('/api/wallet/connect') && (!init?.method || init.method === 'GET')) {
         return {
           ok: true,
@@ -784,7 +841,9 @@ describe('Session revalidation network error', () => {
           headers: { get: () => 'application/json' },
           json: async () => ({ success: true, data: {} }), // no address field
           text: async () => '{}',
-          clone: function () { return this; },
+          clone: function () {
+            return this;
+          },
         };
       }
       if (originalImpl) return originalImpl(input, init);
@@ -795,7 +854,7 @@ describe('Session revalidation network error', () => {
       render(
         <AppProvider>
           <ContextConsumer />
-        </AppProvider>
+        </AppProvider>,
       );
     });
 
@@ -820,15 +879,24 @@ describe('Session revalidation network error', () => {
     const fetchMock = global.fetch as jest.Mock;
     const originalImpl = fetchMock.getMockImplementation();
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === 'string' ? input : (input instanceof URL ? input.href : (input as Request).url);
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.href
+            : (input as Request).url;
       if (url.includes('/api/wallet/connect') && (!init?.method || init.method === 'GET')) {
         return {
           ok: true,
           status: 200,
           headers: { get: () => 'application/json' },
-          json: async () => { throw new Error('JSON parse error'); },
+          json: async () => {
+            throw new Error('JSON parse error');
+          },
           text: async () => 'not json',
-          clone: function () { return this; },
+          clone: function () {
+            return this;
+          },
         };
       }
       if (originalImpl) return originalImpl(input, init);
@@ -839,7 +907,7 @@ describe('Session revalidation network error', () => {
       render(
         <AppProvider>
           <ContextConsumer />
-        </AppProvider>
+        </AppProvider>,
       );
     });
 

@@ -9,13 +9,33 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Users, MessageCircle, ShieldCheck, Hash, Send,
-  Heart, ChevronLeft, Plus, Search, Lock,
+  Users,
+  MessageCircle,
+  ShieldCheck,
+  Hash,
+  Send,
+  Heart,
+  ChevronLeft,
+  Plus,
+  Search,
+  Lock,
 } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
-import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, Tabs } from '@/components/ui/SharedComponents';
-import { MedicalCard, SectionHeader, StatusBadge, HealthMetricCard } from '@/components/ui/PagePrimitives';
+import {
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  Tabs,
+} from '@/components/ui/SharedComponents';
+import {
+  MedicalCard,
+  SectionHeader,
+  StatusBadge,
+  HealthMetricCard,
+} from '@/components/ui/PagePrimitives';
 import {
   CircleCard,
   AnonymousPostCard,
@@ -58,7 +78,6 @@ export default function CommunityPage() {
 
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
             <div>
@@ -67,7 +86,8 @@ export default function CommunityPage() {
                 <h1 className="text-2xl font-bold text-slate-900">Community Circles</h1>
               </div>
               <p className="text-sm text-slate-500">
-                Anonymous, ZKP-verified health community discussions. Your identity is never revealed.
+                Anonymous, ZKP-verified health community discussions. Your identity is never
+                revealed.
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -106,7 +126,10 @@ export default function CommunityPage() {
                         className="w-12 h-12 rounded-xl flex items-center justify-center"
                         style={{ backgroundColor: `${selectedCircle.color}15` }}
                       >
-                        <CircleCategoryIcon category={selectedCircle.category} className="w-6 h-6" />
+                        <CircleCategoryIcon
+                          category={selectedCircle.category}
+                          className="w-6 h-6"
+                        />
                       </div>
                       <div className="flex-1">
                         <h2 className="text-lg font-bold text-slate-900">{selectedCircle.name}</h2>
@@ -114,7 +137,8 @@ export default function CommunityPage() {
                       </div>
                       <div className="flex items-center gap-3 text-xs text-slate-400">
                         <span className="flex items-center gap-1">
-                          <Users className="w-3 h-3" /> {selectedCircle.memberCount.toLocaleString()}
+                          <Users className="w-3 h-3" />{' '}
+                          {selectedCircle.memberCount.toLocaleString()}
                         </span>
                         <span className="flex items-center gap-1">
                           <MessageCircle className="w-3 h-3" /> {selectedCircle.postCount}
@@ -176,7 +200,9 @@ export default function CommunityPage() {
                   {community.posts.length === 0 && (
                     <div className="text-center py-12">
                       <MessageCircle className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                      <p className="text-sm text-slate-500">No posts in this circle yet. Be the first to share!</p>
+                      <p className="text-sm text-slate-500">
+                        No posts in this circle yet. Be the first to share!
+                      </p>
                     </div>
                   )}
                 </div>
@@ -193,7 +219,9 @@ export default function CommunityPage() {
                             key={circle.id}
                             onClick={() => community.setSelectedCircleId(circle.id)}
                             className={`w-full flex items-center gap-2 p-2 rounded-lg text-left transition-colors ${
-                              circle.id === community.selectedCircleId ? 'bg-brand-50 text-brand-700' : 'hover:bg-slate-50 text-slate-600'
+                              circle.id === community.selectedCircleId
+                                ? 'bg-brand-50 text-brand-700'
+                                : 'hover:bg-slate-50 text-slate-600'
                             }`}
                           >
                             <CircleCategoryIcon category={circle.category} className="w-4 h-4" />

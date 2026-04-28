@@ -10,20 +10,47 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Fingerprint, Heart, Wind, Brain, Zap, Bone, Apple,
-  Droplets, CircleDot, Shield, Baby, Activity,
-  Play, Sliders, TrendingUp, Clock, RefreshCw,
-  Settings, ChevronRight, AlertTriangle, CheckCircle,
+  Fingerprint,
+  Heart,
+  Wind,
+  Brain,
+  Zap,
+  Bone,
+  Apple,
+  Droplets,
+  CircleDot,
+  Shield,
+  Baby,
+  Activity,
+  Play,
+  Sliders,
+  TrendingUp,
+  Clock,
+  RefreshCw,
+  Settings,
+  ChevronRight,
+  AlertTriangle,
+  CheckCircle,
 } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
 import {
-  TopNav, Footer, ToastContainer, SearchOverlay,
-  Badge, Tabs, ProgressRing,
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  Tabs,
+  ProgressRing,
 } from '@/components/ui/SharedComponents';
 import {
-  MedicalCard, HealthMetricCard, SectionHeader,
-  ChartTooltip, TEEBadge, StatusBadge, TruncatedHash,
+  MedicalCard,
+  HealthMetricCard,
+  SectionHeader,
+  ChartTooltip,
+  TEEBadge,
+  StatusBadge,
+  TruncatedHash,
 } from '@/components/ui/PagePrimitives';
 import {
   OrganScoreCard,
@@ -36,8 +63,12 @@ import {
 import { useDigitalTwin } from '@/hooks/useDigitalTwin';
 import { BRAND, CHART_COLORS, ORGAN_SYSTEMS } from '@/lib/constants';
 import {
-  seededRandom, seededInt, seededHex, formatNumber,
-  timeAgo, generateAttestation,
+  seededRandom,
+  seededInt,
+  seededHex,
+  formatNumber,
+  timeAgo,
+  generateAttestation,
 } from '@/lib/utils';
 
 // ============================================================
@@ -72,7 +103,6 @@ export default function TwinPage() {
 
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-
           {/* ---- Header ---- */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
@@ -81,7 +111,8 @@ export default function TwinPage() {
                 <h1 className="text-2xl font-bold text-slate-900">Digital Health Twin</h1>
               </div>
               <p className="text-sm text-slate-500">
-                Comprehensive health simulation engine with TEE-attested predictions and what-if analysis
+                Comprehensive health simulation engine with TEE-attested predictions and what-if
+                analysis
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -126,12 +157,7 @@ export default function TwinPage() {
           </div>
 
           {/* ---- Tabs ---- */}
-          <Tabs
-            tabs={TAB_ITEMS}
-            activeTab={activeTab}
-            onChange={setActiveTab}
-            className="mb-8"
-          />
+          <Tabs tabs={TAB_ITEMS} activeTab={activeTab} onChange={setActiveTab} className="mb-8" />
 
           {/* ---- Tab Content ---- */}
           {activeTab === 'my-twin' && <MyTwinTab twin={twin} />}
@@ -139,7 +165,6 @@ export default function TwinPage() {
           {activeTab === 'parameters' && <ParametersTab twin={twin} />}
           {activeTab === 'predictions' && <PredictionsTab twin={twin} />}
           {activeTab === 'timeline' && <TimelineTab twin={twin} />}
-
         </div>
       </main>
 
@@ -175,7 +200,9 @@ function MyTwinTab({ twin }: { twin: ReturnType<typeof useDigitalTwin> }) {
             color={BRAND.sky}
           >
             <div className="text-center">
-              <span className="text-2xl font-bold text-slate-900">{twinData.overallHealthScore}</span>
+              <span className="text-2xl font-bold text-slate-900">
+                {twinData.overallHealthScore}
+              </span>
               <p className="text-xs text-slate-400">Score</p>
             </div>
           </ProgressRing>
@@ -301,7 +328,9 @@ function SimulationsTab({ twin }: { twin: ReturnType<typeof useDigitalTwin> }) {
               <div className="flex flex-col items-center justify-center py-16 text-slate-400">
                 <Play className="w-12 h-12 mb-3 text-slate-300" />
                 <p className="text-sm font-medium">Select a simulation to view details</p>
-                <p className="text-xs mt-1">Click on a simulation card to see trajectory analysis</p>
+                <p className="text-xs mt-1">
+                  Click on a simulation card to see trajectory analysis
+                </p>
               </div>
             </MedicalCard>
           )}
@@ -316,7 +345,8 @@ function SimulationsTab({ twin }: { twin: ReturnType<typeof useDigitalTwin> }) {
 // ============================================================
 
 function ParametersTab({ twin }: { twin: ReturnType<typeof useDigitalTwin> }) {
-  const { parameters, parameterOverrides, setParameterOverride, resetOverrides, runSimulation } = twin;
+  const { parameters, parameterOverrides, setParameterOverride, resetOverrides, runSimulation } =
+    twin;
 
   // Group parameters by category
   const grouped = useMemo(() => {

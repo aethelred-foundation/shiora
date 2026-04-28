@@ -104,7 +104,7 @@ describe('ComplianceScoreCard', () => {
     render(
       <TestWrapper>
         <ComplianceScoreCard framework={mockFramework} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('94%')).toBeInTheDocument();
     expect(screen.getByText('47/50 controls')).toBeInTheDocument();
@@ -120,7 +120,7 @@ describe('ComplianceGauge', () => {
     render(
       <TestWrapper>
         <ComplianceGauge score={88} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('88%')).toBeInTheDocument();
     expect(screen.getByText('Compliant')).toBeInTheDocument();
@@ -136,7 +136,7 @@ describe('FrameworkChecklist', () => {
     render(
       <TestWrapper>
         <FrameworkChecklist checks={mockChecks} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Control ID')).toBeInTheDocument();
     expect(screen.getByText('Control Name')).toBeInTheDocument();
@@ -148,7 +148,7 @@ describe('FrameworkChecklist', () => {
     render(
       <TestWrapper>
         <FrameworkChecklist checks={mockChecks} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Access Control')).toBeInTheDocument();
     expect(screen.getByText('Transmission Security')).toBeInTheDocument();
@@ -158,7 +158,7 @@ describe('FrameworkChecklist', () => {
     render(
       <TestWrapper>
         <FrameworkChecklist checks={[]} isLoading />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Should render skeleton divs, not the table
     expect(screen.queryByText('Control ID')).not.toBeInTheDocument();
@@ -178,7 +178,7 @@ describe('AuditLogRow', () => {
             <AuditLogRow entry={mockAuditEntry} />
           </tbody>
         </table>
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Access Policy Updated')).toBeInTheDocument();
     expect(screen.getByText('API Endpoint')).toBeInTheDocument();
@@ -199,7 +199,7 @@ describe('ViolationCard', () => {
             <ViolationCard violation={mockViolation} />
           </tbody>
         </table>
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Unencrypted data transmission detected')).toBeInTheDocument();
     expect(screen.getByText('high')).toBeInTheDocument();
@@ -215,7 +215,7 @@ describe('ReportCard', () => {
     render(
       <TestWrapper>
         <ReportCard report={mockReport} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Q4 2025 HIPAA Compliance Report')).toBeInTheDocument();
     expect(screen.getByText('92%')).toBeInTheDocument();
@@ -226,7 +226,7 @@ describe('ReportCard', () => {
     render(
       <TestWrapper>
         <ReportCard report={mockReport} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('12')).toBeInTheDocument();
     expect(screen.getByText('0')).toBeInTheDocument();
@@ -237,7 +237,7 @@ describe('ReportCard', () => {
     render(
       <TestWrapper>
         <ReportCard report={report} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('60%')).toBeInTheDocument();
   });
@@ -247,7 +247,7 @@ describe('ReportCard', () => {
     render(
       <TestWrapper>
         <ReportCard report={report} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('80%')).toBeInTheDocument();
   });
@@ -257,7 +257,7 @@ describe('ReportCard', () => {
     render(
       <TestWrapper>
         <ReportCard report={report} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('3')).toBeInTheDocument();
   });
@@ -273,7 +273,7 @@ describe('ComplianceScoreCard — branch coverage', () => {
     render(
       <TestWrapper>
         <ComplianceScoreCard framework={framework} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('60%')).toBeInTheDocument();
   });
@@ -283,7 +283,7 @@ describe('ComplianceScoreCard — branch coverage', () => {
     render(
       <TestWrapper>
         <ComplianceScoreCard framework={framework} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('80%')).toBeInTheDocument();
   });
@@ -298,7 +298,7 @@ describe('ComplianceGauge — branch coverage', () => {
     render(
       <TestWrapper>
         <ComplianceGauge score={60} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('60%')).toBeInTheDocument();
   });
@@ -307,7 +307,7 @@ describe('ComplianceGauge — branch coverage', () => {
     render(
       <TestWrapper>
         <ComplianceGauge score={80} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('80%')).toBeInTheDocument();
   });
@@ -321,13 +321,23 @@ describe('FrameworkChecklist — branch coverage', () => {
   it('renders na, partial, and not_assessed status checks', () => {
     const checks: ComplianceCheck[] = [
       { ...mockChecks[0], id: 'chk-na', status: 'na' as any, controlName: 'N/A Control' },
-      { ...mockChecks[0], id: 'chk-partial', status: 'partial' as any, controlName: 'Partial Control' },
-      { ...mockChecks[0], id: 'chk-not', status: 'not_assessed' as any, controlName: 'Not Assessed Control' },
+      {
+        ...mockChecks[0],
+        id: 'chk-partial',
+        status: 'partial' as any,
+        controlName: 'Partial Control',
+      },
+      {
+        ...mockChecks[0],
+        id: 'chk-not',
+        status: 'not_assessed' as any,
+        controlName: 'Not Assessed Control',
+      },
     ];
     render(
       <TestWrapper>
         <FrameworkChecklist checks={checks} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('N/A Control')).toBeInTheDocument();
     expect(screen.getByText('Partial Control')).toBeInTheDocument();
@@ -341,7 +351,7 @@ describe('FrameworkChecklist — branch coverage', () => {
     render(
       <TestWrapper>
         <FrameworkChecklist checks={[mockChecks[1]]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('--')).toBeInTheDocument();
   });
@@ -356,8 +366,12 @@ describe('ViolationCard — branch coverage', () => {
     const violation: PolicyViolation = { ...mockViolation, assignedTo: undefined as any };
     render(
       <TestWrapper>
-        <table><tbody><ViolationCard violation={violation} /></tbody></table>
-      </TestWrapper>
+        <table>
+          <tbody>
+            <ViolationCard violation={violation} />
+          </tbody>
+        </table>
+      </TestWrapper>,
     );
     expect(screen.getByText('--')).toBeInTheDocument();
   });

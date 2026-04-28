@@ -6,7 +6,8 @@ const mockRunMiddleware = jest.fn<NextResponse | null, [NextRequest, ...unknown[
 
 jest.mock('@/lib/api/middleware', () => ({
   ...jest.requireActual('@/lib/api/middleware'),
-  runMiddleware: (...args: unknown[]) => mockRunMiddleware(args[0] as NextRequest, ...args.slice(1)),
+  runMiddleware: (...args: unknown[]) =>
+    mockRunMiddleware(args[0] as NextRequest, ...args.slice(1)),
 }));
 
 import { GET as getFhir } from '@/app/api/fhir/route';
@@ -135,6 +136,7 @@ describe('/api/fhir/export', () => {
     expect(body.data.format).toBe('json');
     expect(body.data.resourceTypes).toEqual(['Patient', 'Observation']);
     expect(body.data.attestation).toBeDefined();
+    expect(mockRunMiddleware).toHaveBeenCalledWith(expect.any(NextRequest), { requireAuth: true });
   });
 
   it('POST returns 422 for missing resourceTypes', async () => {
@@ -194,6 +196,7 @@ describe('/api/fhir/export', () => {
       }),
     );
     expect(res.status).toBe(429);
+    expect(mockRunMiddleware).toHaveBeenCalledWith(expect.any(NextRequest), { requireAuth: true });
   });
 });
 

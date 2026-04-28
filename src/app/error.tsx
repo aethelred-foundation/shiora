@@ -8,7 +8,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AlertTriangle, RefreshCw, Home, Bug, Copy, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  AlertTriangle,
+  RefreshCw,
+  Home,
+  Bug,
+  Copy,
+  Check,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import Link from 'next/link';
 
 export default function Error({
@@ -31,7 +40,9 @@ export default function Error({
       `Error: ${error.message}`,
       error.digest ? `Digest: ${error.digest}` : '',
       error.stack ? `\nStack:\n${error.stack}` : '',
-    ].filter(Boolean).join('\n');
+    ]
+      .filter(Boolean)
+      .join('\n');
 
     navigator.clipboard.writeText(details).catch(() => {});
     setCopied(true);
@@ -56,13 +67,15 @@ export default function Error({
         {/* Title */}
         <h2 className="text-xl font-bold text-slate-900 mb-2">Something went wrong</h2>
         <p className="text-sm text-slate-500 mb-6">
-          An unexpected error occurred while loading this page. This has been logged for investigation.
+          An unexpected error occurred while loading this page. This has been logged for
+          investigation.
         </p>
 
         {/* Error digest */}
         {error.digest && (
           <p className="text-xs text-slate-400 mb-4">
-            Error ID: <code className="font-mono bg-slate-100 px-1.5 py-0.5 rounded">{error.digest}</code>
+            Error ID:{' '}
+            <code className="font-mono bg-slate-100 px-1.5 py-0.5 rounded">{error.digest}</code>
           </p>
         )}
 
@@ -73,7 +86,11 @@ export default function Error({
               onClick={() => setShowDetails(!showDetails)}
               className="flex items-center justify-center gap-1.5 w-full text-xs text-slate-500 hover:text-slate-700 transition-colors mb-2"
             >
-              {showDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              {showDetails ? (
+                <ChevronUp className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5" />
+              )}
               {showDetails ? 'Hide' : 'Show'} Error Details
             </button>
             {showDetails && (

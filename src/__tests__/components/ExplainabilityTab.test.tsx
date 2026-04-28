@@ -33,8 +33,11 @@ import ExplainabilityTab from '@/components/xai/ExplainabilityTab';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return React.createElement(QueryClientProvider, { client: qc },
-    React.createElement(AppProvider, null, children));
+  return React.createElement(
+    QueryClientProvider,
+    { client: qc },
+    React.createElement(AppProvider, null, children),
+  );
 }
 
 describe('ExplainabilityTab', () => {
@@ -54,7 +57,7 @@ describe('ExplainabilityTab', () => {
     const { container } = render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
   });
@@ -63,17 +66,19 @@ describe('ExplainabilityTab', () => {
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Select AI Model')).toBeInTheDocument();
-    expect(screen.getByText('Choose a model to view its explainability details')).toBeInTheDocument();
+    expect(
+      screen.getByText('Choose a model to view its explainability details'),
+    ).toBeInTheDocument();
   });
 
   it('renders the select dropdown with AI models', () => {
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const select = screen.getByRole('combobox');
     expect(select).toBeInTheDocument();
@@ -85,7 +90,7 @@ describe('ExplainabilityTab', () => {
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const select = screen.getByRole('combobox');
     fireEvent.change(select, { target: { value: 'anomaly' } });
@@ -98,27 +103,23 @@ describe('ExplainabilityTab', () => {
       modelId: 'lstm',
       explanation: 'This prediction is based on heart rate patterns.',
       confidence: 92,
-      shapValues: [
-        { feature: 'HR', value: 75, baseValue: 72, contribution: 0.25 },
-      ],
+      shapValues: [{ feature: 'HR', value: 75, baseValue: 72, contribution: 0.25 }],
       decisionPath: ['Step 1', 'Step 2'],
     };
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('SHAP Feature Contributions')).toBeInTheDocument();
   });
 
   it('renders feature importance chart when featureImportances are provided', () => {
-    mockXAI.featureImportances = [
-      { feature: 'HR', importance: 0.35, direction: 'positive' },
-    ];
+    mockXAI.featureImportances = [{ feature: 'HR', importance: 0.35, direction: 'positive' }];
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Feature Importance')).toBeInTheDocument();
   });
@@ -135,10 +136,12 @@ describe('ExplainabilityTab', () => {
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('AI Explanation')).toBeInTheDocument();
-    expect(screen.getByText('This prediction is based on heart rate patterns.')).toBeInTheDocument();
+    expect(
+      screen.getByText('This prediction is based on heart rate patterns.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('92% confidence')).toBeInTheDocument();
     expect(screen.getByText(/inf-123456/)).toBeInTheDocument();
     expect(screen.getByText('Decision Path')).toBeInTheDocument();
@@ -161,7 +164,7 @@ describe('ExplainabilityTab', () => {
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Cycle LSTM')).toBeInTheDocument();
   });
@@ -178,7 +181,7 @@ describe('ExplainabilityTab', () => {
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Bias Analysis')).toBeInTheDocument();
   });
@@ -187,9 +190,11 @@ describe('ExplainabilityTab', () => {
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('About Explainable AI')).toBeInTheDocument();
-    expect(screen.getByText(/All AI models in Shiora produce explainability artifacts/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/All AI models in Shiora produce explainability artifacts/),
+    ).toBeInTheDocument();
   });
 });

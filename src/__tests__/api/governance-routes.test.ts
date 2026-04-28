@@ -2,13 +2,19 @@
 
 jest.mock('@/lib/api/middleware', () => {
   const actual = jest.requireActual('@/lib/api/middleware');
-  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+  return {
+    ...actual,
+    runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)),
+  };
 });
 
 import { NextRequest, NextResponse } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
 import { GET as getProposals, POST as createProposal } from '@/app/api/governance/proposals/route';
-import { GET as getProposal, POST as voteOnProposal } from '@/app/api/governance/proposals/[id]/route';
+import {
+  GET as getProposal,
+  POST as voteOnProposal,
+} from '@/app/api/governance/proposals/[id]/route';
 import { GET as getVotes, POST as castVote } from '@/app/api/governance/vote/route';
 
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
@@ -22,7 +28,9 @@ afterEach(() => {
 
 describe('/api/governance/proposals', () => {
   it('GET returns proposals list', async () => {
-    const res = await getProposals(new NextRequest('http://localhost:3000/api/governance/proposals'));
+    const res = await getProposals(
+      new NextRequest('http://localhost:3000/api/governance/proposals'),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -106,13 +114,19 @@ describe('/api/governance/proposals', () => {
   });
 
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await getProposals(new NextRequest('http://localhost:3000/api/governance/proposals'));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
+    const res = await getProposals(
+      new NextRequest('http://localhost:3000/api/governance/proposals'),
+    );
     expect(res.status).toBe(403);
   });
 
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await createProposal(
       new NextRequest('http://localhost:3000/api/governance/proposals', {
         method: 'POST',
@@ -191,7 +205,9 @@ describe('/api/governance/proposals/[id]', () => {
   });
 
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await getProposal(
       new NextRequest('http://localhost:3000/api/governance/proposals/prop-test'),
       { params: Promise.resolve({ id: 'prop-test' }) },
@@ -200,7 +216,9 @@ describe('/api/governance/proposals/[id]', () => {
   });
 
   it('POST vote returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await voteOnProposal(
       new NextRequest('http://localhost:3000/api/governance/proposals/prop-test', {
         method: 'POST',
@@ -260,13 +278,17 @@ describe('/api/governance/vote', () => {
   });
 
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await getVotes(new NextRequest('http://localhost:3000/api/governance/vote'));
     expect(res.status).toBe(403);
   });
 
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await castVote(
       new NextRequest('http://localhost:3000/api/governance/vote', {
         method: 'POST',

@@ -7,19 +7,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import type {
-  ProviderReputation,
-  ProviderReview,
-  TrustLevel,
-  ApiResponse,
-} from '@/types';
-import {
-  seededRandom,
-  seededInt,
-  seededHex,
-  seededPick,
-  seededAddress,
-} from '@/lib/utils';
+import type { ProviderReputation, ProviderReview, TrustLevel, ApiResponse } from '@/types';
+import { seededRandom, seededInt, seededHex, seededPick, seededAddress } from '@/lib/utils';
 import { PROVIDER_NAMES, SPECIALTIES } from '@/lib/constants';
 
 // ---------------------------------------------------------------------------
@@ -150,7 +139,10 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          error: { code: 'VALIDATION_ERROR', message: 'rating, categories, and comment are required' },
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'rating, categories, and comment are required',
+          },
           timestamp: new Date().toISOString(),
         } satisfies ApiResponse<never>,
         { status: 400 },

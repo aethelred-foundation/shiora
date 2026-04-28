@@ -1,4 +1,9 @@
-import { SkeletonStats, SkeletonTable, SkeletonCard, SkeletonChart } from '@/components/ui/Skeleton';
+import {
+  SkeletonStats,
+  SkeletonTable,
+  SkeletonCard,
+  SkeletonChart,
+} from '@/components/ui/Skeleton';
 
 export default function TEEExplorerLoading() {
   return (

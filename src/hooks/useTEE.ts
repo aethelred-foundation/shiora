@@ -157,7 +157,10 @@ export function useTEE(): UseTEEReturn {
 
   const verifyAttestationFn = useCallback(
     async (hash: string): Promise<VerifyAttestationResponse> => {
-      return api.post<VerifyAttestationResponse>('/api/tee/attestations', { hash, action: 'verify' });
+      return api.post<VerifyAttestationResponse>('/api/tee/attestations', {
+        hash,
+        action: 'verify',
+      });
     },
     [],
   );
@@ -169,9 +172,7 @@ export function useTEE(): UseTEEReturn {
     const anomalies = list.filter((i) => i.result === 'Anomaly Detected').length;
     const normal = list.filter((i) => i.result === 'Normal').length;
     const avgConf =
-      list.length > 0
-        ? list.reduce((sum, i) => sum + i.confidence, 0) / list.length
-        : 0;
+      list.length > 0 ? list.reduce((sum, i) => sum + i.confidence, 0) / list.length : 0;
     return {
       total: list.length,
       anomalies,

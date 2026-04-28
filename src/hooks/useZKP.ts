@@ -11,12 +11,7 @@ import { useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 
-import type {
-  ZKClaim,
-  ZKClaimType,
-  ZKProof,
-  ZKVerificationResult,
-} from '@/types';
+import type { ZKClaim, ZKClaimType, ZKProof, ZKVerificationResult } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Query keys
@@ -102,10 +97,7 @@ export function useZKP(): UseZKPReturn {
     [claims],
   );
 
-  const pendingCount = useMemo(
-    () => claims.filter((c) => c.status === 'proving').length,
-    [claims],
-  );
+  const pendingCount = useMemo(() => claims.filter((c) => c.status === 'proving').length, [claims]);
 
   // ---- Mutations ----------------------------------------------------------
 
@@ -118,8 +110,7 @@ export function useZKP(): UseZKPReturn {
   });
 
   const generateProofMutation = useMutation({
-    mutationFn: (claimId: string) =>
-      api.post<ZKProof>('/api/zkp/prove', { claimId }),
+    mutationFn: (claimId: string) => api.post<ZKProof>('/api/zkp/prove', { claimId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CLAIMS_KEY] });
       queryClient.invalidateQueries({ queryKey: [PROOFS_KEY] });
@@ -127,8 +118,7 @@ export function useZKP(): UseZKPReturn {
   });
 
   const verifyProofMutation = useMutation({
-    mutationFn: (proofId: string) =>
-      api.post<ZKVerificationResult>('/api/zkp/verify', { proofId }),
+    mutationFn: (proofId: string) => api.post<ZKVerificationResult>('/api/zkp/verify', { proofId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CLAIMS_KEY] });
       queryClient.invalidateQueries({ queryKey: [PROOFS_KEY] });

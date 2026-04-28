@@ -10,18 +10,45 @@
 
 import { useState, useMemo } from 'react';
 import {
-  ShieldCheck, Shield, AlertTriangle, FileText,
-  Calendar, Clock, Eye, Filter, TrendingUp,
-  ChevronDown, ChevronRight, XCircle,
+  ShieldCheck,
+  Shield,
+  AlertTriangle,
+  FileText,
+  Calendar,
+  Clock,
+  Eye,
+  Filter,
+  TrendingUp,
+  ChevronDown,
+  ChevronRight,
+  XCircle,
 } from 'lucide-react';
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, CartesianGrid,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
 } from 'recharts';
 
 import { useApp } from '@/contexts/AppContext';
-import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, Tabs } from '@/components/ui/SharedComponents';
-import { MedicalCard, HealthMetricCard, SectionHeader, ChartTooltip, TEEBadge } from '@/components/ui/PagePrimitives';
+import {
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  Tabs,
+} from '@/components/ui/SharedComponents';
+import {
+  MedicalCard,
+  HealthMetricCard,
+  SectionHeader,
+  ChartTooltip,
+  TEEBadge,
+} from '@/components/ui/PagePrimitives';
 import { BRAND, COMPLIANCE_FRAMEWORKS } from '@/lib/constants';
 import { seededInt, formatDate } from '@/lib/utils';
 
@@ -78,7 +105,11 @@ export default function CompliancePage() {
     { id: 'frameworks', label: 'Frameworks', count: frameworks.length },
     { id: 'audit', label: 'Audit Log', count: auditMeta?.total },
     { id: 'reports', label: 'Reports', count: reports.length },
-    { id: 'violations', label: 'Violations', count: violations.filter((v) => v.status === 'open' || v.status === 'in_progress').length },
+    {
+      id: 'violations',
+      label: 'Violations',
+      count: violations.filter((v) => v.status === 'open' || v.status === 'in_progress').length,
+    },
   ];
 
   // Filter audit log by risk level
@@ -114,7 +145,6 @@ export default function CompliancePage() {
 
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-
           {/* ---- Header ---- */}
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
             <div>
@@ -123,12 +153,15 @@ export default function CompliancePage() {
                 <h1 className="text-2xl font-bold text-slate-900">Compliance & Audit Center</h1>
               </div>
               <p className="text-sm text-slate-500">
-                Monitor regulatory compliance across HIPAA, GDPR, SOC 2, HITRUST, and FDA 21 CFR Part 11 with TEE-verified audit trails
+                Monitor regulatory compliance across HIPAA, GDPR, SOC 2, HITRUST, and FDA 21 CFR
+                Part 11 with TEE-verified audit trails
               </p>
             </div>
             <div className="flex items-center gap-2">
               <TEEBadge platform="Intel SGX" verified />
-              <Badge variant="success" dot>All Systems Compliant</Badge>
+              <Badge variant="success" dot>
+                All Systems Compliant
+              </Badge>
             </div>
           </div>
 
@@ -144,7 +177,9 @@ export default function CompliancePage() {
               <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
                 {/* Large Overall Compliance Score */}
                 <MedicalCard className="lg:col-span-1 flex flex-col items-center justify-center">
-                  <p className="text-xs font-medium text-slate-500 mb-3 uppercase tracking-wider">Overall Score</p>
+                  <p className="text-xs font-medium text-slate-500 mb-3 uppercase tracking-wider">
+                    Overall Score
+                  </p>
                   <ComplianceGauge score={overview?.overallComplianceScore ?? 0} size={140} />
                 </MedicalCard>
 
@@ -239,7 +274,9 @@ export default function CompliancePage() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm text-slate-500 mb-1">Upcoming Assessments</p>
-                      <p className="text-2xl font-bold text-slate-900">{overview?.upcomingAssessments?.length ?? 0}</p>
+                      <p className="text-2xl font-bold text-slate-900">
+                        {overview?.upcomingAssessments?.length ?? 0}
+                      </p>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -247,7 +284,9 @@ export default function CompliancePage() {
                       const fwMeta = COMPLIANCE_FRAMEWORKS.find((f) => f.id === a.frameworkId);
                       return (
                         <div key={i} className="flex items-center justify-between text-xs">
-                          <span className="font-medium text-slate-700">{fwMeta?.name ?? a.frameworkId}</span>
+                          <span className="font-medium text-slate-700">
+                            {fwMeta?.name ?? a.frameworkId}
+                          </span>
                           <span className="text-slate-500">{formatDate(a.dueDate)}</span>
                         </div>
                       );
@@ -285,7 +324,9 @@ export default function CompliancePage() {
                         <ComplianceGauge score={fw.overallScore} size={56} />
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="text-base font-semibold text-slate-900">{meta?.name ?? fw.name}</h3>
+                            <h3 className="text-base font-semibold text-slate-900">
+                              {meta?.name ?? fw.name}
+                            </h3>
                             <Badge variant="neutral">{fw.version}</Badge>
                           </div>
                           <p className="text-xs text-slate-500 mt-0.5 max-w-xl">{fw.description}</p>
@@ -306,10 +347,11 @@ export default function CompliancePage() {
                             {fw.notAssessedControls} N/A
                           </span>
                         </div>
-                        {isExpanded
-                          ? <ChevronDown className="w-5 h-5 text-slate-400 shrink-0" />
-                          : <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
-                        }
+                        {isExpanded ? (
+                          <ChevronDown className="w-5 h-5 text-slate-400 shrink-0" />
+                        ) : (
+                          <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
+                        )}
                       </div>
                     </button>
 
@@ -379,13 +421,27 @@ export default function CompliancePage() {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50">
-                      <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Timestamp</th>
-                      <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Action</th>
-                      <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Actor</th>
-                      <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Resource</th>
-                      <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Type</th>
-                      <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Risk</th>
-                      <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">TEE Hash</th>
+                      <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Timestamp
+                      </th>
+                      <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Action
+                      </th>
+                      <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Actor
+                      </th>
+                      <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Resource
+                      </th>
+                      <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Risk
+                      </th>
+                      <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        TEE Hash
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -485,21 +541,27 @@ export default function CompliancePage() {
                     <div className="w-2 h-2 rounded-full bg-amber-500" />
                     <span className="text-xs text-slate-500">In Progress</span>
                   </div>
-                  <span className="text-2xl font-bold text-amber-600">{violationSummary.inProgress}</span>
+                  <span className="text-2xl font-bold text-amber-600">
+                    {violationSummary.inProgress}
+                  </span>
                 </MedicalCard>
                 <MedicalCard>
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-2 h-2 rounded-full bg-emerald-500" />
                     <span className="text-xs text-slate-500">Resolved</span>
                   </div>
-                  <span className="text-2xl font-bold text-emerald-600">{violationSummary.resolved}</span>
+                  <span className="text-2xl font-bold text-emerald-600">
+                    {violationSummary.resolved}
+                  </span>
                 </MedicalCard>
                 <MedicalCard>
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-2 h-2 rounded-full bg-blue-500" />
                     <span className="text-xs text-slate-500">Accepted Risk</span>
                   </div>
-                  <span className="text-2xl font-bold text-blue-600">{violationSummary.acceptedRisk}</span>
+                  <span className="text-2xl font-bold text-blue-600">
+                    {violationSummary.acceptedRisk}
+                  </span>
                 </MedicalCard>
               </div>
 
@@ -516,14 +578,30 @@ export default function CompliancePage() {
                   <table className="w-full text-left">
                     <thead>
                       <tr className="border-b border-slate-200 bg-slate-50">
-                        <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Framework</th>
-                        <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Control</th>
-                        <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Severity</th>
-                        <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
-                        <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Detected</th>
-                        <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-                        <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Assigned To</th>
-                        <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Remediation</th>
+                        <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Framework
+                        </th>
+                        <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Control
+                        </th>
+                        <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Severity
+                        </th>
+                        <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Title
+                        </th>
+                        <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Detected
+                        </th>
+                        <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Assigned To
+                        </th>
+                        <th className="px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Remediation
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -555,7 +633,6 @@ export default function CompliancePage() {
               </div>
             </MedicalCard>
           )}
-
         </div>
       </main>
 

@@ -2,21 +2,28 @@
 
 import React from 'react';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, CartesianGrid, Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  Cell,
   ReferenceLine,
 } from 'recharts';
 import {
-  Brain, ShieldCheck, AlertTriangle, CheckCircle,
-  Info, ChevronRight, FileText, Target,
+  Brain,
+  ShieldCheck,
+  AlertTriangle,
+  CheckCircle,
+  Info,
+  ChevronRight,
+  FileText,
+  Target,
 } from 'lucide-react';
 
-import type {
-  SHAPValue,
-  FeatureImportance,
-  ModelCard,
-  BiasReport,
-} from '@/types';
+import type { SHAPValue, FeatureImportance, ModelCard, BiasReport } from '@/types';
 import { MedicalCard, StatusBadge } from '@/components/ui/PagePrimitives';
 import { Badge } from '@/components/ui/SharedComponents';
 import { ChartTooltip } from '@/components/ui/PagePrimitives';
@@ -33,7 +40,9 @@ interface SHAPWaterfallProps {
 }
 
 export function SHAPWaterfall({ shapValues, className }: SHAPWaterfallProps) {
-  const sorted = [...shapValues].sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution)).slice(0, 10);
+  const sorted = [...shapValues]
+    .sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution))
+    .slice(0, 10);
   const data = sorted.map((sv) => ({
     feature: sv.feature,
     contribution: parseFloat((sv.contribution * 100).toFixed(2)),
@@ -48,11 +57,36 @@ export function SHAPWaterfall({ shapValues, className }: SHAPWaterfallProps) {
       </div>
       <div className="px-2 pb-4 pt-2">
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
+          <BarChart
+            data={data}
+            layout="vertical"
+            margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
-            <XAxis type="number" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
-            <YAxis type="category" dataKey="feature" tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false} width={95} />
-            <Tooltip content={<ChartTooltip formatValue={/* istanbul ignore next -- formatter callback not invoked in test */ (v) => `${Number(v) > 0 ? '+' : ''}${v}%`} />} />
+            <XAxis
+              type="number"
+              tick={{ fontSize: 10, fill: '#94a3b8' }}
+              tickLine={false}
+              axisLine={{ stroke: '#e2e8f0' }}
+            />
+            <YAxis
+              type="category"
+              dataKey="feature"
+              tick={{ fontSize: 10, fill: '#64748b' }}
+              tickLine={false}
+              axisLine={false}
+              width={95}
+            />
+            <Tooltip
+              content={
+                <ChartTooltip
+                  formatValue={
+                    /* istanbul ignore next -- formatter callback not invoked in test */ (v) =>
+                      `${Number(v) > 0 ? '+' : ''}${v}%`
+                  }
+                />
+              }
+            />
             <ReferenceLine x={0} stroke="#94a3b8" strokeWidth={1} />
             <Bar dataKey="contribution" radius={[0, 4, 4, 0]} barSize={14} name="Contribution">
               {data.map((entry, index) => (
@@ -90,7 +124,8 @@ export function FeatureImportanceChart({ features, className }: FeatureImportanc
   const data = sorted.map((f) => ({
     feature: f.feature,
     importance: parseFloat((f.importance * 100).toFixed(2)),
-    fill: f.direction === 'positive' ? '#10b981' : f.direction === 'negative' ? '#f43f5e' : '#94a3b8',
+    fill:
+      f.direction === 'positive' ? '#10b981' : f.direction === 'negative' ? '#f43f5e' : '#94a3b8',
   }));
 
   return (
@@ -101,11 +136,37 @@ export function FeatureImportanceChart({ features, className }: FeatureImportanc
       </div>
       <div className="px-2 pb-4 pt-2">
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
+          <BarChart
+            data={data}
+            layout="vertical"
+            margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
-            <XAxis type="number" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} domain={[0, 'auto']} />
-            <YAxis type="category" dataKey="feature" tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false} width={95} />
-            <Tooltip content={<ChartTooltip formatValue={/* istanbul ignore next -- formatter callback not invoked in JSDOM */ (v) => `${v}%`} />} />
+            <XAxis
+              type="number"
+              tick={{ fontSize: 10, fill: '#94a3b8' }}
+              tickLine={false}
+              axisLine={{ stroke: '#e2e8f0' }}
+              domain={[0, 'auto']}
+            />
+            <YAxis
+              type="category"
+              dataKey="feature"
+              tick={{ fontSize: 10, fill: '#64748b' }}
+              tickLine={false}
+              axisLine={false}
+              width={95}
+            />
+            <Tooltip
+              content={
+                <ChartTooltip
+                  formatValue={
+                    /* istanbul ignore next -- formatter callback not invoked in JSDOM */ (v) =>
+                      `${v}%`
+                  }
+                />
+              }
+            />
             <Bar dataKey="importance" radius={[0, 4, 4, 0]} barSize={14} name="Importance">
               {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -192,7 +253,9 @@ export function ModelCardViewer({ card, className }: ModelCardViewerProps) {
                     style={{ width: `${metric.value * 100}%` }}
                   />
                 </div>
-                <span className="text-xs font-medium text-slate-700 w-10 text-right">{(metric.value * 100).toFixed(1)}%</span>
+                <span className="text-xs font-medium text-slate-700 w-10 text-right">
+                  {(metric.value * 100).toFixed(1)}%
+                </span>
               </div>
             </div>
           ))}
@@ -265,10 +328,19 @@ export function BiasHeatmap({ report, className }: BiasHeatmapProps) {
 
       <div className="mt-4 pt-3 border-t border-slate-100">
         <div className="flex items-center gap-3 text-xs text-slate-400">
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-100" /> &lt;5% Low</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-50 border border-emerald-200" /> 5-10%</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-amber-50 border border-amber-200" /> 10-15%</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-50 border border-red-200" /> &gt;15% High</span>
+          <span className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-sm bg-emerald-100" /> &lt;5% Low
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-sm bg-emerald-50 border border-emerald-200" />{' '}
+            5-10%
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-sm bg-amber-50 border border-amber-200" /> 10-15%
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-sm bg-red-50 border border-red-200" /> &gt;15% High
+          </span>
         </div>
       </div>
     </MedicalCard>
@@ -295,9 +367,7 @@ export function DecisionPath({ steps, className }: DecisionPathProps) {
               <div className="w-6 h-6 rounded-full bg-brand-500 text-white flex items-center justify-center shrink-0">
                 <span className="text-2xs font-bold">{i + 1}</span>
               </div>
-              {i < steps.length - 1 && (
-                <div className="w-0.5 h-6 bg-brand-200" />
-              )}
+              {i < steps.length - 1 && <div className="w-0.5 h-6 bg-brand-200" />}
             </div>
             <p className="text-xs text-slate-600 pt-1">{step}</p>
           </div>

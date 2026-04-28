@@ -137,30 +137,15 @@ export function useClinicalDecisionSupport(): UseClinicalDecisionSupportReturn {
 
   // ---- Computed ----
 
-  const alerts = useMemo(
-    () => alertsQuery.data ?? [],
-    [alertsQuery.data],
-  );
+  const alerts = useMemo(() => alertsQuery.data ?? [], [alertsQuery.data]);
 
-  const pathways = useMemo(
-    () => pathwaysQuery.data ?? [],
-    [pathwaysQuery.data],
-  );
+  const pathways = useMemo(() => pathwaysQuery.data ?? [], [pathwaysQuery.data]);
 
-  const interactions = useMemo(
-    () => interactionsQuery.data ?? [],
-    [interactionsQuery.data],
-  );
+  const interactions = useMemo(() => interactionsQuery.data ?? [], [interactionsQuery.data]);
 
-  const differentials = useMemo(
-    () => differentialsQuery.data ?? [],
-    [differentialsQuery.data],
-  );
+  const differentials = useMemo(() => differentialsQuery.data ?? [], [differentialsQuery.data]);
 
-  const auditEntries = useMemo(
-    () => auditQuery.data ?? [],
-    [auditQuery.data],
-  );
+  const auditEntries = useMemo(() => auditQuery.data ?? [], [auditQuery.data]);
 
   const refetch = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: [STATS_KEY] });

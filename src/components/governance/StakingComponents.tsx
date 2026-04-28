@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { Coins, TrendingUp, Clock, Lock, Unlock, Calculator, ArrowDown, Gift } from 'lucide-react';
 import {
-  Coins, TrendingUp, Clock, Lock, Unlock,
-  Calculator, ArrowDown, Gift,
-} from 'lucide-react';
-import {
-  AreaChart, Area, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, CartesianGrid,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
 } from 'recharts';
 
 import type { StakingStats } from '@/types';
@@ -59,7 +61,9 @@ export function StakePanel({ stats, onStake, isStaking }: StakePanelProps) {
               placeholder={`Min: ${stats.minStakeAmount} AETHEL`}
               className="w-full px-3 py-2.5 pr-16 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">AETHEL</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">
+              AETHEL
+            </span>
           </div>
         </div>
 
@@ -77,7 +81,10 @@ export function StakePanel({ stats, onStake, isStaking }: StakePanelProps) {
         {amount && parseFloat(amount) >= stats.minStakeAmount && (
           <div className="p-3 bg-emerald-50 rounded-xl">
             <p className="text-xs text-emerald-700">
-              Estimated yearly rewards: <span className="font-bold">{formatNumber(parseFloat(amount) * stats.currentAPY / 100)} AETHEL</span>
+              Estimated yearly rewards:{' '}
+              <span className="font-bold">
+                {formatNumber((parseFloat(amount) * stats.currentAPY) / 100)} AETHEL
+              </span>
             </p>
           </div>
         )}
@@ -107,10 +114,12 @@ export function RewardCalculator({ currentAPY }: RewardCalculatorProps) {
   const [duration, setDuration] = useState('365');
 
   const estimated = useMemo(() => {
-    const a = parseFloat(amount) ||
+    const a =
+      parseFloat(amount) ||
       /* istanbul ignore next -- amount defaults to '1000', always parseable */
       0;
-    const d = parseFloat(duration) ||
+    const d =
+      parseFloat(duration) ||
       /* istanbul ignore next -- duration defaults to '365', always parseable */
       0;
     return a * (currentAPY / 100) * (d / 365);
@@ -148,7 +157,9 @@ export function RewardCalculator({ currentAPY }: RewardCalculatorProps) {
               key={d}
               onClick={() => setDuration(d.toString())}
               className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                duration === d.toString() ? 'bg-brand-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                duration === d.toString()
+                  ? 'bg-brand-500 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
               {d}d
@@ -184,9 +195,11 @@ export function UnstakeTimer({ unlockAt }: UnstakeTimerProps) {
   const isReady = remaining <= 0;
 
   return (
-    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium ${
-      isReady ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
-    }`}>
+    <div
+      className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium ${
+        isReady ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+      }`}
+    >
       {isReady ? (
         <>
           <Unlock className="w-3.5 h-3.5" />
@@ -251,7 +264,13 @@ export function StakingChart({ className }: StakingChartProps) {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-            <XAxis dataKey="day" tick={{ fontSize: 9, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} interval={6} />
+            <XAxis
+              dataKey="day"
+              tick={{ fontSize: 9, fill: '#94a3b8' }}
+              tickLine={false}
+              axisLine={{ stroke: '#e2e8f0' }}
+              interval={6}
+            />
             <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
             <Tooltip content={<ChartTooltip />} />
             <Area

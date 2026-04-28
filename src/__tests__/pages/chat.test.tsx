@@ -12,7 +12,10 @@ Element.prototype.scrollIntoView = jest.fn();
 
 // Mock the useHealthChat hook
 const mockSendMessage = { mutate: jest.fn(), mutateAsync: jest.fn(), isLoading: false };
-const mockCreateConversation = { mutate: jest.fn(), mutateAsync: jest.fn().mockResolvedValue({ id: 'new-conv' }) };
+const mockCreateConversation = {
+  mutate: jest.fn(),
+  mutateAsync: jest.fn().mockResolvedValue({ id: 'new-conv' }),
+};
 const mockDeleteConversation = { mutate: jest.fn() };
 const mockSetActiveConversation = jest.fn();
 
@@ -21,9 +24,27 @@ let mockHookState: Record<string, unknown> = {};
 jest.mock('@/hooks/useHealthChat', () => ({
   useHealthChat: () => ({
     conversations: [
-      { id: 'conv-1', title: 'Cycle Analysis Discussion', createdAt: Date.now(), lastMessageAt: Date.now(), attestationCount: 3 },
-      { id: 'conv-2', title: 'Lab Results Review', createdAt: Date.now(), lastMessageAt: Date.now(), attestationCount: 2 },
-      { id: 'conv-3', title: 'Fertility Planning', createdAt: Date.now(), lastMessageAt: Date.now(), attestationCount: 1 },
+      {
+        id: 'conv-1',
+        title: 'Cycle Analysis Discussion',
+        createdAt: Date.now(),
+        lastMessageAt: Date.now(),
+        attestationCount: 3,
+      },
+      {
+        id: 'conv-2',
+        title: 'Lab Results Review',
+        createdAt: Date.now(),
+        lastMessageAt: Date.now(),
+        attestationCount: 2,
+      },
+      {
+        id: 'conv-3',
+        title: 'Fertility Planning',
+        createdAt: Date.now(),
+        lastMessageAt: Date.now(),
+        attestationCount: 1,
+      },
     ],
     activeConversation: null,
     messages: [],
@@ -37,7 +58,14 @@ jest.mock('@/hooks/useHealthChat', () => ({
       { id: 'lab', category: 'Lab Results', prompts: ['Review my labs'] },
       { id: 'symptoms', category: 'Symptoms', prompts: ['Track my symptoms'] },
     ],
-    activeModel: { id: 'health-transformer', name: 'Health Transformer', version: 'v3.0', maxTokens: 4096, teePlatform: 'Intel SGX', capabilities: [] },
+    activeModel: {
+      id: 'health-transformer',
+      name: 'Health Transformer',
+      version: 'v3.0',
+      maxTokens: 4096,
+      teePlatform: 'Intel SGX',
+      capabilities: [],
+    },
     setActiveConversation: mockSetActiveConversation,
     sendMessage: mockSendMessage,
     createConversation: mockCreateConversation,
@@ -102,9 +130,7 @@ describe('ChatPage', () => {
       </TestWrapper>,
     );
     await waitFor(() => {
-      expect(
-        screen.getByText(/Ask me anything about your health data/),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Ask me anything about your health data/)).toBeInTheDocument();
     });
   });
 
@@ -140,9 +166,7 @@ describe('ChatPage', () => {
       </TestWrapper>,
     );
     await waitFor(() => {
-      expect(
-        screen.getByPlaceholderText('Ask your health AI assistant...'),
-      ).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Ask your health AI assistant...')).toBeInTheDocument();
     });
   });
 
@@ -176,9 +200,7 @@ describe('ChatPage', () => {
       </TestWrapper>,
     );
     await waitFor(() => {
-      expect(
-        screen.getByText(/Responses verified via TEE attestation/),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Responses verified via TEE attestation/)).toBeInTheDocument();
     });
   });
 
@@ -230,9 +252,7 @@ describe('ChatPage', () => {
       </TestWrapper>,
     );
     await waitFor(() => {
-      expect(
-        screen.getByRole('navigation', { name: 'Main navigation' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
       expect(screen.getByRole('contentinfo')).toBeInTheDocument();
     });
   });
@@ -408,9 +428,12 @@ describe('ChatPage', () => {
         <ChatPage />
       </TestWrapper>,
     );
-    await waitFor(() => {
-      expect(screen.getByText(/\d+ attestations/)).toBeInTheDocument();
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(screen.getByText(/\d+ attestations/)).toBeInTheDocument();
+      },
+      { timeout: 3000 },
+    );
   });
 
   it('clicks a suggested prompt to trigger handlePromptSelect', async () => {
@@ -425,9 +448,7 @@ describe('ChatPage', () => {
 
     // Click the first suggested prompt to trigger handlePromptSelect -> handleSend
     const promptButtons = screen.getAllByRole('button');
-    const cyclePrompt = promptButtons.find(
-      (btn) => btn.textContent?.includes('Cycle Health')
-    );
+    const cyclePrompt = promptButtons.find((btn) => btn.textContent?.includes('Cycle Health'));
     if (cyclePrompt) {
       fireEvent.click(cyclePrompt);
     }
@@ -472,10 +493,28 @@ describe('ChatPage with loading conversations', () => {
 describe('ChatPage with messages', () => {
   beforeEach(() => {
     mockHookState = {
-      activeConversation: { id: 'conv-1', title: 'Cycle Analysis Discussion', createdAt: Date.now(), lastMessageAt: Date.now(), attestationCount: 3 },
+      activeConversation: {
+        id: 'conv-1',
+        title: 'Cycle Analysis Discussion',
+        createdAt: Date.now(),
+        lastMessageAt: Date.now(),
+        attestationCount: 3,
+      },
       messages: [
-        { id: 'msg-1', role: 'user', content: 'Hello world', createdAt: Date.now() - 2000, attestation: null },
-        { id: 'msg-2', role: 'assistant', content: 'How can I help?', createdAt: Date.now() - 1000, attestation: '0xabc' },
+        {
+          id: 'msg-1',
+          role: 'user',
+          content: 'Hello world',
+          createdAt: Date.now() - 2000,
+          attestation: null,
+        },
+        {
+          id: 'msg-2',
+          role: 'assistant',
+          content: 'How can I help?',
+          createdAt: Date.now() - 1000,
+          attestation: '0xabc',
+        },
       ],
       isLoadingMessages: false,
     };
@@ -502,7 +541,13 @@ describe('ChatPage with messages', () => {
 describe('ChatPage with loading messages', () => {
   beforeEach(() => {
     mockHookState = {
-      activeConversation: { id: 'conv-1', title: 'Test Conv', createdAt: Date.now(), lastMessageAt: Date.now(), attestationCount: 0 },
+      activeConversation: {
+        id: 'conv-1',
+        title: 'Test Conv',
+        createdAt: Date.now(),
+        lastMessageAt: Date.now(),
+        attestationCount: 0,
+      },
       messages: [],
       isLoadingMessages: true,
     };
@@ -528,9 +573,21 @@ describe('ChatPage with loading messages', () => {
 describe('ChatPage with isSending', () => {
   beforeEach(() => {
     mockHookState = {
-      activeConversation: { id: 'conv-1', title: 'Test Conv', createdAt: Date.now(), lastMessageAt: Date.now(), attestationCount: 0 },
+      activeConversation: {
+        id: 'conv-1',
+        title: 'Test Conv',
+        createdAt: Date.now(),
+        lastMessageAt: Date.now(),
+        attestationCount: 0,
+      },
       messages: [
-        { id: 'msg-1', role: 'user', content: 'Test message', createdAt: Date.now(), attestation: null },
+        {
+          id: 'msg-1',
+          role: 'user',
+          content: 'Test message',
+          createdAt: Date.now(),
+          attestation: null,
+        },
       ],
       isSending: true,
     };
@@ -555,7 +612,13 @@ describe('ChatPage with isSending', () => {
 describe('ChatPage handleSend with active conversation', () => {
   beforeEach(() => {
     mockHookState = {
-      activeConversation: { id: 'conv-1', title: 'Active Conv', createdAt: Date.now(), lastMessageAt: Date.now(), attestationCount: 0 },
+      activeConversation: {
+        id: 'conv-1',
+        title: 'Active Conv',
+        createdAt: Date.now(),
+        lastMessageAt: Date.now(),
+        attestationCount: 0,
+      },
       messages: [],
       isLoadingMessages: false,
     };

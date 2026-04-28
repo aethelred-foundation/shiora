@@ -2,9 +2,18 @@
 
 import React from 'react';
 import {
-  Vote, Clock, CheckCircle, XCircle, MinusCircle,
-  AlertOctagon, Settings, Sparkles, Wallet, Users,
-  ArrowRight, ChevronRight,
+  Vote,
+  Clock,
+  CheckCircle,
+  XCircle,
+  MinusCircle,
+  AlertOctagon,
+  Settings,
+  Sparkles,
+  Wallet,
+  Users,
+  ArrowRight,
+  ChevronRight,
 } from 'lucide-react';
 
 import type { Proposal, ProposalStatus, ProposalType, Delegation } from '@/types';
@@ -53,12 +62,19 @@ export function ProposalCard({ proposal, onVote }: ProposalCardProps) {
     <MedicalCard>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${PROPOSAL_TYPE_COLORS[proposal.type]}`}>
+          <div
+            className={`w-8 h-8 rounded-lg flex items-center justify-center ${PROPOSAL_TYPE_COLORS[proposal.type]}`}
+          >
             {PROPOSAL_TYPE_ICONS[proposal.type]}
           </div>
-          <Badge variant={proposal.type === 'emergency' ?
-            /* istanbul ignore next -- only feature type tested */
-            'error' : 'medical'}>
+          <Badge
+            variant={
+              proposal.type === 'emergency'
+                ? /* istanbul ignore next -- only feature type tested */
+                  'error'
+                : 'medical'
+            }
+          >
             {typeInfo?.label ??
               /* istanbul ignore next */
               proposal.type}
@@ -71,13 +87,19 @@ export function ProposalCard({ proposal, onVote }: ProposalCardProps) {
       <p className="text-xs text-slate-500 line-clamp-2 mb-4">{proposal.description}</p>
 
       {/* Vote bar */}
-      <VotingBar forVotes={proposal.forVotes} againstVotes={proposal.againstVotes} abstainVotes={proposal.abstainVotes} />
+      <VotingBar
+        forVotes={proposal.forVotes}
+        againstVotes={proposal.againstVotes}
+        abstainVotes={proposal.abstainVotes}
+      />
 
       {/* Quorum progress */}
       <div className="mt-3 mb-3">
         <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
           <span>Quorum</span>
-          <span>{formatNumber(totalVotes)} / {formatNumber(proposal.quorum)}</span>
+          <span>
+            {formatNumber(totalVotes)} / {formatNumber(proposal.quorum)}
+          </span>
         </div>
         <div className="w-full bg-slate-100 rounded-full h-1.5">
           <div
@@ -147,13 +169,22 @@ export function VotingBar({ forVotes, againstVotes, abstainVotes }: VotingBarPro
     <div>
       <div className="flex w-full h-3 rounded-full overflow-hidden">
         {forPct > 0 && (
-          <div className="bg-emerald-500 transition-all duration-500" style={{ width: `${forPct}%` }} />
+          <div
+            className="bg-emerald-500 transition-all duration-500"
+            style={{ width: `${forPct}%` }}
+          />
         )}
         {againstPct > 0 && (
-          <div className="bg-red-500 transition-all duration-500" style={{ width: `${againstPct}%` }} />
+          <div
+            className="bg-red-500 transition-all duration-500"
+            style={{ width: `${againstPct}%` }}
+          />
         )}
         {abstainPct > 0 && (
-          <div className="bg-slate-300 transition-all duration-500" style={{ width: `${abstainPct}%` }} />
+          <div
+            className="bg-slate-300 transition-all duration-500"
+            style={{ width: `${abstainPct}%` }}
+          />
         )}
       </div>
       <div className="flex items-center justify-between mt-1.5 text-xs">
@@ -182,9 +213,14 @@ interface DelegationPanelProps {
   onUndelegate?: () => void;
 }
 
-export function DelegationPanel({ delegations, userVotingPower, onDelegate, onUndelegate }: DelegationPanelProps) {
+export function DelegationPanel({
+  delegations,
+  userVotingPower,
+  onDelegate,
+  onUndelegate,
+}: DelegationPanelProps) {
   const userDelegation = delegations.find(
-    (d) => d.delegator === 'aeth1demo000000000000000000000000000000000'
+    (d) => d.delegator === 'aeth1demo000000000000000000000000000000000',
   );
 
   return (
@@ -200,9 +236,12 @@ export function DelegationPanel({ delegations, userVotingPower, onDelegate, onUn
       {userDelegation ? (
         <div className="p-3 bg-brand-50 rounded-xl mb-4">
           <p className="text-xs text-brand-600 mb-1">Delegated to</p>
-          <p className="text-sm font-mono font-medium text-brand-900">{truncateAddress(userDelegation.delegatee)}</p>
+          <p className="text-sm font-mono font-medium text-brand-900">
+            {truncateAddress(userDelegation.delegatee)}
+          </p>
           <p className="text-xs text-brand-500 mt-1">
-            {formatNumber(userDelegation.votingPower)} voting power &middot; {timeAgo(userDelegation.delegatedAt)}
+            {formatNumber(userDelegation.votingPower)} voting power &middot;{' '}
+            {timeAgo(userDelegation.delegatedAt)}
           </p>
           {onUndelegate && (
             <button
@@ -215,7 +254,9 @@ export function DelegationPanel({ delegations, userVotingPower, onDelegate, onUn
         </div>
       ) : (
         <div className="p-3 bg-slate-50 rounded-xl mb-4">
-          <p className="text-xs text-slate-500">No active delegation. Delegate your voting power to a trusted address.</p>
+          <p className="text-xs text-slate-500">
+            No active delegation. Delegate your voting power to a trusted address.
+          </p>
         </div>
       )}
 
@@ -252,15 +293,29 @@ const TIMELINE_STEPS: { status: ProposalStatus; label: string }[] = [
 
 export function ProposalTimeline({ proposal }: ProposalTimelineProps) {
   const statusOrder: ProposalStatus[] = ['active', 'passed', 'queued', 'executed'];
-  const currentIndex = proposal.status === 'defeated' || proposal.status === 'cancelled'
-    ? 2
-    : statusOrder.indexOf(proposal.status) + 1;
+  const currentIndex =
+    proposal.status === 'defeated' || proposal.status === 'cancelled'
+      ? 2
+      : statusOrder.indexOf(proposal.status) + 1;
 
   const steps = [
     { label: 'Created', completed: true, active: false },
     { label: 'Voting', completed: currentIndex > 1, active: proposal.status === 'active' },
-    { label: proposal.status === 'defeated' ? 'Defeated' : proposal.status === 'cancelled' ? 'Cancelled' : 'Passed', completed: currentIndex > 2, active: currentIndex === 2 },
-    { label: 'Executed', completed: proposal.status === 'executed', active: proposal.status === 'queued' },
+    {
+      label:
+        proposal.status === 'defeated'
+          ? 'Defeated'
+          : proposal.status === 'cancelled'
+            ? 'Cancelled'
+            : 'Passed',
+      completed: currentIndex > 2,
+      active: currentIndex === 2,
+    },
+    {
+      label: 'Executed',
+      completed: proposal.status === 'executed',
+      active: proposal.status === 'queued',
+    },
   ];
 
   return (
@@ -268,19 +323,29 @@ export function ProposalTimeline({ proposal }: ProposalTimelineProps) {
       {steps.map((step, i) => (
         <div key={i} className="flex items-start gap-3">
           <div className="flex flex-col items-center">
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
-              step.completed ? 'bg-emerald-500 text-white' :
-              step.active ? 'bg-brand-500 text-white' :
-              'bg-slate-200 text-slate-400'
-            }`}>
-              {step.completed ? <CheckCircle className="w-3.5 h-3.5" /> : <span className="text-xs font-bold">{i + 1}</span>}
+            <div
+              className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+                step.completed
+                  ? 'bg-emerald-500 text-white'
+                  : step.active
+                    ? 'bg-brand-500 text-white'
+                    : 'bg-slate-200 text-slate-400'
+              }`}
+            >
+              {step.completed ? (
+                <CheckCircle className="w-3.5 h-3.5" />
+              ) : (
+                <span className="text-xs font-bold">{i + 1}</span>
+              )}
             </div>
             {i < steps.length - 1 && (
               <div className={`w-0.5 h-8 ${step.completed ? 'bg-emerald-300' : 'bg-slate-200'}`} />
             )}
           </div>
           <div className="pt-0.5">
-            <p className={`text-sm font-medium ${step.completed || step.active ? 'text-slate-900' : 'text-slate-400'}`}>
+            <p
+              className={`text-sm font-medium ${step.completed || step.active ? 'text-slate-900' : 'text-slate-400'}`}
+            >
               {step.label}
             </p>
           </div>

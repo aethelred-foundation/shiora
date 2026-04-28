@@ -74,15 +74,15 @@ describe('/api/compliance', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
+    mockRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
     const res = await getCompliance(new NextRequest('http://localhost:3000/api/compliance'));
     expect(res.status).toBe(429);
   });
 
   it('GET returns 500 when try block throws', async () => {
-    mockSuccessResponse.mockImplementationOnce(() => { throw new Error('boom'); });
+    mockSuccessResponse.mockImplementationOnce(() => {
+      throw new Error('boom');
+    });
     const res = await getCompliance(new NextRequest('http://localhost:3000/api/compliance'));
     expect(res.status).toBe(500);
     const body = await res.json();
@@ -98,12 +98,11 @@ describe('/api/compliance/checks', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
+    expect(mockRunMiddleware).toHaveBeenCalledWith(expect.any(NextRequest), { requireAdmin: true });
   });
 
   it('GET returns 400 when framework is missing', async () => {
-    const res = await getChecks(
-      new NextRequest('http://localhost:3000/api/compliance/checks'),
-    );
+    const res = await getChecks(new NextRequest('http://localhost:3000/api/compliance/checks'));
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error.code).toBe('INVALID_FRAMEWORK');
@@ -119,9 +118,7 @@ describe('/api/compliance/checks', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
+    mockRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
     const res = await getChecks(
       new NextRequest('http://localhost:3000/api/compliance/checks?framework=hipaa'),
     );
@@ -129,7 +126,9 @@ describe('/api/compliance/checks', () => {
   });
 
   it('GET returns 500 when try block throws', async () => {
-    mockSuccessResponse.mockImplementationOnce(() => { throw new Error('boom'); });
+    mockSuccessResponse.mockImplementationOnce(() => {
+      throw new Error('boom');
+    });
     const res = await getChecks(
       new NextRequest('http://localhost:3000/api/compliance/checks?framework=hipaa'),
     );
@@ -139,9 +138,7 @@ describe('/api/compliance/checks', () => {
 
 describe('/api/compliance/reports', () => {
   it('GET returns compliance reports', async () => {
-    const res = await getReports(
-      new NextRequest('http://localhost:3000/api/compliance/reports'),
-    );
+    const res = await getReports(new NextRequest('http://localhost:3000/api/compliance/reports'));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -190,27 +187,21 @@ describe('/api/compliance/reports', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
-    const res = await getReports(
-      new NextRequest('http://localhost:3000/api/compliance/reports'),
-    );
+    mockRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
+    const res = await getReports(new NextRequest('http://localhost:3000/api/compliance/reports'));
     expect(res.status).toBe(429);
   });
 
   it('GET returns 500 when try block throws', async () => {
-    mockSuccessResponse.mockImplementationOnce(() => { throw new Error('boom'); });
-    const res = await getReports(
-      new NextRequest('http://localhost:3000/api/compliance/reports'),
-    );
+    mockSuccessResponse.mockImplementationOnce(() => {
+      throw new Error('boom');
+    });
+    const res = await getReports(new NextRequest('http://localhost:3000/api/compliance/reports'));
     expect(res.status).toBe(500);
   });
 
   it('POST returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
+    mockRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
     const res = await postReport(
       new NextRequest('http://localhost:3000/api/compliance/reports', {
         method: 'POST',
@@ -224,29 +215,24 @@ describe('/api/compliance/reports', () => {
 
 describe('/api/compliance/audit', () => {
   it('GET returns compliance audit log', async () => {
-    const res = await getAudit(
-      new NextRequest('http://localhost:3000/api/compliance/audit'),
-    );
+    const res = await getAudit(new NextRequest('http://localhost:3000/api/compliance/audit'));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
-    const res = await getAudit(
-      new NextRequest('http://localhost:3000/api/compliance/audit'),
-    );
+    mockRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
+    const res = await getAudit(new NextRequest('http://localhost:3000/api/compliance/audit'));
     expect(res.status).toBe(429);
+    expect(mockRunMiddleware).toHaveBeenCalledWith(expect.any(NextRequest), { requireAdmin: true });
   });
 
   it('GET returns 500 when try block throws', async () => {
-    mockPaginatedResponse.mockImplementationOnce(() => { throw new Error('boom'); });
-    const res = await getAudit(
-      new NextRequest('http://localhost:3000/api/compliance/audit'),
-    );
+    mockPaginatedResponse.mockImplementationOnce(() => {
+      throw new Error('boom');
+    });
+    const res = await getAudit(new NextRequest('http://localhost:3000/api/compliance/audit'));
     expect(res.status).toBe(500);
   });
 });

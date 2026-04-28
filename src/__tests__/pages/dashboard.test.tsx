@@ -16,7 +16,7 @@ describe('DashboardPage', () => {
     render(
       <TestWrapper>
         <DashboardPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // "Shiora on Aethelred" appears in TopNav and hero; verify at least one
     expect(screen.getAllByText('Shiora on Aethelred').length).toBeGreaterThanOrEqual(1);
@@ -26,7 +26,7 @@ describe('DashboardPage', () => {
     render(
       <TestWrapper>
         <DashboardPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/Welcome back/)).toBeInTheDocument();
   });
@@ -35,7 +35,7 @@ describe('DashboardPage', () => {
     render(
       <TestWrapper>
         <DashboardPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // These labels may appear in multiple places (metric cards + nav links)
     expect(screen.getAllByText('Health Records').length).toBeGreaterThanOrEqual(1);
@@ -48,7 +48,7 @@ describe('DashboardPage', () => {
     render(
       <TestWrapper>
         <DashboardPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Health records count is 147
     expect(screen.getByText('147')).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe('DashboardPage', () => {
     render(
       <TestWrapper>
         <DashboardPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Upload Health Data')).toBeInTheDocument();
     expect(screen.getByText('Cycle Predictions')).toBeInTheDocument();
@@ -71,7 +71,7 @@ describe('DashboardPage', () => {
     render(
       <TestWrapper>
         <DashboardPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('AES-256 encrypted, IPFS-pinned')).toBeInTheDocument();
     expect(screen.getByText('TEE-verified AI analysis')).toBeInTheDocument();
@@ -83,7 +83,7 @@ describe('DashboardPage', () => {
     render(
       <TestWrapper>
         <DashboardPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Cycle Temperature Tracking')).toBeInTheDocument();
     expect(screen.getByText('Storage Breakdown')).toBeInTheDocument();
@@ -94,7 +94,7 @@ describe('DashboardPage', () => {
     render(
       <TestWrapper>
         <DashboardPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('TEE Status')).toBeInTheDocument();
     // "Platform" may appear multiple times (TEE status card + quick actions area)
@@ -106,7 +106,7 @@ describe('DashboardPage', () => {
     render(
       <TestWrapper>
         <DashboardPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Recent Records')).toBeInTheDocument();
     // Check "View All" link
@@ -117,7 +117,7 @@ describe('DashboardPage', () => {
     render(
       <TestWrapper>
         <DashboardPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Access Activity')).toBeInTheDocument();
     expect(screen.getByText('Manage')).toBeInTheDocument();
@@ -127,7 +127,7 @@ describe('DashboardPage', () => {
     render(
       <TestWrapper>
         <DashboardPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getAllByText('AI Models').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Cycle LSTM')).toBeInTheDocument();
@@ -140,7 +140,7 @@ describe('DashboardPage', () => {
     render(
       <TestWrapper>
         <DashboardPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // "Block", "TPS", etc. may appear in multiple places
     expect(screen.getAllByText('Block').length).toBeGreaterThanOrEqual(1);
@@ -153,7 +153,7 @@ describe('DashboardPage', () => {
     render(
       <TestWrapper>
         <DashboardPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('View Records')).toBeInTheDocument();
     // "AI Insights" may appear in nav and hero
@@ -164,7 +164,7 @@ describe('DashboardPage', () => {
     render(
       <TestWrapper>
         <DashboardPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // TopNav renders navigation
     expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();

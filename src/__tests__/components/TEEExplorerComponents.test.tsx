@@ -13,11 +13,7 @@ import {
   RecentVerificationChains,
   PlatformDistribution,
 } from '@/components/tee/TEEExplorerComponents';
-import type {
-  TEEVerificationChain,
-  TEEComputeJob,
-  TEEEnclaveInfo,
-} from '@/types';
+import type { TEEVerificationChain, TEEComputeJob, TEEEnclaveInfo } from '@/types';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   return <AppProvider>{children}</AppProvider>;
@@ -79,7 +75,7 @@ describe('AttestationRow', () => {
             <AttestationRow attestation={mockAttestation} index={0} />
           </tbody>
         </table>
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Intel SGX')).toBeInTheDocument();
     expect(screen.getByText('cycle-lstm-v3')).toBeInTheDocument();
@@ -93,7 +89,7 @@ describe('AttestationRow', () => {
             <AttestationRow attestation={mockAttestation} index={0} />
           </tbody>
         </table>
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Verified')).toBeInTheDocument();
   });
@@ -107,7 +103,7 @@ describe('AttestationRow', () => {
             <AttestationRow attestation={unverified} index={1} />
           </tbody>
         </table>
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Pending')).toBeInTheDocument();
   });
@@ -120,7 +116,7 @@ describe('AttestationRow', () => {
             <AttestationRow attestation={mockAttestation} index={0} />
           </tbody>
         </table>
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Initially collapsed
@@ -160,7 +156,7 @@ describe('ComputeJobRow', () => {
             <ComputeJobRow job={mockComputeJob} index={0} />
           </tbody>
         </table>
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('job-001')).toBeInTheDocument();
     expect(screen.getByText('Anomaly Detector v2')).toBeInTheDocument();
@@ -179,7 +175,7 @@ describe('EnclaveCard', () => {
     render(
       <TestWrapper>
         <EnclaveCard enclave={mockEnclave} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('enc-sgx-01')).toBeInTheDocument();
     expect(screen.getByText('Intel SGX')).toBeInTheDocument();
@@ -189,7 +185,7 @@ describe('EnclaveCard', () => {
     render(
       <TestWrapper>
         <EnclaveCard enclave={mockEnclave} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Operational')).toBeInTheDocument();
   });
@@ -198,7 +194,7 @@ describe('EnclaveCard', () => {
     render(
       <TestWrapper>
         <EnclaveCard enclave={mockEnclave} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('v2.18.0')).toBeInTheDocument();
     expect(screen.getByText('us-east-1')).toBeInTheDocument();
@@ -216,7 +212,7 @@ describe('VerificationPipeline', () => {
     render(
       <TestWrapper>
         <VerificationPipeline seed={42} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Mobile and desktop both render these labels
     expect(screen.getAllByText('Request Submitted').length).toBeGreaterThanOrEqual(1);
@@ -233,7 +229,7 @@ describe('RecentVerificationChains', () => {
     render(
       <TestWrapper>
         <RecentVerificationChains attestations={[mockAttestation]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('att-1')).toBeInTheDocument();
     expect(screen.getByText('Anchored')).toBeInTheDocument();
@@ -243,7 +239,7 @@ describe('RecentVerificationChains', () => {
     render(
       <TestWrapper>
         <RecentVerificationChains attestations={[]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('No recent verification chains')).toBeInTheDocument();
   });
@@ -252,7 +248,7 @@ describe('RecentVerificationChains', () => {
     render(
       <TestWrapper>
         <RecentVerificationChains attestations={[mockAttestation]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Initially collapsed — no detailed hashes visible
     expect(screen.queryByText('Attestation Hash')).not.toBeInTheDocument();
@@ -286,7 +282,7 @@ describe('RecentVerificationChains', () => {
     render(
       <TestWrapper>
         <RecentVerificationChains attestations={[unverified]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Pending')).toBeInTheDocument();
   });
@@ -296,7 +292,7 @@ describe('RecentVerificationChains', () => {
     render(
       <TestWrapper>
         <RecentVerificationChains attestations={[mockAttestation, att2]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const buttons = screen.getAllByRole('button');
     // Expand first
@@ -320,7 +316,7 @@ describe('EnclaveCard edge cases', () => {
     render(
       <TestWrapper>
         <EnclaveCard enclave={degraded} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Degraded')).toBeInTheDocument();
   });
@@ -330,7 +326,7 @@ describe('EnclaveCard edge cases', () => {
     render(
       <TestWrapper>
         <EnclaveCard enclave={offline} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Offline')).toBeInTheDocument();
   });
@@ -340,7 +336,7 @@ describe('EnclaveCard edge cases', () => {
     render(
       <TestWrapper>
         <EnclaveCard enclave={unknown} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Maintenance')).toBeInTheDocument();
   });
@@ -350,7 +346,7 @@ describe('EnclaveCard edge cases', () => {
     render(
       <TestWrapper>
         <EnclaveCard enclave={lowTrust} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('85.0/100')).toBeInTheDocument();
   });
@@ -360,7 +356,7 @@ describe('EnclaveCard edge cases', () => {
     render(
       <TestWrapper>
         <EnclaveCard enclave={veryLow} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('70.0/100')).toBeInTheDocument();
   });
@@ -370,7 +366,7 @@ describe('EnclaveCard edge cases', () => {
     render(
       <TestWrapper>
         <EnclaveCard enclave={amd} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('AMD SEV')).toBeInTheDocument();
   });
@@ -380,7 +376,7 @@ describe('EnclaveCard edge cases', () => {
     render(
       <TestWrapper>
         <EnclaveCard enclave={nitro} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('AWS Nitro')).toBeInTheDocument();
   });
@@ -390,7 +386,7 @@ describe('EnclaveCard edge cases', () => {
     render(
       <TestWrapper>
         <EnclaveCard enclave={unknown} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Unknown Platform')).toBeInTheDocument();
   });
@@ -400,7 +396,7 @@ describe('EnclaveCard edge cases', () => {
     render(
       <TestWrapper>
         <EnclaveCard enclave={high} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('96.0/100')).toBeInTheDocument();
   });
@@ -410,7 +406,7 @@ describe('EnclaveCard edge cases', () => {
     render(
       <TestWrapper>
         <EnclaveCard enclave={mid} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('92.0/100')).toBeInTheDocument();
   });
@@ -421,8 +417,12 @@ describe('ComputeJobRow edge cases', () => {
     const fastJob = { ...mockComputeJob, executionTimeMs: 500 };
     render(
       <TestWrapper>
-        <table><tbody><ComputeJobRow job={fastJob} index={0} /></tbody></table>
-      </TestWrapper>
+        <table>
+          <tbody>
+            <ComputeJobRow job={fastJob} index={0} />
+          </tbody>
+        </table>
+      </TestWrapper>,
     );
     expect(screen.getByText('500ms')).toBeInTheDocument();
   });
@@ -430,8 +430,12 @@ describe('ComputeJobRow edge cases', () => {
   it('renders job with odd index for alternating row colors', () => {
     render(
       <TestWrapper>
-        <table><tbody><ComputeJobRow job={mockComputeJob} index={1} /></tbody></table>
-      </TestWrapper>
+        <table>
+          <tbody>
+            <ComputeJobRow job={mockComputeJob} index={1} />
+          </tbody>
+        </table>
+      </TestWrapper>,
     );
     expect(screen.getByText('job-001')).toBeInTheDocument();
   });
@@ -440,8 +444,12 @@ describe('ComputeJobRow edge cases', () => {
     const unknownStatus = { ...mockComputeJob, status: 'unknown' as any };
     render(
       <TestWrapper>
-        <table><tbody><ComputeJobRow job={unknownStatus} index={0} /></tbody></table>
-      </TestWrapper>
+        <table>
+          <tbody>
+            <ComputeJobRow job={unknownStatus} index={0} />
+          </tbody>
+        </table>
+      </TestWrapper>,
     );
     expect(screen.getByText('Unknown')).toBeInTheDocument();
   });
@@ -450,8 +458,12 @@ describe('ComputeJobRow edge cases', () => {
     const unknownPriority = { ...mockComputeJob, priority: 'urgent' as any };
     render(
       <TestWrapper>
-        <table><tbody><ComputeJobRow job={unknownPriority} index={0} /></tbody></table>
-      </TestWrapper>
+        <table>
+          <tbody>
+            <ComputeJobRow job={unknownPriority} index={0} />
+          </tbody>
+        </table>
+      </TestWrapper>,
     );
     expect(screen.getByText('Urgent')).toBeInTheDocument();
   });
@@ -460,8 +472,12 @@ describe('ComputeJobRow edge cases', () => {
     const cancelled = { ...mockComputeJob, status: 'cancelled' as any };
     render(
       <TestWrapper>
-        <table><tbody><ComputeJobRow job={cancelled} index={0} /></tbody></table>
-      </TestWrapper>
+        <table>
+          <tbody>
+            <ComputeJobRow job={cancelled} index={0} />
+          </tbody>
+        </table>
+      </TestWrapper>,
     );
     expect(screen.getByText('Cancelled')).toBeInTheDocument();
   });
@@ -478,7 +494,7 @@ describe('PlatformDistribution', () => {
           ]}
           colors={['#3b82f6', '#f97316']}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Intel SGX')).toBeInTheDocument();
     expect(screen.getByText('120')).toBeInTheDocument();
@@ -490,12 +506,10 @@ describe('PlatformDistribution', () => {
     render(
       <TestWrapper>
         <PlatformDistribution
-          data={[
-            { platform: 'Unknown TEE' as any, count: 10, percentage: 100 },
-          ]}
+          data={[{ platform: 'Unknown TEE' as any, count: 10, percentage: 100 }]}
           colors={[]}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Unknown TEE')).toBeInTheDocument();
     expect(screen.getByText('10')).toBeInTheDocument();

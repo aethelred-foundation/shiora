@@ -23,7 +23,8 @@ const REPORT_DATA: Array<{
   {
     title: 'Comprehensive Pharmacogenomic Report',
     category: 'Pharmacogenomics',
-    summary: 'Full drug-gene interaction analysis across 8 key genes. Identified 3 high-priority drug modifications and 5 monitoring recommendations based on metabolizer status.',
+    summary:
+      'Full drug-gene interaction analysis across 8 key genes. Identified 3 high-priority drug modifications and 5 monitoring recommendations based on metabolizer status.',
     findings: 12,
     actionable: 5,
     status: 'reviewed',
@@ -31,7 +32,8 @@ const REPORT_DATA: Array<{
   {
     title: 'Polygenic Risk Score Assessment',
     category: 'Risk Assessment',
-    summary: 'Multi-condition risk evaluation across 6 disease categories. Two elevated risk scores identified requiring lifestyle intervention and enhanced monitoring protocols.',
+    summary:
+      'Multi-condition risk evaluation across 6 disease categories. Two elevated risk scores identified requiring lifestyle intervention and enhanced monitoring protocols.',
     findings: 6,
     actionable: 3,
     status: 'ready',
@@ -39,7 +41,8 @@ const REPORT_DATA: Array<{
   {
     title: 'Carrier Status & Hereditary Screening',
     category: 'Carrier Screening',
-    summary: 'Carrier analysis for 120+ autosomal recessive conditions. Three carrier statuses identified relevant to family planning decisions and genetic counseling.',
+    summary:
+      'Carrier analysis for 120+ autosomal recessive conditions. Three carrier statuses identified relevant to family planning decisions and genetic counseling.',
     findings: 8,
     actionable: 2,
     status: 'shared',
@@ -47,7 +50,8 @@ const REPORT_DATA: Array<{
   {
     title: 'Biomarker Trend Analysis Report',
     category: 'Biomarkers',
-    summary: 'Longitudinal analysis of 10 key biomarkers over 12-month period. Notable trends in lipid panel and inflammatory markers warrant clinical follow-up.',
+    summary:
+      'Longitudinal analysis of 10 key biomarkers over 12-month period. Notable trends in lipid panel and inflammatory markers warrant clinical follow-up.',
     findings: 10,
     actionable: 4,
     status: 'ready',
@@ -55,7 +59,8 @@ const REPORT_DATA: Array<{
   {
     title: 'Whole Genome Variant Summary',
     category: 'Genomic Variants',
-    summary: 'Summary of 4,521 variants identified across the whole genome. 12 clinically significant variants flagged for review including BRCA pathway and cardiac ion channel genes.',
+    summary:
+      'Summary of 4,521 variants identified across the whole genome. 12 clinically significant variants flagged for review including BRCA pathway and cardiac ion channel genes.',
     findings: 15,
     actionable: 6,
     status: 'generating',
@@ -95,11 +100,12 @@ export async function POST(request: NextRequest) {
 
   const category = body.category ?? 'General';
   const newReport: GenomicReport = {
-    id: `gr-${seededHex(SEED + 500 + Date.now() % 1000, 12)}`,
+    id: `gr-${seededHex(SEED + 500 + (Date.now() % 1000), 12)}`,
     title: `${category} Genomic Analysis`,
     category,
     generatedAt: Date.now(),
-    summary: 'Report generation initiated. TEE enclave processing genomic data with full attestation chain. Results will be available shortly.',
+    summary:
+      'Report generation initiated. TEE enclave processing genomic data with full attestation chain. Results will be available shortly.',
     findings: 0,
     actionableItems: 0,
     teeVerified: false,

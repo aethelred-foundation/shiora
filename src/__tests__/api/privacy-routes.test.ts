@@ -2,7 +2,10 @@
 
 jest.mock('@/lib/api/middleware', () => {
   const actual = jest.requireActual('@/lib/api/middleware');
-  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+  return {
+    ...actual,
+    runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)),
+  };
 });
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -26,7 +29,9 @@ function createRequest(url: string, init?: RequestInit): NextRequest {
 
 describe('/api/privacy/access-request', () => {
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await postAccessRequest(
       createRequest('http://localhost:3000/api/privacy/access-request', {
         method: 'POST',
@@ -92,7 +97,9 @@ describe('/api/privacy/access-request', () => {
 
 describe('/api/privacy/erasure', () => {
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await postErasure(
       createRequest('http://localhost:3000/api/privacy/erasure', {
         method: 'POST',
@@ -145,7 +152,9 @@ describe('/api/privacy/erasure', () => {
 
 describe('/api/privacy/portability', () => {
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await postPortability(
       createRequest('http://localhost:3000/api/privacy/portability', {
         method: 'POST',

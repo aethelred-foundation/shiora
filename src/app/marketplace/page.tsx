@@ -9,20 +9,54 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Store, Search, Filter, Plus, Download,
-  ShoppingCart, TrendingUp, BarChart3,
-  Calendar, Heart, TestTube2, HeartPulse,
-  Watch, ScanLine, ClipboardCheck, Pill,
-  Database, Tag,
+  Store,
+  Search,
+  Filter,
+  Plus,
+  Download,
+  ShoppingCart,
+  TrendingUp,
+  BarChart3,
+  Calendar,
+  Heart,
+  TestTube2,
+  HeartPulse,
+  Watch,
+  ScanLine,
+  ClipboardCheck,
+  Pill,
+  Database,
+  Tag,
 } from 'lucide-react';
 import {
-  BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
 } from 'recharts';
 
 import { useApp } from '@/contexts/AppContext';
-import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, Tabs } from '@/components/ui/SharedComponents';
-import { MedicalCard, SectionHeader, StatusBadge, HealthMetricCard, ChartTooltip } from '@/components/ui/PagePrimitives';
+import {
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  Tabs,
+} from '@/components/ui/SharedComponents';
+import {
+  MedicalCard,
+  SectionHeader,
+  StatusBadge,
+  HealthMetricCard,
+  ChartTooltip,
+} from '@/components/ui/PagePrimitives';
 import {
   DataListingCard,
   MarketplaceStatsBar,
@@ -31,7 +65,12 @@ import {
   QualityScoreBadge,
 } from '@/components/marketplace/MarketplaceComponents';
 import { useMarketplace } from '@/hooks/useMarketplace';
-import { MARKETPLACE_CATEGORIES, CHART_COLORS, EXTENDED_STATUS_STYLES, BRAND } from '@/lib/constants';
+import {
+  MARKETPLACE_CATEGORIES,
+  CHART_COLORS,
+  EXTENDED_STATUS_STYLES,
+  BRAND,
+} from '@/lib/constants';
 import { formatNumber, formatDate, truncateAddress, seededRandom, seededInt } from '@/lib/utils';
 import type { DataListing, MarketplaceCategory } from '@/types';
 
@@ -114,9 +153,11 @@ export default function MarketplacePage() {
   };
 
   // ---- Derived data ----
-  const myListings = marketplace.listings.filter(
-    (l) => l.seller === wallet.address || true, // Show all in mock mode
-  ).slice(0, 6);
+  const myListings = marketplace.listings
+    .filter(
+      (l) => l.seller === wallet.address || true, // Show all in mock mode
+    )
+    .slice(0, 6);
 
   return (
     <>
@@ -126,7 +167,6 @@ export default function MarketplacePage() {
 
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-
           {/* ---- Header ---- */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
@@ -173,17 +213,25 @@ export default function MarketplacePage() {
                 </div>
                 <select
                   value={selectedCategory ?? ''}
-                  onChange={(e) => handleCategoryFilter(e.target.value ? e.target.value as MarketplaceCategory : undefined)}
+                  onChange={(e) =>
+                    handleCategoryFilter(
+                      e.target.value ? (e.target.value as MarketplaceCategory) : undefined,
+                    )
+                  }
                   className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
                   <option value="">All Categories</option>
                   {MARKETPLACE_CATEGORIES.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.label}</option>
+                    <option key={cat.id} value={cat.id}>
+                      {cat.label}
+                    </option>
                   ))}
                 </select>
                 <select
                   value={minQuality ?? ''}
-                  onChange={(e) => handleQualityFilter(e.target.value ? Number(e.target.value) : undefined)}
+                  onChange={(e) =>
+                    handleQualityFilter(e.target.value ? Number(e.target.value) : undefined)
+                  }
                   className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
                   <option value="">Any Quality</option>
@@ -205,7 +253,9 @@ export default function MarketplacePage() {
                   <div className="text-center py-12">
                     <Store className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-slate-900 mb-2">No listings found</h3>
-                    <p className="text-sm text-slate-500">Try adjusting your filters or search query</p>
+                    <p className="text-sm text-slate-500">
+                      Try adjusting your filters or search query
+                    </p>
                   </div>
                 </MedicalCard>
               ) : (
@@ -244,7 +294,9 @@ export default function MarketplacePage() {
                   <div className="text-center py-12">
                     <Database className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-slate-900 mb-2">No listings yet</h3>
-                    <p className="text-sm text-slate-500">Create your first listing to start earning AETHEL</p>
+                    <p className="text-sm text-slate-500">
+                      Create your first listing to start earning AETHEL
+                    </p>
                   </div>
                 </MedicalCard>
               ) : (
@@ -277,7 +329,9 @@ export default function MarketplacePage() {
                   <div className="text-center py-12">
                     <ShoppingCart className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-slate-900 mb-2">No purchases yet</h3>
-                    <p className="text-sm text-slate-500">Browse the marketplace to find datasets</p>
+                    <p className="text-sm text-slate-500">
+                      Browse the marketplace to find datasets
+                    </p>
                   </div>
                 </MedicalCard>
               ) : (
@@ -286,11 +340,21 @@ export default function MarketplacePage() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-slate-100">
-                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Dataset</th>
-                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Category</th>
-                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Price</th>
-                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Purchased</th>
-                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Downloads</th>
+                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                            Dataset
+                          </th>
+                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                            Category
+                          </th>
+                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                            Price
+                          </th>
+                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                            Purchased
+                          </th>
+                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                            Downloads
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
@@ -299,16 +363,26 @@ export default function MarketplacePage() {
                           return (
                             <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                               <td className="px-5 py-3">
-                                <p className="font-medium text-slate-900 truncate max-w-[200px]">{p.title}</p>
-                                <p className="text-xs text-slate-400 font-mono">{truncateAddress(p.txHash, 8, 6)}</p>
+                                <p className="font-medium text-slate-900 truncate max-w-[200px]">
+                                  {p.title}
+                                </p>
+                                <p className="text-xs text-slate-400 font-mono">
+                                  {truncateAddress(p.txHash, 8, 6)}
+                                </p>
                               </td>
                               <td className="px-5 py-3">
-                                <Badge variant="medical">{cat?.label ??
-                                  /* istanbul ignore next -- cat always found for seeded categories */
-                                  p.category}</Badge>
+                                <Badge variant="medical">
+                                  {cat?.label ??
+                                    /* istanbul ignore next -- cat always found for seeded categories */
+                                    p.category}
+                                </Badge>
                               </td>
-                              <td className="px-5 py-3 font-semibold text-slate-900">{p.price.toFixed(2)} AETHEL</td>
-                              <td className="px-5 py-3 text-slate-500">{formatDate(p.purchasedAt)}</td>
+                              <td className="px-5 py-3 font-semibold text-slate-900">
+                                {p.price.toFixed(2)} AETHEL
+                              </td>
+                              <td className="px-5 py-3 text-slate-500">
+                                {formatDate(p.purchasedAt)}
+                              </td>
                               <td className="px-5 py-3">
                                 <div className="flex items-center gap-2">
                                   <span className="text-slate-700">{p.downloadCount}</span>
@@ -348,7 +422,9 @@ export default function MarketplacePage() {
                 {/* Top Categories Pie */}
                 <MedicalCard padding={false}>
                   <div className="p-5 pb-0">
-                    <h3 className="text-base font-semibold text-slate-900">Category Distribution</h3>
+                    <h3 className="text-base font-semibold text-slate-900">
+                      Category Distribution
+                    </h3>
                     <p className="text-xs text-slate-400 mt-0.5">Listings by category</p>
                   </div>
                   <div className="flex items-center justify-center py-4">
@@ -375,7 +451,10 @@ export default function MarketplacePage() {
                     {categoryDistribution.slice(0, 5).map((item) => (
                       <div key={item.name} className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                          <span
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{ backgroundColor: item.color }}
+                          />
                           <span className="text-slate-600 truncate max-w-[150px]">{item.name}</span>
                         </div>
                         <span className="text-slate-900 font-medium">{item.value}%</span>
@@ -392,10 +471,22 @@ export default function MarketplacePage() {
                   </div>
                   <div className="px-2 pb-4 pt-2">
                     <ResponsiveContainer width="100%" height={220}>
-                      <BarChart data={categoryVolume} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                      <BarChart
+                        data={categoryVolume}
+                        margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                      >
                         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                        <XAxis dataKey="shortName" tick={{ fontSize: 9, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
-                        <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+                        <XAxis
+                          dataKey="shortName"
+                          tick={{ fontSize: 9, fill: '#94a3b8' }}
+                          tickLine={false}
+                          axisLine={{ stroke: '#e2e8f0' }}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 10, fill: '#94a3b8' }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
                         <Tooltip content={<ChartTooltip formatValue={(v) => `${v} AETHEL`} />} />
                         <Bar dataKey="volume" radius={[4, 4, 0, 0]} barSize={20} name="Volume">
                           {categoryVolume.map((entry, i) => (
@@ -409,7 +500,6 @@ export default function MarketplacePage() {
               </div>
             </>
           )}
-
         </div>
       </main>
 

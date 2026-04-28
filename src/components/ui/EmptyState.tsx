@@ -21,14 +21,17 @@ interface EmptyStateProps {
   className?: string;
 }
 
-const SIZE_CONFIG: Record<EmptyStateSize, {
-  container: string;
-  iconWrapper: string;
-  iconSize: string;
-  title: string;
-  description: string;
-  button: string;
-}> = {
+const SIZE_CONFIG: Record<
+  EmptyStateSize,
+  {
+    container: string;
+    iconWrapper: string;
+    iconSize: string;
+    title: string;
+    description: string;
+    button: string;
+  }
+> = {
   sm: {
     container: 'py-8 px-3',
     iconWrapper: 'w-10 h-10 mb-3',
@@ -72,14 +75,16 @@ export function EmptyState({
   const config = SIZE_CONFIG[size];
 
   return (
-    <div className={`flex flex-col items-center justify-center text-center animate-fade-in ${config.container} ${className}`}>
-      <div className={`rounded-full bg-slate-100 flex items-center justify-center ${config.iconWrapper}`}>
+    <div
+      className={`flex flex-col items-center justify-center text-center animate-fade-in ${config.container} ${className}`}
+    >
+      <div
+        className={`rounded-full bg-slate-100 flex items-center justify-center ${config.iconWrapper}`}
+      >
         {icon || <Inbox className={`${config.iconSize} text-slate-400`} />}
       </div>
       <h3 className={`text-slate-900 mb-1 ${config.title}`}>{title}</h3>
-      {description && (
-        <p className={`text-slate-500 ${config.description}`}>{description}</p>
-      )}
+      {description && <p className={`text-slate-500 ${config.description}`}>{description}</p>}
       {(action || secondaryAction) && (
         <div className="flex items-center gap-3">
           {action && (

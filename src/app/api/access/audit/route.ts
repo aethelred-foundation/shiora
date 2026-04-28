@@ -19,10 +19,7 @@ export async function GET(request: NextRequest) {
   if (blocked) return blocked;
 
   try {
-    const query = parseSearchParams(
-      AuditListQuerySchema,
-      request.nextUrl.searchParams,
-    );
+    const query = parseSearchParams(AuditListQuerySchema, request.nextUrl.searchParams);
 
     let entries = generateMockAuditLog();
 

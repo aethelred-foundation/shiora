@@ -10,18 +10,35 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Siren, Users, AlertOctagon, Activity, FileText,
-  Heart, ShieldCheck, Pill, Clock,
+  Siren,
+  Users,
+  AlertOctagon,
+  Activity,
+  FileText,
+  Heart,
+  ShieldCheck,
+  Pill,
+  Clock,
 } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
 import {
-  TopNav, Footer, ToastContainer, SearchOverlay,
-  Badge, Tabs, ProgressRing,
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  Tabs,
+  ProgressRing,
 } from '@/components/ui/SharedComponents';
 import {
-  MedicalCard, HealthMetricCard, SectionHeader,
-  ChartTooltip, StatusBadge, TEEBadge, TruncatedHash,
+  MedicalCard,
+  HealthMetricCard,
+  SectionHeader,
+  ChartTooltip,
+  StatusBadge,
+  TEEBadge,
+  TruncatedHash,
 } from '@/components/ui/PagePrimitives';
 import {
   EmergencyInfoCard,
@@ -34,8 +51,14 @@ import {
 import { useEmergency } from '@/hooks/useEmergency';
 import { BRAND, CHART_COLORS, TRIAGE_LEVELS } from '@/lib/constants';
 import {
-  seededRandom, seededInt, seededHex, formatNumber,
-  timeAgo, formatDate, formatDateTime, generateAttestation,
+  seededRandom,
+  seededInt,
+  seededHex,
+  formatNumber,
+  timeAgo,
+  formatDate,
+  formatDateTime,
+  generateAttestation,
 } from '@/lib/utils';
 
 // ============================================================
@@ -56,10 +79,17 @@ const TAB_ITEMS = [
 const DEFAULT_TRIAGE = {
   id: 'triage-demo',
   symptoms: ['Chest tightness', 'Shortness of breath', 'Dizziness'],
-  vitalSigns: { heartRate: 102, bloodPressure: 148, temperature: 98.6, respiratoryRate: 22, oxygenSaturation: 95 },
+  vitalSigns: {
+    heartRate: 102,
+    bloodPressure: 148,
+    temperature: 98.6,
+    respiratoryRate: 22,
+    oxygenSaturation: 95,
+  },
   esiLevel: 2 as const,
   disposition: 'emergency_room' as const,
-  reasoning: 'Based on the reported symptoms (Chest tightness, Shortness of breath, Dizziness), the AI triage model assessed the patient\'s condition using the Emergency Severity Index (ESI). Critical symptoms detected requiring emergent evaluation. Elevated heart rate and blood pressure support the urgency classification. This assessment was processed within a TEE enclave for privacy and verified through on-chain attestation.',
+  reasoning:
+    "Based on the reported symptoms (Chest tightness, Shortness of breath, Dizziness), the AI triage model assessed the patient's condition using the Emergency Severity Index (ESI). Critical symptoms detected requiring emergent evaluation. Elevated heart rate and blood pressure support the urgency classification. This assessment was processed within a TEE enclave for privacy and verified through on-chain attestation.",
   confidence: 94,
   attestation: generateAttestation(SEED + 500),
   assessedAt: Date.now() - 3600000,
@@ -86,7 +116,6 @@ export default function EmergencyPage() {
 
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-
           {/* ---- Header ---- */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
@@ -95,11 +124,14 @@ export default function EmergencyPage() {
                 <h1 className="text-2xl font-bold text-slate-900">Emergency & Care Coordination</h1>
               </div>
               <p className="text-sm text-slate-500">
-                Emergency medical information, care team management, and AI-powered triage with TEE attestations
+                Emergency medical information, care team management, and AI-powered triage with TEE
+                attestations
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="error" dot>Emergency Ready</Badge>
+              <Badge variant="error" dot>
+                Emergency Ready
+              </Badge>
               <TEEBadge platform="Intel SGX" verified />
             </div>
           </div>
@@ -117,7 +149,7 @@ export default function EmergencyPage() {
             <HealthMetricCard
               icon={<Users className="w-5 h-5" />}
               label="Care Team Members"
-              value={(emergency.careTeam.filter((m) => m.isActive).length).toString()}
+              value={emergency.careTeam.filter((m) => m.isActive).length.toString()}
               unit="active"
               sparklineData={[4, 4, 5, 5, 5, 5, 5, 5]}
               sparklineColor={BRAND.sky}
@@ -125,7 +157,7 @@ export default function EmergencyPage() {
             <HealthMetricCard
               icon={<AlertOctagon className="w-5 h-5" />}
               label="Emergency Protocols"
-              value={(emergency.protocols.length).toString()}
+              value={emergency.protocols.length.toString()}
               unit="protocols"
               sparklineData={[4, 5, 5, 6, 6, 6, 6, 6]}
               sparklineColor="#f59e0b"
@@ -133,7 +165,7 @@ export default function EmergencyPage() {
             <HealthMetricCard
               icon={<Activity className="w-5 h-5" />}
               label="Care Handoffs"
-              value={(emergency.handoffs.length).toString()}
+              value={emergency.handoffs.length.toString()}
               unit="records"
               sparklineData={[2, 3, 3, 4, 4, 5, 5, 5]}
               sparklineColor="#10b981"
@@ -141,30 +173,16 @@ export default function EmergencyPage() {
           </div>
 
           {/* ---- Tabs ---- */}
-          <Tabs
-            tabs={TAB_ITEMS}
-            activeTab={activeTab}
-            onChange={setActiveTab}
-            className="mb-8"
-          />
+          <Tabs tabs={TAB_ITEMS} activeTab={activeTab} onChange={setActiveTab} className="mb-8" />
 
           {/* ---- Tab Content ---- */}
-          {activeTab === 'emergency-card' && (
-            <EmergencyCardTab emergency={emergency} />
-          )}
-          {activeTab === 'care-team' && (
-            <CareTeamTab emergency={emergency} />
-          )}
-          {activeTab === 'protocols' && (
-            <ProtocolsTab emergency={emergency} />
-          )}
+          {activeTab === 'emergency-card' && <EmergencyCardTab emergency={emergency} />}
+          {activeTab === 'care-team' && <CareTeamTab emergency={emergency} />}
+          {activeTab === 'protocols' && <ProtocolsTab emergency={emergency} />}
           {activeTab === 'triage' && (
             <TriageTab emergency={emergency} triageDisplay={triageDisplay} />
           )}
-          {activeTab === 'handoffs' && (
-            <HandoffsTab emergency={emergency} />
-          )}
-
+          {activeTab === 'handoffs' && <HandoffsTab emergency={emergency} />}
         </div>
       </main>
 
@@ -192,7 +210,9 @@ function EmergencyCardTab({ emergency }: { emergency: ReturnType<typeof useEmerg
     return (
       <MedicalCard className="text-center py-12">
         <Siren className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-        <p className="text-sm text-slate-500">No emergency card configured. Connect your wallet to set up.</p>
+        <p className="text-sm text-slate-500">
+          No emergency card configured. Connect your wallet to set up.
+        </p>
       </MedicalCard>
     );
   }
@@ -331,18 +351,31 @@ function TriageTab({
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50/50">
-                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">ESI Level</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Symptoms</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Disposition</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Confidence</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      ESI Level
+                    </th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      Symptoms
+                    </th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      Disposition
+                    </th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      Confidence
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {emergency.triageHistory.map((assessment) => {
                     const triageLevel = TRIAGE_LEVELS.find((t) => t.level === assessment.esiLevel);
                     return (
-                      <tr key={assessment.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                      <tr
+                        key={assessment.id}
+                        className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors"
+                      >
                         <td className="py-3 px-4 text-sm text-slate-600">
                           {formatDateTime(assessment.assessedAt)}
                         </td>
@@ -352,12 +385,17 @@ function TriageTab({
                         <td className="py-3 px-4 max-w-[200px]">
                           <div className="flex flex-wrap gap-1">
                             {assessment.symptoms.slice(0, 3).map((s, i) => (
-                              <span key={i} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600">
+                              <span
+                                key={i}
+                                className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600"
+                              >
                                 {s}
                               </span>
                             ))}
                             {assessment.symptoms.length > 3 && (
-                              <span className="text-[10px] text-slate-400">+{assessment.symptoms.length - 3}</span>
+                              <span className="text-[10px] text-slate-400">
+                                +{assessment.symptoms.length - 3}
+                              </span>
                             )}
                           </div>
                         </td>
@@ -373,11 +411,18 @@ function TriageTab({
                                 className="h-full rounded-full"
                                 style={{
                                   width: `${assessment.confidence}%`,
-                                  backgroundColor: assessment.confidence >= 90 ? '#10b981' : assessment.confidence >= 80 ? '#eab308' : '#f43f5e',
+                                  backgroundColor:
+                                    assessment.confidence >= 90
+                                      ? '#10b981'
+                                      : assessment.confidence >= 80
+                                        ? '#eab308'
+                                        : '#f43f5e',
                                 }}
                               />
                             </div>
-                            <span className="text-xs font-medium text-slate-700">{assessment.confidence}%</span>
+                            <span className="text-xs font-medium text-slate-700">
+                              {assessment.confidence}%
+                            </span>
                           </div>
                         </td>
                       </tr>

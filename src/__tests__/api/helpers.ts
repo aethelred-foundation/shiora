@@ -6,10 +6,7 @@ import { seededAddress } from '@/lib/utils';
 export const TEST_ADDRESS = seededAddress(12345);
 export const TEST_TOKEN = createSessionToken(TEST_ADDRESS).token;
 
-export function createAuthedRequest(
-  url: string,
-  init?: RequestInit,
-): NextRequest {
+export function createAuthedRequest(url: string, init?: RequestInit): NextRequest {
   return new NextRequest(url, {
     ...init,
     headers: {

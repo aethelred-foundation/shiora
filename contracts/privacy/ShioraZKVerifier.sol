@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
+import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title ShioraZKVerifier
@@ -135,8 +135,12 @@ contract ShioraZKVerifier is Ownable, ReentrancyGuard, Pausable {
     // ────────────────────────────────────────────────────────
 
     modifier onlyVerifier() {
-        if (!_verifiers[msg.sender]) revert NotVerifier();
+        _onlyVerifier();
         _;
+    }
+
+    function _onlyVerifier() internal view {
+        if (!_verifiers[msg.sender]) revert NotVerifier();
     }
 
     // ────────────────────────────────────────────────────────
@@ -228,7 +232,7 @@ contract ShioraZKVerifier is Ownable, ReentrancyGuard, Pausable {
         if (block.timestamp >= claim.expiresAt) revert ClaimExpired_();
 
         // Verify the public inputs hash matches
-        bytes32 computedInputsHash = keccak256(publicInputs);
+        bytes32 computedInputsHash = _hashCalldata(publicInputs);
         if (computedInputsHash != claim.publicInputsHash) revert InvalidProof();
 
         // Verify the proof signature — recover signer from the proof hash
@@ -333,6 +337,19 @@ contract ShioraZKVerifier is Ownable, ReentrancyGuard, Pausable {
      */
     function isClaimTypeSupported(bytes32 claimType) external view returns (bool) {
         return supportedClaimTypes[claimType];
+    }
+
+    // ────────────────────────────────────────────────────────
+    // Internal Functions
+    // ────────────────────────────────────────────────────────
+
+    function _hashCalldata(bytes calldata data) internal pure returns (bytes32 digest) {
+        assembly ("memory-safe") {
+            let ptr := mload(0x40)
+            calldatacopy(ptr, data.offset, data.length)
+            digest := keccak256(ptr, data.length)
+            mstore(0x40, add(ptr, and(add(data.length, 0x3f), not(0x1f))))
+        }
     }
 
     // ────────────────────────────────────────────────────────

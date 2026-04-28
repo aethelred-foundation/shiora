@@ -26,37 +26,24 @@ export const AethelredAddressSchema = z
 /** IPFS CID (mock format Qm...) */
 export const CIDSchema = z
   .string()
-  .regex(
-    /^(Qm[1-9A-HJ-NP-Za-km-z]{44}|bafy[1-9A-HJ-NP-Za-km-z]{20,})$/,
-    'Invalid IPFS CID',
-  );
+  .regex(/^(Qm[1-9A-HJ-NP-Za-km-z]{44}|bafy[1-9A-HJ-NP-Za-km-z]{20,})$/, 'Invalid IPFS CID');
 
 /** Hex hash (0x prefixed) */
-export const HexHashSchema = z
-  .string()
-  .regex(/^0x[0-9a-f]{64}$/, 'Invalid hex hash');
+export const HexHashSchema = z.string().regex(/^0x[0-9a-f]{64}$/, 'Invalid hex hash');
 
 /** ISO date string */
-export const ISODateSchema = z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/));
+export const ISODateSchema = z
+  .string()
+  .datetime({ offset: true })
+  .or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/));
 
 // ────────────────────────────────────────────────────────────
 // Records
 // ────────────────────────────────────────────────────────────
 
-export const RecordTypeEnum = z.enum([
-  'lab_result',
-  'imaging',
-  'prescription',
-  'vitals',
-  'notes',
-]);
+export const RecordTypeEnum = z.enum(['lab_result', 'imaging', 'prescription', 'vitals', 'notes']);
 
-export const RecordStatusEnum = z.enum([
-  'Verified',
-  'Pinning',
-  'Pinned',
-  'Processing',
-]);
+export const RecordStatusEnum = z.enum(['Verified', 'Pinning', 'Pinned', 'Processing']);
 
 export const RecordCreateSchema = z.object({
   type: RecordTypeEnum,
@@ -86,12 +73,7 @@ export const RecordListQuerySchema = PaginationSchema.extend({
 // Access Grants
 // ────────────────────────────────────────────────────────────
 
-export const GrantStatusEnum = z.enum([
-  'Active',
-  'Expired',
-  'Revoked',
-  'Pending',
-]);
+export const GrantStatusEnum = z.enum(['Active', 'Expired', 'Revoked', 'Pending']);
 
 export const DataScopeEnum = z.enum([
   'Full Records',
@@ -143,12 +125,7 @@ export const ConsentScopeEnum = z.enum([
   'full_access',
 ]);
 
-export const ConsentStatusEnum = z.enum([
-  'active',
-  'expired',
-  'revoked',
-  'pending',
-]);
+export const ConsentStatusEnum = z.enum(['active', 'expired', 'revoked', 'pending']);
 
 export const ConsentCreateSchema = z.object({
   providerAddress: AethelredAddressSchema.optional(),
@@ -159,15 +136,14 @@ export const ConsentCreateSchema = z.object({
   policyId: z.string().trim().min(1).max(100).optional(),
 });
 
-export const ConsentUpdateSchema = z.object({
-  scopes: z.array(ConsentScopeEnum).min(1).max(10).optional(),
-  durationDays: z.number().int().min(1).max(365).optional(),
-}).refine(
-  (value) => value.scopes !== undefined || value.durationDays !== undefined,
-  {
+export const ConsentUpdateSchema = z
+  .object({
+    scopes: z.array(ConsentScopeEnum).min(1).max(10).optional(),
+    durationDays: z.number().int().min(1).max(365).optional(),
+  })
+  .refine((value) => value.scopes !== undefined || value.durationDays !== undefined, {
     message: 'At least one updatable consent field is required.',
-  },
-);
+  });
 
 export const ConsentListQuerySchema = PaginationSchema.extend({
   status: ConsentStatusEnum.optional(),
@@ -179,13 +155,7 @@ export const ConsentListQuerySchema = PaginationSchema.extend({
 // Audit Log
 // ────────────────────────────────────────────────────────────
 
-export const AuditTypeEnum = z.enum([
-  'access',
-  'grant',
-  'revoke',
-  'modify',
-  'download',
-]);
+export const AuditTypeEnum = z.enum(['access', 'grant', 'revoke', 'modify', 'download']);
 
 export const AuditListQuerySchema = PaginationSchema.extend({
   type: AuditTypeEnum.optional(),
@@ -237,7 +207,11 @@ export const WalletConnectSchema = z.object({
 export const IPFSUploadSchema = z.object({
   filename: z.string().min(1).max(255),
   contentType: z.string().min(1).max(100),
-  size: z.number().int().positive().max(100 * 1024 * 1024), // 100 MB max
+  size: z
+    .number()
+    .int()
+    .positive()
+    .max(100 * 1024 * 1024), // 100 MB max
 });
 
 // ────────────────────────────────────────────────────────────

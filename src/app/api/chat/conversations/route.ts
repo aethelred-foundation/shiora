@@ -6,15 +6,8 @@
 
 import { NextRequest } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
-import {
-  successResponse,
-  HTTP,
-} from '@/lib/api/responses';
-import {
-  seededHex,
-  seededInt,
-  seededPick,
-} from '@/lib/utils';
+import { successResponse, HTTP } from '@/lib/api/responses';
+import { seededHex, seededInt, seededPick } from '@/lib/utils';
 import { AI_MODELS } from '@/lib/constants';
 
 // ────────────────────────────────────────────────────────────

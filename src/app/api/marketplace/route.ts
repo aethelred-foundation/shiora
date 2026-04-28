@@ -19,7 +19,7 @@ import {
   buildMarketplaceListingFromInput,
   createMarketplaceListing,
   listMarketplaceListings,
-} from '@/lib/api/store';
+} from '@/lib/api/store-service';
 import { MARKETPLACE_CATEGORIES } from '@/lib/constants';
 
 const MarketplaceListQuerySchema = z.object({
@@ -35,12 +35,19 @@ const MarketplaceCreateSchema = z.object({
   description: z.string().max(2000).optional(),
   price: z.number().positive(),
   expirationDays: z.number().int().min(1).max(365).default(30),
-  anonymizationLevel: z.enum(['k-anonymity', 'l-diversity', 'differential-privacy']).default('k-anonymity'),
+  anonymizationLevel: z
+    .enum(['k-anonymity', 'l-diversity', 'differential-privacy'])
+    .default('k-anonymity'),
 });
 
-function parseSearchParams<T extends z.ZodTypeAny>(schema: T, searchParams: URLSearchParams): z.infer<T> {
+function parseSearchParams<T extends z.ZodTypeAny>(
+  schema: T,
+  searchParams: URLSearchParams,
+): z.infer<T> {
   const raw: Record<string, string> = {};
-  searchParams.forEach((v, k) => { raw[k] = v; });
+  searchParams.forEach((v, k) => {
+    raw[k] = v;
+  });
   return schema.parse(raw);
 }
 
@@ -59,11 +66,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const listings = listMarketplaceListings().filter((listing) => {
+    const listings = (await listMarketplaceListings()).filter((listing) => {
       if (query.category && listing.category !== query.category) return false;
       if (query.q) {
         const q = query.q.toLowerCase();
-        if (!listing.title.toLowerCase().includes(q) && !listing.category.toLowerCase().includes(q)) {
+        if (
+          !listing.title.toLowerCase().includes(q) &&
+          !listing.category.toLowerCase().includes(q)
+        ) {
           return false;
         }
       }
@@ -92,9 +102,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = MarketplaceCreateSchema.parse(body);
 
-    const allowedCategoryIds = new Set(
-      MARKETPLACE_CATEGORIES.map((category) => category.id),
-    );
+    const allowedCategoryIds = new Set(MARKETPLACE_CATEGORIES.map((category) => category.id));
     if (!allowedCategoryIds.has(validated.category)) {
       return errorResponse(
         'INVALID_CATEGORY',
@@ -103,7 +111,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const listing = createMarketplaceListing(
+    const listing = await createMarketplaceListing(
       buildMarketplaceListingFromInput({
         seller: auth.walletAddress!,
         category: validated.category,

@@ -32,8 +32,9 @@ export async function GET(request: NextRequest) {
     totalListings: 20,
     activeListings: 14,
     totalVolume: parseFloat(
-      Array.from({ length: 20 }, (_, i) =>
-        (seededRandom(SEED + i * 23) * 500 + 10) * seededInt(SEED + i * 31, 0, 25),
+      Array.from(
+        { length: 20 },
+        (_, i) => (seededRandom(SEED + i * 23) * 500 + 10) * seededInt(SEED + i * 31, 0, 25),
       )
         .reduce((a, b) => a + b, 0)
         .toFixed(2),

@@ -7,15 +7,34 @@
 
 import React, { useState } from 'react';
 import {
-  ShoppingCart, TrendingUp, BarChart3, Users,
-  ShieldCheck, Tag, Database, Calendar,
-  Heart, TestTube2, HeartPulse, Watch,
-  ScanLine, ClipboardCheck, Pill, CheckCircle,
-  X, AlertTriangle, Store,
+  ShoppingCart,
+  TrendingUp,
+  BarChart3,
+  Users,
+  ShieldCheck,
+  Tag,
+  Database,
+  Calendar,
+  Heart,
+  TestTube2,
+  HeartPulse,
+  Watch,
+  ScanLine,
+  ClipboardCheck,
+  Pill,
+  CheckCircle,
+  X,
+  AlertTriangle,
+  Store,
 } from 'lucide-react';
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, CartesianGrid,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
 } from 'recharts';
 
 import { MedicalCard, ChartTooltip, StatusBadge } from '@/components/ui/PagePrimitives';
@@ -53,7 +72,8 @@ function getCategoryMeta(categoryId: string) {
 // ============================================================
 
 export function QualityScoreBadge({ score, size = 44 }: { score: number; size?: number }) {
-  const color = score >= 90 ? '#10b981' : score >= 75 ? '#8B1538' : score >= 60 ? '#fb923c' : '#f43f5e';
+  const color =
+    score >= 90 ? '#10b981' : score >= 75 ? '#8B1538' : score >= 60 ? '#fb923c' : '#f43f5e';
   return (
     <ProgressRing value={score} max={100} size={size} strokeWidth={3} color={color}>
       <span className="text-xs font-bold text-slate-900">{score}</span>
@@ -104,7 +124,12 @@ export function DataListingCard({
             className="h-1.5 rounded-full transition-all"
             style={{
               width: `${listing.qualityScore}%`,
-              backgroundColor: listing.qualityScore >= 90 ? '#10b981' : listing.qualityScore >= 75 ? '#8B1538' : '#fb923c',
+              backgroundColor:
+                listing.qualityScore >= 90
+                  ? '#10b981'
+                  : listing.qualityScore >= 75
+                    ? '#8B1538'
+                    : '#fb923c',
             }}
           />
         </div>
@@ -119,7 +144,9 @@ export function DataListingCard({
       {/* Badges */}
       <div className="flex flex-wrap gap-1.5 mb-4">
         {listing.teeVerified && (
-          <Badge variant="success" dot>TEE Verified</Badge>
+          <Badge variant="success" dot>
+            TEE Verified
+          </Badge>
         )}
         <Badge variant="medical">{listing.anonymizationLevel}</Badge>
       </div>
@@ -141,18 +168,16 @@ export function DataListingCard({
           ) : (
             <StatusBadge status={listing.status} styles={EXTENDED_STATUS_STYLES} />
           )
+        ) : listing.status === 'active' && onPurchase ? (
+          <button
+            onClick={() => onPurchase(listing.id)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors"
+          >
+            <ShoppingCart className="w-3.5 h-3.5" />
+            Purchase
+          </button>
         ) : (
-          listing.status === 'active' && onPurchase ? (
-            <button
-              onClick={() => onPurchase(listing.id)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors"
-            >
-              <ShoppingCart className="w-3.5 h-3.5" />
-              Purchase
-            </button>
-          ) : (
-            <StatusBadge status={listing.status} styles={EXTENDED_STATUS_STYLES} />
-          )
+          <StatusBadge status={listing.status} styles={EXTENDED_STATUS_STYLES} />
         )}
       </div>
     </MedicalCard>
@@ -184,7 +209,9 @@ export function MarketplaceStatsBar({ stats }: { stats: MarketplaceStats }) {
           </div>
           <div>
             <p className="text-xs text-slate-500">Total Volume</p>
-            <p className="text-lg font-bold text-slate-900">{formatNumber(stats.totalVolume)} AETHEL</p>
+            <p className="text-lg font-bold text-slate-900">
+              {formatNumber(stats.totalVolume)} AETHEL
+            </p>
           </div>
         </div>
       </MedicalCard>
@@ -195,7 +222,9 @@ export function MarketplaceStatsBar({ stats }: { stats: MarketplaceStats }) {
           </div>
           <div>
             <p className="text-xs text-slate-500">Avg Price</p>
-            <p className="text-lg font-bold text-slate-900">{stats.averagePrice.toFixed(2)} AETHEL</p>
+            <p className="text-lg font-bold text-slate-900">
+              {stats.averagePrice.toFixed(2)} AETHEL
+            </p>
           </div>
         </div>
       </MedicalCard>
@@ -333,7 +362,13 @@ export function RevenueChart({
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-            <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} interval={6} />
+            <XAxis
+              dataKey="day"
+              tick={{ fontSize: 10, fill: '#94a3b8' }}
+              tickLine={false}
+              axisLine={{ stroke: '#e2e8f0' }}
+              interval={6}
+            />
             <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
             <Tooltip content={<ChartTooltip formatValue={(v) => `${v} AETHEL`} />} />
             <Area

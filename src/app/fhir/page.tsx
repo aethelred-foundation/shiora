@@ -9,16 +9,41 @@
 
 import { useState } from 'react';
 import {
-  Link2, Upload, Download, ArrowRight,
-  FileJson, Code, CheckCircle, XCircle,
-  Clock, AlertTriangle, Database,
-  User, Eye, Pill, AlertCircle, FileSearch,
-  Syringe, Scissors,
+  Link2,
+  Upload,
+  Download,
+  ArrowRight,
+  FileJson,
+  Code,
+  CheckCircle,
+  XCircle,
+  Clock,
+  AlertTriangle,
+  Database,
+  User,
+  Eye,
+  Pill,
+  AlertCircle,
+  FileSearch,
+  Syringe,
+  Scissors,
 } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
-import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, Tabs } from '@/components/ui/SharedComponents';
-import { MedicalCard, SectionHeader, StatusBadge, HealthMetricCard } from '@/components/ui/PagePrimitives';
+import {
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  Tabs,
+} from '@/components/ui/SharedComponents';
+import {
+  MedicalCard,
+  SectionHeader,
+  StatusBadge,
+  HealthMetricCard,
+} from '@/components/ui/PagePrimitives';
 import {
   ResourceViewer,
   MappingTable,
@@ -69,7 +94,6 @@ export default function FHIRBridgePage() {
 
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-
           {/* ---- Header ---- */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
@@ -197,7 +221,8 @@ export default function FHIRBridgePage() {
                         <div>
                           <p className="text-sm font-medium text-slate-900">{config.destination}</p>
                           <p className="text-xs text-slate-500">
-                            {config.resourceTypes.length} types | {config.format.toUpperCase()} format
+                            {config.resourceTypes.length} types | {config.format.toUpperCase()}{' '}
+                            format
                           </p>
                         </div>
                         <Badge variant="info">{config.format.toUpperCase()}</Badge>
@@ -211,7 +236,9 @@ export default function FHIRBridgePage() {
                         )}
                       </div>
                       {config.lastExportAt && (
-                        <p className="text-xs text-slate-400">Last export: {timeAgo(config.lastExportAt)}</p>
+                        <p className="text-xs text-slate-400">
+                          Last export: {timeAgo(config.lastExportAt)}
+                        </p>
                       )}
                     </MedicalCard>
                   ))}
@@ -263,11 +290,21 @@ export default function FHIRBridgePage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-100">
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Type</th>
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Source / Destination</th>
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Resources</th>
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Date</th>
+                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                          Type
+                        </th>
+                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                          Source / Destination
+                        </th>
+                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                          Resources
+                        </th>
+                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                          Status
+                        </th>
+                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                          Date
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -304,7 +341,9 @@ export default function FHIRBridgePage() {
                             </Badge>
                           </td>
                           <td className="px-5 py-3 text-slate-700">{config.destination}</td>
-                          <td className="px-5 py-3 text-slate-700">{config.resourceTypes.length} types</td>
+                          <td className="px-5 py-3 text-slate-700">
+                            {config.resourceTypes.length} types
+                          </td>
                           <td className="px-5 py-3">
                             <div className="flex items-center gap-1.5">
                               <CheckCircle className="w-4 h-4 text-emerald-500" />
@@ -322,7 +361,6 @@ export default function FHIRBridgePage() {
               </MedicalCard>
             </>
           )}
-
         </div>
       </main>
 

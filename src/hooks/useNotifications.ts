@@ -5,11 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 import { useApp } from '@/contexts/AppContext';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import type {
-  Notification,
-  NotificationType,
-  NotificationPreferences,
-} from '@/types';
+import type { Notification, NotificationType, NotificationPreferences } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Defaults
@@ -70,11 +66,7 @@ export interface UseNotificationsReturn {
 // ---------------------------------------------------------------------------
 
 export function useNotifications(): UseNotificationsReturn {
-  const {
-    notifications: contextNotifications,
-    addNotification,
-    removeNotification,
-  } = useApp();
+  const { notifications: contextNotifications, addNotification, removeNotification } = useApp();
 
   const queryClient = useQueryClient();
 
@@ -152,7 +144,10 @@ export function useNotifications(): UseNotificationsReturn {
     if (typeof window === 'undefined') return;
     if (!preferences.sound) return;
     try {
-      const ctx = new (window.AudioContext || (window as unknown as Record<string, unknown>).webkitAudioContext as typeof AudioContext)();
+      const ctx = new (
+        window.AudioContext ||
+        ((window as unknown as Record<string, unknown>).webkitAudioContext as typeof AudioContext)
+      )();
       const oscillator = ctx.createOscillator();
       const gain = ctx.createGain();
       oscillator.connect(gain);
@@ -194,10 +189,7 @@ export function useNotifications(): UseNotificationsReturn {
   // ---- Computed values ---------------------------------------------------
 
   const unreadCount = useMemo(
-    () =>
-      notifications.filter(
-        (n) => !(n as unknown as Record<string, unknown>).read,
-      ).length,
+    () => notifications.filter((n) => !(n as unknown as Record<string, unknown>).read).length,
     [notifications],
   );
 
@@ -241,10 +233,7 @@ export function useNotifications(): UseNotificationsReturn {
     (title: string, message: string) => add('warning', title, message),
     [add],
   );
-  const info = useCallback(
-    (title: string, message: string) => add('info', title, message),
-    [add],
-  );
+  const info = useCallback((title: string, message: string) => add('info', title, message), [add]);
 
   return {
     notifications,

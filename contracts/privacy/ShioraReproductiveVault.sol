@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraReproductiveVault
@@ -149,14 +149,22 @@ contract ShioraReproductiveVault is Ownable, ReentrancyGuard, Pausable {
     // ────────────────────────────────────────────────────────
 
     modifier onlyCompartmentOwner(bytes32 compartmentId) {
-        if (_compartments[compartmentId].owner == address(0)) revert CompartmentNotFound();
-        if (_compartments[compartmentId].owner != msg.sender) revert NotCompartmentOwner();
+        _onlyCompartmentOwner(compartmentId);
         _;
     }
 
     modifier compartmentNotLocked(bytes32 compartmentId) {
-        if (_compartments[compartmentId].locked) revert CompartmentLocked_();
+        _compartmentNotLocked(compartmentId);
         _;
+    }
+
+    function _onlyCompartmentOwner(bytes32 compartmentId) internal view {
+        if (_compartments[compartmentId].owner == address(0)) revert CompartmentNotFound();
+        if (_compartments[compartmentId].owner != msg.sender) revert NotCompartmentOwner();
+    }
+
+    function _compartmentNotLocked(bytes32 compartmentId) internal view {
+        if (_compartments[compartmentId].locked) revert CompartmentLocked_();
     }
 
     // ────────────────────────────────────────────────────────

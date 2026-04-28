@@ -9,10 +9,26 @@
 
 import React, { useState, useCallback, useRef } from 'react';
 import {
-  Upload, X, FileText, TestTube2, ScanLine, Pill,
-  HeartPulse, Lock, ShieldCheck, CheckCircle, AlertCircle,
-  Cloud, Cpu, Link2, Tag, Calendar, Building2,
-  ChevronDown, Trash2, File,
+  Upload,
+  X,
+  FileText,
+  TestTube2,
+  ScanLine,
+  Pill,
+  HeartPulse,
+  Lock,
+  ShieldCheck,
+  CheckCircle,
+  AlertCircle,
+  Cloud,
+  Cpu,
+  Link2,
+  Tag,
+  Calendar,
+  Building2,
+  ChevronDown,
+  Trash2,
+  File,
 } from 'lucide-react';
 
 import { Modal, Badge } from '@/components/ui/SharedComponents';
@@ -32,7 +48,14 @@ interface UploadFile {
   preview?: string;
 }
 
-type UploadStage = 'idle' | 'encrypting' | 'uploading' | 'registering' | 'verifying' | 'success' | 'error';
+type UploadStage =
+  | 'idle'
+  | 'encrypting'
+  | 'uploading'
+  | 'registering'
+  | 'verifying'
+  | 'success'
+  | 'error';
 
 interface UploadModalProps {
   open: boolean;
@@ -57,10 +80,26 @@ const ACCEPTED_MIME_TYPES = [
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
 
 const STAGE_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-  encrypting: { label: 'Encrypting with AES-256-GCM...', icon: <Lock className="w-4 h-4" />, color: 'text-brand-600' },
-  uploading: { label: 'Uploading to IPFS...', icon: <Cloud className="w-4 h-4" />, color: 'text-violet-600' },
-  registering: { label: 'Registering on-chain...', icon: <Link2 className="w-4 h-4" />, color: 'text-amber-600' },
-  verifying: { label: 'Verifying TEE attestation...', icon: <Cpu className="w-4 h-4" />, color: 'text-emerald-600' },
+  encrypting: {
+    label: 'Encrypting with AES-256-GCM...',
+    icon: <Lock className="w-4 h-4" />,
+    color: 'text-brand-600',
+  },
+  uploading: {
+    label: 'Uploading to IPFS...',
+    icon: <Cloud className="w-4 h-4" />,
+    color: 'text-violet-600',
+  },
+  registering: {
+    label: 'Registering on-chain...',
+    icon: <Link2 className="w-4 h-4" />,
+    color: 'text-amber-600',
+  },
+  verifying: {
+    label: 'Verifying TEE attestation...',
+    icon: <Cpu className="w-4 h-4" />,
+    color: 'text-emerald-600',
+  },
 };
 
 const STAGE_PROGRESS: Record<string, number> = {
@@ -128,7 +167,7 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredProviders = PROVIDER_NAMES.filter((p) =>
-    p.toLowerCase().includes(providerSearch.toLowerCase())
+    p.toLowerCase().includes(providerSearch.toLowerCase()),
   );
 
   const resetForm = useCallback(() => {
@@ -191,14 +230,17 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
     }
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files?.length) {
-      addFiles(e.dataTransfer.files);
-    }
-  }, [addFiles]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragActive(false);
+      if (e.dataTransfer.files?.length) {
+        addFiles(e.dataTransfer.files);
+      }
+    },
+    [addFiles],
+  );
 
   const addTag = useCallback(() => {
     const trimmed = tagInput.trim().toLowerCase();
@@ -246,7 +288,8 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
           </div>
           <h3 className="text-lg font-bold text-slate-900 mb-2">Upload Successful</h3>
           <p className="text-sm text-slate-500 mb-6">
-            Your health record has been encrypted, uploaded to IPFS, and registered on the Aethelred blockchain.
+            Your health record has been encrypted, uploaded to IPFS, and registered on the Aethelred
+            blockchain.
           </p>
           <div className="bg-slate-50 rounded-xl p-4 mb-6 space-y-2 text-left">
             <div className="flex items-center justify-between text-xs">
@@ -255,15 +298,21 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-500">TEE Verification</span>
-              <Badge variant="success" dot>Verified</Badge>
+              <Badge variant="success" dot>
+                Verified
+              </Badge>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-500">IPFS Status</span>
-              <Badge variant="success" dot>Pinned</Badge>
+              <Badge variant="success" dot>
+                Pinned
+              </Badge>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-500">On-chain</span>
-              <Badge variant="success" dot>Confirmed</Badge>
+              <Badge variant="success" dot>
+                Confirmed
+              </Badge>
             </div>
           </div>
           <button
@@ -298,7 +347,10 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
               Cancel
             </button>
             <button
-              onClick={() => { setStage('idle'); setError(''); }}
+              onClick={() => {
+                setStage('idle');
+                setError('');
+              }}
               className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-medium transition-colors"
             >
               Try Again
@@ -354,7 +406,9 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
                   ) : (
                     <div className="w-5 h-5 rounded-full border-2 border-slate-200 shrink-0" />
                   )}
-                  <span className={`text-sm ${isComplete ? 'text-emerald-700 font-medium' : isCurrent ? 'text-slate-900 font-medium' : 'text-slate-400'}`}>
+                  <span
+                    className={`text-sm ${isComplete ? 'text-emerald-700 font-medium' : isCurrent ? 'text-slate-900 font-medium' : 'text-slate-400'}`}
+                  >
                     {cfg.label}
                   </span>
                 </div>
@@ -366,7 +420,8 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
           <div className="mt-6 p-3 bg-brand-50 border border-brand-200 rounded-xl flex items-start gap-2">
             <Lock className="w-4 h-4 text-brand-600 mt-0.5 shrink-0" />
             <p className="text-xs text-brand-700">
-              Your data is being encrypted with AES-256-GCM before leaving your device. Only you hold the decryption keys.
+              Your data is being encrypted with AES-256-GCM before leaving your device. Only you
+              hold the decryption keys.
             </p>
           </div>
         </div>
@@ -376,7 +431,13 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
 
   // Idle state (form)
   return (
-    <Modal open={open} onClose={handleClose} title="Upload Health Record" description="Encrypt and upload your health data to the Aethelred blockchain" size="lg">
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title="Upload Health Record"
+      description="Encrypt and upload your health data to the Aethelred blockchain"
+      size="lg"
+    >
       <div className="space-y-5">
         {/* Error display */}
         {error && (
@@ -407,7 +468,9 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
             onChange={(e) => e.target.files && addFiles(e.target.files)}
             className="hidden"
           />
-          <Upload className={`w-8 h-8 mx-auto mb-3 ${dragActive ? 'text-brand-500' : 'text-slate-400'}`} />
+          <Upload
+            className={`w-8 h-8 mx-auto mb-3 ${dragActive ? 'text-brand-500' : 'text-slate-400'}`}
+          />
           <p className="text-sm font-medium text-slate-900 mb-1">
             {dragActive ? 'Drop files here' : 'Drag & drop files or click to browse'}
           </p>
@@ -424,10 +487,15 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
                 <File className="w-5 h-5 text-brand-500 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-slate-900 truncate">{f.file.name}</p>
-                  <p className="text-xs text-slate-500">{getFileTypeLabel(f.file.name)} &middot; {formatBytes(f.file.size)}</p>
+                  <p className="text-xs text-slate-500">
+                    {getFileTypeLabel(f.file.name)} &middot; {formatBytes(f.file.size)}
+                  </p>
                 </div>
                 <button
-                  onClick={(e) => { e.stopPropagation(); removeFile(f.id); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFile(f.id);
+                  }}
                   className="p-1 rounded-lg hover:bg-slate-200 text-slate-400 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -485,7 +553,11 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
                 {filteredProviders.map((p) => (
                   <button
                     key={p}
-                    onClick={() => { setProvider(p); setProviderSearch(''); setShowProviderDropdown(false); }}
+                    onClick={() => {
+                      setProvider(p);
+                      setProviderSearch('');
+                      setShowProviderDropdown(false);
+                    }}
                     className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                   >
                     {p}
@@ -521,7 +593,12 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
                 type="text"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addTag();
+                  }
+                }}
                 placeholder="Add tag and press Enter"
                 className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
@@ -529,7 +606,10 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {tags.map((tag) => (
-                  <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 bg-brand-50 text-brand-700 rounded-full text-xs">
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-brand-50 text-brand-700 rounded-full text-xs"
+                  >
                     {tag}
                     <button onClick={() => removeTag(tag)} className="hover:text-brand-900">
                       <X className="w-3 h-3" />
@@ -545,7 +625,8 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
         <div className="flex items-center gap-2 p-3 bg-brand-50 border border-brand-200 rounded-xl">
           <Lock className="w-4 h-4 text-brand-600 shrink-0" />
           <p className="text-xs text-brand-700">
-            Files will be encrypted with <strong>AES-256-GCM</strong> before upload. Your encryption keys never leave your device.
+            Files will be encrypted with <strong>AES-256-GCM</strong> before upload. Your encryption
+            keys never leave your device.
           </p>
         </div>
 

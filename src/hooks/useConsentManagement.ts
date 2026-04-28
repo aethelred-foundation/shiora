@@ -154,8 +154,7 @@ export function useConsentManagement(): UseConsentManagementReturn {
   // ---- Create mutation ---------------------------------------------------
 
   const createMutation = useMutation({
-    mutationFn: (form: CreateConsentForm) =>
-      api.post<ConsentGrant>('/api/consent', form),
+    mutationFn: (form: CreateConsentForm) => api.post<ConsentGrant>('/api/consent', form),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CONSENTS_KEY] });
       queryClient.invalidateQueries({ queryKey: [AUDIT_KEY] });
@@ -165,8 +164,7 @@ export function useConsentManagement(): UseConsentManagementReturn {
   // ---- Revoke mutation ---------------------------------------------------
 
   const revokeMutation = useMutation({
-    mutationFn: (id: string) =>
-      api.patch<void>(`/api/consent/${id}`, { action: 'revoke' }),
+    mutationFn: (id: string) => api.patch<void>(`/api/consent/${id}`, { action: 'revoke' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CONSENTS_KEY] });
       queryClient.invalidateQueries({ queryKey: [AUDIT_KEY] });

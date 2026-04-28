@@ -51,14 +51,18 @@ export async function POST(request: NextRequest) {
     }
 
     const seed = Date.now();
-    return successResponse({
-      positionId,
-      claimedAmount: seededInt(seed, 10, 100),
-      claimedAt: Date.now(),
-      txHash: generateTxHash(seed),
-    }, HTTP.OK, {
-      message: 'Rewards claimed successfully.',
-    });
+    return successResponse(
+      {
+        positionId,
+        claimedAmount: seededInt(seed, 10, 100),
+        claimedAt: Date.now(),
+        txHash: generateTxHash(seed),
+      },
+      HTTP.OK,
+      {
+        message: 'Rewards claimed successfully.',
+      },
+    );
   } catch {
     return errorResponse('INVALID_REQUEST', 'Invalid request body', HTTP.BAD_REQUEST);
   }

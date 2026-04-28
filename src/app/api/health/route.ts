@@ -5,7 +5,8 @@
 
 import { NextRequest } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
-import { successResponse } from '@/lib/api/responses';
+import { errorResponse, HTTP, successResponse } from '@/lib/api/responses';
+import { serverEnv } from '@/lib/api/env';
 
 const startTime = Date.now();
 
@@ -15,6 +16,21 @@ export async function GET(request: NextRequest) {
 
   const uptimeMs = Date.now() - startTime;
   const uptimeSeconds = Math.floor(uptimeMs / 1000);
+  const productionReadinessFailures = serverEnv.getProductionReadinessFailures();
+
+  if (serverEnv.isProduction && productionReadinessFailures.length > 0) {
+    return errorResponse(
+      'PRODUCTION_READINESS_FAILED',
+      'Service is not ready for regulated production.',
+      HTTP.SERVICE_UNAVAILABLE,
+      {
+        readiness: {
+          status: 'unready',
+          failureCount: productionReadinessFailures.length,
+        },
+      },
+    );
+  }
 
   return successResponse({
     status: 'healthy',
@@ -28,6 +44,14 @@ export async function GET(request: NextRequest) {
     },
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV ?? 'development',
+    readiness: {
+      status:
+        serverEnv.isProduction && productionReadinessFailures.length === 0
+          ? 'ready'
+          : 'not_applicable',
+      failureCount: productionReadinessFailures.length,
+      ...(serverEnv.isProduction ? {} : { failures: productionReadinessFailures }),
+    },
     features: {
       teeVerification: true,
       ipfsStorage: true,

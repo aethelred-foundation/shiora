@@ -108,14 +108,47 @@ const mockRules = [
 ];
 
 const mockHistory = [
-  { id: 'h-1', alertId: 'alert-1', action: 'triggered' as const, timestamp: Date.now() - 3600000, actor: 'system' },
-  { id: 'h-2', alertId: 'alert-1', action: 'acknowledged' as const, timestamp: Date.now() - 1800000, actor: 'user' },
-  { id: 'h-3', alertId: 'alert-2', action: 'triggered' as const, timestamp: Date.now() - 7200000, actor: 'system' },
-  { id: 'h-4', alertId: 'alert-3', action: 'resolved' as const, timestamp: Date.now() - 5000000, actor: 'user' },
-  { id: 'h-5', alertId: 'alert-2', action: 'escalated' as const, timestamp: Date.now() - 500000, actor: 'system' },
+  {
+    id: 'h-1',
+    alertId: 'alert-1',
+    action: 'triggered' as const,
+    timestamp: Date.now() - 3600000,
+    actor: 'system',
+  },
+  {
+    id: 'h-2',
+    alertId: 'alert-1',
+    action: 'acknowledged' as const,
+    timestamp: Date.now() - 1800000,
+    actor: 'user',
+  },
+  {
+    id: 'h-3',
+    alertId: 'alert-2',
+    action: 'triggered' as const,
+    timestamp: Date.now() - 7200000,
+    actor: 'system',
+  },
+  {
+    id: 'h-4',
+    alertId: 'alert-3',
+    action: 'resolved' as const,
+    timestamp: Date.now() - 5000000,
+    actor: 'user',
+  },
+  {
+    id: 'h-5',
+    alertId: 'alert-2',
+    action: 'escalated' as const,
+    timestamp: Date.now() - 500000,
+    actor: 'system',
+  },
 ];
 
-let mockFilters = { severity: undefined as string | undefined, status: undefined as string | undefined };
+let mockFilters = {
+  severity: undefined as string | undefined,
+  status: undefined as string | undefined,
+};
 
 jest.mock('@/hooks/usePredictiveAlerts', () => ({
   usePredictiveAlerts: () => ({
@@ -161,7 +194,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Health Alert Center')).toBeInTheDocument();
   });
@@ -170,10 +203,10 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(
-      screen.getByText(/AI-powered health monitoring with TEE-verified predictions/)
+      screen.getByText(/AI-powered health monitoring with TEE-verified predictions/),
     ).toBeInTheDocument();
   });
 
@@ -181,7 +214,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const tabLabels = tabs.map((t) => t.textContent);
@@ -194,7 +227,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getAllByText('Active Alerts').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Critical Alerts')).toBeInTheDocument();
@@ -206,7 +239,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Alert Frequency (14 Days)')).toBeInTheDocument();
   });
@@ -215,7 +248,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByRole('button', { name: 'All' })).toBeInTheDocument();
     const criticalButtons = screen.getAllByText(/critical/i);
@@ -226,7 +259,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/Bulk Acknowledge/)).toBeInTheDocument();
   });
@@ -235,7 +268,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const bulkBtn = screen.getByText(/Bulk Acknowledge/);
     fireEvent.click(bulkBtn);
@@ -250,7 +283,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const allBtn = screen.getByRole('button', { name: 'All' });
     fireEvent.click(allBtn);
@@ -262,29 +295,23 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Find the severity filter buttons (the ones in the filter bar, not the metric cards)
     const filterButtons = screen.getAllByRole('button');
-    const criticalFilterBtn = filterButtons.find(
-      (btn) => btn.textContent === 'critical'
-    );
+    const criticalFilterBtn = filterButtons.find((btn) => btn.textContent === 'critical');
     if (criticalFilterBtn) {
       fireEvent.click(criticalFilterBtn);
       expect(mockSetSeverityFilter).toHaveBeenCalled();
     }
 
-    const warningFilterBtn = filterButtons.find(
-      (btn) => btn.textContent === 'warning'
-    );
+    const warningFilterBtn = filterButtons.find((btn) => btn.textContent === 'warning');
     if (warningFilterBtn) {
       fireEvent.click(warningFilterBtn);
       expect(mockSetSeverityFilter).toHaveBeenCalled();
     }
 
-    const infoFilterBtn = filterButtons.find(
-      (btn) => btn.textContent === 'info'
-    );
+    const infoFilterBtn = filterButtons.find((btn) => btn.textContent === 'info');
     if (infoFilterBtn) {
       fireEvent.click(infoFilterBtn);
       expect(mockSetSeverityFilter).toHaveBeenCalled();
@@ -296,12 +323,10 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const filterButtons = screen.getAllByRole('button');
-    const criticalFilterBtn = filterButtons.find(
-      (btn) => btn.textContent === 'critical'
-    );
+    const criticalFilterBtn = filterButtons.find((btn) => btn.textContent === 'critical');
     if (criticalFilterBtn) {
       fireEvent.click(criticalFilterBtn);
       expect(mockSetSeverityFilter).toHaveBeenCalledWith(undefined);
@@ -313,12 +338,10 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const filterButtons = screen.getAllByRole('button');
-    const warningFilterBtn = filterButtons.find(
-      (btn) => btn.textContent === 'warning'
-    );
+    const warningFilterBtn = filterButtons.find((btn) => btn.textContent === 'warning');
     if (warningFilterBtn) {
       fireEvent.click(warningFilterBtn);
       expect(mockSetSeverityFilter).toHaveBeenCalledWith(undefined);
@@ -330,12 +353,10 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const filterButtons = screen.getAllByRole('button');
-    const infoFilterBtn = filterButtons.find(
-      (btn) => btn.textContent === 'info'
-    );
+    const infoFilterBtn = filterButtons.find((btn) => btn.textContent === 'info');
     if (infoFilterBtn) {
       fireEvent.click(infoFilterBtn);
       expect(mockSetSeverityFilter).toHaveBeenCalledWith(undefined);
@@ -346,7 +367,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('High Temperature')).toBeInTheDocument();
     expect(screen.getByText('Elevated Heart Rate')).toBeInTheDocument();
@@ -356,7 +377,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Predictive Health Alerts')).toBeInTheDocument();
     // criticalCount > 0 so the critical badge should render
@@ -367,7 +388,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const activeBadges = screen.getAllByText(/Active/);
     expect(activeBadges.length).toBeGreaterThanOrEqual(1);
@@ -379,7 +400,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const rulesTab = tabs.find((t) => t.textContent?.includes('Rules'));
@@ -393,7 +414,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const rulesTab = tabs.find((t) => t.textContent?.includes('Rules'));
@@ -407,7 +428,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const historyTab = tabs.find((t) => t.textContent?.includes('History'));
@@ -421,7 +442,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const historyTab = tabs.find((t) => t.textContent?.includes('History'));
@@ -433,7 +454,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const historyTab = tabs.find((t) => t.textContent?.includes('History'));
@@ -457,7 +478,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Go to rules tab
     const tabs = screen.getAllByRole('tab');
@@ -479,7 +500,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const rulesTab = tabs.find((t) => t.textContent?.includes('Rules'));
@@ -495,7 +516,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const rulesTab = tabs.find((t) => t.textContent?.includes('Rules'));
@@ -515,7 +536,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const rulesTab = tabs.find((t) => t.textContent?.includes('Rules'));
@@ -535,7 +556,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const rulesTab = tabs.find((t) => t.textContent?.includes('Rules'));
@@ -558,7 +579,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const rulesTab = tabs.find((t) => t.textContent?.includes('Rules'));
@@ -577,7 +598,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const rulesTab = tabs.find((t) => t.textContent?.includes('Rules'));
@@ -589,14 +610,14 @@ describe('AlertsPage', () => {
 
     // Click "critical" severity button (the one inside the modal)
     const criticalBtns = modalSeverityButtons.filter(
-      (btn) => btn.textContent === 'critical' && btn.closest('[class*="fixed"]')
+      (btn) => btn.textContent === 'critical' && btn.closest('[class*="fixed"]'),
     );
     if (criticalBtns.length > 0) {
       fireEvent.click(criticalBtns[0]);
     }
 
     const infoBtns = modalSeverityButtons.filter(
-      (btn) => btn.textContent === 'info' && btn.closest('[class*="fixed"]')
+      (btn) => btn.textContent === 'info' && btn.closest('[class*="fixed"]'),
     );
     if (infoBtns.length > 0) {
       fireEvent.click(infoBtns[0]);
@@ -607,7 +628,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const rulesTab = tabs.find((t) => t.textContent?.includes('Rules'));
@@ -623,7 +644,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const rulesTab = tabs.find((t) => t.textContent?.includes('Rules'));
@@ -633,7 +654,7 @@ describe('AlertsPage', () => {
     // The "Create Rule" button inside the modal (not the tab button)
     const modalButtons = screen.getAllByRole('button');
     const submitBtn = modalButtons.find(
-      (btn) => btn.textContent === 'Create Rule' && btn.closest('[class*="fixed"]')
+      (btn) => btn.textContent === 'Create Rule' && btn.closest('[class*="fixed"]'),
     );
     expect(submitBtn).toBeDefined();
 
@@ -650,7 +671,7 @@ describe('AlertsPage', () => {
           severity: 'warning',
           enabled: true,
           channels: ['in_app'],
-        })
+        }),
       );
     });
   });
@@ -661,7 +682,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
@@ -671,7 +692,7 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Distribution of alerts by severity over time')).toBeInTheDocument();
   });
@@ -680,13 +701,13 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const rulesTab = tabs.find((t) => t.textContent?.includes('Rules'));
     fireEvent.click(rulesTab!);
     expect(
-      screen.getByText('Configure thresholds and notification channels for health metrics')
+      screen.getByText('Configure thresholds and notification channels for health metrics'),
     ).toBeInTheDocument();
   });
 
@@ -694,14 +715,12 @@ describe('AlertsPage', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const historyTab = tabs.find((t) => t.textContent?.includes('History'));
     fireEvent.click(historyTab!);
-    expect(
-      screen.getByText('Timeline of all alert events and actions')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Timeline of all alert events and actions')).toBeInTheDocument();
   });
 });
 
@@ -726,13 +745,21 @@ describe('AlertsPage loading state', () => {
       rules: mockRules,
       history: mockHistory,
       isLoading: false,
-      activeAlertCount: mockAlerts.filter((a: typeof mockAlerts[0]) => !a.acknowledgedAt && !a.resolvedAt).length,
-      criticalCount: mockAlerts.filter((a: typeof mockAlerts[0]) => a.severity === 'critical' && !a.resolvedAt).length,
+      activeAlertCount: mockAlerts.filter(
+        (a: (typeof mockAlerts)[0]) => !a.acknowledgedAt && !a.resolvedAt,
+      ).length,
+      criticalCount: mockAlerts.filter(
+        (a: (typeof mockAlerts)[0]) => a.severity === 'critical' && !a.resolvedAt,
+      ).length,
       filters: mockFilters,
       setSeverityFilter: mockSetSeverityFilter,
       setStatusFilter: mockSetStatusFilter,
       mutations: {
-        createRule: { mutate: mockCreateRuleMutate, mutateAsync: mockCreateRuleMutateAsync, isLoading: false },
+        createRule: {
+          mutate: mockCreateRuleMutate,
+          mutateAsync: mockCreateRuleMutateAsync,
+          isLoading: false,
+        },
         updateRule: { mutate: jest.fn(), isLoading: false },
         toggleRule: { mutate: mockToggleRuleMutate, isLoading: false },
         acknowledgeAlert: { mutate: mockAcknowledgeMutate, isLoading: false },
@@ -745,7 +772,7 @@ describe('AlertsPage loading state', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Loading state shows skeleton cards
     const skeletons = document.querySelectorAll('.skeleton');
@@ -774,13 +801,21 @@ describe('AlertsPage empty alerts', () => {
       rules: mockRules,
       history: mockHistory,
       isLoading: false,
-      activeAlertCount: mockAlerts.filter((a: typeof mockAlerts[0]) => !a.acknowledgedAt && !a.resolvedAt).length,
-      criticalCount: mockAlerts.filter((a: typeof mockAlerts[0]) => a.severity === 'critical' && !a.resolvedAt).length,
+      activeAlertCount: mockAlerts.filter(
+        (a: (typeof mockAlerts)[0]) => !a.acknowledgedAt && !a.resolvedAt,
+      ).length,
+      criticalCount: mockAlerts.filter(
+        (a: (typeof mockAlerts)[0]) => a.severity === 'critical' && !a.resolvedAt,
+      ).length,
       filters: mockFilters,
       setSeverityFilter: mockSetSeverityFilter,
       setStatusFilter: mockSetStatusFilter,
       mutations: {
-        createRule: { mutate: mockCreateRuleMutate, mutateAsync: mockCreateRuleMutateAsync, isLoading: false },
+        createRule: {
+          mutate: mockCreateRuleMutate,
+          mutateAsync: mockCreateRuleMutateAsync,
+          isLoading: false,
+        },
         updateRule: { mutate: jest.fn(), isLoading: false },
         toggleRule: { mutate: mockToggleRuleMutate, isLoading: false },
         acknowledgeAlert: { mutate: mockAcknowledgeMutate, isLoading: false },
@@ -793,7 +828,7 @@ describe('AlertsPage empty alerts', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('All Clear')).toBeInTheDocument();
     expect(screen.getByText('No alerts match your current filters.')).toBeInTheDocument();
@@ -803,7 +838,7 @@ describe('AlertsPage empty alerts', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText(/Bulk Acknowledge/)).not.toBeInTheDocument();
   });
@@ -812,7 +847,7 @@ describe('AlertsPage empty alerts', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // The "N Critical" badge in the hero should not appear
     expect(screen.queryByText(/\d+ Critical/)).not.toBeInTheDocument();
@@ -837,13 +872,21 @@ describe('AlertsPage empty history', () => {
       rules: mockRules,
       history: mockHistory,
       isLoading: false,
-      activeAlertCount: mockAlerts.filter((a: typeof mockAlerts[0]) => !a.acknowledgedAt && !a.resolvedAt).length,
-      criticalCount: mockAlerts.filter((a: typeof mockAlerts[0]) => a.severity === 'critical' && !a.resolvedAt).length,
+      activeAlertCount: mockAlerts.filter(
+        (a: (typeof mockAlerts)[0]) => !a.acknowledgedAt && !a.resolvedAt,
+      ).length,
+      criticalCount: mockAlerts.filter(
+        (a: (typeof mockAlerts)[0]) => a.severity === 'critical' && !a.resolvedAt,
+      ).length,
       filters: mockFilters,
       setSeverityFilter: mockSetSeverityFilter,
       setStatusFilter: mockSetStatusFilter,
       mutations: {
-        createRule: { mutate: mockCreateRuleMutate, mutateAsync: mockCreateRuleMutateAsync, isLoading: false },
+        createRule: {
+          mutate: mockCreateRuleMutate,
+          mutateAsync: mockCreateRuleMutateAsync,
+          isLoading: false,
+        },
         updateRule: { mutate: jest.fn(), isLoading: false },
         toggleRule: { mutate: mockToggleRuleMutate, isLoading: false },
         acknowledgeAlert: { mutate: mockAcknowledgeMutate, isLoading: false },
@@ -856,7 +899,7 @@ describe('AlertsPage empty history', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const historyTab = tabs.find((t) => t.textContent?.includes('History'));
@@ -879,13 +922,11 @@ describe('AlertsPage with severity filter active', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // The critical filter button should have active styling
     const filterButtons = screen.getAllByRole('button');
-    const criticalFilterBtn = filterButtons.find(
-      (btn) => btn.textContent === 'critical'
-    );
+    const criticalFilterBtn = filterButtons.find((btn) => btn.textContent === 'critical');
     expect(criticalFilterBtn).toBeDefined();
     expect(criticalFilterBtn!.className).toContain('bg-red-500');
   });
@@ -904,12 +945,10 @@ describe('AlertsPage with warning severity filter', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const filterButtons = screen.getAllByRole('button');
-    const warningFilterBtn = filterButtons.find(
-      (btn) => btn.textContent === 'warning'
-    );
+    const warningFilterBtn = filterButtons.find((btn) => btn.textContent === 'warning');
     expect(warningFilterBtn).toBeDefined();
     expect(warningFilterBtn!.className).toContain('bg-amber-500');
   });
@@ -928,12 +967,10 @@ describe('AlertsPage with info severity filter', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const filterButtons = screen.getAllByRole('button');
-    const infoFilterBtn = filterButtons.find(
-      (btn) => btn.textContent === 'info'
-    );
+    const infoFilterBtn = filterButtons.find((btn) => btn.textContent === 'info');
     expect(infoFilterBtn).toBeDefined();
     expect(infoFilterBtn!.className).toContain('bg-brand-500');
   });
@@ -971,7 +1008,11 @@ describe('AlertsPage with many alerts', () => {
       setSeverityFilter: mockSetSeverityFilter,
       setStatusFilter: mockSetStatusFilter,
       mutations: {
-        createRule: { mutate: mockCreateRuleMutate, mutateAsync: mockCreateRuleMutateAsync, isLoading: false },
+        createRule: {
+          mutate: mockCreateRuleMutate,
+          mutateAsync: mockCreateRuleMutateAsync,
+          isLoading: false,
+        },
         updateRule: { mutate: jest.fn(), isLoading: false },
         toggleRule: { mutate: mockToggleRuleMutate, isLoading: false },
         acknowledgeAlert: { mutate: mockAcknowledgeMutate, isLoading: false },
@@ -987,13 +1028,21 @@ describe('AlertsPage with many alerts', () => {
       rules: mockRules,
       history: mockHistory,
       isLoading: false,
-      activeAlertCount: mockAlerts.filter((a: typeof mockAlerts[0]) => !a.acknowledgedAt && !a.resolvedAt).length,
-      criticalCount: mockAlerts.filter((a: typeof mockAlerts[0]) => a.severity === 'critical' && !a.resolvedAt).length,
+      activeAlertCount: mockAlerts.filter(
+        (a: (typeof mockAlerts)[0]) => !a.acknowledgedAt && !a.resolvedAt,
+      ).length,
+      criticalCount: mockAlerts.filter(
+        (a: (typeof mockAlerts)[0]) => a.severity === 'critical' && !a.resolvedAt,
+      ).length,
       filters: mockFilters,
       setSeverityFilter: mockSetSeverityFilter,
       setStatusFilter: mockSetStatusFilter,
       mutations: {
-        createRule: { mutate: mockCreateRuleMutate, mutateAsync: mockCreateRuleMutateAsync, isLoading: false },
+        createRule: {
+          mutate: mockCreateRuleMutate,
+          mutateAsync: mockCreateRuleMutateAsync,
+          isLoading: false,
+        },
         updateRule: { mutate: jest.fn(), isLoading: false },
         toggleRule: { mutate: mockToggleRuleMutate, isLoading: false },
         acknowledgeAlert: { mutate: mockAcknowledgeMutate, isLoading: false },
@@ -1006,7 +1055,7 @@ describe('AlertsPage with many alerts', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // With 5 active and 5 critical, the trend values use the > branches
     expect(screen.getByText('Health Alert Center')).toBeInTheDocument();
@@ -1023,13 +1072,21 @@ describe('AlertsPage with createRule loading', () => {
       rules: mockRules,
       history: mockHistory,
       isLoading: false,
-      activeAlertCount: mockAlerts.filter((a: typeof mockAlerts[0]) => !a.acknowledgedAt && !a.resolvedAt).length,
-      criticalCount: mockAlerts.filter((a: typeof mockAlerts[0]) => a.severity === 'critical' && !a.resolvedAt).length,
+      activeAlertCount: mockAlerts.filter(
+        (a: (typeof mockAlerts)[0]) => !a.acknowledgedAt && !a.resolvedAt,
+      ).length,
+      criticalCount: mockAlerts.filter(
+        (a: (typeof mockAlerts)[0]) => a.severity === 'critical' && !a.resolvedAt,
+      ).length,
       filters: mockFilters,
       setSeverityFilter: mockSetSeverityFilter,
       setStatusFilter: mockSetStatusFilter,
       mutations: {
-        createRule: { mutate: mockCreateRuleMutate, mutateAsync: mockCreateRuleMutateAsync, isLoading: true },
+        createRule: {
+          mutate: mockCreateRuleMutate,
+          mutateAsync: mockCreateRuleMutateAsync,
+          isLoading: true,
+        },
         updateRule: { mutate: jest.fn(), isLoading: false },
         toggleRule: { mutate: mockToggleRuleMutate, isLoading: false },
         acknowledgeAlert: { mutate: mockAcknowledgeMutate, isLoading: false },
@@ -1045,13 +1102,21 @@ describe('AlertsPage with createRule loading', () => {
       rules: mockRules,
       history: mockHistory,
       isLoading: false,
-      activeAlertCount: mockAlerts.filter((a: typeof mockAlerts[0]) => !a.acknowledgedAt && !a.resolvedAt).length,
-      criticalCount: mockAlerts.filter((a: typeof mockAlerts[0]) => a.severity === 'critical' && !a.resolvedAt).length,
+      activeAlertCount: mockAlerts.filter(
+        (a: (typeof mockAlerts)[0]) => !a.acknowledgedAt && !a.resolvedAt,
+      ).length,
+      criticalCount: mockAlerts.filter(
+        (a: (typeof mockAlerts)[0]) => a.severity === 'critical' && !a.resolvedAt,
+      ).length,
       filters: mockFilters,
       setSeverityFilter: mockSetSeverityFilter,
       setStatusFilter: mockSetStatusFilter,
       mutations: {
-        createRule: { mutate: mockCreateRuleMutate, mutateAsync: mockCreateRuleMutateAsync, isLoading: false },
+        createRule: {
+          mutate: mockCreateRuleMutate,
+          mutateAsync: mockCreateRuleMutateAsync,
+          isLoading: false,
+        },
         updateRule: { mutate: jest.fn(), isLoading: false },
         toggleRule: { mutate: mockToggleRuleMutate, isLoading: false },
         acknowledgeAlert: { mutate: mockAcknowledgeMutate, isLoading: false },
@@ -1064,7 +1129,7 @@ describe('AlertsPage with createRule loading', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const rulesTab = tabs.find((t) => t.textContent?.includes('Rules'));
@@ -1088,7 +1153,7 @@ describe('AlertsPage with status filter active', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const allBtn = screen.getByRole('button', { name: 'All' });
     expect(allBtn.className).toContain('bg-slate-100');
@@ -1101,7 +1166,7 @@ describe('AlertsPage modal severity CSS branches', () => {
     render(
       <TestWrapper>
         <AlertsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const rulesTab = tabs.find((t) => t.textContent?.includes('Rules'));
@@ -1111,7 +1176,7 @@ describe('AlertsPage modal severity CSS branches', () => {
     // Click critical severity in modal
     const modalBtns = screen.getAllByRole('button');
     const modalCritical = modalBtns.find(
-      (btn) => btn.textContent === 'critical' && btn.closest('[class*="fixed"]')
+      (btn) => btn.textContent === 'critical' && btn.closest('[class*="fixed"]'),
     );
     if (modalCritical) {
       fireEvent.click(modalCritical);
@@ -1120,7 +1185,7 @@ describe('AlertsPage modal severity CSS branches', () => {
 
     // Click warning - it should now be inactive, click to make active
     const modalWarning = modalBtns.find(
-      (btn) => btn.textContent === 'warning' && btn.closest('[class*="fixed"]')
+      (btn) => btn.textContent === 'warning' && btn.closest('[class*="fixed"]'),
     );
     if (modalWarning) {
       fireEvent.click(modalWarning);
@@ -1129,7 +1194,7 @@ describe('AlertsPage modal severity CSS branches', () => {
 
     // Click info to make it active
     const modalInfo = modalBtns.find(
-      (btn) => btn.textContent === 'info' && btn.closest('[class*="fixed"]')
+      (btn) => btn.textContent === 'info' && btn.closest('[class*="fixed"]'),
     );
     if (modalInfo) {
       fireEvent.click(modalInfo);

@@ -101,7 +101,9 @@ const DEFAULT_OVERVIEW: ComplianceOverview = {
 export function useCompliance(): UseComplianceReturn {
   const queryClient = useQueryClient();
   const [auditPage, setAuditPage] = useState(1);
-  const [selectedFramework, setSelectedFrameworkRaw] = useState<ComplianceFrameworkId | null>('hipaa');
+  const [selectedFramework, setSelectedFrameworkRaw] = useState<ComplianceFrameworkId | null>(
+    'hipaa',
+  );
 
   const setSelectedFramework = useCallback((fw: ComplianceFrameworkId) => {
     setSelectedFrameworkRaw(fw);
@@ -123,7 +125,11 @@ export function useCompliance(): UseComplianceReturn {
 
   const auditQuery = useQuery({
     queryKey: [COMPLIANCE_AUDIT_KEY, auditPage],
-    queryFn: () => api.getPaginated<ComplianceAuditEntry>('/api/compliance/audit', { page: auditPage, limit: 20 }),
+    queryFn: () =>
+      api.getPaginated<ComplianceAuditEntry>('/api/compliance/audit', {
+        page: auditPage,
+        limit: 20,
+      }),
     staleTime: 30_000,
     placeholderData: (prev) => prev,
   });
@@ -142,7 +148,8 @@ export function useCompliance(): UseComplianceReturn {
 
   const checksQuery = useQuery({
     queryKey: [COMPLIANCE_CHECKS_KEY, selectedFramework],
-    queryFn: () => api.get<ComplianceCheck[]>('/api/compliance/checks', { framework: selectedFramework! }),
+    queryFn: () =>
+      api.get<ComplianceCheck[]>('/api/compliance/checks', { framework: selectedFramework! }),
     enabled: selectedFramework !== null,
     staleTime: 30_000,
   });
@@ -172,7 +179,11 @@ export function useCompliance(): UseComplianceReturn {
     frameworks: frameworksQuery.data ?? [],
     auditLog: auditQuery.data?.items ?? [],
     auditMeta: auditQuery.data?.meta
-      ? { page: auditQuery.data.meta.page, total: auditQuery.data.meta.total, totalPages: auditQuery.data.meta.totalPages }
+      ? {
+          page: auditQuery.data.meta.page,
+          total: auditQuery.data.meta.total,
+          totalPages: auditQuery.data.meta.totalPages,
+        }
       : null,
     reports: reportsQuery.data ?? [],
     violations: violationsQuery.data ?? [],

@@ -2,15 +2,22 @@
 
 jest.mock('@/lib/api/middleware', () => {
   const actual = jest.requireActual('@/lib/api/middleware');
-  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+  return {
+    ...actual,
+    runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)),
+  };
 });
 
 jest.mock('@/lib/api/store', () => {
   const actual = jest.requireActual('@/lib/api/store');
   return {
     ...actual,
-    listMarketplaceListings: jest.fn((...args: unknown[]) => actual.listMarketplaceListings(...args)),
-    updateMarketplaceListing: jest.fn((...args: unknown[]) => actual.updateMarketplaceListing(...args)),
+    listMarketplaceListings: jest.fn((...args: unknown[]) =>
+      actual.listMarketplaceListings(...args),
+    ),
+    updateMarketplaceListing: jest.fn((...args: unknown[]) =>
+      actual.updateMarketplaceListing(...args),
+    ),
   };
 });
 
@@ -19,13 +26,21 @@ import { runMiddleware } from '@/lib/api/middleware';
 import { listMarketplaceListings, updateMarketplaceListing } from '@/lib/api/store';
 import { GET as listMarketplace, POST as createListing } from '@/app/api/marketplace/route';
 import { GET as getStats } from '@/app/api/marketplace/stats/route';
-import { GET as getListing, POST as purchaseListing, DELETE as deleteListing } from '@/app/api/marketplace/[id]/route';
+import {
+  GET as getListing,
+  POST as purchaseListing,
+  DELETE as deleteListing,
+} from '@/app/api/marketplace/[id]/route';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
 
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
-const mockedListMarketplaceListings = listMarketplaceListings as jest.MockedFunction<typeof listMarketplaceListings>;
-const mockedUpdateMarketplaceListing = updateMarketplaceListing as jest.MockedFunction<typeof updateMarketplaceListing>;
+const mockedListMarketplaceListings = listMarketplaceListings as jest.MockedFunction<
+  typeof listMarketplaceListings
+>;
+const mockedUpdateMarketplaceListing = updateMarketplaceListing as jest.MockedFunction<
+  typeof updateMarketplaceListing
+>;
 const actualStore = jest.requireActual('@/lib/api/store');
 
 afterEach(() => {
@@ -33,8 +48,12 @@ afterEach(() => {
     const actual = jest.requireActual('@/lib/api/middleware');
     return actual.runMiddleware(...args);
   });
-  mockedListMarketplaceListings.mockImplementation((...args: unknown[]) => actualStore.listMarketplaceListings(...args));
-  mockedUpdateMarketplaceListing.mockImplementation((...args: unknown[]) => actualStore.updateMarketplaceListing(...args));
+  mockedListMarketplaceListings.mockImplementation((...args: unknown[]) =>
+    actualStore.listMarketplaceListings(...args),
+  );
+  mockedUpdateMarketplaceListing.mockImplementation((...args: unknown[]) =>
+    actualStore.updateMarketplaceListing(...args),
+  );
 });
 
 const addr = seededAddress(7777);
@@ -60,13 +79,17 @@ function buyerAuthed(url: string, init?: RequestInit): NextRequest {
 
 describe('/api/marketplace', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await listMarketplace(new NextRequest('http://localhost:3000/api/marketplace'));
     expect(res.status).toBe(403);
   });
 
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await createListing(
       authed('http://localhost:3000/api/marketplace', {
         method: 'POST',
@@ -106,7 +129,9 @@ describe('/api/marketplace', () => {
   });
 
   it('GET returns 400 for invalid category', async () => {
-    const req = new NextRequest('http://localhost:3000/api/marketplace?category=totally_fake_category');
+    const req = new NextRequest(
+      'http://localhost:3000/api/marketplace?category=totally_fake_category',
+    );
     const res = await listMarketplace(req);
     expect(res.status).toBe(400);
     const body = await res.json();
@@ -230,7 +255,9 @@ describe('/api/marketplace', () => {
 
 describe('/api/marketplace/stats', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await getStats(new NextRequest('http://localhost:3000/api/marketplace/stats'));
     expect(res.status).toBe(403);
   });
@@ -259,16 +286,19 @@ describe('/api/marketplace/stats', () => {
 
 describe('/api/marketplace/[id]', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await getListing(
-      new NextRequest('http://localhost:3000/api/marketplace/any-id'),
-      { params: Promise.resolve({ id: 'any-id' }) },
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
     );
+    const res = await getListing(new NextRequest('http://localhost:3000/api/marketplace/any-id'), {
+      params: Promise.resolve({ id: 'any-id' }),
+    });
     expect(res.status).toBe(403);
   });
 
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await purchaseListing(
       authed('http://localhost:3000/api/marketplace/any-id', { method: 'POST' }),
       { params: Promise.resolve({ id: 'any-id' }) },
@@ -277,7 +307,9 @@ describe('/api/marketplace/[id]', () => {
   });
 
   it('DELETE returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await deleteListing(
       authed('http://localhost:3000/api/marketplace/any-id', { method: 'DELETE' }),
       { params: Promise.resolve({ id: 'any-id' }) },
@@ -354,7 +386,9 @@ describe('/api/marketplace/[id]', () => {
   it('POST returns 401 from inner requireAuth when middleware is bypassed', async () => {
     mockedRunMiddleware.mockReturnValueOnce(null);
     const res = await purchaseListing(
-      new NextRequest(`http://localhost:3000/api/marketplace/${activeListingId}`, { method: 'POST' }),
+      new NextRequest(`http://localhost:3000/api/marketplace/${activeListingId}`, {
+        method: 'POST',
+      }),
       { params: Promise.resolve({ id: activeListingId }) },
     );
     expect(res.status).toBe(401);
@@ -362,7 +396,9 @@ describe('/api/marketplace/[id]', () => {
 
   it('POST returns 401 when unauthenticated', async () => {
     const res = await purchaseListing(
-      new NextRequest(`http://localhost:3000/api/marketplace/${activeListingId}`, { method: 'POST' }),
+      new NextRequest(`http://localhost:3000/api/marketplace/${activeListingId}`, {
+        method: 'POST',
+      }),
       { params: Promise.resolve({ id: activeListingId }) },
     );
     expect(res.status).toBe(401);
@@ -414,7 +450,9 @@ describe('/api/marketplace/[id]', () => {
   it('DELETE returns 401 from inner requireAuth when middleware is bypassed', async () => {
     mockedRunMiddleware.mockReturnValueOnce(null);
     const res = await deleteListing(
-      new NextRequest(`http://localhost:3000/api/marketplace/${activeListingId}`, { method: 'DELETE' }),
+      new NextRequest(`http://localhost:3000/api/marketplace/${activeListingId}`, {
+        method: 'DELETE',
+      }),
       { params: Promise.resolve({ id: activeListingId }) },
     );
     expect(res.status).toBe(401);
@@ -422,7 +460,9 @@ describe('/api/marketplace/[id]', () => {
 
   it('DELETE returns 401 when unauthenticated', async () => {
     const res = await deleteListing(
-      new NextRequest(`http://localhost:3000/api/marketplace/${activeListingId}`, { method: 'DELETE' }),
+      new NextRequest(`http://localhost:3000/api/marketplace/${activeListingId}`, {
+        method: 'DELETE',
+      }),
       { params: Promise.resolve({ id: activeListingId }) },
     );
     expect(res.status).toBe(401);

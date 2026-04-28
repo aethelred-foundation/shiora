@@ -31,23 +31,13 @@ describe('EmptyState', () => {
   });
 
   it('renders custom icon', () => {
-    render(
-      <EmptyState
-        title="Empty"
-        icon={<span data-testid="custom-icon">IC</span>}
-      />
-    );
+    render(<EmptyState title="Empty" icon={<span data-testid="custom-icon">IC</span>} />);
     expect(screen.getByTestId('custom-icon')).toBeInTheDocument();
   });
 
   it('renders primary action button and calls onClick', () => {
     const onClick = jest.fn();
-    render(
-      <EmptyState
-        title="Empty"
-        action={{ label: 'Upload', onClick }}
-      />
-    );
+    render(<EmptyState title="Empty" action={{ label: 'Upload', onClick }} />);
     const button = screen.getByText('Upload');
     expect(button).toBeInTheDocument();
     fireEvent.click(button);
@@ -56,12 +46,7 @@ describe('EmptyState', () => {
 
   it('renders secondary action button and calls onClick', () => {
     const onClick = jest.fn();
-    render(
-      <EmptyState
-        title="Empty"
-        secondaryAction={{ label: 'Learn More', onClick }}
-      />
-    );
+    render(<EmptyState title="Empty" secondaryAction={{ label: 'Learn More', onClick }} />);
     const button = screen.getByText('Learn More');
     expect(button).toBeInTheDocument();
     fireEvent.click(button);
@@ -74,7 +59,7 @@ describe('EmptyState', () => {
         title="Empty"
         action={{ label: 'Upload', onClick: jest.fn() }}
         secondaryAction={{ label: 'Cancel', onClick: jest.fn() }}
-      />
+      />,
     );
     expect(screen.getByText('Upload')).toBeInTheDocument();
     expect(screen.getByText('Cancel')).toBeInTheDocument();

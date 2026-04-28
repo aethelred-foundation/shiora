@@ -9,24 +9,67 @@
 
 import { useState, useMemo } from 'react';
 import {
-  FolderLock, Upload, Search, Filter, Download, Eye,
-  TestTube2, ScanLine, Pill, HeartPulse, FileText,
-  Lock, ShieldCheck, Clock, HardDrive, Layers,
-  ChevronDown, ChevronRight, CheckCircle, ArrowUpDown,
-  Hash, ExternalLink, Grid3X3, List,
+  FolderLock,
+  Upload,
+  Search,
+  Filter,
+  Download,
+  Eye,
+  TestTube2,
+  ScanLine,
+  Pill,
+  HeartPulse,
+  FileText,
+  Lock,
+  ShieldCheck,
+  Clock,
+  HardDrive,
+  Layers,
+  ChevronDown,
+  ChevronRight,
+  CheckCircle,
+  ArrowUpDown,
+  Hash,
+  ExternalLink,
+  Grid3X3,
+  List,
 } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
-import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, Tabs, Modal } from '@/components/ui/SharedComponents';
 import {
-  MedicalCard, HealthMetricCard, SectionHeader, StatusBadge,
-  EncryptionBadge, TEEBadge, TruncatedHash, CopyButton,
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  Tabs,
+  Modal,
+} from '@/components/ui/SharedComponents';
+import {
+  MedicalCard,
+  HealthMetricCard,
+  SectionHeader,
+  StatusBadge,
+  EncryptionBadge,
+  TEEBadge,
+  TruncatedHash,
+  CopyButton,
 } from '@/components/ui/PagePrimitives';
 import { BRAND, RECORD_TYPES, PROVIDER_NAMES } from '@/lib/constants';
 import {
-  seededRandom, seededInt, seededHex, seededPick, seededAddress,
-  formatNumber, formatBytes, formatDate, formatDateTime,
-  timeAgo, generateCID, generateTxHash, generateAttestation,
+  seededRandom,
+  seededInt,
+  seededHex,
+  seededPick,
+  seededAddress,
+  formatNumber,
+  formatBytes,
+  formatDate,
+  formatDateTime,
+  timeAgo,
+  generateCID,
+  generateTxHash,
+  generateAttestation,
 } from '@/lib/utils';
 
 // ============================================================
@@ -59,14 +102,61 @@ interface HealthRecord {
 const SEED = 200;
 
 const TYPE_DESCRIPTIONS: Record<string, string[]> = {
-  lab_result: ['Complete Blood Count', 'Thyroid Panel (TSH, T3, T4)', 'Lipid Panel', 'Hemoglobin A1C', 'Hormone Panel (Estradiol, Progesterone)', 'Comprehensive Metabolic Panel', 'Iron Studies', 'Vitamin D Level'],
-  imaging: ['Pelvic Ultrasound', 'Mammogram Bilateral', 'Transvaginal Sonogram', 'Bone Density Scan', 'MRI Pelvis', 'HSG Report'],
-  prescription: ['Estradiol 2mg Oral', 'Progesterone 200mg', 'Levothyroxine 50mcg', 'Prenatal Vitamins', 'Metformin 500mg'],
-  vitals: ['Blood Pressure Reading', 'Weight & BMI Check', 'Heart Rate Monitoring', 'Oxygen Saturation', 'Temperature Log'],
-  notes: ['Annual Exam Notes', 'Follow-up Visit Summary', 'Pre-conception Consultation', 'Specialist Referral', 'Treatment Plan Update'],
+  lab_result: [
+    'Complete Blood Count',
+    'Thyroid Panel (TSH, T3, T4)',
+    'Lipid Panel',
+    'Hemoglobin A1C',
+    'Hormone Panel (Estradiol, Progesterone)',
+    'Comprehensive Metabolic Panel',
+    'Iron Studies',
+    'Vitamin D Level',
+  ],
+  imaging: [
+    'Pelvic Ultrasound',
+    'Mammogram Bilateral',
+    'Transvaginal Sonogram',
+    'Bone Density Scan',
+    'MRI Pelvis',
+    'HSG Report',
+  ],
+  prescription: [
+    'Estradiol 2mg Oral',
+    'Progesterone 200mg',
+    'Levothyroxine 50mcg',
+    'Prenatal Vitamins',
+    'Metformin 500mg',
+  ],
+  vitals: [
+    'Blood Pressure Reading',
+    'Weight & BMI Check',
+    'Heart Rate Monitoring',
+    'Oxygen Saturation',
+    'Temperature Log',
+  ],
+  notes: [
+    'Annual Exam Notes',
+    'Follow-up Visit Summary',
+    'Pre-conception Consultation',
+    'Specialist Referral',
+    'Treatment Plan Update',
+  ],
 };
 
-const TAGS_POOL = ['routine', 'urgent', 'follow-up', 'annual', 'specialist', 'lab', 'imaging', 'medication', 'monitoring', 'fertility', 'prenatal', 'postpartum'];
+const TAGS_POOL = [
+  'routine',
+  'urgent',
+  'follow-up',
+  'annual',
+  'specialist',
+  'lab',
+  'imaging',
+  'medication',
+  'monitoring',
+  'fertility',
+  'prenatal',
+  'postpartum',
+];
 
 function generateRecords(): HealthRecord[] {
   const types = ['lab_result', 'imaging', 'prescription', 'vitals', 'notes'] as const;
@@ -91,7 +181,12 @@ function generateRecords(): HealthRecord[] {
       attestation: generateAttestation(SEED + i * 40),
       size: seededInt(SEED + i * 11, 20, 2000) * 1024,
       provider: seededPick(SEED + i * 13, PROVIDER_NAMES),
-      status: i < 2 ? 'Processing' : i < 4 ? 'Pinning' : seededPick(SEED + i * 9, ['Verified', 'Pinned'] as const),
+      status:
+        i < 2
+          ? 'Processing'
+          : i < 4
+            ? 'Pinning'
+            : seededPick(SEED + i * 9, ['Verified', 'Pinned'] as const),
       ipfsNodes: seededInt(SEED + i * 17, 12, 64),
       tags: [TAGS_POOL[i % TAGS_POOL.length], TAGS_POOL[(i + 3) % TAGS_POOL.length]],
     };
@@ -126,7 +221,15 @@ const TYPE_LABELS: Record<string, string> = {
   notes: 'Clinical Notes',
 };
 
-function RecordDetailModal({ record, open, onClose }: { record: HealthRecord | null; open: boolean; onClose: () => void }) {
+function RecordDetailModal({
+  record,
+  open,
+  onClose,
+}: {
+  record: HealthRecord | null;
+  open: boolean;
+  onClose: () => void;
+}) {
   if (!record) return null;
 
   return (
@@ -134,7 +237,9 @@ function RecordDetailModal({ record, open, onClose }: { record: HealthRecord | n
       <div className="space-y-5">
         {/* Header */}
         <div className="flex items-start gap-4">
-          <div className={`w-12 h-12 rounded-xl ${TYPE_COLORS[record.type]} flex items-center justify-center`}>
+          <div
+            className={`w-12 h-12 rounded-xl ${TYPE_COLORS[record.type]} flex items-center justify-center`}
+          >
             {ICON_MAP[record.type]}
           </div>
           <div className="flex-1">
@@ -156,7 +261,9 @@ function RecordDetailModal({ record, open, onClose }: { record: HealthRecord | n
           </div>
           <div className="bg-slate-50 rounded-xl p-3">
             <p className="text-xs text-slate-400 mb-1">Upload Date</p>
-            <p className="text-sm font-medium text-slate-900">{formatDateTime(record.uploadDate)}</p>
+            <p className="text-sm font-medium text-slate-900">
+              {formatDateTime(record.uploadDate)}
+            </p>
           </div>
           <div className="bg-slate-50 rounded-xl p-3">
             <p className="text-xs text-slate-400 mb-1">File Size</p>
@@ -192,7 +299,9 @@ function RecordDetailModal({ record, open, onClose }: { record: HealthRecord | n
           <h5 className="text-sm font-semibold text-slate-900 mb-2">Tags</h5>
           <div className="flex flex-wrap gap-2">
             {record.tags.map((tag) => (
-              <Badge key={tag} variant="info">{tag}</Badge>
+              <Badge key={tag} variant="info">
+                {tag}
+              </Badge>
             ))}
           </div>
         </div>
@@ -201,8 +310,9 @@ function RecordDetailModal({ record, open, onClose }: { record: HealthRecord | n
         <div className="p-3 bg-emerald-50 rounded-xl flex items-start gap-2">
           <ShieldCheck className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
           <p className="text-xs text-emerald-700">
-            This record is encrypted with {record.encryption} and stored on IPFS across {record.ipfsNodes} nodes.
-            The TEE attestation proves this record was processed inside an Intel SGX enclave.
+            This record is encrypted with {record.encryption} and stored on IPFS across{' '}
+            {record.ipfsNodes} nodes. The TEE attestation proves this record was processed inside an
+            Intel SGX enclave.
           </p>
         </div>
       </div>
@@ -229,9 +339,17 @@ export default function RecordsPage() {
 
   const typeTabs = [
     { id: 'all', label: 'All', count: records.length },
-    { id: 'lab_result', label: 'Labs', count: records.filter((r) => r.type === 'lab_result').length },
+    {
+      id: 'lab_result',
+      label: 'Labs',
+      count: records.filter((r) => r.type === 'lab_result').length,
+    },
     { id: 'imaging', label: 'Imaging', count: records.filter((r) => r.type === 'imaging').length },
-    { id: 'prescription', label: 'Rx', count: records.filter((r) => r.type === 'prescription').length },
+    {
+      id: 'prescription',
+      label: 'Rx',
+      count: records.filter((r) => r.type === 'prescription').length,
+    },
     { id: 'vitals', label: 'Vitals', count: records.filter((r) => r.type === 'vitals').length },
     { id: 'notes', label: 'Notes', count: records.filter((r) => r.type === 'notes').length },
   ];
@@ -241,10 +359,11 @@ export default function RecordsPage() {
     if (activeType !== 'all') result = result.filter((r) => r.type === activeType);
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      result = result.filter((r) =>
-        r.label.toLowerCase().includes(q) ||
-        r.provider.toLowerCase().includes(q) ||
-        r.tags.some((t) => t.includes(q))
+      result = result.filter(
+        (r) =>
+          r.label.toLowerCase().includes(q) ||
+          r.provider.toLowerCase().includes(q) ||
+          r.tags.some((t) => t.includes(q)),
       );
     }
     result = [...result].sort((a, b) => {
@@ -258,7 +377,10 @@ export default function RecordsPage() {
 
   const toggleSort = (field: typeof sortField) => {
     if (sortField === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    else { setSortField(field); setSortDir('desc'); }
+    else {
+      setSortField(field);
+      setSortDir('desc');
+    }
   };
 
   const openDetail = (record: HealthRecord) => {
@@ -274,7 +396,6 @@ export default function RecordsPage() {
 
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-
           {/* ─── Header ─── */}
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
             <div>
@@ -323,7 +444,9 @@ export default function RecordsPage() {
                 </div>
                 <div>
                   <p className="text-xs text-slate-500">Storage Used</p>
-                  <p className="text-xl font-bold text-slate-900">{formatBytes(healthData.storageUsed)}</p>
+                  <p className="text-xl font-bold text-slate-900">
+                    {formatBytes(healthData.storageUsed)}
+                  </p>
                 </div>
               </div>
             </MedicalCard>
@@ -382,28 +505,42 @@ export default function RecordsPage() {
                 <table className="min-w-full divide-y divide-slate-100">
                   <thead>
                     <tr className="bg-slate-50/80">
-                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Type</th>
+                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Type
+                      </th>
                       <th
                         className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:text-slate-700"
                         onClick={() => toggleSort('label')}
                       >
-                        <span className="inline-flex items-center gap-1">Record <ArrowUpDown className="w-3 h-3" /></span>
+                        <span className="inline-flex items-center gap-1">
+                          Record <ArrowUpDown className="w-3 h-3" />
+                        </span>
                       </th>
-                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Provider</th>
+                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Provider
+                      </th>
                       <th
                         className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:text-slate-700"
                         onClick={() => toggleSort('date')}
                       >
-                        <span className="inline-flex items-center gap-1">Date <ArrowUpDown className="w-3 h-3" /></span>
+                        <span className="inline-flex items-center gap-1">
+                          Date <ArrowUpDown className="w-3 h-3" />
+                        </span>
                       </th>
                       <th
                         className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:text-slate-700"
                         onClick={() => toggleSort('size')}
                       >
-                        <span className="inline-flex items-center gap-1">Size <ArrowUpDown className="w-3 h-3" /></span>
+                        <span className="inline-flex items-center gap-1">
+                          Size <ArrowUpDown className="w-3 h-3" />
+                        </span>
                       </th>
-                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Security</th>
+                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        Security
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -414,7 +551,9 @@ export default function RecordsPage() {
                         onClick={() => openDetail(record)}
                       >
                         <td className="px-5 py-3">
-                          <div className={`w-8 h-8 rounded-lg ${TYPE_COLORS[record.type]} flex items-center justify-center`}>
+                          <div
+                            className={`w-8 h-8 rounded-lg ${TYPE_COLORS[record.type]} flex items-center justify-center`}
+                          >
                             {ICON_MAP[record.type]}
                           </div>
                         </td>
@@ -425,7 +564,9 @@ export default function RecordsPage() {
                           </div>
                         </td>
                         <td className="px-5 py-3">
-                          <p className="text-sm text-slate-600 max-w-[200px] truncate">{record.provider}</p>
+                          <p className="text-sm text-slate-600 max-w-[200px] truncate">
+                            {record.provider}
+                          </p>
                         </td>
                         <td className="px-5 py-3">
                           <p className="text-sm text-slate-600">{formatDate(record.date)}</p>
@@ -456,9 +597,15 @@ export default function RecordsPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filtered.map((record) => (
-                <MedicalCard key={record.id} onClick={() => openDetail(record)} className="cursor-pointer">
+                <MedicalCard
+                  key={record.id}
+                  onClick={() => openDetail(record)}
+                  className="cursor-pointer"
+                >
                   <div className="flex items-start justify-between mb-3">
-                    <div className={`w-10 h-10 rounded-xl ${TYPE_COLORS[record.type]} flex items-center justify-center`}>
+                    <div
+                      className={`w-10 h-10 rounded-xl ${TYPE_COLORS[record.type]} flex items-center justify-center`}
+                    >
                       {ICON_MAP[record.type]}
                     </div>
                     <StatusBadge status={record.status} />
@@ -494,7 +641,11 @@ export default function RecordsPage() {
       <Footer />
 
       {/* Detail Modal */}
-      <RecordDetailModal record={selectedRecord} open={detailOpen} onClose={() => setDetailOpen(false)} />
+      <RecordDetailModal
+        record={selectedRecord}
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+      />
     </>
   );
 }

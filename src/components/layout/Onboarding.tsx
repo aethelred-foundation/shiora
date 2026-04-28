@@ -9,10 +9,22 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  Heart, Wallet, Key, Cpu, Upload, CheckCircle,
-  ChevronRight, ChevronLeft, Shield, ShieldCheck,
-  Lock, ArrowRight, Sparkles, Fingerprint,
-  Globe, Compass,
+  Heart,
+  Wallet,
+  Key,
+  Cpu,
+  Upload,
+  CheckCircle,
+  ChevronRight,
+  ChevronLeft,
+  Shield,
+  ShieldCheck,
+  Lock,
+  ArrowRight,
+  Sparkles,
+  Fingerprint,
+  Globe,
+  Compass,
 } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
@@ -61,8 +73,7 @@ function StepWelcome() {
 
       <h2 className="text-3xl font-bold text-slate-900 mb-3">Welcome to Shiora</h2>
       <p className="text-base text-slate-500 max-w-md mx-auto mb-8">
-        Your sovereign health data platform powered by TEE-verified AI
-        on the Aethelred blockchain.
+        Your sovereign health data platform powered by TEE-verified AI on the Aethelred blockchain.
       </p>
 
       {/* Feature highlights */}
@@ -87,7 +98,13 @@ function StepWelcome() {
   );
 }
 
-function StepConnectWallet({ wallet, connectWallet }: { wallet: { connected: boolean; address: string }; connectWallet: (provider?: 'keplr' | 'leap') => void | Promise<void> }) {
+function StepConnectWallet({
+  wallet,
+  connectWallet,
+}: {
+  wallet: { connected: boolean; address: string };
+  connectWallet: (provider?: 'keplr' | 'leap') => void | Promise<void>;
+}) {
   return (
     <div className="text-center">
       <div className="w-16 h-16 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto mb-6">
@@ -107,42 +124,52 @@ function StepConnectWallet({ wallet, connectWallet }: { wallet: { connected: boo
                 <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
                 <div className="text-left">
                   <p className="text-sm font-medium text-emerald-900">Wallet Connected</p>
-                  <p className="text-xs font-mono text-emerald-700 mt-0.5">{truncateAddress(wallet.address, 12, 8)}</p>
+                  <p className="text-xs font-mono text-emerald-700 mt-0.5">
+                    {truncateAddress(wallet.address, 12, 8)}
+                  </p>
                 </div>
               </div>
             </div>
           );
         }
         return (
-        <div className="max-w-sm mx-auto space-y-3">
-          <button
-            onClick={() => { connectWallet('keplr')?.catch(() => { /* error handled by useWallet */ }); }}
-            className="w-full flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-brand-300 hover:bg-brand-50 transition-colors text-left"
-          >
-            <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
-              <Globe className="w-5 h-5 text-orange-600" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-900">Keplr Wallet</p>
-              <p className="text-xs text-slate-500">Cosmos ecosystem wallet</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-400 ml-auto" />
-          </button>
+          <div className="max-w-sm mx-auto space-y-3">
+            <button
+              onClick={() => {
+                connectWallet('keplr')?.catch(() => {
+                  /* error handled by useWallet */
+                });
+              }}
+              className="w-full flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-brand-300 hover:bg-brand-50 transition-colors text-left"
+            >
+              <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
+                <Globe className="w-5 h-5 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Keplr Wallet</p>
+                <p className="text-xs text-slate-500">Cosmos ecosystem wallet</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400 ml-auto" />
+            </button>
 
-          <button
-            onClick={() => { connectWallet('leap')?.catch(() => { /* error handled by useWallet */ }); }}
-            className="w-full flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-brand-300 hover:bg-brand-50 transition-colors text-left"
-          >
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
-              <Compass className="w-5 h-5 text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-900">Leap Wallet</p>
-              <p className="text-xs text-slate-500">Cosmos ecosystem wallet</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-400 ml-auto" />
-          </button>
-        </div>
+            <button
+              onClick={() => {
+                connectWallet('leap')?.catch(() => {
+                  /* error handled by useWallet */
+                });
+              }}
+              className="w-full flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-brand-300 hover:bg-brand-50 transition-colors text-left"
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+                <Compass className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Leap Wallet</p>
+                <p className="text-xs text-slate-500">Cosmos ecosystem wallet</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400 ml-auto" />
+            </button>
+          </div>
         );
       })()}
     </div>
@@ -167,7 +194,8 @@ function StepEncryptionKeys() {
       </div>
       <h2 className="text-2xl font-bold text-slate-900 mb-2">Set Up Encryption Keys</h2>
       <p className="text-sm text-slate-500 max-w-md mx-auto mb-8">
-        Generate your personal encryption keys. These keys ensure only you can decrypt your health data.
+        Generate your personal encryption keys. These keys ensure only you can decrypt your health
+        data.
       </p>
 
       <div className="max-w-sm mx-auto">
@@ -177,7 +205,9 @@ function StepEncryptionKeys() {
               <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
               <div className="text-left">
                 <p className="text-sm font-medium text-emerald-900">Encryption Keys Generated</p>
-                <p className="text-xs text-emerald-700 mt-0.5">AES-256-GCM keys stored securely in your browser</p>
+                <p className="text-xs text-emerald-700 mt-0.5">
+                  AES-256-GCM keys stored securely in your browser
+                </p>
               </div>
             </div>
             <div className="bg-slate-50 rounded-xl p-4 text-left space-y-2">
@@ -191,7 +221,9 @@ function StepEncryptionKeys() {
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-500">Status</span>
-                <Badge variant="success" dot>Active</Badge>
+                <Badge variant="success" dot>
+                  Active
+                </Badge>
               </div>
             </div>
           </div>
@@ -219,7 +251,8 @@ function StepEncryptionKeys() {
           <div className="flex items-start gap-2">
             <Shield className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
             <p className="text-xs text-amber-700">
-              Your encryption keys are generated locally and never transmitted. Back up your keys securely -- losing them means losing access to your data.
+              Your encryption keys are generated locally and never transmitted. Back up your keys
+              securely -- losing them means losing access to your data.
             </p>
           </div>
         </div>
@@ -232,9 +265,12 @@ function StepTEEPreference() {
   const [selectedPlatform, setSelectedPlatform] = useState('Intel SGX');
 
   const platformDescriptions: Record<string, string> = {
-    'Intel SGX': 'Industry-standard with hardware-level memory isolation. Recommended for most users.',
-    'AWS Nitro': 'Cloud-native enclaves with strong AWS integration. Ideal for scalable deployments.',
-    'AMD SEV': 'Secure Encrypted Virtualization for VM-level isolation. Best for virtualized environments.',
+    'Intel SGX':
+      'Industry-standard with hardware-level memory isolation. Recommended for most users.',
+    'AWS Nitro':
+      'Cloud-native enclaves with strong AWS integration. Ideal for scalable deployments.',
+    'AMD SEV':
+      'Secure Encrypted Virtualization for VM-level isolation. Best for virtualized environments.',
   };
 
   return (
@@ -244,8 +280,8 @@ function StepTEEPreference() {
       </div>
       <h2 className="text-2xl font-bold text-slate-900 mb-2">Choose TEE Enclave</h2>
       <p className="text-sm text-slate-500 max-w-md mx-auto mb-8">
-        Select the Trusted Execution Environment for your health AI computations.
-        All AI runs exclusively inside these secure enclaves.
+        Select the Trusted Execution Environment for your health AI computations. All AI runs
+        exclusively inside these secure enclaves.
       </p>
 
       <div className="max-w-md mx-auto space-y-3">
@@ -260,7 +296,9 @@ function StepTEEPreference() {
             }`}
           >
             <div className="flex items-center gap-3">
-              <Cpu className={`w-5 h-5 ${selectedPlatform === platform ? 'text-brand-600' : 'text-slate-400'}`} />
+              <Cpu
+                className={`w-5 h-5 ${selectedPlatform === platform ? 'text-brand-600' : 'text-slate-400'}`}
+              />
               <div>
                 <p className="text-sm font-semibold text-slate-900">{platform}</p>
                 <p className="text-xs text-slate-500">{platformDescriptions[platform]}</p>
@@ -294,7 +332,8 @@ function StepImportRecords() {
       </div>
       <h2 className="text-2xl font-bold text-slate-900 mb-2">Import Health Records</h2>
       <p className="text-sm text-slate-500 max-w-md mx-auto mb-8">
-        Import your existing health records from other platforms. This step is optional and can be done later.
+        Import your existing health records from other platforms. This step is optional and can be
+        done later.
       </p>
 
       <div className="max-w-sm mx-auto">
@@ -303,7 +342,9 @@ function StepImportRecords() {
             <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
             <div className="text-left">
               <p className="text-sm font-medium text-emerald-900">Records Ready for Import</p>
-              <p className="text-xs text-emerald-700 mt-0.5">Your records will be encrypted and uploaded after setup</p>
+              <p className="text-xs text-emerald-700 mt-0.5">
+                Your records will be encrypted and uploaded after setup
+              </p>
             </div>
           </div>
         ) : (
@@ -343,8 +384,8 @@ function StepComplete() {
       </div>
       <h2 className="text-3xl font-bold text-slate-900 mb-3">You&apos;re All Set!</h2>
       <p className="text-base text-slate-500 max-w-md mx-auto mb-8">
-        Your Shiora on Aethelred account is configured and ready. Your health data is protected
-        by end-to-end encryption and TEE-verified AI on the Aethelred blockchain.
+        Your Shiora on Aethelred account is configured and ready. Your health data is protected by
+        end-to-end encryption and TEE-verified AI on the Aethelred blockchain.
       </p>
 
       <div className="max-w-sm mx-auto space-y-3 mb-8">
@@ -354,7 +395,10 @@ function StepComplete() {
           { label: 'TEE enclave selected', icon: Cpu, color: 'text-emerald-500' },
           { label: 'Ready to go', icon: CheckCircle, color: 'text-emerald-500' },
         ].map((item) => (
-          <div key={item.label} className="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl text-left">
+          <div
+            key={item.label}
+            className="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl text-left"
+          >
             <item.icon className={`w-5 h-5 ${item.color} shrink-0`} />
             <span className="text-sm font-medium text-emerald-900">{item.label}</span>
           </div>
@@ -380,7 +424,9 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       if (completed === 'true') {
         onComplete();
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [onComplete]);
 
   const goNext = useCallback(() => {
@@ -388,7 +434,11 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       setCurrentStep((s) => (s + 1) as OnboardingStep);
     } else {
       // Persist completion
-      try { localStorage.setItem(STORAGE_KEY, 'true'); } catch { /* ignore */ }
+      try {
+        localStorage.setItem(STORAGE_KEY, 'true');
+      } catch {
+        /* ignore */
+      }
       onComplete();
     }
   }, [currentStep, onComplete]);
@@ -400,7 +450,11 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   }, [currentStep]);
 
   const skipOnboarding = useCallback(() => {
-    try { localStorage.setItem(STORAGE_KEY, 'true'); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(STORAGE_KEY, 'true');
+    } catch {
+      /* ignore */
+    }
     onComplete();
   }, [onComplete]);
 
@@ -411,7 +465,14 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center">
             <svg viewBox="0 0 24 24" className="w-5 h-5">
-              <path d="M 15 4 C 10 4 6 7.5 6 12 C 6 16.5 10 20 15 20 C 17 20 18.5 19.2 18.5 19.2" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              <path
+                d="M 15 4 C 10 4 6 7.5 6 12 C 6 16.5 10 20 15 20 C 17 20 18.5 19.2 18.5 19.2"
+                stroke="white"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
             </svg>
           </div>
           <span className="text-lg font-bold text-slate-900">Shiora</span>
@@ -435,8 +496,8 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               i + 1 === currentStep
                 ? 'w-8 bg-brand-500'
                 : i + 1 < currentStep
-                ? 'w-1.5 bg-brand-300'
-                : 'w-1.5 bg-slate-200'
+                  ? 'w-1.5 bg-brand-300'
+                  : 'w-1.5 bg-slate-200'
             }`}
           />
         ))}

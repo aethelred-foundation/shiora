@@ -16,8 +16,11 @@ import type { StakingStats } from '@/types';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return React.createElement(QueryClientProvider, { client: qc },
-    React.createElement(AppProvider, null, children));
+  return React.createElement(
+    QueryClientProvider,
+    { client: qc },
+    React.createElement(AppProvider, null, children),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -43,7 +46,7 @@ describe('StakePanel', () => {
     render(
       <TestWrapper>
         <StakePanel stats={mockStakingStats} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getAllByText('Stake AETHEL').length).toBeGreaterThan(0);
   });
@@ -52,7 +55,7 @@ describe('StakePanel', () => {
     render(
       <TestWrapper>
         <StakePanel stats={mockStakingStats} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('12.5% APY')).toBeInTheDocument();
   });
@@ -61,7 +64,7 @@ describe('StakePanel', () => {
     render(
       <TestWrapper>
         <StakePanel stats={mockStakingStats} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('100')).toBeInTheDocument();
   });
@@ -70,7 +73,7 @@ describe('StakePanel', () => {
     render(
       <TestWrapper>
         <StakePanel stats={mockStakingStats} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('7d')).toBeInTheDocument();
   });
@@ -79,7 +82,7 @@ describe('StakePanel', () => {
     render(
       <TestWrapper>
         <StakePanel stats={mockStakingStats} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByRole('button', { name: /Stake AETHEL/ })).toBeInTheDocument();
   });
@@ -88,7 +91,7 @@ describe('StakePanel', () => {
     render(
       <TestWrapper>
         <StakePanel stats={mockStakingStats} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const button = screen.getByRole('button', { name: /Stake AETHEL/ });
     expect(button).toBeDisabled();
@@ -98,7 +101,7 @@ describe('StakePanel', () => {
     render(
       <TestWrapper>
         <StakePanel stats={mockStakingStats} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const input = screen.getByRole('spinbutton');
     fireEvent.change(input, { target: { value: '50' } });
@@ -110,7 +113,7 @@ describe('StakePanel', () => {
     render(
       <TestWrapper>
         <StakePanel stats={mockStakingStats} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const input = screen.getByRole('spinbutton');
     fireEvent.change(input, { target: { value: '1000' } });
@@ -122,7 +125,7 @@ describe('StakePanel', () => {
     render(
       <TestWrapper>
         <StakePanel stats={mockStakingStats} onStake={onStake} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const input = screen.getByRole('spinbutton');
     fireEvent.change(input, { target: { value: '500' } });
@@ -135,7 +138,7 @@ describe('StakePanel', () => {
     render(
       <TestWrapper>
         <StakePanel stats={mockStakingStats} isStaking />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Staking...')).toBeInTheDocument();
   });
@@ -150,7 +153,7 @@ describe('RewardCalculator', () => {
     render(
       <TestWrapper>
         <RewardCalculator currentAPY={12.5} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Reward Calculator')).toBeInTheDocument();
   });
@@ -159,7 +162,7 @@ describe('RewardCalculator', () => {
     render(
       <TestWrapper>
         <RewardCalculator currentAPY={12.5} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Stake Amount (AETHEL)')).toBeInTheDocument();
   });
@@ -168,7 +171,7 @@ describe('RewardCalculator', () => {
     render(
       <TestWrapper>
         <RewardCalculator currentAPY={12.5} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Duration (days)')).toBeInTheDocument();
   });
@@ -177,7 +180,7 @@ describe('RewardCalculator', () => {
     render(
       <TestWrapper>
         <RewardCalculator currentAPY={12.5} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('30d')).toBeInTheDocument();
     expect(screen.getByText('90d')).toBeInTheDocument();
@@ -189,7 +192,7 @@ describe('RewardCalculator', () => {
     render(
       <TestWrapper>
         <RewardCalculator currentAPY={12.5} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Estimated Rewards')).toBeInTheDocument();
   });
@@ -198,7 +201,7 @@ describe('RewardCalculator', () => {
     render(
       <TestWrapper>
         <RewardCalculator currentAPY={12.5} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getAllByText(/AETHEL/).length).toBeGreaterThan(0);
   });
@@ -207,7 +210,7 @@ describe('RewardCalculator', () => {
     render(
       <TestWrapper>
         <RewardCalculator currentAPY={12.5} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('30d'));
     expect(screen.getByText(/at 12.5% APY/)).toBeInTheDocument();
@@ -217,7 +220,7 @@ describe('RewardCalculator', () => {
     render(
       <TestWrapper>
         <RewardCalculator currentAPY={12.5} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const inputs = screen.getAllByRole('spinbutton');
     // First input is the amount
@@ -229,7 +232,7 @@ describe('RewardCalculator', () => {
     render(
       <TestWrapper>
         <RewardCalculator currentAPY={12.5} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const inputs = screen.getAllByRole('spinbutton');
     // Second input is the duration
@@ -248,7 +251,7 @@ describe('UnstakeTimer', () => {
     render(
       <TestWrapper>
         <UnstakeTimer unlockAt={futureUnlock} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/remaining/)).toBeInTheDocument();
   });
@@ -258,7 +261,7 @@ describe('UnstakeTimer', () => {
     render(
       <TestWrapper>
         <UnstakeTimer unlockAt={pastUnlock} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Ready to withdraw')).toBeInTheDocument();
   });
@@ -273,7 +276,7 @@ describe('StakingChart', () => {
     render(
       <TestWrapper>
         <StakingChart />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Staking History')).toBeInTheDocument();
   });
@@ -282,7 +285,7 @@ describe('StakingChart', () => {
     render(
       <TestWrapper>
         <StakingChart />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Total staked AETHEL over 30 days')).toBeInTheDocument();
   });
@@ -291,7 +294,7 @@ describe('StakingChart', () => {
     render(
       <TestWrapper>
         <StakingChart />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Total Staked')).toBeInTheDocument();
   });
@@ -300,7 +303,7 @@ describe('StakingChart', () => {
     render(
       <TestWrapper>
         <StakingChart />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Rewards')).toBeInTheDocument();
   });

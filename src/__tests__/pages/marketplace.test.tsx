@@ -31,13 +31,18 @@ jest.mock('@/contexts/AppContext', () => {
         aethelBalance: mockWalletBalance,
       },
       healthData: {
-        totalRecords: 147, encryptedRecords: 147,
-        lastUpload: Date.now(), storageUsed: 1024 * 1024 * 50,
-        ipfsNodes: 42, teeVerified: true,
+        totalRecords: 147,
+        encryptedRecords: 147,
+        lastUpload: Date.now(),
+        storageUsed: 1024 * 1024 * 50,
+        ipfsNodes: 42,
+        teeVerified: true,
       },
       teeState: {
-        status: 'operational', platform: 'Intel SGX',
-        enclaveId: '0x123', lastAttestation: Date.now(),
+        status: 'operational',
+        platform: 'Intel SGX',
+        enclaveId: '0x123',
+        lastAttestation: Date.now(),
         modelVersions: {},
       },
       realTime: {
@@ -66,34 +71,67 @@ jest.mock('@/hooks/useMarketplace', () => ({
   useMarketplace: () => ({
     listings: [
       {
-        id: 'listing-1', seller: '0xseller1', sellerReputation: 95, category: 'lab_results',
-        title: 'Comprehensive Lab Panel', description: 'Anonymized lab results dataset',
-        dataPoints: 15000, dateRange: { start: Date.now() - 86400000 * 180, end: Date.now() },
-        qualityScore: 92, anonymizationLevel: 'differential-privacy', price: 50,
-        currency: 'AETHEL', status: 'active', teeVerified: true,
-        attestation: '0xatt1', purchaseCount: 12, createdAt: Date.now() - 86400000 * 30,
+        id: 'listing-1',
+        seller: '0xseller1',
+        sellerReputation: 95,
+        category: 'lab_results',
+        title: 'Comprehensive Lab Panel',
+        description: 'Anonymized lab results dataset',
+        dataPoints: 15000,
+        dateRange: { start: Date.now() - 86400000 * 180, end: Date.now() },
+        qualityScore: 92,
+        anonymizationLevel: 'differential-privacy',
+        price: 50,
+        currency: 'AETHEL',
+        status: 'active',
+        teeVerified: true,
+        attestation: '0xatt1',
+        purchaseCount: 12,
+        createdAt: Date.now() - 86400000 * 30,
         expiresAt: Date.now() + 86400000 * 150,
       },
       {
-        id: 'listing-2', seller: '0xseller2', sellerReputation: 88, category: 'vitals_timeseries',
-        title: 'Heart Rate Monitoring Data', description: 'Continuous HR monitoring dataset',
-        dataPoints: 50000, dateRange: { start: Date.now() - 86400000 * 90, end: Date.now() },
-        qualityScore: 85, anonymizationLevel: 'k-anonymity', price: 75,
-        currency: 'AETHEL', status: 'active', teeVerified: true,
-        attestation: '0xatt2', purchaseCount: 5, createdAt: Date.now() - 86400000 * 14,
+        id: 'listing-2',
+        seller: '0xseller2',
+        sellerReputation: 88,
+        category: 'vitals_timeseries',
+        title: 'Heart Rate Monitoring Data',
+        description: 'Continuous HR monitoring dataset',
+        dataPoints: 50000,
+        dateRange: { start: Date.now() - 86400000 * 90, end: Date.now() },
+        qualityScore: 85,
+        anonymizationLevel: 'k-anonymity',
+        price: 75,
+        currency: 'AETHEL',
+        status: 'active',
+        teeVerified: true,
+        attestation: '0xatt2',
+        purchaseCount: 5,
+        createdAt: Date.now() - 86400000 * 14,
         expiresAt: Date.now() + 86400000 * 166,
       },
     ],
     purchases: [
       {
-        id: 'purch-1', listingId: 'listing-1', buyer: '0xbuyer1', seller: '0xseller1',
-        price: 50, purchasedAt: Date.now() - 86400000 * 7, txHash: '0xtxhash1',
-        downloadCount: 3, category: 'lab_results', title: 'Comprehensive Lab Panel',
+        id: 'purch-1',
+        listingId: 'listing-1',
+        buyer: '0xbuyer1',
+        seller: '0xseller1',
+        price: 50,
+        purchasedAt: Date.now() - 86400000 * 7,
+        txHash: '0xtxhash1',
+        downloadCount: 3,
+        category: 'lab_results',
+        title: 'Comprehensive Lab Panel',
       },
     ],
     stats: {
-      totalListings: 45, activeListings: 32, totalVolume: 12500,
-      totalSellers: 18, totalBuyers: 120, averagePrice: 65,
+      totalListings: 45,
+      activeListings: 32,
+      totalVolume: 12500,
+      totalSellers: 18,
+      totalBuyers: 120,
+      averagePrice: 65,
     },
     isLoading: false,
     isFetching: false,
@@ -137,28 +175,50 @@ beforeEach(() => {
 
 describe('MarketplacePage', () => {
   it('renders the marketplace page heading', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     expect(screen.getByText('Health Data Marketplace')).toBeInTheDocument();
   });
 
   it('renders the page description', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
-    expect(screen.getByText(/Buy and sell anonymized, TEE-verified health datasets/)).toBeInTheDocument();
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
+    expect(
+      screen.getByText(/Buy and sell anonymized, TEE-verified health datasets/),
+    ).toBeInTheDocument();
   });
 
   it('renders navigation and footer', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   });
 
   it('renders the create listing button', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     expect(screen.getByText('Create Listing')).toBeInTheDocument();
   });
 
   it('renders tab navigation', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     expect(screen.getByText('Browse')).toBeInTheDocument();
     expect(screen.getByText('My Listings')).toBeInTheDocument();
     expect(screen.getByText('My Purchases')).toBeInTheDocument();
@@ -168,36 +228,60 @@ describe('MarketplacePage', () => {
   // --- Browse Tab ---
 
   it('renders search input on Browse tab', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     expect(screen.getByPlaceholderText('Search datasets...')).toBeInTheDocument();
   });
 
   it('renders category and quality filter dropdowns', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     expect(screen.getByText('All Categories')).toBeInTheDocument();
     expect(screen.getByText('Any Quality')).toBeInTheDocument();
   });
 
   it('renders listing cards on Browse tab', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     expect(screen.getByText('Comprehensive Lab Panel')).toBeInTheDocument();
     expect(screen.getByText('Heart Rate Monitoring Data')).toBeInTheDocument();
   });
 
   it('renders listing count text', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     expect(screen.getByText(/Showing 2 listings/)).toBeInTheDocument();
   });
 
   it('calls setSearch when search input changes', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     const searchInput = screen.getByPlaceholderText('Search datasets...');
     fireEvent.change(searchInput, { target: { value: 'lab' } });
     expect(mockSetSearch).toHaveBeenCalledWith('lab');
   });
 
   it('calls setCategoryFilter when category dropdown changes', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     const selects = screen.getAllByRole('combobox');
     // First select is category
     fireEvent.change(selects[0], { target: { value: 'lab_results' } });
@@ -205,14 +289,22 @@ describe('MarketplacePage', () => {
   });
 
   it('calls setCategoryFilter with undefined when All Categories is selected', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     const selects = screen.getAllByRole('combobox');
     fireEvent.change(selects[0], { target: { value: '' } });
     expect(mockSetCategoryFilter).toHaveBeenCalledWith(undefined);
   });
 
   it('calls setQualityFilter when quality dropdown changes', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     const selects = screen.getAllByRole('combobox');
     // Second select is quality
     fireEvent.change(selects[1], { target: { value: '90' } });
@@ -220,7 +312,11 @@ describe('MarketplacePage', () => {
   });
 
   it('calls setQualityFilter with undefined when Any Quality is selected', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     const selects = screen.getAllByRole('combobox');
     fireEvent.change(selects[1], { target: { value: '' } });
     expect(mockSetQualityFilter).toHaveBeenCalledWith(undefined);
@@ -228,20 +324,32 @@ describe('MarketplacePage', () => {
 
   it('shows loading skeletons when isLoading is true', () => {
     mockOverrides = { isLoading: true };
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     expect(screen.queryByText('Comprehensive Lab Panel')).not.toBeInTheDocument();
   });
 
   it('shows no listings found when listings is empty', () => {
     mockOverrides = { listings: [] };
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     expect(screen.getByText('No listings found')).toBeInTheDocument();
     expect(screen.getByText('Try adjusting your filters or search query')).toBeInTheDocument();
   });
 
   it('hides stats bar when stats is null', () => {
     mockOverrides = { stats: null };
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     // Page should still render
     expect(screen.getByText('Health Data Marketplace')).toBeInTheDocument();
   });
@@ -249,7 +357,11 @@ describe('MarketplacePage', () => {
   // --- My Listings Tab ---
 
   it('switches to My Listings tab and shows listings', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('My Listings'));
     expect(screen.getAllByText('My Listings').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Datasets you have listed for sale/)).toBeInTheDocument();
@@ -257,7 +369,11 @@ describe('MarketplacePage', () => {
 
   it('shows empty state on My Listings when listings is empty', () => {
     mockOverrides = { listings: [] };
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('My Listings'));
     expect(screen.getByText('No listings yet')).toBeInTheDocument();
   });
@@ -265,7 +381,11 @@ describe('MarketplacePage', () => {
   // --- My Purchases Tab ---
 
   it('switches to My Purchases tab and shows purchase table', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('My Purchases'));
     expect(screen.getByText(/Datasets you have purchased/)).toBeInTheDocument();
     expect(screen.getByText('Dataset')).toBeInTheDocument();
@@ -275,7 +395,11 @@ describe('MarketplacePage', () => {
 
   it('shows empty state on My Purchases when purchases is empty', () => {
     mockOverrides = { purchases: [] };
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('My Purchases'));
     expect(screen.getByText('No purchases yet')).toBeInTheDocument();
   });
@@ -283,7 +407,11 @@ describe('MarketplacePage', () => {
   // --- Analytics Tab ---
 
   it('switches to Analytics tab and shows charts', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Analytics'));
     expect(screen.getByText('Marketplace Analytics')).toBeInTheDocument();
     expect(screen.getByText('Category Distribution')).toBeInTheDocument();
@@ -293,7 +421,11 @@ describe('MarketplacePage', () => {
   // --- Purchase Modal ---
 
   it('opens purchase modal when Purchase button is clicked on a listing card', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     const purchaseButtons = screen.getAllByText('Purchase');
     if (purchaseButtons.length > 0) {
       fireEvent.click(purchaseButtons[0]);
@@ -302,7 +434,11 @@ describe('MarketplacePage', () => {
   });
 
   it('confirms purchase button is disabled when wallet balance is zero', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     const purchaseButtons = screen.getAllByText('Purchase');
     if (purchaseButtons.length > 0) {
       fireEvent.click(purchaseButtons[0]);
@@ -316,7 +452,11 @@ describe('MarketplacePage', () => {
   });
 
   it('closes purchase modal when cancel is clicked', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     const purchaseButtons = screen.getAllByText('Purchase');
     if (purchaseButtons.length > 0) {
       fireEvent.click(purchaseButtons[0]);
@@ -328,7 +468,11 @@ describe('MarketplacePage', () => {
   // --- Withdraw ---
 
   it('clicks Withdraw button on My Listings tab', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('My Listings'));
     const withdrawButtons = screen.getAllByText('Withdraw');
     if (withdrawButtons.length > 0) {
@@ -340,20 +484,32 @@ describe('MarketplacePage', () => {
   // --- Additional coverage tests ---
 
   it('renders category distribution pie chart labels on Analytics tab', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Analytics'));
     expect(screen.getByText('Listings by category')).toBeInTheDocument();
     expect(screen.getByText('AETHEL traded per category')).toBeInTheDocument();
   });
 
   it('renders revenue chart on Analytics tab', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Analytics'));
     expect(screen.getByText(/Revenue, categories, and volume trends/)).toBeInTheDocument();
   });
 
   it('renders purchase details in My Purchases table', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('My Purchases'));
     expect(screen.getByText('Comprehensive Lab Panel')).toBeInTheDocument();
     expect(screen.getByText(/50\.00 AETHEL/)).toBeInTheDocument();
@@ -362,7 +518,11 @@ describe('MarketplacePage', () => {
   });
 
   it('renders quality filter options', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     const selects = screen.getAllByRole('combobox');
     const qualitySelect = selects[1];
     expect(qualitySelect).toBeInTheDocument();
@@ -373,19 +533,31 @@ describe('MarketplacePage', () => {
 
   it('shows 0 listings text when listings are empty on browse tab', () => {
     mockOverrides = { listings: [] };
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     expect(screen.getByText(/Showing 0 listings/)).toBeInTheDocument();
   });
 
   it('renders marketplace stats bar with stats', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     // Stats bar should render when stats are provided
     expect(screen.getByText('Health Data Marketplace')).toBeInTheDocument();
   });
 
   it('confirms purchase when wallet has sufficient balance', () => {
     mockWalletBalance = 1000;
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     const purchaseButtons = screen.getAllByText('Purchase');
     fireEvent.click(purchaseButtons[0]);
     const confirmButtons = screen.getAllByText('Confirm Purchase');
@@ -397,7 +569,11 @@ describe('MarketplacePage', () => {
   });
 
   it('shows insufficient balance warning when wallet balance is 0', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     const purchaseButtons = screen.getAllByText('Purchase');
     fireEvent.click(purchaseButtons[0]);
     // Wallet balance is 0, so "Insufficient balance" warning should appear
@@ -405,14 +581,22 @@ describe('MarketplacePage', () => {
   });
 
   it('renders My Listings with isOwner cards showing Withdraw buttons', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('My Listings'));
     const withdrawButtons = screen.getAllByText('Withdraw');
     expect(withdrawButtons.length).toBeGreaterThan(0);
   });
 
   it('renders category badge in purchases table', () => {
-    render(<TestWrapper><MarketplacePage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplacePage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('My Purchases'));
     // The category badge should render the label for lab_results
     expect(screen.getByText('Lab Results')).toBeInTheDocument();

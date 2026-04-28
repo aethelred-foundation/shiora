@@ -15,37 +15,92 @@ const HANDOFFS = [
   {
     fromProvider: 'Dr. Sarah Chen',
     toProvider: 'Dr. James Liu',
-    patientSummary: 'Patient with Type 2 Diabetes and Hypertension requiring cardiology evaluation after elevated troponin detected during routine labs',
-    outstandingIssues: ['Cardiology stress test needed', 'Adjust antihypertensive regimen', 'Schedule follow-up echocardiogram'],
-    medications: ['Metformin 500mg BID', 'Lisinopril 10mg daily', 'Atorvastatin 20mg daily', 'Aspirin 81mg daily', 'Metoprolol 25mg BID'],
+    patientSummary:
+      'Patient with Type 2 Diabetes and Hypertension requiring cardiology evaluation after elevated troponin detected during routine labs',
+    outstandingIssues: [
+      'Cardiology stress test needed',
+      'Adjust antihypertensive regimen',
+      'Schedule follow-up echocardiogram',
+    ],
+    medications: [
+      'Metformin 500mg BID',
+      'Lisinopril 10mg daily',
+      'Atorvastatin 20mg daily',
+      'Aspirin 81mg daily',
+      'Metoprolol 25mg BID',
+    ],
   },
   {
     fromProvider: 'Dr. James Liu',
     toProvider: 'Dr. Aisha Patel',
-    patientSummary: 'Post-cardiac evaluation — stress test normal, HbA1c elevated at 8.2% requiring endocrine specialist for diabetes optimization',
-    outstandingIssues: ['Optimize insulin sensitizer therapy', 'Consider GLP-1 receptor agonist', 'Recheck HbA1c in 3 months'],
-    medications: ['Metformin 500mg BID', 'Lisinopril 10mg daily', 'Atorvastatin 20mg daily', 'Aspirin 81mg daily', 'Metoprolol 25mg BID'],
+    patientSummary:
+      'Post-cardiac evaluation — stress test normal, HbA1c elevated at 8.2% requiring endocrine specialist for diabetes optimization',
+    outstandingIssues: [
+      'Optimize insulin sensitizer therapy',
+      'Consider GLP-1 receptor agonist',
+      'Recheck HbA1c in 3 months',
+    ],
+    medications: [
+      'Metformin 500mg BID',
+      'Lisinopril 10mg daily',
+      'Atorvastatin 20mg daily',
+      'Aspirin 81mg daily',
+      'Metoprolol 25mg BID',
+    ],
   },
   {
     fromProvider: 'Dr. Aisha Patel',
     toProvider: 'Nurse Emily Rodriguez',
-    patientSummary: 'Endocrine adjustment complete — added Semaglutide for improved glycemic control. Requires regular monitoring and patient education on injection technique',
-    outstandingIssues: ['Monitor for GI side effects', 'Weekly injection adherence check', 'Schedule follow-up labs in 6 weeks'],
-    medications: ['Metformin 500mg BID', 'Semaglutide 0.25mg weekly', 'Lisinopril 10mg daily', 'Atorvastatin 20mg daily', 'Metoprolol 25mg BID'],
+    patientSummary:
+      'Endocrine adjustment complete — added Semaglutide for improved glycemic control. Requires regular monitoring and patient education on injection technique',
+    outstandingIssues: [
+      'Monitor for GI side effects',
+      'Weekly injection adherence check',
+      'Schedule follow-up labs in 6 weeks',
+    ],
+    medications: [
+      'Metformin 500mg BID',
+      'Semaglutide 0.25mg weekly',
+      'Lisinopril 10mg daily',
+      'Atorvastatin 20mg daily',
+      'Metoprolol 25mg BID',
+    ],
   },
   {
     fromProvider: 'Dr. Michael Torres',
     toProvider: 'Dr. Sarah Chen',
-    patientSummary: 'ER visit for hypoglycemic episode — blood glucose 48 mg/dL, treated with IV dextrose. Patient stabilized and discharged with follow-up instructions',
-    outstandingIssues: ['Review glucose monitoring frequency', 'Evaluate medication dosing', 'Assess for hypoglycemia unawareness', 'Follow up within 48 hours'],
-    medications: ['Metformin 500mg BID', 'Semaglutide 0.25mg weekly', 'Lisinopril 10mg daily', 'Atorvastatin 20mg daily'],
+    patientSummary:
+      'ER visit for hypoglycemic episode — blood glucose 48 mg/dL, treated with IV dextrose. Patient stabilized and discharged with follow-up instructions',
+    outstandingIssues: [
+      'Review glucose monitoring frequency',
+      'Evaluate medication dosing',
+      'Assess for hypoglycemia unawareness',
+      'Follow up within 48 hours',
+    ],
+    medications: [
+      'Metformin 500mg BID',
+      'Semaglutide 0.25mg weekly',
+      'Lisinopril 10mg daily',
+      'Atorvastatin 20mg daily',
+    ],
   },
   {
     fromProvider: 'Nurse Emily Rodriguez',
     toProvider: 'Dr. Rachel Kim',
-    patientSummary: 'Routine monitoring reveals declining renal function — eGFR dropped from 72 to 58 mL/min. Referral to nephrology for evaluation of chronic kidney disease staging',
-    outstandingIssues: ['Complete renal panel', 'Urine albumin-to-creatinine ratio', 'Assess need for medication dose adjustments'],
-    medications: ['Metformin 500mg BID', 'Semaglutide 0.25mg weekly', 'Lisinopril 10mg daily', 'Atorvastatin 20mg daily', 'Metoprolol 25mg BID'],
+    patientSummary:
+      'Routine monitoring reveals declining renal function — eGFR dropped from 72 to 58 mL/min. Referral to nephrology for evaluation of chronic kidney disease staging',
+    outstandingIssues: [
+      'Complete renal panel',
+      'Urine albumin-to-creatinine ratio',
+      'Assess need for medication dose adjustments',
+    ],
+    medications: [
+      'Metformin 500mg BID',
+      'Semaglutide 0.25mg weekly',
+      'Lisinopril 10mg daily',
+      'Atorvastatin 20mg daily',
+      'Metoprolol 25mg BID',
+    ],
   },
 ];
 
@@ -80,7 +135,11 @@ export async function POST(request: NextRequest) {
     const { fromProvider, toProvider, patientSummary } = body;
 
     if (!fromProvider || !toProvider || !patientSummary) {
-      return errorResponse('VALIDATION_ERROR', 'fromProvider, toProvider, and patientSummary are required', HTTP.UNPROCESSABLE);
+      return errorResponse(
+        'VALIDATION_ERROR',
+        'fromProvider, toProvider, and patientSummary are required',
+        HTTP.UNPROCESSABLE,
+      );
     }
 
     const seed = Date.now();

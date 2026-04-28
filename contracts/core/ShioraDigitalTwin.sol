@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraDigitalTwin
@@ -147,9 +147,13 @@ contract ShioraDigitalTwin is Ownable, ReentrancyGuard, Pausable {
     // ────────────────────────────────────────────────────────
 
     modifier onlyTwinOwner(bytes32 twinId) {
+        _onlyTwinOwner(twinId);
+        _;
+    }
+
+    function _onlyTwinOwner(bytes32 twinId) internal view {
         if (_twins[twinId].owner == address(0)) revert TwinNotFound();
         if (_twins[twinId].owner != msg.sender) revert NotTwinOwner();
-        _;
     }
 
     // ────────────────────────────────────────────────────────
@@ -355,19 +359,34 @@ contract ShioraDigitalTwin is Ownable, ReentrancyGuard, Pausable {
         bytes32 teeAttestationHash
     ) internal {
         _nonce++;
-        bytes32 snapshotId = keccak256(
-            abi.encodePacked(twinId, "snapshot", block.timestamp, _nonce)
-        );
+        uint256 snapshotTimestamp = block.timestamp;
+        bytes32 snapshotId = _hashSnapshotId(twinId, snapshotTimestamp, _nonce);
 
         _twinSnapshots[twinId].push(ParameterSnapshot({
             snapshotId: snapshotId,
             twinId: twinId,
             parameterHash: parameterHash,
             teeAttestationHash: teeAttestationHash,
-            timestamp: block.timestamp
+            timestamp: snapshotTimestamp
         }));
 
         emit ParameterSnapshotTaken(snapshotId, twinId, parameterHash, teeAttestationHash);
+    }
+
+    function _hashSnapshotId(
+        bytes32 twinId,
+        uint256 snapshotTimestamp,
+        uint256 nonce
+    ) internal pure returns (bytes32 snapshotId) {
+        assembly ("memory-safe") {
+            let ptr := mload(0x40)
+            mstore(ptr, twinId)
+            mstore(add(ptr, 0x20), shl(192, 0x736e617073686f74))
+            mstore(add(ptr, 0x28), snapshotTimestamp)
+            mstore(add(ptr, 0x48), nonce)
+            snapshotId := keccak256(ptr, 0x68)
+            mstore(0x40, add(ptr, 0x80))
+        }
     }
 
     // ────────────────────────────────────────────────────────

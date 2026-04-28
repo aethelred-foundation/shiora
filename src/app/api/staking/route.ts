@@ -66,13 +66,18 @@ export async function POST(request: NextRequest) {
     const { amount } = body;
 
     if (!amount || typeof amount !== 'number' || amount < 100) {
-      return errorResponse('VALIDATION_ERROR', 'amount must be a number >= 100', HTTP.UNPROCESSABLE);
+      return errorResponse(
+        'VALIDATION_ERROR',
+        'amount must be a number >= 100',
+        HTTP.UNPROCESSABLE,
+      );
     }
 
     const seed = Date.now();
     const position = {
       id: `stake-${seededHex(seed, 8)}`,
-      staker: request.headers.get('x-wallet-address') ?? 'aeth1demo000000000000000000000000000000000',
+      staker:
+        request.headers.get('x-wallet-address') ?? 'aeth1demo000000000000000000000000000000000',
       amount,
       stakedAt: Date.now(),
       status: 'staked',

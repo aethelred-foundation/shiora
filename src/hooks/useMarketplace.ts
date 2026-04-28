@@ -85,9 +85,7 @@ export interface UseMarketplaceReturn {
 // Hook
 // ---------------------------------------------------------------------------
 
-export function useMarketplace(
-  initialFilters?: Partial<MarketplaceFilters>,
-): UseMarketplaceReturn {
+export function useMarketplace(initialFilters?: Partial<MarketplaceFilters>): UseMarketplaceReturn {
   const queryClient = useQueryClient();
 
   const [filters, setFiltersRaw] = useState<MarketplaceFilters>({
@@ -148,10 +146,9 @@ export function useMarketplace(
   const revenueQuery = useQuery({
     queryKey: [STATS_KEY, 'revenue'],
     queryFn: () =>
-      api.get<{ day: string; revenue: number; transactions: number }[]>(
-        '/api/marketplace/stats',
-        { type: 'revenue' },
-      ),
+      api.get<{ day: string; revenue: number; transactions: number }[]>('/api/marketplace/stats', {
+        type: 'revenue',
+      }),
     staleTime: 60_000,
   });
 
@@ -160,8 +157,7 @@ export function useMarketplace(
   // ---- Mutations ----
 
   const createMutation = useMutation({
-    mutationFn: (form: CreateListingForm) =>
-      api.post<DataListing>('/api/marketplace', form),
+    mutationFn: (form: CreateListingForm) => api.post<DataListing>('/api/marketplace', form),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [LISTINGS_KEY] });
       queryClient.invalidateQueries({ queryKey: [STATS_KEY] });
@@ -178,8 +174,7 @@ export function useMarketplace(
   });
 
   const withdrawMutation = useMutation({
-    mutationFn: (id: string) =>
-      api.delete<void>(`/api/marketplace/${id}`),
+    mutationFn: (id: string) => api.delete<void>(`/api/marketplace/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [LISTINGS_KEY] });
       queryClient.invalidateQueries({ queryKey: [STATS_KEY] });

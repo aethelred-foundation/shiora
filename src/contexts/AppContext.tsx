@@ -117,7 +117,12 @@ export interface RewardsState {
 export interface AppContextValue {
   wallet: WalletState;
   connectWallet: () => void;
-  connectWalletWithData: (address: string, balance: number, provider?: 'keplr' | 'leap' | null, chainId?: string | null) => void;
+  connectWalletWithData: (
+    address: string,
+    balance: number,
+    provider?: 'keplr' | 'leap' | null,
+    chainId?: string | null,
+  ) => void;
   disconnectWallet: () => void;
   healthData: HealthDataState;
   teeState: TEEState;
@@ -258,7 +263,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             .then(async (res) => {
               if (!res.ok) {
                 setWallet(DEFAULT_WALLET);
-                try { localStorage.removeItem('shiora_wallet'); } catch { /* ignore */ }
+                try {
+                  localStorage.removeItem('shiora_wallet');
+                } catch {
+                  /* ignore */
+                }
                 return;
               }
               try {
@@ -267,21 +276,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 if (serverAddr && serverAddr !== parsed.address) {
                   // Session cookie belongs to a different wallet — clear stale state.
                   setWallet(DEFAULT_WALLET);
-                  try { localStorage.removeItem('shiora_wallet'); } catch { /* ignore */ }
+                  try {
+                    localStorage.removeItem('shiora_wallet');
+                  } catch {
+                    /* ignore */
+                  }
                 }
-              } catch { /* ignore parse errors — session is valid */ }
+              } catch {
+                /* ignore parse errors — session is valid */
+              }
             })
             .catch(() => {
               // Network error — keep local state, next API call will handle it.
             });
         }
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   const persistWallet = useCallback((w: WalletState) => {
     setWallet(w);
-    try { localStorage.setItem('shiora_wallet', JSON.stringify(w)); } catch { /* ignore */ }
+    try {
+      localStorage.setItem('shiora_wallet', JSON.stringify(w));
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   // Quick-connect with a generated address (dev/test convenience, no server auth).
@@ -296,32 +317,41 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Authenticated connect: called by useWallet after a successful server
   // challenge-response handshake so the UI reflects real wallet data.
-  const connectWalletWithData = useCallback((
-    address: string,
-    balance: number,
-    provider?: 'keplr' | 'leap' | null,
-    chainId?: string | null,
-  ) => {
-    persistWallet({
-      connected: true,
-      address,
-      aethelBalance: balance,
-      provider: provider ?? null,
-      chainId: chainId ?? null,
-    });
-  }, [persistWallet]);
+  const connectWalletWithData = useCallback(
+    (
+      address: string,
+      balance: number,
+      provider?: 'keplr' | 'leap' | null,
+      chainId?: string | null,
+    ) => {
+      persistWallet({
+        connected: true,
+        address,
+        aethelBalance: balance,
+        provider: provider ?? null,
+        chainId: chainId ?? null,
+      });
+    },
+    [persistWallet],
+  );
 
   const disconnectWallet = useCallback(() => {
     setWallet(DEFAULT_WALLET);
-    try { localStorage.removeItem('shiora_wallet'); } catch { /* ignore */ }
+    try {
+      localStorage.removeItem('shiora_wallet');
+    } catch {
+      /* ignore */
+    }
 
     if (typeof fetch === 'function') {
       void fetch('/api/wallet/connect', {
         method: 'DELETE',
         credentials: 'same-origin',
-      }).catch(/* istanbul ignore next */ () => {
-        // Clearing the server cookie is best-effort during local development.
-      });
+      }).catch(
+        /* istanbul ignore next */ () => {
+          // Clearing the server cookie is best-effort during local development.
+        },
+      );
     }
   }, []);
 
@@ -380,7 +410,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const timers = timerMap.current;
-    return () => { Object.values(timers).forEach(clearTimeout); };
+    return () => {
+      Object.values(timers).forEach(clearTimeout);
+    };
   }, []);
 
   // --- Consent --------------------------------------------------------------
@@ -410,20 +442,45 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // --- Memoised context value -----------------------------------------------
   const value = useMemo<AppContextValue>(
     () => ({
-      wallet, connectWallet, connectWalletWithData, disconnectWallet,
-      healthData, teeState, realTime,
-      notifications, addNotification, removeNotification,
-      searchOpen, setSearchOpen,
-      consentState, chatState, vaultState,
-      governanceState, stakingState, marketplaceState, rewardsState,
+      wallet,
+      connectWallet,
+      connectWalletWithData,
+      disconnectWallet,
+      healthData,
+      teeState,
+      realTime,
+      notifications,
+      addNotification,
+      removeNotification,
+      searchOpen,
+      setSearchOpen,
+      consentState,
+      chatState,
+      vaultState,
+      governanceState,
+      stakingState,
+      marketplaceState,
+      rewardsState,
     }),
     [
-      wallet, connectWallet, connectWalletWithData, disconnectWallet,
-      healthData, teeState, realTime,
-      notifications, addNotification, removeNotification,
+      wallet,
+      connectWallet,
+      connectWalletWithData,
+      disconnectWallet,
+      healthData,
+      teeState,
+      realTime,
+      notifications,
+      addNotification,
+      removeNotification,
       searchOpen,
-      consentState, chatState, vaultState,
-      governanceState, stakingState, marketplaceState, rewardsState,
+      consentState,
+      chatState,
+      vaultState,
+      governanceState,
+      stakingState,
+      marketplaceState,
+      rewardsState,
     ],
   );
 

@@ -5,11 +5,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  successResponse,
-  errorResponse,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededHex, seededInt, generateAttestation } from '@/lib/utils';
 import { WEARABLE_PROVIDERS } from '@/lib/constants';
@@ -26,7 +22,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const providerMeta = WEARABLE_PROVIDERS.find((p) => p.id === provider);
 
   if (!providerMeta) {
-    return errorResponse('INVALID_PROVIDER', `Unknown wearable provider: ${provider}`, HTTP.BAD_REQUEST);
+    return errorResponse(
+      'INVALID_PROVIDER',
+      `Unknown wearable provider: ${provider}`,
+      HTTP.BAD_REQUEST,
+    );
   }
 
   const seed = Date.now();

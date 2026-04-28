@@ -6,12 +6,7 @@
 import { NextRequest } from 'next/server';
 import { successResponse, errorResponse } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
-import {
-  seededRandom,
-  seededInt,
-  seededHex,
-  generateAttestation,
-} from '@/lib/utils';
+import { seededRandom, seededInt, seededHex, generateAttestation } from '@/lib/utils';
 import { GENOMIC_RISK_CATEGORIES } from '@/lib/constants';
 import type {
   GenomicsOverview,
@@ -36,14 +31,102 @@ const PGX_DATA: Array<{
   evidence: PharmacogenomicResult['evidenceLevel'];
   guideline: string;
 }> = [
-  { gene: 'CYP2D6', variant: '*4/*4', rsId: 'rs3892097', drug: 'Codeine', category: 'Analgesic', rate: 'poor', recommendation: 'Avoid codeine — use alternative analgesics such as acetaminophen or NSAIDs. Patient cannot convert codeine to morphine.', evidence: 'Level 1A', guideline: 'CPIC' },
-  { gene: 'CYP2C19', variant: '*2/*2', rsId: 'rs4244285', drug: 'Clopidogrel', category: 'Antiplatelet', rate: 'intermediate', recommendation: 'Consider prasugrel or ticagrelor. Reduced anti-platelet effect expected with clopidogrel.', evidence: 'Level 1A', guideline: 'CPIC' },
-  { gene: 'CYP3A4', variant: '*1/*3', rsId: 'rs35599367', drug: 'Simvastatin', category: 'Statin', rate: 'intermediate', recommendation: 'Reduce simvastatin dose or consider alternative statin. Monitor for myopathy symptoms.', evidence: 'Level 1B', guideline: 'DPWG' },
-  { gene: 'SLCO1B1', variant: '*5/*5', rsId: 'rs4149056', drug: 'Simvastatin', category: 'Statin', rate: 'poor', recommendation: 'Avoid simvastatin or limit to 20mg/day maximum. High myopathy risk. Consider rosuvastatin.', evidence: 'Level 1A', guideline: 'CPIC' },
-  { gene: 'VKORC1', variant: '-1639 A/A', rsId: 'rs9923231', drug: 'Warfarin', category: 'Anticoagulant', rate: 'rapid', recommendation: 'Reduce warfarin dose by 25-50%. Increased sensitivity to warfarin expected. Monitor INR closely.', evidence: 'Level 1A', guideline: 'CPIC' },
-  { gene: 'DPYD', variant: '*2A/*1', rsId: 'rs3918290', drug: 'Fluorouracil', category: 'Chemotherapy', rate: 'intermediate', recommendation: 'Reduce fluorouracil dose by 50%. Monitor for severe toxicity including myelosuppression.', evidence: 'Level 1A', guideline: 'CPIC' },
-  { gene: 'HLA-B', variant: '*57:01 positive', rsId: 'rs2395029', drug: 'Abacavir', category: 'Antiretroviral', rate: 'poor', recommendation: 'Contraindicated — do NOT prescribe abacavir. High risk of hypersensitivity reaction.', evidence: 'Level 1A', guideline: 'CPIC' },
-  { gene: 'UGT1A1', variant: '*28/*28', rsId: 'rs8175347', drug: 'Irinotecan', category: 'Chemotherapy', rate: 'ultra_rapid', recommendation: 'Reduce irinotecan starting dose by at least 30%. Monitor for severe neutropenia and diarrhea.', evidence: 'Level 1B', guideline: 'DPWG' },
+  {
+    gene: 'CYP2D6',
+    variant: '*4/*4',
+    rsId: 'rs3892097',
+    drug: 'Codeine',
+    category: 'Analgesic',
+    rate: 'poor',
+    recommendation:
+      'Avoid codeine — use alternative analgesics such as acetaminophen or NSAIDs. Patient cannot convert codeine to morphine.',
+    evidence: 'Level 1A',
+    guideline: 'CPIC',
+  },
+  {
+    gene: 'CYP2C19',
+    variant: '*2/*2',
+    rsId: 'rs4244285',
+    drug: 'Clopidogrel',
+    category: 'Antiplatelet',
+    rate: 'intermediate',
+    recommendation:
+      'Consider prasugrel or ticagrelor. Reduced anti-platelet effect expected with clopidogrel.',
+    evidence: 'Level 1A',
+    guideline: 'CPIC',
+  },
+  {
+    gene: 'CYP3A4',
+    variant: '*1/*3',
+    rsId: 'rs35599367',
+    drug: 'Simvastatin',
+    category: 'Statin',
+    rate: 'intermediate',
+    recommendation:
+      'Reduce simvastatin dose or consider alternative statin. Monitor for myopathy symptoms.',
+    evidence: 'Level 1B',
+    guideline: 'DPWG',
+  },
+  {
+    gene: 'SLCO1B1',
+    variant: '*5/*5',
+    rsId: 'rs4149056',
+    drug: 'Simvastatin',
+    category: 'Statin',
+    rate: 'poor',
+    recommendation:
+      'Avoid simvastatin or limit to 20mg/day maximum. High myopathy risk. Consider rosuvastatin.',
+    evidence: 'Level 1A',
+    guideline: 'CPIC',
+  },
+  {
+    gene: 'VKORC1',
+    variant: '-1639 A/A',
+    rsId: 'rs9923231',
+    drug: 'Warfarin',
+    category: 'Anticoagulant',
+    rate: 'rapid',
+    recommendation:
+      'Reduce warfarin dose by 25-50%. Increased sensitivity to warfarin expected. Monitor INR closely.',
+    evidence: 'Level 1A',
+    guideline: 'CPIC',
+  },
+  {
+    gene: 'DPYD',
+    variant: '*2A/*1',
+    rsId: 'rs3918290',
+    drug: 'Fluorouracil',
+    category: 'Chemotherapy',
+    rate: 'intermediate',
+    recommendation:
+      'Reduce fluorouracil dose by 50%. Monitor for severe toxicity including myelosuppression.',
+    evidence: 'Level 1A',
+    guideline: 'CPIC',
+  },
+  {
+    gene: 'HLA-B',
+    variant: '*57:01 positive',
+    rsId: 'rs2395029',
+    drug: 'Abacavir',
+    category: 'Antiretroviral',
+    rate: 'poor',
+    recommendation:
+      'Contraindicated — do NOT prescribe abacavir. High risk of hypersensitivity reaction.',
+    evidence: 'Level 1A',
+    guideline: 'CPIC',
+  },
+  {
+    gene: 'UGT1A1',
+    variant: '*28/*28',
+    rsId: 'rs8175347',
+    drug: 'Irinotecan',
+    category: 'Chemotherapy',
+    rate: 'ultra_rapid',
+    recommendation:
+      'Reduce irinotecan starting dose by at least 30%. Monitor for severe neutropenia and diarrhea.',
+    evidence: 'Level 1B',
+    guideline: 'DPWG',
+  },
 ];
 
 // ---- Risk score reference data ----
@@ -58,11 +141,19 @@ const RISK_MODIFIABLE_FACTORS: Record<string, string[]> = {
 };
 
 const RISK_INTERVENTIONS: Record<string, string[]> = {
-  cardiovascular: ['Annual cardiac screening', 'Statin evaluation', 'Lifestyle modification program'],
+  cardiovascular: [
+    'Annual cardiac screening',
+    'Statin evaluation',
+    'Lifestyle modification program',
+  ],
   type2_diabetes: ['HbA1c monitoring quarterly', 'Metformin evaluation', 'Nutritional counseling'],
   breast_cancer: ['Mammography annually', 'Genetic counseling', 'BRCA risk assessment'],
   alzheimers: ['Cognitive baseline testing', 'Amyloid monitoring', 'Neuroprotective supplements'],
-  colorectal_cancer: ['Colonoscopy every 5 years', 'Fecal immunochemical test', 'Diet optimization'],
+  colorectal_cancer: [
+    'Colonoscopy every 5 years',
+    'Fecal immunochemical test',
+    'Diet optimization',
+  ],
   autoimmune: ['Autoantibody panel annually', 'Anti-inflammatory diet', 'Immune modulation review'],
 };
 
@@ -96,7 +187,11 @@ export async function GET(request: NextRequest) {
       biomarkerCount: 10,
       riskScoreCount: 6,
       reportCount: 5,
-      highRiskConditions: ['Cardiovascular (elevated)', 'Type 2 Diabetes (elevated)', 'Breast Cancer (average-high)'],
+      highRiskConditions: [
+        'Cardiovascular (elevated)',
+        'Type 2 Diabetes (elevated)',
+        'Breast Cancer (average-high)',
+      ],
       actionableFindings: 5,
     };
 

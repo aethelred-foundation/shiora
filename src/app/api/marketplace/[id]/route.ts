@@ -6,18 +6,13 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  successResponse,
-  notFoundResponse,
-  errorResponse,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, notFoundResponse, errorResponse, HTTP } from '@/lib/api/responses';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import {
   buildPurchaseReceipt,
   getMarketplaceListing,
   updateMarketplaceListing,
-} from '@/lib/api/store';
+} from '@/lib/api/store-service';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -28,7 +23,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   if (blocked) return blocked;
 
   const { id } = await context.params;
-  const listing = getMarketplaceListing(id);
+  const listing = await getMarketplaceListing(id);
   if (!listing) {
     return notFoundResponse('MarketplaceListing', id);
   }
@@ -44,7 +39,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   if ('status' in auth) return auth;
 
   const { id } = await context.params;
-  const listing = getMarketplaceListing(id);
+  const listing = await getMarketplaceListing(id, auth.walletAddress!);
   if (!listing) {
     return notFoundResponse('MarketplaceListing', id);
   }
@@ -65,10 +60,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
     );
   }
 
-  updateMarketplaceListing(id, {
-    status: 'sold',
-    purchaseCount: listing.purchaseCount + 1,
-  });
+  await updateMarketplaceListing(
+    id,
+    {
+      status: 'sold',
+      purchaseCount: listing.purchaseCount + 1,
+    },
+    auth.walletAddress!,
+  );
 
   const purchase = buildPurchaseReceipt(listing, auth.walletAddress!);
 
@@ -85,7 +84,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   if ('status' in auth) return auth;
 
   const { id } = await context.params;
-  const listing = getMarketplaceListing(id);
+  const listing = await getMarketplaceListing(id, auth.walletAddress!);
   if (!listing) {
     return notFoundResponse('MarketplaceListing', id);
   }
@@ -98,9 +97,13 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     );
   }
 
-  const withdrawnListing = updateMarketplaceListing(id, {
-    status: 'withdrawn',
-  });
+  const withdrawnListing = await updateMarketplaceListing(
+    id,
+    {
+      status: 'withdrawn',
+    },
+    auth.walletAddress!,
+  );
   if (!withdrawnListing) {
     return notFoundResponse('MarketplaceListing', id);
   }

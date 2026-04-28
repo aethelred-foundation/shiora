@@ -4,10 +4,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  successResponse,
-  notFoundResponse,
-} from '@/lib/api/responses';
+import { successResponse, notFoundResponse } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
   seededRandom,
@@ -18,10 +15,7 @@ import {
   generateAttestation,
 } from '@/lib/utils';
 import { TEE_PLATFORMS, AI_MODELS } from '@/lib/constants';
-import type {
-  TEEVerificationChain,
-  TEEPlatform,
-} from '@/types';
+import type { TEEVerificationChain, TEEPlatform } from '@/types';
 
 // ────────────────────────────────────────────────────────────
 // Deterministic seed (must match list endpoint)
@@ -92,13 +86,24 @@ export async function GET(request: NextRequest, context: RouteContext) {
     enclave: {
       id: attestation.enclaveId,
       platform: attestation.platform,
-      firmwareVersion: attestation.platform === 'Intel SGX' ? '2.18.100.4' : attestation.platform === 'AWS Nitro' ? '3.1.0' : '1.51.0',
-      trustScore: parseFloat((seededRandom(SEED + attestation.blockHeight + 1) * 10 + 90).toFixed(1)),
+      firmwareVersion:
+        attestation.platform === 'Intel SGX'
+          ? '2.18.100.4'
+          : attestation.platform === 'AWS Nitro'
+            ? '3.1.0'
+            : '1.51.0',
+      trustScore: parseFloat(
+        (seededRandom(SEED + attestation.blockHeight + 1) * 10 + 90).toFixed(1),
+      ),
     },
     model: {
       id: attestation.modelId,
-      name: AI_MODELS.find((m) => m.id === attestation.modelId)?.name /* istanbul ignore next */ ?? attestation.modelId,
-      version: AI_MODELS.find((m) => m.id === attestation.modelId)?.version /* istanbul ignore next */ ?? 'v1.0',
+      name:
+        AI_MODELS.find((m) => m.id === attestation.modelId)?.name /* istanbul ignore next */ ??
+        attestation.modelId,
+      version:
+        AI_MODELS.find((m) => m.id === attestation.modelId)?.version /* istanbul ignore next */ ??
+        'v1.0',
     },
   });
 }

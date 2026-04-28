@@ -8,7 +8,8 @@ const mockRunMiddleware = jest.fn<NextResponse | null, [NextRequest, ...unknown[
 
 jest.mock('@/lib/api/middleware', () => ({
   ...jest.requireActual('@/lib/api/middleware'),
-  runMiddleware: (...args: unknown[]) => mockRunMiddleware(args[0] as NextRequest, ...args.slice(1)),
+  runMiddleware: (...args: unknown[]) =>
+    mockRunMiddleware(args[0] as NextRequest, ...args.slice(1)),
 }));
 
 const actualConstants = jest.requireActual('@/lib/constants');
@@ -23,7 +24,11 @@ let mockAlertMetrics: unknown[] | null = null;
 
 import { GET as getAlerts, POST as postAlert } from '@/app/api/alerts/route';
 import { GET as getHistory } from '@/app/api/alerts/history/route';
-import { GET as getRules, POST as postRule, PATCH as patchRule } from '@/app/api/alerts/rules/route';
+import {
+  GET as getRules,
+  POST as postRule,
+  PATCH as patchRule,
+} from '@/app/api/alerts/rules/route';
 import { POST as resolveAlert } from '@/app/api/alerts/[id]/resolve/route';
 import { POST as acknowledgeAlert } from '@/app/api/alerts/[id]/acknowledge/route';
 
@@ -110,7 +115,13 @@ describe('/api/alerts', () => {
     // Replace ALERT_METRICS with a single unknown metric so that
     // titles[metric] is undefined and the ?? fallback is triggered
     mockAlertMetrics = [
-      { id: 'unknown_metric', label: 'Unknown', unit: 'x', defaultThreshold: 50, condition: 'above' },
+      {
+        id: 'unknown_metric',
+        label: 'Unknown',
+        unit: 'x',
+        defaultThreshold: 50,
+        condition: 'above',
+      },
     ];
     const res = await getAlerts(new NextRequest('http://localhost:3000/api/alerts'));
     const body = await res.json();
@@ -192,7 +203,9 @@ describe('/api/alerts/history', () => {
   });
 
   it('GET filters history by alertId', async () => {
-    const req = new NextRequest('http://localhost:3000/api/alerts/history?alertId=alert-nonexistent');
+    const req = new NextRequest(
+      'http://localhost:3000/api/alerts/history?alertId=alert-nonexistent',
+    );
     const res = await getHistory(req);
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -304,7 +317,12 @@ describe('/api/alerts/rules', () => {
       new NextRequest('http://localhost:3000/api/alerts/rules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ metric: 'hr', condition: 'above', threshold: 100, severity: 'warning' }),
+        body: JSON.stringify({
+          metric: 'hr',
+          condition: 'above',
+          threshold: 100,
+          severity: 'warning',
+        }),
       }),
     );
     expect(res.status).toBe(429);

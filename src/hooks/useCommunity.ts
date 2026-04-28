@@ -11,12 +11,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 
-import type {
-  CommunityCircle,
-  AnonymousPost,
-  CircleMembership,
-  CircleCategory,
-} from '@/types';
+import type { CommunityCircle, AnonymousPost, CircleMembership, CircleCategory } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Query keys
@@ -107,8 +102,7 @@ export function useCommunity(): UseCommunityReturn {
   // ---- Mutations ----
 
   const joinMutation = useMutation({
-    mutationFn: (id: string) =>
-      api.post<void>(`/api/community/circles/${id}`, { action: 'join' }),
+    mutationFn: (id: string) => api.post<void>(`/api/community/circles/${id}`, { action: 'join' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CIRCLES_KEY] });
       queryClient.invalidateQueries({ queryKey: [MEMBERSHIPS_KEY] });
@@ -116,8 +110,7 @@ export function useCommunity(): UseCommunityReturn {
   });
 
   const leaveMutation = useMutation({
-    mutationFn: (id: string) =>
-      api.post<void>(`/api/community/circles/${id}`, { action: 'leave' }),
+    mutationFn: (id: string) => api.post<void>(`/api/community/circles/${id}`, { action: 'leave' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CIRCLES_KEY] });
       queryClient.invalidateQueries({ queryKey: [MEMBERSHIPS_KEY] });
@@ -149,10 +142,7 @@ export function useCommunity(): UseCommunityReturn {
     [allCircles, categoryFilter],
   );
 
-  const joinedCount = useMemo(
-    () => allCircles.filter((c) => c.isJoined).length,
-    [allCircles],
-  );
+  const joinedCount = useMemo(() => allCircles.filter((c) => c.isJoined).length, [allCircles]);
 
   const refetch = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: [CIRCLES_KEY] });

@@ -7,21 +7,44 @@
 
 import React, { useState } from 'react';
 import {
-  Apple, CircleDot, Zap, Watch, Compass,
-  RefreshCw, Power, PowerOff, Battery,
-  ShieldCheck, Clock, Database, Activity,
-  CheckCircle, AlertTriangle, XCircle,
+  Apple,
+  CircleDot,
+  Zap,
+  Watch,
+  Compass,
+  RefreshCw,
+  Power,
+  PowerOff,
+  Battery,
+  ShieldCheck,
+  Clock,
+  Database,
+  Activity,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
 } from 'lucide-react';
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, CartesianGrid,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
 } from 'recharts';
 
 import { MedicalCard, ChartTooltip, StatusBadge } from '@/components/ui/PagePrimitives';
 import { Badge, ProgressRing } from '@/components/ui/SharedComponents';
 import { WEARABLE_PROVIDERS, EXTENDED_STATUS_STYLES } from '@/lib/constants';
 import { formatNumber, formatDate, formatDateTime, timeAgo } from '@/lib/utils';
-import type { WearableDevice, WearableDataPoint, WearableSyncBatch, WearableProvider as WearableProviderType, WearableMetricType } from '@/types';
+import type {
+  WearableDevice,
+  WearableDataPoint,
+  WearableSyncBatch,
+  WearableProvider as WearableProviderType,
+  WearableMetricType,
+} from '@/types';
 
 // ============================================================
 // Provider icon/color map
@@ -88,14 +111,18 @@ export function DeviceCard({
               <Clock className="w-3 h-3" />
               Last Sync
             </span>
-            <span className="text-slate-700 font-medium">{device.lastSync ? timeAgo(device.lastSync) : /* istanbul ignore next */ 'Never'}</span>
+            <span className="text-slate-700 font-medium">
+              {device.lastSync ? timeAgo(device.lastSync) : /* istanbul ignore next */ 'Never'}
+            </span>
           </div>
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-500 flex items-center gap-1">
               <Database className="w-3 h-3" />
               Data Points
             </span>
-            <span className="text-slate-700 font-medium">{formatNumber(device.dataPointsSynced)}</span>
+            <span className="text-slate-700 font-medium">
+              {formatNumber(device.dataPointsSynced)}
+            </span>
           </div>
           {device.batteryLevel !== undefined && (
             <div className="flex items-center justify-between text-xs">
@@ -103,7 +130,9 @@ export function DeviceCard({
                 <Battery className="w-3 h-3" />
                 Battery
               </span>
-              <span className={`font-medium ${device.batteryLevel > 20 ? 'text-emerald-600' : 'text-red-600'}`}>
+              <span
+                className={`font-medium ${device.batteryLevel > 20 ? 'text-emerald-600' : 'text-red-600'}`}
+              >
                 {device.batteryLevel}%
               </span>
             </div>
@@ -181,7 +210,10 @@ export function WearableChart({
     .slice(-50);
 
   const chartData = sorted.map((dp) => ({
-    time: new Date(dp.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+    time: new Date(dp.timestamp).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }),
     value: dp.value,
   }));
 
@@ -193,13 +225,21 @@ export function WearableChart({
         <h3 className="text-base font-semibold text-slate-900 capitalize">
           {metric.replace(/_/g, ' ')}
         </h3>
-        <p className="text-xs text-slate-400 mt-0.5">{sorted.length} data points ({unit})</p>
+        <p className="text-xs text-slate-400 mt-0.5">
+          {sorted.length} data points ({unit})
+        </p>
       </div>
       <div className="px-2 pb-4 pt-2">
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-            <XAxis dataKey="time" tick={{ fontSize: 9, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} interval={Math.max(1, Math.floor(chartData.length / 8))} />
+            <XAxis
+              dataKey="time"
+              tick={{ fontSize: 9, fill: '#94a3b8' }}
+              tickLine={false}
+              axisLine={{ stroke: '#e2e8f0' }}
+              interval={Math.max(1, Math.floor(chartData.length / 8))}
+            />
             <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
             <Tooltip content={<ChartTooltip formatValue={(v) => `${v} ${unit}`} />} />
             <Line
@@ -234,16 +274,26 @@ export function DataPointList({ dataPoints }: { dataPoints: WearableDataPoint[] 
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100">
-              <th className="px-5 py-2 text-left text-xs font-medium text-slate-500 uppercase">Metric</th>
-              <th className="px-5 py-2 text-left text-xs font-medium text-slate-500 uppercase">Value</th>
-              <th className="px-5 py-2 text-left text-xs font-medium text-slate-500 uppercase">Unit</th>
-              <th className="px-5 py-2 text-left text-xs font-medium text-slate-500 uppercase">Time</th>
+              <th className="px-5 py-2 text-left text-xs font-medium text-slate-500 uppercase">
+                Metric
+              </th>
+              <th className="px-5 py-2 text-left text-xs font-medium text-slate-500 uppercase">
+                Value
+              </th>
+              <th className="px-5 py-2 text-left text-xs font-medium text-slate-500 uppercase">
+                Unit
+              </th>
+              <th className="px-5 py-2 text-left text-xs font-medium text-slate-500 uppercase">
+                Time
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
             {recent.map((dp) => (
               <tr key={dp.id} className="hover:bg-slate-50 transition-colors">
-                <td className="px-5 py-2 capitalize text-slate-700">{dp.metric.replace(/_/g, ' ')}</td>
+                <td className="px-5 py-2 capitalize text-slate-700">
+                  {dp.metric.replace(/_/g, ' ')}
+                </td>
                 <td className="px-5 py-2 font-semibold text-slate-900">{dp.value.toFixed(1)}</td>
                 <td className="px-5 py-2 text-slate-500">{dp.unit}</td>
                 <td className="px-5 py-2 text-slate-500">{timeAgo(dp.timestamp)}</td>
@@ -282,14 +332,14 @@ export function ConnectionWizard({
           <div key={s} className="flex items-center gap-2">
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                step >= s
-                  ? 'bg-brand-600 text-white'
-                  : 'bg-slate-100 text-slate-400'
+                step >= s ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-400'
               }`}
             >
               {step > s ? <CheckCircle className="w-4 h-4" /> : s}
             </div>
-            {s < 3 && <div className={`w-12 h-0.5 ${step > s ? 'bg-brand-600' : 'bg-slate-200'}`} />}
+            {s < 3 && (
+              <div className={`w-12 h-0.5 ${step > s ? 'bg-brand-600' : 'bg-slate-200'}`} />
+            )}
           </div>
         ))}
       </div>
@@ -341,7 +391,8 @@ export function ConnectionWizard({
           </div>
           <h3 className="text-lg font-semibold text-slate-900 mb-2">Confirm Connection</h3>
           <p className="text-sm text-slate-500 mb-6">
-            Ready to start syncing. Your data is protected by end-to-end encryption and TEE attestation.
+            Ready to start syncing. Your data is protected by end-to-end encryption and TEE
+            attestation.
           </p>
           <div className="flex gap-3 justify-center">
             <button

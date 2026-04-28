@@ -9,20 +9,45 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Stethoscope, Activity, Pill, AlertTriangle, ShieldCheck,
-  CheckCircle, Clock, Bell, FileSearch, Brain, Heart,
-  Clipboard, ChevronRight, Info, Shield, BarChart3,
-  ListChecks, FlaskConical, ScrollText,
+  Stethoscope,
+  Activity,
+  Pill,
+  AlertTriangle,
+  ShieldCheck,
+  CheckCircle,
+  Clock,
+  Bell,
+  FileSearch,
+  Brain,
+  Heart,
+  Clipboard,
+  ChevronRight,
+  Info,
+  Shield,
+  BarChart3,
+  ListChecks,
+  FlaskConical,
+  ScrollText,
 } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
 import {
-  TopNav, Footer, ToastContainer, SearchOverlay,
-  Badge, Tabs, ProgressRing,
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  Tabs,
+  ProgressRing,
 } from '@/components/ui/SharedComponents';
 import {
-  MedicalCard, HealthMetricCard, SectionHeader,
-  ChartTooltip, StatusBadge, TEEBadge, TruncatedHash,
+  MedicalCard,
+  HealthMetricCard,
+  SectionHeader,
+  ChartTooltip,
+  StatusBadge,
+  TEEBadge,
+  TruncatedHash,
 } from '@/components/ui/PagePrimitives';
 import {
   ClinicalAlertCard,
@@ -34,12 +59,23 @@ import {
 import { useClinicalDecisionSupport } from '@/hooks/useClinicalDecisionSupport';
 import { BRAND, CHART_COLORS } from '@/lib/constants';
 import {
-  seededRandom, seededInt, seededHex,
-  formatNumber, formatPercent, timeAgo, formatDate, generateAttestation,
+  seededRandom,
+  seededInt,
+  seededHex,
+  formatNumber,
+  formatPercent,
+  timeAgo,
+  formatDate,
+  generateAttestation,
 } from '@/lib/utils';
 import {
-  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-  ResponsiveContainer, Tooltip,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  ResponsiveContainer,
+  Tooltip,
 } from 'recharts';
 
 // ============================================================
@@ -93,7 +129,6 @@ export default function ClinicalDecisionSupportPage() {
 
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-
           {/* ---- Header ---- */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
@@ -102,7 +137,8 @@ export default function ClinicalDecisionSupportPage() {
                 <h1 className="text-2xl font-bold text-slate-900">Clinical Decision Support</h1>
               </div>
               <p className="text-sm text-slate-500">
-                AI-powered clinical pathways, drug interaction checks, and differential diagnosis with TEE-verified audit trail
+                AI-powered clinical pathways, drug interaction checks, and differential diagnosis
+                with TEE-verified audit trail
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -137,7 +173,16 @@ export default function ClinicalDecisionSupportPage() {
               icon={<ShieldCheck className="w-5 h-5" />}
               label="Guideline Compliance"
               value={formatPercent(clinical.stats?.guidelineComplianceScore ?? 0, 0)}
-              sparklineData={[85, 86, 88, 87, 89, 90, 91, clinical.stats?.guidelineComplianceScore ?? 90]}
+              sparklineData={[
+                85,
+                86,
+                88,
+                87,
+                89,
+                90,
+                91,
+                clinical.stats?.guidelineComplianceScore ?? 90,
+              ]}
               sparklineColor="#10b981"
             />
           </div>
@@ -156,7 +201,6 @@ export default function ClinicalDecisionSupportPage() {
           {clinical.activeTab === 'interactions' && <InteractionsTab clinical={clinical} />}
           {clinical.activeTab === 'differentials' && <DifferentialsTab clinical={clinical} />}
           {clinical.activeTab === 'audit' && <AuditTab clinical={clinical} />}
-
         </div>
       </main>
 
@@ -174,10 +218,8 @@ function DashboardTab({ clinical }: { clinical: ReturnType<typeof useClinicalDec
 
   return (
     <div className="space-y-8">
-
       {/* Two-column layout: Alerts + Radar */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
         {/* Clinical Alerts */}
         <div>
           <SectionHeader
@@ -188,9 +230,9 @@ function DashboardTab({ clinical }: { clinical: ReturnType<typeof useClinicalDec
           />
           <div className="space-y-3">
             {clinical.alerts.length > 0 ? (
-              clinical.alerts.slice(0, 5).map((alert) => (
-                <ClinicalAlertCard key={alert.id} alert={alert} />
-              ))
+              clinical.alerts
+                .slice(0, 5)
+                .map((alert) => <ClinicalAlertCard key={alert.id} alert={alert} />)
             ) : (
               <MedicalCard>
                 <div className="flex items-center justify-center py-12 text-slate-400 text-sm">
@@ -214,10 +256,7 @@ function DashboardTab({ clinical }: { clinical: ReturnType<typeof useClinicalDec
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="75%">
                   <PolarGrid stroke="#e2e8f0" />
-                  <PolarAngleAxis
-                    dataKey="category"
-                    tick={{ fill: '#64748b', fontSize: 11 }}
-                  />
+                  <PolarAngleAxis dataKey="category" tick={{ fill: '#64748b', fontSize: 11 }} />
                   <PolarRadiusAxis
                     angle={30}
                     domain={[60, 100]}
@@ -241,8 +280,13 @@ function DashboardTab({ clinical }: { clinical: ReturnType<typeof useClinicalDec
             <div className="flex flex-wrap gap-4 justify-center pt-2 border-t border-slate-100 mt-2">
               {radarData.map((d, i) => (
                 <div key={d.category} className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                  <span className="text-xs text-slate-600">{d.category}: <strong>{d.accuracy}%</strong></span>
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
+                  />
+                  <span className="text-xs text-slate-600">
+                    {d.category}: <strong>{d.accuracy}%</strong>
+                  </span>
                 </div>
               ))}
             </div>
@@ -334,7 +378,11 @@ function PathwaysTab({ clinical }: { clinical: ReturnType<typeof useClinicalDeci
 // Drug Interactions Tab
 // ============================================================
 
-function InteractionsTab({ clinical }: { clinical: ReturnType<typeof useClinicalDecisionSupport> }) {
+function InteractionsTab({
+  clinical,
+}: {
+  clinical: ReturnType<typeof useClinicalDecisionSupport>;
+}) {
   return (
     <div>
       <SectionHeader
@@ -349,14 +397,30 @@ function InteractionsTab({ clinical }: { clinical: ReturnType<typeof useClinical
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/50">
-                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Drug A</th>
-                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Drug B</th>
-                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Severity</th>
-                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Mechanism</th>
-                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Clinical Effect</th>
-                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Recommendation</th>
-                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Evidence</th>
-                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">TEE</th>
+                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Drug A
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Drug B
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Severity
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Mechanism
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Clinical Effect
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Recommendation
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Evidence
+                </th>
+                <th className="py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  TEE
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -381,7 +445,11 @@ function InteractionsTab({ clinical }: { clinical: ReturnType<typeof useClinical
 // Differentials Tab
 // ============================================================
 
-function DifferentialsTab({ clinical }: { clinical: ReturnType<typeof useClinicalDecisionSupport> }) {
+function DifferentialsTab({
+  clinical,
+}: {
+  clinical: ReturnType<typeof useClinicalDecisionSupport>;
+}) {
   return (
     <div>
       <SectionHeader

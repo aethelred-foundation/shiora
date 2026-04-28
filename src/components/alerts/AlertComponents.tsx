@@ -2,11 +2,30 @@
 
 import React, { useState } from 'react';
 import {
-  AlertTriangle, AlertCircle, Info, CheckCircle, Bell,
-  Mail, Smartphone, MessageSquare, Clock, Shield,
-  ToggleLeft, ToggleRight, Edit2, ChevronDown, ChevronUp,
-  Thermometer, Heart, Activity, Droplets, Gauge,
-  Moon, TrendingUp, Zap, Brain,
+  AlertTriangle,
+  AlertCircle,
+  Info,
+  CheckCircle,
+  Bell,
+  Mail,
+  Smartphone,
+  MessageSquare,
+  Clock,
+  Shield,
+  ToggleLeft,
+  ToggleRight,
+  Edit2,
+  ChevronDown,
+  ChevronUp,
+  Thermometer,
+  Heart,
+  Activity,
+  Droplets,
+  Gauge,
+  Moon,
+  TrendingUp,
+  Zap,
+  Brain,
 } from 'lucide-react';
 
 import type {
@@ -26,10 +45,28 @@ import { formatDateTime, timeAgo, truncateAddress } from '@/lib/utils';
 // Shared Helpers
 // ============================================================
 
-const SEVERITY_STYLES: Record<AlertSeverity, { border: string; bg: string; icon: React.ReactNode; badge: 'error' | 'warning' | 'info' }> = {
-  critical: { border: 'border-red-300', bg: 'bg-red-50', icon: <AlertTriangle className="w-5 h-5 text-red-500" />, badge: 'error' },
-  warning: { border: 'border-amber-300', bg: 'bg-amber-50', icon: <AlertCircle className="w-5 h-5 text-amber-500" />, badge: 'warning' },
-  info: { border: 'border-brand-300', bg: 'bg-brand-50', icon: <Info className="w-5 h-5 text-brand-500" />, badge: 'info' },
+const SEVERITY_STYLES: Record<
+  AlertSeverity,
+  { border: string; bg: string; icon: React.ReactNode; badge: 'error' | 'warning' | 'info' }
+> = {
+  critical: {
+    border: 'border-red-300',
+    bg: 'bg-red-50',
+    icon: <AlertTriangle className="w-5 h-5 text-red-500" />,
+    badge: 'error',
+  },
+  warning: {
+    border: 'border-amber-300',
+    bg: 'bg-amber-50',
+    icon: <AlertCircle className="w-5 h-5 text-amber-500" />,
+    badge: 'warning',
+  },
+  info: {
+    border: 'border-brand-300',
+    bg: 'bg-brand-50',
+    icon: <Info className="w-5 h-5 text-brand-500" />,
+    badge: 'info',
+  },
 };
 
 const METRIC_ICONS: Record<string, React.ReactNode> = {
@@ -79,16 +116,30 @@ export function AlertCard({ alert, onAcknowledge, onResolve }: AlertCardProps) {
   return (
     <MedicalCard className={`border-l-4 ${style.border}`}>
       <div className="flex items-start gap-3">
-        <div className={`w-10 h-10 rounded-xl ${style.bg} flex items-center justify-center shrink-0`}>
+        <div
+          className={`w-10 h-10 rounded-xl ${style.bg} flex items-center justify-center shrink-0`}
+        >
           {style.icon}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h3 className="text-sm font-semibold text-slate-900">{alert.title}</h3>
             <Badge variant={style.badge}>{alert.severity}</Badge>
-            {alert.resolvedAt && <Badge variant="success" dot>Resolved</Badge>}
-            {isAcknowledged && <Badge variant="warning" dot>Acknowledged</Badge>}
-            {isActive && <Badge variant="error" dot>Active</Badge>}
+            {alert.resolvedAt && (
+              <Badge variant="success" dot>
+                Resolved
+              </Badge>
+            )}
+            {isAcknowledged && (
+              <Badge variant="warning" dot>
+                Acknowledged
+              </Badge>
+            )}
+            {isActive && (
+              <Badge variant="error" dot>
+                Active
+              </Badge>
+            )}
           </div>
 
           <div className="flex items-center gap-3 mb-2 text-xs text-slate-500">
@@ -155,7 +206,8 @@ interface AlertRuleCardProps {
 }
 
 export function AlertRuleCard({ rule, onToggle, onEdit }: AlertRuleCardProps) {
-  const conditionLabel = rule.condition === 'above' ? 'Above' : rule.condition === 'below' ? 'Below' : 'Deviation';
+  const conditionLabel =
+    rule.condition === 'above' ? 'Above' : rule.condition === 'below' ? 'Below' : 'Deviation';
 
   return (
     <MedicalCard>
@@ -249,27 +301,34 @@ export function ThresholdSlider({
   const thresholdPct = ((threshold - min) / range) * 100;
   const currentPct = currentValue !== undefined ? ((currentValue - min) / range) * 100 : undefined;
 
-  const dangerZoneStyle = condition === 'above'
-    ? { left: `${thresholdPct}%`, right: '0%' }
-    : condition === 'below'
-    ? { left: '0%', right: `${100 - thresholdPct}%` }
-    : { left: `${Math.max(0, thresholdPct - 10)}%`, right: `${Math.max(0, 100 - thresholdPct - 10)}%` };
+  const dangerZoneStyle =
+    condition === 'above'
+      ? { left: `${thresholdPct}%`, right: '0%' }
+      : condition === 'below'
+        ? { left: '0%', right: `${100 - thresholdPct}%` }
+        : {
+            left: `${Math.max(0, thresholdPct - 10)}%`,
+            right: `${Math.max(0, 100 - thresholdPct - 10)}%`,
+          };
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-xs text-slate-500">
-        <span>{min} {unit}</span>
-        <span className="font-medium text-slate-700">Threshold: {threshold} {unit}</span>
-        <span>{max} {unit}</span>
+        <span>
+          {min} {unit}
+        </span>
+        <span className="font-medium text-slate-700">
+          Threshold: {threshold} {unit}
+        </span>
+        <span>
+          {max} {unit}
+        </span>
       </div>
       <div className="relative h-8">
         {/* Track background */}
         <div className="absolute top-3 left-0 right-0 h-2 bg-emerald-100 rounded-full" />
         {/* Danger zone */}
-        <div
-          className="absolute top-3 h-2 bg-red-100 rounded-full"
-          style={dangerZoneStyle}
-        />
+        <div className="absolute top-3 h-2 bg-red-100 rounded-full" style={dangerZoneStyle} />
         {/* Current value marker */}
         {currentPct !== undefined && (
           <div
@@ -325,7 +384,9 @@ export function AlertTimeline({ history }: AlertTimelineProps) {
           return (
             <div key={entry.id} className="relative flex gap-4 pl-0">
               {/* Dot */}
-              <div className={`relative z-10 w-6 h-6 rounded-full ${actionStyle.color} flex items-center justify-center shrink-0`}>
+              <div
+                className={`relative z-10 w-6 h-6 rounded-full ${actionStyle.color} flex items-center justify-center shrink-0`}
+              >
                 {actionStyle.icon}
               </div>
               {/* Content */}
@@ -334,9 +395,7 @@ export function AlertTimeline({ history }: AlertTimelineProps) {
                   <span className="text-sm font-medium text-slate-900 capitalize">
                     {entry.action}
                   </span>
-                  {entry.actor && (
-                    <span className="text-xs text-slate-500">by {entry.actor}</span>
-                  )}
+                  {entry.actor && <span className="text-xs text-slate-500">by {entry.actor}</span>}
                 </div>
                 <p className="text-xs text-slate-400">{formatDateTime(entry.timestamp)}</p>
                 {entry.notes && (
@@ -385,9 +444,11 @@ export function ChannelSelector({ selected, onChange }: ChannelSelectorProps) {
                 : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
             }`}
           >
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-              isSelected ? 'bg-brand-100' : 'bg-slate-100'
-            }`}>
+            <div
+              className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                isSelected ? 'bg-brand-100' : 'bg-slate-100'
+              }`}
+            >
               {CHANNEL_ICONS[channel.id]}
             </div>
             <div>

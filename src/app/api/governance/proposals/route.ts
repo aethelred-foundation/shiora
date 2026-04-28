@@ -8,7 +8,11 @@ import { NextRequest } from 'next/server';
 import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
-  seededRandom, seededInt, seededHex, seededPick, seededAddress,
+  seededRandom,
+  seededInt,
+  seededHex,
+  seededPick,
+  seededAddress,
   generateTxHash,
 } from '@/lib/utils';
 
@@ -71,9 +75,7 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  const filtered = status
-    ? proposals.filter((p) => p.status === status)
-    : proposals;
+  const filtered = status ? proposals.filter((p) => p.status === status) : proposals;
 
   return successResponse(filtered);
 }
@@ -91,13 +93,18 @@ export async function POST(request: NextRequest) {
     const { type, title, description, votingPeriodDays } = body;
 
     if (!type || !title || !description) {
-      return errorResponse('VALIDATION_ERROR', 'type, title, and description are required', HTTP.UNPROCESSABLE);
+      return errorResponse(
+        'VALIDATION_ERROR',
+        'type, title, and description are required',
+        HTTP.UNPROCESSABLE,
+      );
     }
 
     const seed = Date.now();
     const proposal = {
       id: `prop-${seededHex(seed, 8)}`,
-      proposer: request.headers.get('x-wallet-address') ?? 'aeth1demo000000000000000000000000000000000',
+      proposer:
+        request.headers.get('x-wallet-address') ?? 'aeth1demo000000000000000000000000000000000',
       type,
       title,
       description,

@@ -10,32 +10,86 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
-  Brain, ShieldCheck, Cpu, Activity, TrendingUp,
-  AlertTriangle, CheckCircle, Clock, Thermometer,
-  Droplets, Moon, Sun, Zap, BarChart3, Eye,
-  ChevronRight, RefreshCw, Sparkles, Target,
-  HeartPulse, Calendar, ArrowUpRight, Stethoscope,
-  Pill, Dna, Fingerprint,
+  Brain,
+  ShieldCheck,
+  Cpu,
+  Activity,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Thermometer,
+  Droplets,
+  Moon,
+  Sun,
+  Zap,
+  BarChart3,
+  Eye,
+  ChevronRight,
+  RefreshCw,
+  Sparkles,
+  Target,
+  HeartPulse,
+  Calendar,
+  ArrowUpRight,
+  Stethoscope,
+  Pill,
+  Dna,
+  Fingerprint,
 } from 'lucide-react';
 import {
-  AreaChart, Area, LineChart, Line, BarChart, Bar,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-  ScatterChart, Scatter, ZAxis,
+  AreaChart,
+  Area,
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  ScatterChart,
+  Scatter,
+  ZAxis,
 } from 'recharts';
 
 import { useApp } from '@/contexts/AppContext';
-import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, Tabs, ProgressRing } from '@/components/ui/SharedComponents';
 import {
-  MedicalCard, HealthMetricCard, SectionHeader, ChartTooltip,
-  StatusBadge, TEEBadge, TruncatedHash,
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  Tabs,
+  ProgressRing,
+} from '@/components/ui/SharedComponents';
+import {
+  MedicalCard,
+  HealthMetricCard,
+  SectionHeader,
+  ChartTooltip,
+  StatusBadge,
+  TEEBadge,
+  TruncatedHash,
 } from '@/components/ui/PagePrimitives';
 import ExplainabilityTab from '@/components/xai/ExplainabilityTab';
 import { BRAND, CHART_COLORS, CYCLE_PHASE_COLORS, AI_MODELS } from '@/lib/constants';
 import {
-  seededRandom, seededInt, seededHex,
-  formatNumber, formatPercent, timeAgo, formatDate,
-  generateDayLabel, generateAttestation,
+  seededRandom,
+  seededInt,
+  seededHex,
+  formatNumber,
+  formatPercent,
+  timeAgo,
+  formatDate,
+  generateDayLabel,
+  generateAttestation,
 } from '@/lib/utils';
 
 // ============================================================
@@ -46,16 +100,43 @@ const SEED = 300;
 
 function generateCyclePrediction() {
   return Array.from({ length: 35 }, (_, i) => {
-    const phase = i < 5 ? 'menstrual' : i < 14 ? 'follicular' : i < 17 ? 'ovulation' : i < 28 ? 'luteal' : 'menstrual';
+    const phase =
+      i < 5
+        ? 'menstrual'
+        : i < 14
+          ? 'follicular'
+          : i < 17
+            ? 'ovulation'
+            : i < 28
+              ? 'luteal'
+              : 'menstrual';
     const phaseInfo = CYCLE_PHASE_COLORS[phase as keyof typeof CYCLE_PHASE_COLORS];
     return {
       day: i + 1,
       label: `Day ${i + 1}`,
-      temperature: parseFloat((97.0 + (phase === 'luteal' ? 0.5 : phase === 'ovulation' ? 0.6 : 0) + seededRandom(SEED + i * 2) * 0.3).toFixed(1)),
-      predicted: parseFloat((97.0 + (phase === 'luteal' ? 0.5 : phase === 'ovulation' ? 0.6 : 0) + seededRandom(SEED + i * 2 + 100) * 0.25).toFixed(1)),
-      fertility: phase === 'ovulation' ? 90 + seededRandom(SEED + i) * 10 : phase === 'follicular' && i > 10 ? 40 + seededRandom(SEED + i) * 30 : seededRandom(SEED + i) * 20,
+      temperature: parseFloat(
+        (
+          97.0 +
+          (phase === 'luteal' ? 0.5 : phase === 'ovulation' ? 0.6 : 0) +
+          seededRandom(SEED + i * 2) * 0.3
+        ).toFixed(1),
+      ),
+      predicted: parseFloat(
+        (
+          97.0 +
+          (phase === 'luteal' ? 0.5 : phase === 'ovulation' ? 0.6 : 0) +
+          seededRandom(SEED + i * 2 + 100) * 0.25
+        ).toFixed(1),
+      ),
+      fertility:
+        phase === 'ovulation'
+          ? 90 + seededRandom(SEED + i) * 10
+          : phase === 'follicular' && i > 10
+            ? 40 + seededRandom(SEED + i) * 30
+            : seededRandom(SEED + i) * 20,
       phase,
-      phaseColor: phaseInfo?.stroke ||
+      phaseColor:
+        phaseInfo?.stroke ||
         /* istanbul ignore next -- phaseInfo always found for seeded phases */
         BRAND.sky,
     };
@@ -63,7 +144,13 @@ function generateCyclePrediction() {
 }
 
 function generateAnomalies() {
-  const types = ['Elevated Temperature', 'Irregular Cycle Length', 'Unusual Pattern', 'Missed Phase Detection', 'Atypical Hormone Levels'];
+  const types = [
+    'Elevated Temperature',
+    'Irregular Cycle Length',
+    'Unusual Pattern',
+    'Missed Phase Detection',
+    'Atypical Hormone Levels',
+  ];
   const severities = ['High', 'Medium', 'Low'] as const;
   return Array.from({ length: 6 }, (_, i) => ({
     id: `anomaly-${i}`,
@@ -177,7 +264,6 @@ export default function InsightsPage() {
 
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-
           {/* ─── Header ─── */}
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
             <div>
@@ -186,13 +272,19 @@ export default function InsightsPage() {
                 <h1 className="text-2xl font-bold text-slate-900">AI Insights</h1>
               </div>
               <p className="text-sm text-slate-500">
-                TEE-verified health analytics powered by machine learning models running inside secure enclaves
+                TEE-verified health analytics powered by machine learning models running inside
+                secure enclaves
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <StatusBadge status={teeState.status === 'operational' ? 'Operational' :
-                /* istanbul ignore next -- teeState is always operational in test */
-                'Degraded'} />
+              <StatusBadge
+                status={
+                  teeState.status === 'operational'
+                    ? 'Operational'
+                    : /* istanbul ignore next -- teeState is always operational in test */
+                      'Degraded'
+                }
+              />
               <Badge variant="medical">
                 <Cpu className="w-3 h-3 mr-1" />
                 {teeState.platform}
@@ -246,15 +338,23 @@ export default function InsightsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-base font-semibold text-slate-900">Cycle Prediction</h3>
-                        <p className="text-xs text-slate-400 mt-0.5">Actual vs predicted basal body temperature</p>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          Actual vs predicted basal body temperature
+                        </p>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: BRAND.sky }} />
+                          <span
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{ backgroundColor: BRAND.sky }}
+                          />
                           <span className="text-2xs text-slate-500">Actual</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: '#a78bfa' }} />
+                          <span
+                            className="w-2.5 h-2.5 rounded-full border-2"
+                            style={{ borderColor: '#a78bfa' }}
+                          />
                           <span className="text-2xs text-slate-500">Predicted</span>
                         </div>
                       </div>
@@ -262,13 +362,42 @@ export default function InsightsPage() {
                   </div>
                   <div className="px-2 pb-4 pt-2">
                     <ResponsiveContainer width="100%" height={240}>
-                      <LineChart data={cyclePrediction} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                      <LineChart
+                        data={cyclePrediction}
+                        margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                      >
                         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                        <XAxis dataKey="label" tick={{ fontSize: 9, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} interval={4} />
-                        <YAxis domain={[96.5, 98.5]} tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+                        <XAxis
+                          dataKey="label"
+                          tick={{ fontSize: 9, fill: '#94a3b8' }}
+                          tickLine={false}
+                          axisLine={{ stroke: '#e2e8f0' }}
+                          interval={4}
+                        />
+                        <YAxis
+                          domain={[96.5, 98.5]}
+                          tick={{ fontSize: 10, fill: '#94a3b8' }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
                         <Tooltip content={<ChartTooltip formatValue={(v) => `${v}°F`} />} />
-                        <Line type="monotone" dataKey="temperature" stroke={BRAND.sky} strokeWidth={2} dot={false} name="Actual" />
-                        <Line type="monotone" dataKey="predicted" stroke="#a78bfa" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Predicted" />
+                        <Line
+                          type="monotone"
+                          dataKey="temperature"
+                          stroke={BRAND.sky}
+                          strokeWidth={2}
+                          dot={false}
+                          name="Actual"
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="predicted"
+                          stroke="#a78bfa"
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          dot={false}
+                          name="Predicted"
+                        />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -286,7 +415,14 @@ export default function InsightsPage() {
                         <PolarGrid stroke="#e2e8f0" />
                         <PolarAngleAxis dataKey="metric" tick={{ fontSize: 9, fill: '#64748b' }} />
                         <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
-                        <Radar name="Score" dataKey="value" stroke={BRAND.sky} fill={BRAND.sky} fillOpacity={0.2} strokeWidth={2} />
+                        <Radar
+                          name="Score"
+                          dataKey="value"
+                          stroke={BRAND.sky}
+                          fill={BRAND.sky}
+                          fillOpacity={0.2}
+                          strokeWidth={2}
+                        />
                       </RadarChart>
                     </ResponsiveContainer>
                   </div>
@@ -305,11 +441,17 @@ export default function InsightsPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CHART_COLORS[0] }} />
+                          <span
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{ backgroundColor: CHART_COLORS[0] }}
+                          />
                           <span className="text-2xs text-slate-500">Energy</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CHART_COLORS[5] }} />
+                          <span
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{ backgroundColor: CHART_COLORS[5] }}
+                          />
                           <span className="text-2xs text-slate-500">Mood</span>
                         </div>
                       </div>
@@ -317,13 +459,38 @@ export default function InsightsPage() {
                   </div>
                   <div className="px-2 pb-4 pt-2">
                     <ResponsiveContainer width="100%" height={200}>
-                      <BarChart data={weeklyEnergy} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                      <BarChart
+                        data={weeklyEnergy}
+                        margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                      >
                         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                        <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
-                        <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} domain={[0, 100]} />
+                        <XAxis
+                          dataKey="day"
+                          tick={{ fontSize: 11, fill: '#94a3b8' }}
+                          tickLine={false}
+                          axisLine={{ stroke: '#e2e8f0' }}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 10, fill: '#94a3b8' }}
+                          tickLine={false}
+                          axisLine={false}
+                          domain={[0, 100]}
+                        />
                         <Tooltip content={<ChartTooltip />} />
-                        <Bar dataKey="energy" fill={CHART_COLORS[0]} radius={[4, 4, 0, 0]} barSize={12} name="Energy" />
-                        <Bar dataKey="mood" fill={CHART_COLORS[5]} radius={[4, 4, 0, 0]} barSize={12} name="Mood" />
+                        <Bar
+                          dataKey="energy"
+                          fill={CHART_COLORS[0]}
+                          radius={[4, 4, 0, 0]}
+                          barSize={12}
+                          name="Energy"
+                        />
+                        <Bar
+                          dataKey="mood"
+                          fill={CHART_COLORS[5]}
+                          radius={[4, 4, 0, 0]}
+                          barSize={12}
+                          name="Mood"
+                        />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -337,15 +504,28 @@ export default function InsightsPage() {
                   </div>
                   <div className="divide-y divide-slate-100">
                     {recentInferences.slice(0, 6).map((inf) => (
-                      <div key={inf.id} className="px-5 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          inf.result === 'Normal' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
-                        }`}>
-                          {inf.result === 'Normal' ? <CheckCircle className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+                      <div
+                        key={inf.id}
+                        className="px-5 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors"
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                            inf.result === 'Normal'
+                              ? 'bg-emerald-50 text-emerald-600'
+                              : 'bg-amber-50 text-amber-600'
+                          }`}
+                        >
+                          {inf.result === 'Normal' ? (
+                            <CheckCircle className="w-4 h-4" />
+                          ) : (
+                            <AlertTriangle className="w-4 h-4" />
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-slate-900">{inf.model.name}</p>
-                          <p className="text-xs text-slate-400">{inf.result} • {inf.confidence}% confidence</p>
+                          <p className="text-xs text-slate-400">
+                            {inf.result} • {inf.confidence}% confidence
+                          </p>
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-xs text-slate-400">{timeAgo(inf.timestamp)}</p>
@@ -367,7 +547,10 @@ export default function InsightsPage() {
                 <span className="text-sm font-medium text-slate-700">Cycle Phases:</span>
                 {Object.values(CYCLE_PHASE_COLORS).map((phase) => (
                   <div key={phase.label} className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: phase.stroke }} />
+                    <span
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: phase.stroke }}
+                    />
                     <span className="text-sm text-slate-600">{phase.label}</span>
                   </div>
                 ))}
@@ -376,12 +559,19 @@ export default function InsightsPage() {
               {/* Temperature + Fertility */}
               <MedicalCard padding={false}>
                 <div className="p-5 pb-0">
-                  <h3 className="text-base font-semibold text-slate-900">Temperature & Fertility Window</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">LSTM-predicted cycle with fertility probability overlay</p>
+                  <h3 className="text-base font-semibold text-slate-900">
+                    Temperature & Fertility Window
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    LSTM-predicted cycle with fertility probability overlay
+                  </p>
                 </div>
                 <div className="px-2 pb-4 pt-2">
                   <ResponsiveContainer width="100%" height={280}>
-                    <AreaChart data={cyclePrediction} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                    <AreaChart
+                      data={cyclePrediction}
+                      margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
+                    >
                       <defs>
                         <linearGradient id="fertilityGrad" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#a78bfa" stopOpacity={0.3} />
@@ -389,13 +579,57 @@ export default function InsightsPage() {
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis dataKey="label" tick={{ fontSize: 9, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} interval={3} />
-                      <YAxis yAxisId="temp" domain={[96.5, 98.5]} tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
-                      <YAxis yAxisId="fertility" orientation="right" domain={[0, 100]} tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fontSize: 9, fill: '#94a3b8' }}
+                        tickLine={false}
+                        axisLine={{ stroke: '#e2e8f0' }}
+                        interval={3}
+                      />
+                      <YAxis
+                        yAxisId="temp"
+                        domain={[96.5, 98.5]}
+                        tick={{ fontSize: 10, fill: '#94a3b8' }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        yAxisId="fertility"
+                        orientation="right"
+                        domain={[0, 100]}
+                        tick={{ fontSize: 10, fill: '#94a3b8' }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
                       <Tooltip content={<ChartTooltip />} />
-                      <Area yAxisId="fertility" type="monotone" dataKey="fertility" stroke="#a78bfa" fill="url(#fertilityGrad)" strokeWidth={1.5} name="Fertility %" />
-                      <Line yAxisId="temp" type="monotone" dataKey="temperature" stroke={BRAND.sky} strokeWidth={2} dot={false} name="Temperature °F" />
-                      <Line yAxisId="temp" type="monotone" dataKey="predicted" stroke="#f43f5e" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Predicted °F" />
+                      <Area
+                        yAxisId="fertility"
+                        type="monotone"
+                        dataKey="fertility"
+                        stroke="#a78bfa"
+                        fill="url(#fertilityGrad)"
+                        strokeWidth={1.5}
+                        name="Fertility %"
+                      />
+                      <Line
+                        yAxisId="temp"
+                        type="monotone"
+                        dataKey="temperature"
+                        stroke={BRAND.sky}
+                        strokeWidth={2}
+                        dot={false}
+                        name="Temperature °F"
+                      />
+                      <Line
+                        yAxisId="temp"
+                        type="monotone"
+                        dataKey="predicted"
+                        stroke="#f43f5e"
+                        strokeWidth={2}
+                        strokeDasharray="5 5"
+                        dot={false}
+                        name="Predicted °F"
+                      />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -449,11 +683,15 @@ export default function InsightsPage() {
               {anomalies.map((anomaly) => (
                 <MedicalCard key={anomaly.id}>
                   <div className="flex items-start gap-4">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                      anomaly.severity === 'High' ? 'bg-rose-50 text-rose-600' :
-                      anomaly.severity === 'Medium' ? 'bg-amber-50 text-amber-600' :
-                      'bg-brand-50 text-brand-600'
-                    }`}>
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                        anomaly.severity === 'High'
+                          ? 'bg-rose-50 text-rose-600'
+                          : anomaly.severity === 'Medium'
+                            ? 'bg-amber-50 text-amber-600'
+                            : 'bg-brand-50 text-brand-600'
+                      }`}
+                    >
                       <AlertTriangle className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -543,8 +781,12 @@ export default function InsightsPage() {
               {/* Treatment Effectiveness + Drug Warnings */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <MedicalCard>
-                  <h3 className="text-base font-semibold text-slate-900 mb-1">Treatment Effectiveness</h3>
-                  <p className="text-xs text-slate-400 mb-4">AI-predicted treatment response based on your health twin</p>
+                  <h3 className="text-base font-semibold text-slate-900 mb-1">
+                    Treatment Effectiveness
+                  </h3>
+                  <p className="text-xs text-slate-400 mb-4">
+                    AI-predicted treatment response based on your health twin
+                  </p>
                   <div className="space-y-3">
                     {[
                       { treatment: 'Metformin 500mg', effectiveness: 87, status: 'Optimal' },
@@ -557,7 +799,9 @@ export default function InsightsPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-sm text-slate-700">{t.treatment}</span>
-                            <span className={`text-xs font-medium ${t.effectiveness >= 85 ? 'text-emerald-600' : t.effectiveness >= 70 ? 'text-brand-600' : 'text-amber-600'}`}>
+                            <span
+                              className={`text-xs font-medium ${t.effectiveness >= 85 ? 'text-emerald-600' : t.effectiveness >= 70 ? 'text-brand-600' : 'text-amber-600'}`}
+                            >
                               {t.status} ({t.effectiveness}%)
                             </span>
                           </div>
@@ -574,15 +818,21 @@ export default function InsightsPage() {
                 </MedicalCard>
 
                 <MedicalCard>
-                  <h3 className="text-base font-semibold text-slate-900 mb-1">Drug Interaction Warnings</h3>
-                  <p className="text-xs text-slate-400 mb-4">Based on your current medication profile</p>
+                  <h3 className="text-base font-semibold text-slate-900 mb-1">
+                    Drug Interaction Warnings
+                  </h3>
+                  <p className="text-xs text-slate-400 mb-4">
+                    Based on your current medication profile
+                  </p>
                   <div className="space-y-3">
                     <div className="p-3 bg-rose-50 rounded-xl border border-rose-200">
                       <div className="flex items-start gap-2">
                         <AlertTriangle className="w-4 h-4 text-rose-600 mt-0.5 shrink-0" />
                         <div>
                           <p className="text-sm font-medium text-rose-900">Warfarin + Aspirin</p>
-                          <p className="text-xs text-rose-700 mt-0.5">Major: Increased bleeding risk. Monitor INR closely.</p>
+                          <p className="text-xs text-rose-700 mt-0.5">
+                            Major: Increased bleeding risk. Monitor INR closely.
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -590,8 +840,12 @@ export default function InsightsPage() {
                       <div className="flex items-start gap-2">
                         <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
                         <div>
-                          <p className="text-sm font-medium text-amber-900">Metformin + Contrast Dye</p>
-                          <p className="text-xs text-amber-700 mt-0.5">Moderate: Hold metformin 48h before/after contrast imaging.</p>
+                          <p className="text-sm font-medium text-amber-900">
+                            Metformin + Contrast Dye
+                          </p>
+                          <p className="text-xs text-amber-700 mt-0.5">
+                            Moderate: Hold metformin 48h before/after contrast imaging.
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -599,14 +853,21 @@ export default function InsightsPage() {
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
                         <div>
-                          <p className="text-sm font-medium text-emerald-900">All other combinations safe</p>
-                          <p className="text-xs text-emerald-700 mt-0.5">No additional interactions detected in your medication profile.</p>
+                          <p className="text-sm font-medium text-emerald-900">
+                            All other combinations safe
+                          </p>
+                          <p className="text-xs text-emerald-700 mt-0.5">
+                            No additional interactions detected in your medication profile.
+                          </p>
                         </div>
                       </div>
                     </div>
                   </div>
                   <div className="mt-4 flex justify-end">
-                    <Link href="/clinical" className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1">
+                    <Link
+                      href="/clinical"
+                      className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1"
+                    >
                       Full Clinical Analysis <ChevronRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
@@ -622,8 +883,12 @@ export default function InsightsPage() {
                         <Stethoscope className="w-5 h-5 text-rose-600" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-semibold text-slate-900 group-hover:text-brand-600 transition-colors">Clinical Decision Support</p>
-                        <p className="text-xs text-slate-400">Pathways, interactions, differentials</p>
+                        <p className="text-sm font-semibold text-slate-900 group-hover:text-brand-600 transition-colors">
+                          Clinical Decision Support
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Pathways, interactions, differentials
+                        </p>
                       </div>
                       <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-brand-500" />
                     </div>
@@ -636,7 +901,9 @@ export default function InsightsPage() {
                         <Fingerprint className="w-5 h-5 text-cyan-600" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-semibold text-slate-900 group-hover:text-brand-600 transition-colors">Digital Health Twin</p>
+                        <p className="text-sm font-semibold text-slate-900 group-hover:text-brand-600 transition-colors">
+                          Digital Health Twin
+                        </p>
                         <p className="text-xs text-slate-400">Simulations, predictions, what-if</p>
                       </div>
                       <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-brand-500" />
@@ -650,7 +917,9 @@ export default function InsightsPage() {
                         <Dna className="w-5 h-5 text-fuchsia-600" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-semibold text-slate-900 group-hover:text-brand-600 transition-colors">Genomics Lab</p>
+                        <p className="text-sm font-semibold text-slate-900 group-hover:text-brand-600 transition-colors">
+                          Genomics Lab
+                        </p>
                         <p className="text-xs text-slate-400">Pharmacogenomics, risk scores</p>
                       </div>
                       <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-brand-500" />
@@ -662,9 +931,7 @@ export default function InsightsPage() {
           )}
 
           {/* ─── Explainability Tab ─── */}
-          {activeTab === 'explainability' && (
-            <ExplainabilityTab />
-          )}
+          {activeTab === 'explainability' && <ExplainabilityTab />}
 
           {/* ─── Models Tab ─── */}
           {activeTab === 'models' && (
@@ -692,11 +959,15 @@ export default function InsightsPage() {
                       </div>
                       <div className="bg-slate-50 rounded-xl p-3 text-center">
                         <p className="text-xs text-slate-400">Inferences</p>
-                        <p className="text-lg font-bold text-slate-900">{formatNumber(seededInt(SEED + model.accuracy, 2000, 8000))}</p>
+                        <p className="text-lg font-bold text-slate-900">
+                          {formatNumber(seededInt(SEED + model.accuracy, 2000, 8000))}
+                        </p>
                       </div>
                       <div className="bg-slate-50 rounded-xl p-3 text-center">
                         <p className="text-xs text-slate-400">Latency</p>
-                        <p className="text-lg font-bold text-slate-900">{seededInt(SEED + model.accuracy * 2, 80, 350)}ms</p>
+                        <p className="text-lg font-bold text-slate-900">
+                          {seededInt(SEED + model.accuracy * 2, 80, 350)}ms
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
@@ -712,11 +983,14 @@ export default function InsightsPage() {
                 <div className="flex items-start gap-3">
                   <ShieldCheck className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
                   <div>
-                    <h4 className="text-sm font-semibold text-emerald-900 mb-1">TEE-Verified Inference</h4>
+                    <h4 className="text-sm font-semibold text-emerald-900 mb-1">
+                      TEE-Verified Inference
+                    </h4>
                     <p className="text-sm text-emerald-700">
-                      All AI models execute inside Intel SGX / AWS Nitro secure enclaves. Each inference produces a
-                      cryptographic attestation that proves the computation was performed correctly on unmodified model
-                      weights with your encrypted data — without exposing any data outside the enclave.
+                      All AI models execute inside Intel SGX / AWS Nitro secure enclaves. Each
+                      inference produces a cryptographic attestation that proves the computation was
+                      performed correctly on unmodified model weights with your encrypted data —
+                      without exposing any data outside the enclave.
                     </p>
                   </div>
                 </div>

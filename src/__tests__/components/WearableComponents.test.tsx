@@ -17,8 +17,11 @@ import type { WearableDevice, WearableDataPoint, WearableProvider } from '@/type
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return React.createElement(QueryClientProvider, { client: qc },
-    React.createElement(AppProvider, null, children));
+  return React.createElement(
+    QueryClientProvider,
+    { client: qc },
+    React.createElement(AppProvider, null, children),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -83,7 +86,7 @@ describe('DeviceCard', () => {
     render(
       <TestWrapper>
         <DeviceCard device={mockConnectedDevice} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Apple Health')).toBeInTheDocument();
     expect(screen.getByText('iPhone 15 Pro')).toBeInTheDocument();
@@ -93,7 +96,7 @@ describe('DeviceCard', () => {
     render(
       <TestWrapper>
         <DeviceCard device={mockConnectedDevice} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Last Sync')).toBeInTheDocument();
     expect(screen.getByText('Data Points')).toBeInTheDocument();
@@ -103,7 +106,7 @@ describe('DeviceCard', () => {
     render(
       <TestWrapper>
         <DeviceCard device={mockConnectedDevice} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Battery')).toBeInTheDocument();
     expect(screen.getByText('85%')).toBeInTheDocument();
@@ -113,7 +116,7 @@ describe('DeviceCard', () => {
     render(
       <TestWrapper>
         <DeviceCard device={mockLowBatteryDevice} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const batteryText = screen.getByText('15%');
     expect(batteryText).toHaveClass('text-red-600');
@@ -123,7 +126,7 @@ describe('DeviceCard', () => {
     render(
       <TestWrapper>
         <DeviceCard device={mockConnectedDevice} onSync={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Sync')).toBeInTheDocument();
   });
@@ -133,7 +136,7 @@ describe('DeviceCard', () => {
     render(
       <TestWrapper>
         <DeviceCard device={mockConnectedDevice} onSync={onSync} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Sync'));
     expect(onSync).toHaveBeenCalledWith('device-1');
@@ -143,7 +146,7 @@ describe('DeviceCard', () => {
     render(
       <TestWrapper>
         <DeviceCard device={mockConnectedDevice} onSync={jest.fn()} isSyncing={true} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Syncing...')).toBeInTheDocument();
   });
@@ -152,7 +155,7 @@ describe('DeviceCard', () => {
     render(
       <TestWrapper>
         <DeviceCard device={mockDisconnectedDevice} onConnect={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Connect')).toBeInTheDocument();
   });
@@ -162,7 +165,7 @@ describe('DeviceCard', () => {
     render(
       <TestWrapper>
         <DeviceCard device={mockDisconnectedDevice} onConnect={onConnect} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect'));
     expect(onConnect).toHaveBeenCalledWith('oura');
@@ -172,7 +175,7 @@ describe('DeviceCard', () => {
     render(
       <TestWrapper>
         <DeviceCard device={mockDisconnectedDevice} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('Battery')).not.toBeInTheDocument();
   });
@@ -182,12 +185,12 @@ describe('DeviceCard', () => {
     render(
       <TestWrapper>
         <DeviceCard device={mockConnectedDevice} onDisconnect={onDisconnect} onSync={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // The disconnect button contains a PowerOff icon — it's the second button
     const buttons = screen.getAllByRole('button');
     // Find the button that is NOT the Sync button
-    const disconnectButton = buttons.find(btn => !btn.textContent?.includes('Sync'));
+    const disconnectButton = buttons.find((btn) => !btn.textContent?.includes('Sync'));
     fireEvent.click(disconnectButton!);
     expect(onDisconnect).toHaveBeenCalledWith('device-1');
   });
@@ -202,7 +205,7 @@ describe('SyncStatusBar', () => {
     render(
       <TestWrapper>
         <SyncStatusBar progress={60} label="Syncing heart rate data..." />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Syncing heart rate data...')).toBeInTheDocument();
   });
@@ -211,7 +214,7 @@ describe('SyncStatusBar', () => {
     render(
       <TestWrapper>
         <SyncStatusBar progress={75} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('75%')).toBeInTheDocument();
   });
@@ -220,7 +223,7 @@ describe('SyncStatusBar', () => {
     const { container } = render(
       <TestWrapper>
         <SyncStatusBar progress={40} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.firstChild).toBeTruthy();
     expect(screen.getByText('40%')).toBeInTheDocument();
@@ -230,7 +233,7 @@ describe('SyncStatusBar', () => {
     render(
       <TestWrapper>
         <SyncStatusBar progress={120} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // The text shows original value but bar is capped
     expect(screen.getByText('120%')).toBeInTheDocument();
@@ -246,7 +249,7 @@ describe('WearableChart', () => {
     render(
       <TestWrapper>
         <WearableChart dataPoints={mockDataPoints} metric="heart_rate" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('heart rate')).toBeInTheDocument();
   });
@@ -255,7 +258,7 @@ describe('WearableChart', () => {
     render(
       <TestWrapper>
         <WearableChart dataPoints={mockDataPoints} metric="heart_rate" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/10 data points/)).toBeInTheDocument();
   });
@@ -264,7 +267,7 @@ describe('WearableChart', () => {
     const { container } = render(
       <TestWrapper>
         <WearableChart dataPoints={[]} metric="heart_rate" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.firstChild).toBeTruthy();
   });
@@ -272,12 +275,20 @@ describe('WearableChart', () => {
   it('renders only data points matching the metric', () => {
     const mixedPoints: WearableDataPoint[] = [
       ...mockDataPoints,
-      { id: 'dp-hrv-1', deviceId: 'device-1', metric: 'hrv', value: 45, unit: 'ms', timestamp: Date.now(), source: 'apple_health' },
+      {
+        id: 'dp-hrv-1',
+        deviceId: 'device-1',
+        metric: 'hrv',
+        value: 45,
+        unit: 'ms',
+        timestamp: Date.now(),
+        source: 'apple_health',
+      },
     ];
     render(
       <TestWrapper>
         <WearableChart dataPoints={mixedPoints} metric="heart_rate" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/10 data points/)).toBeInTheDocument();
   });
@@ -292,7 +303,7 @@ describe('DataPointList', () => {
     render(
       <TestWrapper>
         <DataPointList dataPoints={mockDataPoints} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Recent Data Points')).toBeInTheDocument();
   });
@@ -301,7 +312,7 @@ describe('DataPointList', () => {
     render(
       <TestWrapper>
         <DataPointList dataPoints={mockDataPoints} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Metric')).toBeInTheDocument();
     expect(screen.getByText('Value')).toBeInTheDocument();
@@ -313,7 +324,7 @@ describe('DataPointList', () => {
     render(
       <TestWrapper>
         <DataPointList dataPoints={mockDataPoints} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // metric "heart_rate" displayed as "heart rate" (underscores replaced)
     const cells = screen.getAllByText('heart rate');
@@ -324,7 +335,7 @@ describe('DataPointList', () => {
     const { container } = render(
       <TestWrapper>
         <DataPointList dataPoints={[]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.firstChild).toBeTruthy();
   });
@@ -340,8 +351,13 @@ describe('ConnectionWizard', () => {
   it('renders step 1 with provider name and Authorize button', () => {
     render(
       <TestWrapper>
-        <ConnectionWizard provider={provider} onConnect={jest.fn()} onCancel={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <ConnectionWizard
+          provider={provider}
+          onConnect={jest.fn()}
+          onCancel={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText('Connect Apple Health')).toBeInTheDocument();
     expect(screen.getByText('Authorize Connection')).toBeInTheDocument();
@@ -350,8 +366,13 @@ describe('ConnectionWizard', () => {
   it('advances to step 2 on Authorize Connection click', () => {
     render(
       <TestWrapper>
-        <ConnectionWizard provider={provider} onConnect={jest.fn()} onCancel={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <ConnectionWizard
+          provider={provider}
+          onConnect={jest.fn()}
+          onCancel={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Authorize Connection'));
     expect(screen.getByText('TEE Verification')).toBeInTheDocument();
@@ -361,8 +382,13 @@ describe('ConnectionWizard', () => {
   it('advances to step 3 on Verify & Connect click', () => {
     render(
       <TestWrapper>
-        <ConnectionWizard provider={provider} onConnect={jest.fn()} onCancel={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <ConnectionWizard
+          provider={provider}
+          onConnect={jest.fn()}
+          onCancel={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Authorize Connection'));
     fireEvent.click(screen.getByText('Verify & Connect'));
@@ -375,8 +401,13 @@ describe('ConnectionWizard', () => {
     const onConnect = jest.fn();
     render(
       <TestWrapper>
-        <ConnectionWizard provider={provider} onConnect={onConnect} onCancel={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <ConnectionWizard
+          provider={provider}
+          onConnect={onConnect}
+          onCancel={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Authorize Connection'));
     fireEvent.click(screen.getByText('Verify & Connect'));
@@ -388,8 +419,13 @@ describe('ConnectionWizard', () => {
     const onCancel = jest.fn();
     render(
       <TestWrapper>
-        <ConnectionWizard provider={provider} onConnect={jest.fn()} onCancel={onCancel} isLoading={false} />
-      </TestWrapper>
+        <ConnectionWizard
+          provider={provider}
+          onConnect={jest.fn()}
+          onCancel={onCancel}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Authorize Connection'));
     fireEvent.click(screen.getByText('Verify & Connect'));
@@ -400,8 +436,13 @@ describe('ConnectionWizard', () => {
   it('shows Connecting... when isLoading is true on step 3', () => {
     render(
       <TestWrapper>
-        <ConnectionWizard provider={provider} onConnect={jest.fn()} onCancel={jest.fn()} isLoading={true} />
-      </TestWrapper>
+        <ConnectionWizard
+          provider={provider}
+          onConnect={jest.fn()}
+          onCancel={jest.fn()}
+          isLoading={true}
+        />
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Authorize Connection'));
     fireEvent.click(screen.getByText('Verify & Connect'));
@@ -411,8 +452,13 @@ describe('ConnectionWizard', () => {
   it('renders for different provider', () => {
     render(
       <TestWrapper>
-        <ConnectionWizard provider="oura" onConnect={jest.fn()} onCancel={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <ConnectionWizard
+          provider="oura"
+          onConnect={jest.fn()}
+          onCancel={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText('Connect Oura Ring')).toBeInTheDocument();
   });

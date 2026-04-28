@@ -16,9 +16,11 @@ export function isAllowedOrigin(origin: string | null | undefined): boolean {
       const allowed = new URL(allowedOrigin);
       const candidate = new URL(origin);
 
-      return allowed.protocol === candidate.protocol
-        && allowed.hostname.startsWith('.')
-        && candidate.hostname.endsWith(allowed.hostname);
+      return (
+        allowed.protocol === candidate.protocol &&
+        allowed.hostname.startsWith('.') &&
+        candidate.hostname.endsWith(allowed.hostname)
+      );
     } catch {
       return false;
     }

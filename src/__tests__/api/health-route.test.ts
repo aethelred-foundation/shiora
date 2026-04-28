@@ -2,7 +2,10 @@
 
 jest.mock('@/lib/api/middleware', () => {
   const actual = jest.requireActual('@/lib/api/middleware');
-  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+  return {
+    ...actual,
+    runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)),
+  };
 });
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -20,7 +23,9 @@ afterEach(() => {
 
 describe('/api/health', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const req = new NextRequest('http://localhost:3000/api/health', { method: 'GET' });
     const res = await GET(req);
     expect(res.status).toBe(403);
@@ -65,6 +70,14 @@ describe('/api/health', () => {
     const body = await res.json();
     expect(body.data.timestamp).toBeDefined();
     expect(body.data.environment).toBe('test');
+  });
+
+  it('includes non-production readiness details', async () => {
+    const req = new NextRequest('http://localhost:3000/api/health', { method: 'GET' });
+    const res = await GET(req);
+    const body = await res.json();
+    expect(body.data.readiness.status).toBe('not_applicable');
+    expect(Array.isArray(body.data.readiness.failures)).toBe(true);
   });
 
   it('returns uptime with formatted human-readable string', async () => {
@@ -136,5 +149,70 @@ describe('/api/health', () => {
     } finally {
       jest.restoreAllMocks();
     }
+  });
+});
+
+describe('/api/health production readiness', () => {
+  afterEach(() => {
+    jest.resetModules();
+    jest.dontMock('@/lib/api/env');
+    jest.dontMock('@/lib/api/middleware');
+  });
+
+  it('returns 503 without leaking individual production readiness failures', async () => {
+    jest.resetModules();
+    jest.doMock('@/lib/api/middleware', () => ({
+      runMiddleware: jest.fn(() => null),
+    }));
+    jest.doMock('@/lib/api/env', () => ({
+      serverEnv: {
+        isProduction: true,
+        getProductionReadinessFailures: () => [
+          'SHIORA_SESSION_SECRET must be set to a 32+ character secret.',
+          'DATABASE_URL must point to a durable audited datastore.',
+        ],
+      },
+    }));
+
+    const { GET: getHealth } = require('@/app/api/health/route');
+    const req = new NextRequest('https://app.shiora.health/api/health', { method: 'GET' });
+    const res = await getHealth(req);
+    const body = await res.json();
+
+    expect(res.status).toBe(503);
+    expect(body.success).toBe(false);
+    expect(body.error.code).toBe('PRODUCTION_READINESS_FAILED');
+    expect(body.error.details).toEqual({
+      readiness: {
+        status: 'unready',
+        failureCount: 2,
+      },
+    });
+    expect(JSON.stringify(body)).not.toContain('SHIORA_SESSION_SECRET');
+    expect(JSON.stringify(body)).not.toContain('DATABASE_URL');
+  });
+
+  it('returns ready in production when regulated readiness checks pass', async () => {
+    jest.resetModules();
+    jest.doMock('@/lib/api/middleware', () => ({
+      runMiddleware: jest.fn(() => null),
+    }));
+    jest.doMock('@/lib/api/env', () => ({
+      serverEnv: {
+        isProduction: true,
+        getProductionReadinessFailures: () => [],
+      },
+    }));
+
+    const { GET: getHealth } = require('@/app/api/health/route');
+    const req = new NextRequest('https://app.shiora.health/api/health', { method: 'GET' });
+    const res = await getHealth(req);
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.data.readiness).toEqual({
+      status: 'ready',
+      failureCount: 0,
+    });
   });
 });

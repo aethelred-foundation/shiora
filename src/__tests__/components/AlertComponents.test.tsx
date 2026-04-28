@@ -13,17 +13,15 @@ import {
   AlertTimeline,
   ChannelSelector,
 } from '@/components/alerts/AlertComponents';
-import type {
-  PredictiveAlert,
-  AlertRule,
-  AlertHistory,
-  AlertChannel,
-} from '@/types';
+import type { PredictiveAlert, AlertRule, AlertHistory, AlertChannel } from '@/types';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return React.createElement(QueryClientProvider, { client: qc },
-    React.createElement(AppProvider, null, children));
+  return React.createElement(
+    QueryClientProvider,
+    { client: qc },
+    React.createElement(AppProvider, null, children),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -101,7 +99,7 @@ describe('AlertCard', () => {
     render(
       <TestWrapper>
         <AlertCard alert={mockAlert} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Elevated Heart Rate')).toBeInTheDocument();
     expect(screen.getByText(/consistently elevated/)).toBeInTheDocument();
@@ -111,7 +109,7 @@ describe('AlertCard', () => {
     render(
       <TestWrapper>
         <AlertCard alert={mockAlert} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getAllByText('warning').length).toBeGreaterThan(0);
   });
@@ -120,7 +118,7 @@ describe('AlertCard', () => {
     render(
       <TestWrapper>
         <AlertCard alert={mockAlert} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/88% confidence/)).toBeInTheDocument();
   });
@@ -129,7 +127,7 @@ describe('AlertCard', () => {
     render(
       <TestWrapper>
         <AlertCard alert={mockActiveAlert} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Active')).toBeInTheDocument();
   });
@@ -138,7 +136,7 @@ describe('AlertCard', () => {
     render(
       <TestWrapper>
         <AlertCard alert={mockAcknowledgedAlert} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Acknowledged')).toBeInTheDocument();
   });
@@ -147,7 +145,7 @@ describe('AlertCard', () => {
     render(
       <TestWrapper>
         <AlertCard alert={mockResolvedAlert} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Resolved')).toBeInTheDocument();
   });
@@ -157,7 +155,7 @@ describe('AlertCard', () => {
     render(
       <TestWrapper>
         <AlertCard alert={mockActiveAlert} onAcknowledge={onAcknowledge} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Acknowledge'));
     expect(onAcknowledge).toHaveBeenCalledWith('alert-active');
@@ -168,7 +166,7 @@ describe('AlertCard', () => {
     render(
       <TestWrapper>
         <AlertCard alert={mockActiveAlert} onResolve={onResolve} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Resolve'));
     expect(onResolve).toHaveBeenCalledWith('alert-active');
@@ -184,7 +182,7 @@ describe('AlertRuleCard', () => {
     render(
       <TestWrapper>
         <AlertRuleCard rule={mockRule} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Heart Rate')).toBeInTheDocument();
   });
@@ -193,7 +191,7 @@ describe('AlertRuleCard', () => {
     render(
       <TestWrapper>
         <AlertRuleCard rule={mockRule} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/Above 100 bpm/)).toBeInTheDocument();
   });
@@ -202,7 +200,7 @@ describe('AlertRuleCard', () => {
     render(
       <TestWrapper>
         <AlertRuleCard rule={mockRule} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/Cooldown: 30min/)).toBeInTheDocument();
   });
@@ -212,7 +210,7 @@ describe('AlertRuleCard', () => {
     render(
       <TestWrapper>
         <AlertRuleCard rule={mockRule} onToggle={onToggle} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByTitle('Disable rule'));
     expect(onToggle).toHaveBeenCalledWith('rule-1');
@@ -223,7 +221,7 @@ describe('AlertRuleCard', () => {
     render(
       <TestWrapper>
         <AlertRuleCard rule={mockRule} onEdit={onEdit} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Edit'));
     expect(onEdit).toHaveBeenCalledWith(mockRule);
@@ -234,7 +232,7 @@ describe('AlertRuleCard', () => {
     render(
       <TestWrapper>
         <AlertRuleCard rule={disabledRule} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByTitle('Enable rule')).toBeInTheDocument();
   });
@@ -257,7 +255,7 @@ describe('ThresholdSlider', () => {
           onChange={onChange}
           condition="above"
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/40 bpm/)).toBeInTheDocument();
     expect(screen.getByText(/200 bpm/)).toBeInTheDocument();
@@ -277,7 +275,7 @@ describe('ThresholdSlider', () => {
           onChange={onChange}
           condition="above"
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // The marker div has a title attribute
     const marker = document.querySelector('[title="Current: 105 bpm"]');
@@ -296,7 +294,7 @@ describe('ThresholdSlider', () => {
           onChange={onChange}
           condition="above"
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const slider = screen.getByRole('slider');
     fireEvent.change(slider, { target: { value: '120' } });
@@ -313,7 +311,7 @@ describe('AlertTimeline', () => {
     render(
       <TestWrapper>
         <AlertTimeline history={mockHistory} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('triggered')).toBeInTheDocument();
     expect(screen.getByText('acknowledged')).toBeInTheDocument();
@@ -323,7 +321,7 @@ describe('AlertTimeline', () => {
     render(
       <TestWrapper>
         <AlertTimeline history={mockHistory} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/by System/)).toBeInTheDocument();
     expect(screen.getByText(/by User/)).toBeInTheDocument();
@@ -333,7 +331,7 @@ describe('AlertTimeline', () => {
     render(
       <TestWrapper>
         <AlertTimeline history={mockHistory} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Threshold exceeded')).toBeInTheDocument();
   });
@@ -349,7 +347,7 @@ describe('ChannelSelector', () => {
     render(
       <TestWrapper>
         <ChannelSelector selected={[]} onChange={onChange} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('In-App')).toBeInTheDocument();
     expect(screen.getByText('Email')).toBeInTheDocument();
@@ -360,7 +358,7 @@ describe('ChannelSelector', () => {
     render(
       <TestWrapper>
         <ChannelSelector selected={[]} onChange={onChange} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('In-App').closest('button')!);
     expect(onChange).toHaveBeenCalled();
@@ -371,7 +369,7 @@ describe('ChannelSelector', () => {
     const { container } = render(
       <TestWrapper>
         <ChannelSelector selected={['in_app' as AlertChannel]} onChange={onChange} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Selected button has brand styling
     const selectedBtn = container.querySelector('.border-brand-300');
@@ -382,8 +380,11 @@ describe('ChannelSelector', () => {
     const onChange = jest.fn();
     render(
       <TestWrapper>
-        <ChannelSelector selected={['in_app' as AlertChannel, 'email' as AlertChannel]} onChange={onChange} />
-      </TestWrapper>
+        <ChannelSelector
+          selected={['in_app' as AlertChannel, 'email' as AlertChannel]}
+          onChange={onChange}
+        />
+      </TestWrapper>,
     );
     // Click In-App to deselect it
     fireEvent.click(screen.getByText('In-App').closest('button')!);
@@ -401,7 +402,7 @@ describe('AlertCard — branch coverage', () => {
     render(
       <TestWrapper>
         <AlertCard alert={alert} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('critical')).toBeInTheDocument();
   });
@@ -411,7 +412,7 @@ describe('AlertCard — branch coverage', () => {
     render(
       <TestWrapper>
         <AlertCard alert={alert} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('info')).toBeInTheDocument();
   });
@@ -421,7 +422,7 @@ describe('AlertCard — branch coverage', () => {
     render(
       <TestWrapper>
         <AlertCard alert={alert} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('unknown_metric')).toBeInTheDocument();
   });
@@ -437,7 +438,7 @@ describe('AlertRuleCard — branch coverage', () => {
     render(
       <TestWrapper>
         <AlertRuleCard rule={rule} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/Below 100 bpm/)).toBeInTheDocument();
   });
@@ -447,7 +448,7 @@ describe('AlertRuleCard — branch coverage', () => {
     render(
       <TestWrapper>
         <AlertRuleCard rule={rule} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/Deviation 100 bpm/)).toBeInTheDocument();
   });
@@ -457,7 +458,7 @@ describe('AlertRuleCard — branch coverage', () => {
     render(
       <TestWrapper>
         <AlertRuleCard rule={rule} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // METRIC_LABELS fallback also displays the raw metric string
     expect(screen.getByText('unknown_metric')).toBeInTheDocument();
@@ -480,7 +481,7 @@ describe('ThresholdSlider — branch coverage', () => {
           onChange={jest.fn()}
           condition="below"
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/Threshold: 100 bpm/)).toBeInTheDocument();
   });
@@ -496,7 +497,7 @@ describe('ThresholdSlider — branch coverage', () => {
           onChange={jest.fn()}
           condition="deviation"
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/Threshold: 100 bpm/)).toBeInTheDocument();
   });
@@ -512,7 +513,7 @@ describe('ThresholdSlider — branch coverage', () => {
           onChange={jest.fn()}
           condition="above"
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.querySelector('[title^="Current:"]')).not.toBeInTheDocument();
   });
@@ -535,7 +536,7 @@ describe('AlertTimeline — branch coverage', () => {
     render(
       <TestWrapper>
         <AlertTimeline history={history} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('custom_action')).toBeInTheDocument();
   });
@@ -560,7 +561,7 @@ describe('AlertTimeline — branch coverage', () => {
     render(
       <TestWrapper>
         <AlertTimeline history={history} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('resolved')).toBeInTheDocument();
     expect(screen.getByText('escalated')).toBeInTheDocument();
@@ -580,7 +581,7 @@ describe('AlertTimeline — branch coverage', () => {
     render(
       <TestWrapper>
         <AlertTimeline history={history} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('triggered')).toBeInTheDocument();
     expect(screen.queryByText(/by /)).not.toBeInTheDocument();

@@ -9,13 +9,28 @@
 
 import React from 'react';
 import {
-  Upload, RefreshCw, MessageCircle, Stethoscope,
-  Microscope, Flame, Trophy, Users, Gift,
-  TrendingUp, Coins, Award, Star,
+  Upload,
+  RefreshCw,
+  MessageCircle,
+  Stethoscope,
+  Microscope,
+  Flame,
+  Trophy,
+  Users,
+  Gift,
+  TrendingUp,
+  Coins,
+  Award,
+  Star,
 } from 'lucide-react';
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, CartesianGrid,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
 } from 'recharts';
 
 import type { RewardEntry, RewardStreak, RewardStats } from '@/types';
@@ -64,12 +79,14 @@ export function RewardCard({
   isClaimLoading?: boolean;
 }) {
   const actionDef = REWARD_ACTIONS.find((a) => a.id === reward.action);
-  const iconBg = ACTION_COLORS[reward.action] ??
+  const iconBg =
+    ACTION_COLORS[reward.action] ??
     /* istanbul ignore next */
     'bg-slate-50 text-slate-600';
-  const icon = ACTION_ICON_MAP[reward.action] ??
+  const icon = ACTION_ICON_MAP[reward.action] ?? (
     /* istanbul ignore next */
-    <Gift className="w-4 h-4" />;
+    <Gift className="w-4 h-4" />
+  );
   const isClaimed = !!reward.claimedAt;
 
   return (
@@ -85,9 +102,7 @@ export function RewardCard({
                 /* istanbul ignore next */
                 reward.action}
             </h4>
-            {isClaimed && (
-              <Badge variant="success">Claimed</Badge>
-            )}
+            {isClaimed && <Badge variant="success">Claimed</Badge>}
           </div>
           <p className="text-xs text-slate-500 truncate">{reward.description}</p>
           <p className="text-xs text-slate-400 mt-1">{timeAgo(reward.earnedAt)}</p>
@@ -114,11 +129,7 @@ export function RewardCard({
 // EarnChart — AreaChart of daily AETHEL earned over 30 days
 // ---------------------------------------------------------------------------
 
-export function EarnChart({
-  data,
-}: {
-  data: { day: string; earned: number }[];
-}) {
+export function EarnChart({ data }: { data: { day: string; earned: number }[] }) {
   return (
     <MedicalCard padding={false}>
       <div className="p-5 pb-0">
@@ -148,11 +159,7 @@ export function EarnChart({
               axisLine={{ stroke: '#e2e8f0' }}
               interval={6}
             />
-            <YAxis
-              tick={{ fontSize: 10, fill: '#94a3b8' }}
-              tickLine={false}
-              axisLine={false}
-            />
+            <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
             <Tooltip content={<ChartTooltip formatValue={(v) => `${v} AETHEL`} />} />
             <Area
               type="monotone"
@@ -174,11 +181,7 @@ export function EarnChart({
 // StreakIndicator
 // ---------------------------------------------------------------------------
 
-export function StreakIndicator({
-  streak,
-}: {
-  streak: RewardStreak;
-}) {
+export function StreakIndicator({ streak }: { streak: RewardStreak }) {
   const actionDef = REWARD_ACTIONS.find((a) => a.id === streak.action);
 
   return (
@@ -188,18 +191,16 @@ export function StreakIndicator({
           <Flame className="w-4 h-4" />
         </div>
         <div>
-          <p className="text-sm font-medium text-slate-900">{actionDef?.label ??
-            /* istanbul ignore next */
-            streak.action}</p>
-          <p className="text-xs text-slate-400">
-            Longest: {streak.longestStreak} days
+          <p className="text-sm font-medium text-slate-900">
+            {actionDef?.label ??
+              /* istanbul ignore next */
+              streak.action}
           </p>
+          <p className="text-xs text-slate-400">Longest: {streak.longestStreak} days</p>
         </div>
       </div>
       <div className="flex items-center gap-3">
-        {streak.multiplier > 1 && (
-          <Badge variant="warning">{streak.multiplier.toFixed(1)}x</Badge>
-        )}
+        {streak.multiplier > 1 && <Badge variant="warning">{streak.multiplier.toFixed(1)}x</Badge>}
         <div className="text-right">
           <p className="text-sm font-bold text-slate-900">{streak.currentStreak}</p>
           <p className="text-2xs text-slate-400">days</p>
@@ -213,11 +214,7 @@ export function StreakIndicator({
 // MilestoneProgress
 // ---------------------------------------------------------------------------
 
-export function MilestoneProgress({
-  stats,
-}: {
-  stats: RewardStats;
-}) {
+export function MilestoneProgress({ stats }: { stats: RewardStats }) {
   const progress = Math.min(100, (stats.totalEarned / stats.nextLevelThreshold) * 100);
   const remaining = Math.max(0, stats.nextLevelThreshold - stats.totalEarned);
 

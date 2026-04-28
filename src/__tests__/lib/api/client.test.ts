@@ -135,10 +135,11 @@ describe('api helper', () => {
       ok: false,
       status: 400,
       headers: new Headers({ 'content-type': 'application/json' }),
-      json: () => Promise.resolve({
-        success: false,
-        error: { code: 'BAD_REQUEST', message: 'Invalid input' },
-      }),
+      json: () =>
+        Promise.resolve({
+          success: false,
+          error: { code: 'BAD_REQUEST', message: 'Invalid input' },
+        }),
     });
 
     try {
@@ -211,10 +212,11 @@ describe('api helper', () => {
       ok: false,
       status: 400,
       headers: new Headers({ 'content-type': 'application/json' }),
-      json: () => Promise.resolve({
-        success: false,
-        error: { code: 'BAD', message: 'nope' },
-      }),
+      json: () =>
+        Promise.resolve({
+          success: false,
+          error: { code: 'BAD', message: 'nope' },
+        }),
     });
 
     try {

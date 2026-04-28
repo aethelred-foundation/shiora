@@ -10,12 +10,35 @@
 
 import React, { useState, useMemo } from 'react';
 import {
-  Shield, ShieldCheck, ShieldOff, Clock, Calendar,
-  CheckCircle, XCircle, AlertTriangle, RefreshCw,
-  ChevronRight, X, Eye, Pencil, Ban, RotateCcw,
-  Building2, FileText, TestTube2, ScanLine, Pill,
-  HeartPulse, Heart, Watch, Brain, Lock,
-  Search, ChevronDown, Check, Loader2,
+  Shield,
+  ShieldCheck,
+  ShieldOff,
+  Clock,
+  Calendar,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  RefreshCw,
+  ChevronRight,
+  X,
+  Eye,
+  Pencil,
+  Ban,
+  RotateCcw,
+  Building2,
+  FileText,
+  TestTube2,
+  ScanLine,
+  Pill,
+  HeartPulse,
+  Heart,
+  Watch,
+  Brain,
+  Lock,
+  Search,
+  ChevronDown,
+  Check,
+  Loader2,
 } from 'lucide-react';
 
 import type {
@@ -49,16 +72,21 @@ const SCOPE_ICON_MAP: Record<string, React.ReactNode> = {
 };
 
 function getScopeLabel(scopeId: string): string {
-  return CONSENT_SCOPES.find((s) => s.id === scopeId)?.label ??
+  return (
+    CONSENT_SCOPES.find((s) => s.id === scopeId)?.label ??
     /* istanbul ignore next */
-    scopeId;
+    scopeId
+  );
 }
 
 // ============================================================
 // Status helpers
 // ============================================================
 
-const STATUS_CONFIG: Record<ConsentStatus, { variant: 'success' | 'neutral' | 'error' | 'warning'; label: string }> = {
+const STATUS_CONFIG: Record<
+  ConsentStatus,
+  { variant: 'success' | 'neutral' | 'error' | 'warning'; label: string }
+> = {
   active: { variant: 'success', label: 'Active' },
   expired: { variant: 'neutral', label: 'Expired' },
   revoked: { variant: 'error', label: 'Revoked' },
@@ -81,7 +109,9 @@ export function ConsentCard({ consent, onRevoke, onModify }: ConsentCardProps) {
   const statusCfg = STATUS_CONFIG[consent.status];
 
   const expiryText = useMemo(() => {
-    if (consent.status === 'revoked') return `Revoked ${consent.revokedAt ? timeAgo(consent.revokedAt) : ''}`;
+    if (consent.status === 'revoked') {
+      return `Revoked ${consent.revokedAt ? timeAgo(consent.revokedAt) : ''}`;
+    }
     if (daysLeft < 0) return `Expired ${timeAgo(consent.expiresAt)}`;
     if (daysLeft === 0) return 'Expires today';
     return `${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining`;
@@ -97,7 +127,9 @@ export function ConsentCard({ consent, onRevoke, onModify }: ConsentCardProps) {
           </div>
           <div>
             <h4 className="text-sm font-semibold text-slate-900">{consent.providerName}</h4>
-            <p className="text-xs text-slate-500">{truncateAddress(consent.providerAddress, 8, 4)}</p>
+            <p className="text-xs text-slate-500">
+              {truncateAddress(consent.providerAddress, 8, 4)}
+            </p>
           </div>
         </div>
         <Badge variant={statusCfg.variant} dot>
@@ -150,14 +182,20 @@ export function ConsentCard({ consent, onRevoke, onModify }: ConsentCardProps) {
       {consent.status === 'active' && (
         <div className="flex gap-2 pt-3 border-t border-slate-100">
           <button
-            onClick={(e) => { e.stopPropagation(); onModify(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onModify();
+            }}
             className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-xl hover:bg-amber-100 transition-colors"
           >
             <Pencil className="w-3 h-3" />
             Modify
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); onRevoke(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRevoke();
+            }}
             className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 transition-colors"
           >
             <Ban className="w-3 h-3" />
@@ -200,11 +238,7 @@ export function ConsentTimeline({ auditEntries }: ConsentTimelineProps) {
   );
 
   if (sorted.length === 0) {
-    return (
-      <div className="py-8 text-center text-sm text-slate-400">
-        No audit entries found
-      </div>
-    );
+    return <div className="py-8 text-center text-sm text-slate-400">No audit entries found</div>;
   }
 
   return (
@@ -220,7 +254,9 @@ export function ConsentTimeline({ auditEntries }: ConsentTimelineProps) {
           return (
             <div key={entry.id} className="relative flex items-start gap-3 pl-2">
               {/* Dot */}
-              <div className={`relative z-10 w-5 h-5 rounded-full ${colors.bg} flex items-center justify-center shrink-0 ring-2 ring-white`}>
+              <div
+                className={`relative z-10 w-5 h-5 rounded-full ${colors.bg} flex items-center justify-center shrink-0 ring-2 ring-white`}
+              >
                 <span className={`w-2 h-2 rounded-full ${colors.dot}`} />
               </div>
 
@@ -228,7 +264,9 @@ export function ConsentTimeline({ auditEntries }: ConsentTimelineProps) {
               <div className="flex-1 min-w-0 pb-3">
                 <div className="flex items-center gap-2 mb-1">
                   {TIMELINE_ICONS[entry.action]}
-                  <span className="text-sm font-medium text-slate-900 capitalize">{entry.action}</span>
+                  <span className="text-sm font-medium text-slate-900 capitalize">
+                    {entry.action}
+                  </span>
                   <span className="text-xs text-slate-400">{timeAgo(entry.timestamp)}</span>
                 </div>
                 <p className="text-xs text-slate-500 mb-1">{entry.details}</p>
@@ -256,7 +294,11 @@ interface ConsentScopeSelectorProps {
   maxScopes?: number;
 }
 
-export function ConsentScopeSelector({ selected, onChange, maxScopes = 10 }: ConsentScopeSelectorProps) {
+export function ConsentScopeSelector({
+  selected,
+  onChange,
+  maxScopes = 10,
+}: ConsentScopeSelectorProps) {
   const toggleScope = (scopeId: ConsentScope) => {
     if (selected.includes(scopeId)) {
       onChange(selected.filter((s) => s !== scopeId));
@@ -269,7 +311,9 @@ export function ConsentScopeSelector({ selected, onChange, maxScopes = 10 }: Con
     <div>
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm font-medium text-slate-700">Data Scopes</p>
-        <span className="text-xs text-slate-400">{selected.length}/{maxScopes} selected</span>
+        <span className="text-xs text-slate-400">
+          {selected.length}/{maxScopes} selected
+        </span>
       </div>
       <div className="grid grid-cols-2 gap-2">
         {CONSENT_SCOPES.map((scope) => {
@@ -285,13 +329,15 @@ export function ConsentScopeSelector({ selected, onChange, maxScopes = 10 }: Con
                 isSelected
                   ? 'bg-brand-50 border-brand-300 text-brand-800 ring-1 ring-brand-200'
                   : isDisabled
-                  ? 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                    ? 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
+                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
               }`}
             >
-              <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
-                isSelected ? 'bg-brand-500 border-brand-500' : 'border-slate-300 bg-white'
-              }`}>
+              <div
+                className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
+                  isSelected ? 'bg-brand-500 border-brand-500' : 'border-slate-300 bg-white'
+                }`}
+              >
                 {isSelected && <Check className="w-3 h-3 text-white" />}
               </div>
               <span className="flex items-center gap-1.5">
@@ -324,7 +370,9 @@ const DURATION_PRESETS = [
 ];
 
 export function ConsentExpiryPicker({ durationDays, onChange }: ConsentExpiryPickerProps) {
-  const [customMode, setCustomMode] = useState(!DURATION_PRESETS.some((p) => p.value === durationDays));
+  const [customMode, setCustomMode] = useState(
+    !DURATION_PRESETS.some((p) => p.value === durationDays),
+  );
   const expiryDate = new Date(Date.now() + durationDays * 86400000);
 
   return (
@@ -337,7 +385,10 @@ export function ConsentExpiryPicker({ durationDays, onChange }: ConsentExpiryPic
           <button
             key={preset.value}
             type="button"
-            onClick={() => { onChange(preset.value); setCustomMode(false); }}
+            onClick={() => {
+              onChange(preset.value);
+              setCustomMode(false);
+            }}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
               durationDays === preset.value && !customMode
                 ? 'bg-brand-50 border-brand-300 text-brand-700'
@@ -368,9 +419,19 @@ export function ConsentExpiryPicker({ durationDays, onChange }: ConsentExpiryPic
             min={1}
             max={730}
             value={durationDays}
-            onChange={(e) => onChange(Math.max(1, Math.min(730, parseInt(e.target.value) ||
-              /* istanbul ignore next */
-              1)))}
+            onChange={(e) =>
+              onChange(
+                Math.max(
+                  1,
+                  Math.min(
+                    730,
+                    parseInt(e.target.value) ||
+                      /* istanbul ignore next */
+                      1,
+                  ),
+                ),
+              )
+            }
             className="w-24 px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
           />
           <span className="text-sm text-slate-500">days</span>
@@ -389,7 +450,12 @@ export function ConsentExpiryPicker({ durationDays, onChange }: ConsentExpiryPic
           </div>
         </div>
         <span className="text-xs text-slate-500 whitespace-nowrap">
-          Expires {expiryDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          Expires{' '}
+          {expiryDate.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })}
         </span>
       </div>
     </div>
@@ -408,7 +474,13 @@ interface CreateConsentModalProps {
   isLoading: boolean;
 }
 
-export function CreateConsentModal({ isOpen, onClose, onSubmit, policies, isLoading }: CreateConsentModalProps) {
+export function CreateConsentModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  policies,
+  isLoading,
+}: CreateConsentModalProps) {
   const [step, setStep] = useState(0);
   const [providerAddress, setProviderAddress] = useState('');
   const [providerName, setProviderName] = useState('');
@@ -451,7 +523,9 @@ export function CreateConsentModal({ isOpen, onClose, onSubmit, policies, isLoad
 
   const handleSubmit = () => {
     onSubmit({
-      providerAddress: providerAddress || /* istanbul ignore next */ `aeth1${Math.random().toString(36).slice(2, 40)}`,
+      providerAddress:
+        providerAddress ||
+        /* istanbul ignore next */ `aeth1${Math.random().toString(36).slice(2, 40)}`,
       providerName: providerName || /* istanbul ignore next */ 'Unknown Provider',
       scopes,
       durationDays,
@@ -484,8 +558,8 @@ export function CreateConsentModal({ isOpen, onClose, onSubmit, policies, isLoad
                   i === step
                     ? 'bg-brand-100 text-brand-700'
                     : i < step
-                    ? 'bg-emerald-50 text-emerald-700 cursor-pointer hover:bg-emerald-100'
-                    : 'bg-slate-100 text-slate-400'
+                      ? 'bg-emerald-50 text-emerald-700 cursor-pointer hover:bg-emerald-100'
+                      : 'bg-slate-100 text-slate-400'
                 }`}
               >
                 {i < step ? <Check className="w-3 h-3" /> : <span>{i + 1}</span>}
@@ -529,7 +603,10 @@ export function CreateConsentModal({ isOpen, onClose, onSubmit, policies, isLoad
                 <input
                   type="text"
                   value={providerSearch}
-                  onChange={(e) => { setProviderSearch(e.target.value); setProviderName(e.target.value); }}
+                  onChange={(e) => {
+                    setProviderSearch(e.target.value);
+                    setProviderName(e.target.value);
+                  }}
                   placeholder="Search or enter provider name..."
                   className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 />
@@ -540,7 +617,10 @@ export function CreateConsentModal({ isOpen, onClose, onSubmit, policies, isLoad
                     <button
                       key={provider}
                       type="button"
-                      onClick={() => { setProviderName(provider); setProviderSearch(provider); }}
+                      onClick={() => {
+                        setProviderName(provider);
+                        setProviderSearch(provider);
+                      }}
                       className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                     >
                       {provider}
@@ -550,7 +630,9 @@ export function CreateConsentModal({ isOpen, onClose, onSubmit, policies, isLoad
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Provider Address (optional)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Provider Address (optional)
+              </label>
               <input
                 type="text"
                 value={providerAddress}
@@ -563,9 +645,7 @@ export function CreateConsentModal({ isOpen, onClose, onSubmit, policies, isLoad
         )}
 
         {/* Step 2: Scopes */}
-        {step === 1 && (
-          <ConsentScopeSelector selected={scopes} onChange={setScopes} />
-        )}
+        {step === 1 && <ConsentScopeSelector selected={scopes} onChange={setScopes} />}
 
         {/* Step 3: Duration */}
         {step === 2 && (
@@ -581,7 +661,9 @@ export function CreateConsentModal({ isOpen, onClose, onSubmit, policies, isLoad
                 onClick={() => setAutoRenew(!autoRenew)}
                 className={`relative w-10 h-6 rounded-full transition-colors ${autoRenew ? 'bg-brand-500' : 'bg-slate-300'}`}
               >
-                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${autoRenew ? 'translate-x-4' : ''}`} />
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${autoRenew ? 'translate-x-4' : ''}`}
+                />
               </button>
             </div>
           </div>
@@ -598,7 +680,9 @@ export function CreateConsentModal({ isOpen, onClose, onSubmit, policies, isLoad
               {providerAddress && (
                 <div className="flex justify-between">
                   <span className="text-sm text-slate-500">Address</span>
-                  <span className="text-sm font-mono text-slate-700">{truncateAddress(providerAddress, 8, 4)}</span>
+                  <span className="text-sm font-mono text-slate-700">
+                    {truncateAddress(providerAddress, 8, 4)}
+                  </span>
                 </div>
               )}
               <div className="flex justify-between">
@@ -611,9 +695,9 @@ export function CreateConsentModal({ isOpen, onClose, onSubmit, policies, isLoad
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-slate-500">Auto-Renew</span>
-                <span className="text-sm font-medium text-slate-900">{autoRenew
-                  ? /* istanbul ignore next */ 'Yes'
-                  : 'No'}</span>
+                <span className="text-sm font-medium text-slate-900">
+                  {autoRenew ? /* istanbul ignore next */ 'Yes' : 'No'}
+                </span>
               </div>
               {selectedPolicyId && (
                 <div className="flex justify-between">
@@ -649,7 +733,7 @@ export function CreateConsentModal({ isOpen, onClose, onSubmit, policies, isLoad
         <div className="flex justify-between pt-4 border-t border-slate-100">
           <button
             type="button"
-            onClick={() => step > 0 ? setStep(step - 1) : handleClose()}
+            onClick={() => (step > 0 ? setStep(step - 1) : handleClose())}
             className="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
           >
             {step === 0 ? 'Cancel' : 'Back'}
@@ -692,17 +776,23 @@ interface SmartContractStatusProps {
   expiresAt: number;
 }
 
-export function SmartContractStatus({ txHash, attestation, status, expiresAt }: SmartContractStatusProps) {
+export function SmartContractStatus({
+  txHash,
+  attestation,
+  status,
+  expiresAt,
+}: SmartContractStatusProps) {
   const daysLeft = daysFromNow(expiresAt);
   const confirmations = 128 + Math.floor(Math.random() * 50);
 
-  const statusColor = status === 'active'
-    ? 'text-emerald-600 bg-emerald-50'
-    : status === 'revoked'
-    ? 'text-red-600 bg-red-50'
-    : status === 'pending'
-    ? 'text-amber-600 bg-amber-50'
-    : 'text-slate-500 bg-slate-50';
+  const statusColor =
+    status === 'active'
+      ? 'text-emerald-600 bg-emerald-50'
+      : status === 'revoked'
+        ? 'text-red-600 bg-red-50'
+        : status === 'pending'
+          ? 'text-amber-600 bg-amber-50'
+          : 'text-slate-500 bg-slate-50';
 
   return (
     <div className="bg-white/70 backdrop-blur-sm border border-white/20 shadow-lg rounded-2xl p-4 space-y-3">
@@ -714,7 +804,9 @@ export function SmartContractStatus({ txHash, attestation, status, expiresAt }: 
       {/* On-chain status */}
       <div className="flex items-center justify-between">
         <span className="text-xs text-slate-500">On-Chain Status</span>
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
+        <span
+          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusColor}`}
+        >
           {status === 'active' && <CheckCircle className="w-3 h-3" />}
           {status === 'revoked' && <XCircle className="w-3 h-3" />}
           {status === 'pending' && <Clock className="w-3 h-3" />}
@@ -742,7 +834,9 @@ export function SmartContractStatus({ txHash, attestation, status, expiresAt }: 
       {status === 'active' && daysLeft > 0 && (
         <div className="flex items-center justify-between">
           <span className="text-xs text-slate-500">Expires In</span>
-          <span className={`text-xs font-medium ${daysLeft <= 7 ? 'text-amber-600' : 'text-slate-700'}`}>
+          <span
+            className={`text-xs font-medium ${daysLeft <= 7 ? 'text-amber-600' : 'text-slate-700'}`}
+          >
             {daysLeft} day{daysLeft !== 1 ? 's' : ''}
           </span>
         </div>

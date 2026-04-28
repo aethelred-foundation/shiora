@@ -22,7 +22,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // "Access Control" appears in page heading and nav link
     expect(screen.getAllByText('Access Control').length).toBeGreaterThanOrEqual(1);
@@ -32,10 +32,10 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(
-      screen.getByText(/Manage provider access to your encrypted health data/)
+      screen.getByText(/Manage provider access to your encrypted health data/),
     ).toBeInTheDocument();
   });
 
@@ -43,7 +43,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Grant Access')).toBeInTheDocument();
   });
@@ -52,7 +52,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Active Grants')).toBeInTheDocument();
     expect(screen.getByText('Pending Requests')).toBeInTheDocument();
@@ -64,7 +64,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Access Grants')).toBeInTheDocument();
     expect(screen.getByText('Audit Log')).toBeInTheDocument();
@@ -74,7 +74,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // First provider name from mock data
     expect(screen.getByText('Dr. Sarah Chen, OB-GYN')).toBeInTheDocument();
@@ -84,7 +84,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // These are the status filter tabs within the grants view
     const allTabs = screen.getAllByText('All');
@@ -96,7 +96,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // "Revoked" appears as both a filter tab label and status badge on grants
@@ -113,7 +113,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByPlaceholderText('Search providers...')).toBeInTheDocument();
   });
@@ -122,7 +122,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const searchInput = screen.getByPlaceholderText('Search providers...');
@@ -135,7 +135,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const searchInput = screen.getByPlaceholderText('Search providers...');
@@ -148,7 +148,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.click(screen.getByText('Audit Log'));
@@ -166,7 +166,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     fireEvent.click(screen.getByText('Audit Log'));
@@ -179,7 +179,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Click on the first grant card
@@ -195,7 +195,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('End-to-End Encrypted Access')).toBeInTheDocument();
   });
@@ -204,7 +204,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Grant cards should have permission indicator boxes
     // The exact presence depends on grant data, but the structure should render
@@ -216,7 +216,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Open the modal by clicking a grant
@@ -227,7 +227,7 @@ describe('AccessPage', () => {
     const closeButtons = screen.getAllByRole('button');
     // Find the close/X button in the modal — typically the last one or one with specific aria
     const closeBtn = closeButtons.find(
-      (btn) => btn.querySelector('svg') && btn.closest('[class*="fixed"]')
+      (btn) => btn.querySelector('svg') && btn.closest('[class*="fixed"]'),
     );
     if (closeBtn) {
       fireEvent.click(closeBtn);
@@ -242,7 +242,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Grants at index 2+ have canShare=false, grants at index 4+ have canDownload=false
     // Find a provider that has limited permissions
@@ -266,7 +266,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Filter to show expired grants
     const expiredElements = screen.getAllByText('Expired');
@@ -285,7 +285,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Grants with status != 'Active' have lastAccess: null
     // These grants should not show "Last: ..." text
@@ -297,7 +297,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const tabs = screen.getAllByRole('tab');
@@ -310,7 +310,7 @@ describe('AccessPage', () => {
     render(
       <TestWrapper>
         <AccessPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const tabs = screen.getAllByRole('tab');

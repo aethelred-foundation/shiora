@@ -71,7 +71,14 @@ describe('useZKP', () => {
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
     });
-    const validTypes = ['age_range', 'condition_present', 'medication_active', 'data_quality', 'provider_verified', 'fertility_window'];
+    const validTypes = [
+      'age_range',
+      'condition_present',
+      'medication_active',
+      'data_quality',
+      'provider_verified',
+      'fertility_window',
+    ];
     result.current.claims.forEach((claim) => {
       expect(validTypes).toContain(claim.claimType);
     });

@@ -106,7 +106,9 @@ export function ChatBubble({ message, isUser }: ChatBubbleProps) {
           )}
 
           {/* Message content */}
-          <p className={`text-sm leading-relaxed whitespace-pre-wrap ${isUser ? 'text-white' : 'text-slate-700'}`}>
+          <p
+            className={`text-sm leading-relaxed whitespace-pre-wrap ${isUser ? 'text-white' : 'text-slate-700'}`}
+          >
             {message.content}
           </p>
 
@@ -145,9 +147,18 @@ export function TypingIndicator() {
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm">
           <div className="flex items-center gap-1">
-            <span className="w-2 h-2 bg-brand-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-            <span className="w-2 h-2 bg-brand-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-            <span className="w-2 h-2 bg-brand-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            <span
+              className="w-2 h-2 bg-brand-400 rounded-full animate-bounce"
+              style={{ animationDelay: '0ms' }}
+            />
+            <span
+              className="w-2 h-2 bg-brand-400 rounded-full animate-bounce"
+              style={{ animationDelay: '150ms' }}
+            />
+            <span
+              className="w-2 h-2 bg-brand-400 rounded-full animate-bounce"
+              style={{ animationDelay: '300ms' }}
+            />
           </div>
         </div>
       </div>
@@ -220,11 +231,7 @@ export function ChatInput({ onSend, disabled = false, isLoading = false }: ChatI
         className="flex-shrink-0 w-10 h-10 rounded-xl bg-brand-500 text-white flex items-center justify-center hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/40"
         aria-label="Send message"
       >
-        {isLoading ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <Send className="w-4 h-4" />
-        )}
+        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
       </button>
     </div>
   );
@@ -256,9 +263,7 @@ export function SuggestedPrompts({ prompts, onSelect }: SuggestedPromptsProps) {
               <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-brand-50 text-brand-600 mb-1.5">
                 {prompt.category}
               </span>
-              <p className="text-sm text-slate-700 leading-snug line-clamp-2">
-                {prompt.prompt}
-              </p>
+              <p className="text-sm text-slate-700 leading-snug line-clamp-2">{prompt.prompt}</p>
             </div>
           </div>
         </button>
@@ -302,9 +307,7 @@ export function ConversationList({
       {/* Conversation list */}
       <div className="flex-1 overflow-y-auto">
         {conversations.length === 0 ? (
-          <div className="p-4 text-center text-sm text-slate-400">
-            No conversations yet
-          </div>
+          <div className="p-4 text-center text-sm text-slate-400">No conversations yet</div>
         ) : (
           conversations.map((conv) => (
             <div
@@ -316,7 +319,9 @@ export function ConversationList({
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <h4 className={`text-sm font-medium truncate ${activeId === conv.id ? 'text-brand-700' : 'text-slate-800'}`}>
+                  <h4
+                    className={`text-sm font-medium truncate ${activeId === conv.id ? 'text-brand-700' : 'text-slate-800'}`}
+                  >
                     {conv.title}
                   </h4>
                   <p className="text-xs text-slate-400 truncate mt-0.5">
@@ -339,9 +344,7 @@ export function ConversationList({
 
               {/* Bottom metadata */}
               <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-xs text-slate-400">
-                  {timeAgo(conv.updatedAt)}
-                </span>
+                <span className="text-xs text-slate-400">{timeAgo(conv.updatedAt)}</span>
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-slate-100 text-slate-500">
                   <MessageSquare className="w-3 h-3" />
                   {conv.messageCount}
@@ -364,19 +367,14 @@ interface AttestationProofProps {
 }
 
 export function AttestationProof({ messages }: AttestationProofProps) {
-  const attestedMessages = messages.filter(
-    (m) => m.role === 'assistant' && m.attestation,
-  );
+  const attestedMessages = messages.filter((m) => m.role === 'assistant' && m.attestation);
 
   // Platform breakdown.
-  const platformCounts = attestedMessages.reduce<Record<string, number>>(
-    (acc, m) => {
-      const platform = m.teePlatform ?? /* istanbul ignore next */ 'Unknown';
-      acc[platform] = (acc[platform] ?? 0) + 1;
-      return acc;
-    },
-    {},
-  );
+  const platformCounts = attestedMessages.reduce<Record<string, number>>((acc, m) => {
+    const platform = m.teePlatform ?? /* istanbul ignore next */ 'Unknown';
+    acc[platform] = (acc[platform] ?? 0) + 1;
+    return acc;
+  }, {});
 
   return (
     <div className="flex flex-col h-full">
@@ -420,10 +418,7 @@ export function AttestationProof({ messages }: AttestationProofProps) {
           </div>
         ) : (
           attestedMessages.map((msg) => (
-            <div
-              key={msg.id}
-              className="bg-slate-50 rounded-lg p-3 border border-slate-100"
-            >
+            <div key={msg.id} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
                 <span className="text-xs font-medium text-emerald-700">Verified</span>
@@ -439,9 +434,7 @@ export function AttestationProof({ messages }: AttestationProofProps) {
                   <Bot className="w-3 h-3 text-slate-400" />
                   <span className="text-xs text-slate-500">{msg.model}</span>
                 </div>
-                <div className="text-xs text-slate-400">
-                  {formatDateTime(msg.timestamp)}
-                </div>
+                <div className="text-xs text-slate-400">{formatDateTime(msg.timestamp)}</div>
               </div>
             </div>
           ))
@@ -452,9 +445,7 @@ export function AttestationProof({ messages }: AttestationProofProps) {
       <div className="p-3 border-t border-slate-200 bg-slate-50/50">
         <div className="flex items-center justify-between">
           <span className="text-xs text-slate-500">Total Attestations</span>
-          <span className="text-sm font-semibold text-brand-600">
-            {attestedMessages.length}
-          </span>
+          <span className="text-sm font-semibold text-brand-600">{attestedMessages.length}</span>
         </div>
       </div>
     </div>

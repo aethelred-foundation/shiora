@@ -2,7 +2,10 @@
 
 jest.mock('@/lib/api/middleware', () => {
   const actual = jest.requireActual('@/lib/api/middleware');
-  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+  return {
+    ...actual,
+    runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)),
+  };
 });
 
 const actualChallenge = jest.requireActual('@/lib/api/challenge');
@@ -52,17 +55,18 @@ function createTestChallenge(address: string) {
   const issuedAt = Date.now();
   const expiresAt = issuedAt + 5 * 60 * 1000;
   const payload = `${address}:${nonce}:${issuedAt}:${expiresAt}`;
-  const hmac = crypto
-    .createHmac('sha256', SESSION_SECRET)
-    .update(payload)
-    .digest('hex');
+  const hmac = crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('hex');
   return { nonce, issuedAt, expiresAt, hmac };
 }
 
 describe('/api/wallet/challenge', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const req = new NextRequest(`http://localhost:3000/api/wallet/challenge?address=${TEST_ADDRESS}`);
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
+    const req = new NextRequest(
+      `http://localhost:3000/api/wallet/challenge?address=${TEST_ADDRESS}`,
+    );
     const res = await getChallenge(req);
     expect(res.status).toBe(403);
   });
@@ -92,9 +96,7 @@ describe('/api/wallet/challenge', () => {
   });
 
   it('returns 400 for invalid address format', async () => {
-    const req = new NextRequest(
-      'http://localhost:3000/api/wallet/challenge?address=invalidaddr',
-    );
+    const req = new NextRequest('http://localhost:3000/api/wallet/challenge?address=invalidaddr');
     const res = await getChallenge(req);
     expect(res.status).toBe(400);
   });
@@ -102,7 +104,9 @@ describe('/api/wallet/challenge', () => {
 
 describe('/api/wallet/connect GET', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await getConnect(authedReq('http://localhost:3000/api/wallet/connect'));
     expect(res.status).toBe(403);
   });
@@ -127,7 +131,9 @@ describe('/api/wallet/connect GET', () => {
 
 describe('/api/wallet/connect POST', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const req = new NextRequest('http://localhost:3000/api/wallet/connect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -278,7 +284,10 @@ describe('/api/wallet/connect POST', () => {
     const pubKeyHex = (pubKeyUncompressed as Buffer).toString('hex');
 
     // Derive the aeth address from the public key
-    const sha256Hash = crypto.createHash('sha256').update(pubKeyUncompressed as Buffer).digest();
+    const sha256Hash = crypto
+      .createHash('sha256')
+      .update(pubKeyUncompressed as Buffer)
+      .digest();
     const ripemd160Hash = crypto.createHash('ripemd160').update(sha256Hash).digest();
 
     // Minimal bech32 encode
@@ -393,7 +402,9 @@ describe('/api/wallet/connect POST', () => {
 
 describe('/api/wallet/connect DELETE', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const req = new NextRequest('http://localhost:3000/api/wallet/connect', { method: 'DELETE' });
     const res = await deleteConnect(req);
     expect(res.status).toBe(403);

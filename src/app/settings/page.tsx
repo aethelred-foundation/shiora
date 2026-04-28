@@ -9,18 +9,65 @@
 
 import { useState, useCallback } from 'react';
 import {
-  Settings, User, Shield, Eye, Bell, Link2, Download, Wifi,
-  Camera, Copy, Check, Lock, Smartphone, Monitor, Globe,
-  Key, QrCode, Trash2, AlertTriangle, CheckCircle,
-  Mail, BellRing, BellOff, Clock, ToggleLeft, ToggleRight,
-  Building2, Unplug, FileJson, FileSpreadsheet, Database,
-  Server, Cpu, ShieldCheck, ExternalLink, ChevronRight,
-  LogOut, HardDrive, Fingerprint, History,
+  Settings,
+  User,
+  Shield,
+  Eye,
+  Bell,
+  Link2,
+  Download,
+  Wifi,
+  Camera,
+  Copy,
+  Check,
+  Lock,
+  Smartphone,
+  Monitor,
+  Globe,
+  Key,
+  QrCode,
+  Trash2,
+  AlertTriangle,
+  CheckCircle,
+  Mail,
+  BellRing,
+  BellOff,
+  Clock,
+  ToggleLeft,
+  ToggleRight,
+  Building2,
+  Unplug,
+  FileJson,
+  FileSpreadsheet,
+  Database,
+  Server,
+  Cpu,
+  ShieldCheck,
+  ExternalLink,
+  ChevronRight,
+  LogOut,
+  HardDrive,
+  Fingerprint,
+  History,
 } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
-import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, Tabs, Modal, ConfirmDialog } from '@/components/ui/SharedComponents';
-import { MedicalCard, SectionHeader, TruncatedHash, CopyButton } from '@/components/ui/PagePrimitives';
+import {
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  Tabs,
+  Modal,
+  ConfirmDialog,
+} from '@/components/ui/SharedComponents';
+import {
+  MedicalCard,
+  SectionHeader,
+  TruncatedHash,
+  CopyButton,
+} from '@/components/ui/PagePrimitives';
 import { PROVIDER_NAMES, TEE_PLATFORMS } from '@/lib/constants';
 import { truncateAddress } from '@/lib/utils';
 
@@ -228,11 +275,27 @@ function ProfileTab({ wallet }: { wallet: { connected: boolean; address: string 
               <TextInput id="name" value={name} onChange={setName} placeholder="Your name" />
             </FormField>
             <FormField label="Email Address" htmlFor="email">
-              <TextInput id="email" value={email} onChange={setEmail} type="email" placeholder="name@example.com" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" />
+              <TextInput
+                id="email"
+                value={email}
+                onChange={setEmail}
+                type="email"
+                placeholder="name@example.com"
+                pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
+              />
             </FormField>
           </div>
-          <FormField label="Bio" description="A brief description shown on your profile" htmlFor="bio">
-            <TextArea id="bio" value={bio} onChange={setBio} placeholder="Tell us about yourself..." />
+          <FormField
+            label="Bio"
+            description="A brief description shown on your profile"
+            htmlFor="bio"
+          >
+            <TextArea
+              id="bio"
+              value={bio}
+              onChange={setBio}
+              placeholder="Tell us about yourself..."
+            />
           </FormField>
         </div>
       </MedicalCard>
@@ -240,7 +303,9 @@ function ProfileTab({ wallet }: { wallet: { connected: boolean; address: string 
       {/* Wallet Address */}
       <MedicalCard>
         <h4 className="text-base font-semibold text-slate-900 mb-3">Wallet Address</h4>
-        <p className="text-xs text-slate-500 mb-4">Your blockchain identity on the Aethelred network</p>
+        <p className="text-xs text-slate-500 mb-4">
+          Your blockchain identity on the Aethelred network
+        </p>
         {wallet.connected ? (
           <div className="bg-slate-50 rounded-xl p-4">
             <div className="flex items-center justify-between">
@@ -248,7 +313,9 @@ function ProfileTab({ wallet }: { wallet: { connected: boolean; address: string 
               <CopyButton text={wallet.address} />
             </div>
             <div className="flex items-center gap-2 mt-3">
-              <Badge variant="success" dot>Connected</Badge>
+              <Badge variant="success" dot>
+                Connected
+              </Badge>
               <Badge variant="info">Aethelred Mainnet</Badge>
             </div>
           </div>
@@ -277,9 +344,30 @@ function SecurityTab() {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const mockSessions = [
-    { id: '1', device: 'MacBook Pro', browser: 'Chrome 120', location: 'San Francisco, CA', lastActive: 'Active now', current: true },
-    { id: '2', device: 'iPhone 15', browser: 'Safari Mobile', location: 'San Francisco, CA', lastActive: '2 hours ago', current: false },
-    { id: '3', device: 'Windows PC', browser: 'Firefox 121', location: 'New York, NY', lastActive: '3 days ago', current: false },
+    {
+      id: '1',
+      device: 'MacBook Pro',
+      browser: 'Chrome 120',
+      location: 'San Francisco, CA',
+      lastActive: 'Active now',
+      current: true,
+    },
+    {
+      id: '2',
+      device: 'iPhone 15',
+      browser: 'Safari Mobile',
+      location: 'San Francisco, CA',
+      lastActive: '2 hours ago',
+      current: false,
+    },
+    {
+      id: '3',
+      device: 'Windows PC',
+      browser: 'Firefox 121',
+      location: 'New York, NY',
+      lastActive: '3 days ago',
+      current: false,
+    },
   ];
 
   return (
@@ -289,7 +377,9 @@ function SecurityTab() {
         <div className="flex items-start justify-between mb-4">
           <div>
             <h4 className="text-base font-semibold text-slate-900">Two-Factor Authentication</h4>
-            <p className="text-xs text-slate-500 mt-1">Add an extra layer of security to your account</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Add an extra layer of security to your account
+            </p>
           </div>
           <Badge variant={twoFactorEnabled ? 'success' : 'warning'} dot>
             {twoFactorEnabled ? 'Enabled' : 'Disabled'}
@@ -301,7 +391,9 @@ function SecurityTab() {
             <ShieldCheck className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
             <div>
               <p className="text-sm font-medium text-emerald-900">2FA is active</p>
-              <p className="text-xs text-emerald-700 mt-0.5">Your account is protected with authenticator app verification.</p>
+              <p className="text-xs text-emerald-700 mt-0.5">
+                Your account is protected with authenticator app verification.
+              </p>
             </div>
           </div>
         ) : (
@@ -320,13 +412,31 @@ function SecurityTab() {
         <h4 className="text-base font-semibold text-slate-900 mb-5">Change Password</h4>
         <div className="space-y-4">
           <FormField label="Current Password" htmlFor="current-password">
-            <TextInput id="current-password" value={currentPassword} onChange={setCurrentPassword} type="password" placeholder="Enter current password" />
+            <TextInput
+              id="current-password"
+              value={currentPassword}
+              onChange={setCurrentPassword}
+              type="password"
+              placeholder="Enter current password"
+            />
           </FormField>
           <FormField label="New Password" htmlFor="new-password">
-            <TextInput id="new-password" value={newPassword} onChange={setNewPassword} type="password" placeholder="Enter new password" />
+            <TextInput
+              id="new-password"
+              value={newPassword}
+              onChange={setNewPassword}
+              type="password"
+              placeholder="Enter new password"
+            />
           </FormField>
           <FormField label="Confirm New Password" htmlFor="confirm-password">
-            <TextInput id="confirm-password" value={confirmPassword} onChange={setConfirmPassword} type="password" placeholder="Confirm new password" />
+            <TextInput
+              id="confirm-password"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+              type="password"
+              placeholder="Confirm new password"
+            />
           </FormField>
           <div className="flex justify-end">
             <button className="px-5 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-medium transition-colors">
@@ -340,7 +450,9 @@ function SecurityTab() {
       <MedicalCard padding={false}>
         <div className="p-5 pb-3">
           <h4 className="text-base font-semibold text-slate-900">Active Sessions</h4>
-          <p className="text-xs text-slate-500 mt-1">Manage your active login sessions across devices</p>
+          <p className="text-xs text-slate-500 mt-1">
+            Manage your active login sessions across devices
+          </p>
         </div>
         <div className="divide-y divide-slate-100">
           {mockSessions.map((session) => (
@@ -357,7 +469,9 @@ function SecurityTab() {
                   <p className="text-sm font-medium text-slate-900">{session.device}</p>
                   {session.current && <Badge variant="success">Current</Badge>}
                 </div>
-                <p className="text-xs text-slate-500">{session.browser} &middot; {session.location}</p>
+                <p className="text-xs text-slate-500">
+                  {session.browser} &middot; {session.location}
+                </p>
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <span className="text-xs text-slate-400">{session.lastActive}</span>
@@ -373,21 +487,37 @@ function SecurityTab() {
       </MedicalCard>
 
       {/* 2FA Modal */}
-      <Modal open={show2FAModal} onClose={() => setShow2FAModal(false)} title="Set Up 2FA" size="sm">
+      <Modal
+        open={show2FAModal}
+        onClose={() => setShow2FAModal(false)}
+        title="Set Up 2FA"
+        size="sm"
+      >
         <div className="text-center space-y-4">
           <div className="w-48 h-48 mx-auto bg-slate-100 rounded-xl flex items-center justify-center">
             <QrCode className="w-24 h-24 text-slate-300" />
           </div>
-          <p className="text-sm text-slate-600">Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)</p>
+          <p className="text-sm text-slate-600">
+            Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
+          </p>
           <div className="bg-slate-50 rounded-xl p-3">
             <p className="text-xs text-slate-400 mb-1">Manual entry key</p>
             <p className="font-mono text-sm text-slate-700 select-all">JBSWY3DPEHPK3PXP</p>
           </div>
           <FormField label="Verification Code" htmlFor="2fa-code">
-            <TextInput id="2fa-code" value="" onChange={() => {}} placeholder="Enter 6-digit code" pattern="[0-9]{6}" />
+            <TextInput
+              id="2fa-code"
+              value=""
+              onChange={() => {}}
+              placeholder="Enter 6-digit code"
+              pattern="[0-9]{6}"
+            />
           </FormField>
           <button
-            onClick={() => { setTwoFactorEnabled(true); setShow2FAModal(false); }}
+            onClick={() => {
+              setTwoFactorEnabled(true);
+              setShow2FAModal(false);
+            }}
             className="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-medium transition-colors"
           >
             Enable 2FA
@@ -413,7 +543,9 @@ function PrivacyTab() {
       {/* Data Sharing */}
       <MedicalCard>
         <h4 className="text-base font-semibold text-slate-900 mb-1">Data Sharing Preferences</h4>
-        <p className="text-xs text-slate-500 mb-4">Control how your health data is shared and used</p>
+        <p className="text-xs text-slate-500 mb-4">
+          Control how your health data is shared and used
+        </p>
         <div className="divide-y divide-slate-100">
           <Toggle
             enabled={shareWithProviders}
@@ -433,7 +565,9 @@ function PrivacyTab() {
       {/* Analytics */}
       <MedicalCard>
         <h4 className="text-base font-semibold text-slate-900 mb-1">Analytics & Usage</h4>
-        <p className="text-xs text-slate-500 mb-4">Help us improve Shiora by sharing usage information</p>
+        <p className="text-xs text-slate-500 mb-4">
+          Help us improve Shiora by sharing usage information
+        </p>
         <div className="divide-y divide-slate-100">
           <Toggle
             enabled={shareAnalytics}
@@ -459,7 +593,9 @@ function PrivacyTab() {
       {/* Cookie Settings */}
       <MedicalCard>
         <h4 className="text-base font-semibold text-slate-900 mb-1">Cookie Preferences</h4>
-        <p className="text-xs text-slate-500 mb-4">Manage cookie settings for your browsing experience</p>
+        <p className="text-xs text-slate-500 mb-4">
+          Manage cookie settings for your browsing experience
+        </p>
         <div className="divide-y divide-slate-100">
           <Toggle
             enabled={essentialCookies}
@@ -489,8 +625,9 @@ function PrivacyTab() {
           <div>
             <p className="text-sm font-medium text-brand-900">Your Privacy Matters</p>
             <p className="text-xs text-brand-700 mt-1">
-              All health data is encrypted end-to-end with AES-256-GCM. AI inference happens exclusively inside TEE enclaves.
-              Your data never leaves the enclave unencrypted. We are fully HIPAA compliant.
+              All health data is encrypted end-to-end with AES-256-GCM. AI inference happens
+              exclusively inside TEE enclaves. Your data never leaves the enclave unencrypted. We
+              are fully HIPAA compliant.
             </p>
           </div>
         </div>
@@ -599,11 +736,51 @@ function NotificationsTab() {
 
 function ConnectedAppsTab() {
   const connectedApps = [
-    { id: '1', name: 'Dr. Sarah Chen, OB-GYN', type: 'Healthcare Provider', status: 'Connected', connectedAt: 'Mar 2, 2026', icon: Building2, color: 'bg-brand-50 text-brand-600' },
-    { id: '2', name: 'Metro Women\'s Health', type: 'Healthcare System', status: 'Connected', connectedAt: 'Feb 15, 2026', icon: Building2, color: 'bg-emerald-50 text-emerald-600' },
-    { id: '3', name: 'Apple Health', type: 'Fitness Tracker', status: 'Connected', connectedAt: 'Jan 10, 2026', icon: HardDrive, color: 'bg-slate-100 text-slate-600' },
-    { id: '4', name: 'Fitbit', type: 'Wearable Device', status: 'Disconnected', connectedAt: 'Dec 5, 2025', icon: HardDrive, color: 'bg-violet-50 text-violet-600' },
-    { id: '5', name: 'MyFitnessPal', type: 'Nutrition Tracker', status: 'Connected', connectedAt: 'Nov 20, 2025', icon: HardDrive, color: 'bg-amber-50 text-amber-600' },
+    {
+      id: '1',
+      name: 'Dr. Sarah Chen, OB-GYN',
+      type: 'Healthcare Provider',
+      status: 'Connected',
+      connectedAt: 'Mar 2, 2026',
+      icon: Building2,
+      color: 'bg-brand-50 text-brand-600',
+    },
+    {
+      id: '2',
+      name: "Metro Women's Health",
+      type: 'Healthcare System',
+      status: 'Connected',
+      connectedAt: 'Feb 15, 2026',
+      icon: Building2,
+      color: 'bg-emerald-50 text-emerald-600',
+    },
+    {
+      id: '3',
+      name: 'Apple Health',
+      type: 'Fitness Tracker',
+      status: 'Connected',
+      connectedAt: 'Jan 10, 2026',
+      icon: HardDrive,
+      color: 'bg-slate-100 text-slate-600',
+    },
+    {
+      id: '4',
+      name: 'Fitbit',
+      type: 'Wearable Device',
+      status: 'Disconnected',
+      connectedAt: 'Dec 5, 2025',
+      icon: HardDrive,
+      color: 'bg-violet-50 text-violet-600',
+    },
+    {
+      id: '5',
+      name: 'MyFitnessPal',
+      type: 'Nutrition Tracker',
+      status: 'Connected',
+      connectedAt: 'Nov 20, 2025',
+      icon: HardDrive,
+      color: 'bg-amber-50 text-amber-600',
+    },
   ];
 
   return (
@@ -613,7 +790,9 @@ function ConnectedAppsTab() {
           <div className="flex items-center justify-between">
             <div>
               <h4 className="text-base font-semibold text-slate-900">Connected Applications</h4>
-              <p className="text-xs text-slate-500 mt-1">Manage healthcare providers and apps connected to your Shiora account</p>
+              <p className="text-xs text-slate-500 mt-1">
+                Manage healthcare providers and apps connected to your Shiora account
+              </p>
             </div>
             <button className="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-medium transition-colors shadow-sm">
               Connect App
@@ -624,8 +803,13 @@ function ConnectedAppsTab() {
           {connectedApps.map((app) => {
             const Icon = app.icon;
             return (
-              <div key={app.id} className="px-5 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors">
-                <div className={`w-11 h-11 rounded-xl ${app.color} flex items-center justify-center shrink-0`}>
+              <div
+                key={app.id}
+                className="px-5 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors"
+              >
+                <div
+                  className={`w-11 h-11 rounded-xl ${app.color} flex items-center justify-center shrink-0`}
+                >
                   <Icon className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -635,7 +819,9 @@ function ConnectedAppsTab() {
                       {app.status}
                     </Badge>
                   </div>
-                  <p className="text-xs text-slate-500">{app.type} &middot; Connected {app.connectedAt}</p>
+                  <p className="text-xs text-slate-500">
+                    {app.type} &middot; Connected {app.connectedAt}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {app.status === 'Connected' ? (
@@ -686,7 +872,9 @@ function DataExportTab() {
       {/* Export Health Data */}
       <MedicalCard>
         <h4 className="text-base font-semibold text-slate-900 mb-1">Export Health Data</h4>
-        <p className="text-xs text-slate-500 mb-5">Download all your health records in a portable format</p>
+        <p className="text-xs text-slate-500 mb-5">
+          Download all your health records in a portable format
+        </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
           <button
@@ -698,10 +886,14 @@ function DataExportTab() {
             }`}
           >
             <div className="flex items-center gap-3 mb-2">
-              <FileJson className={`w-5 h-5 ${exportFormat === 'json' ? 'text-brand-600' : 'text-slate-400'}`} />
+              <FileJson
+                className={`w-5 h-5 ${exportFormat === 'json' ? 'text-brand-600' : 'text-slate-400'}`}
+              />
               <span className="text-sm font-semibold text-slate-900">JSON Format</span>
             </div>
-            <p className="text-xs text-slate-500">Structured data format compatible with most health platforms and FHIR standard</p>
+            <p className="text-xs text-slate-500">
+              Structured data format compatible with most health platforms and FHIR standard
+            </p>
           </button>
 
           <button
@@ -713,10 +905,14 @@ function DataExportTab() {
             }`}
           >
             <div className="flex items-center gap-3 mb-2">
-              <FileSpreadsheet className={`w-5 h-5 ${exportFormat === 'csv' ? 'text-brand-600' : 'text-slate-400'}`} />
+              <FileSpreadsheet
+                className={`w-5 h-5 ${exportFormat === 'csv' ? 'text-brand-600' : 'text-slate-400'}`}
+              />
               <span className="text-sm font-semibold text-slate-900">CSV Format</span>
             </div>
-            <p className="text-xs text-slate-500">Spreadsheet-compatible format for analysis in Excel, Google Sheets, or R</p>
+            <p className="text-xs text-slate-500">
+              Spreadsheet-compatible format for analysis in Excel, Google Sheets, or R
+            </p>
           </button>
         </div>
 
@@ -768,14 +964,18 @@ function DataExportTab() {
           <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
           <div>
             <h4 className="text-base font-semibold text-red-900">Danger Zone</h4>
-            <p className="text-xs text-red-600 mt-0.5">These actions are irreversible. Proceed with extreme caution.</p>
+            <p className="text-xs text-red-600 mt-0.5">
+              These actions are irreversible. Proceed with extreme caution.
+            </p>
           </div>
         </div>
         <div className="space-y-3">
           <div className="flex items-center justify-between p-4 bg-red-50 rounded-xl border border-red-100">
             <div>
               <p className="text-sm font-medium text-red-900">Delete Account</p>
-              <p className="text-xs text-red-600">Permanently delete your account, all health records, and encryption keys</p>
+              <p className="text-xs text-red-600">
+                Permanently delete your account, all health records, and encryption keys
+              </p>
             </div>
             <button
               onClick={() => setShowDeleteConfirm(true)}
@@ -814,11 +1014,29 @@ function NetworkTab() {
         <h4 className="text-base font-semibold text-slate-900 mb-1">RPC Endpoint Configuration</h4>
         <p className="text-xs text-slate-500 mb-5">Configure your blockchain node connection</p>
         <div className="space-y-4">
-          <FormField label="RPC Endpoint" description="HTTP endpoint for blockchain queries" htmlFor="rpc">
-            <TextInput id="rpc" value={rpcEndpoint} onChange={setRpcEndpoint} placeholder="https://rpc.aethelred.network" />
+          <FormField
+            label="RPC Endpoint"
+            description="HTTP endpoint for blockchain queries"
+            htmlFor="rpc"
+          >
+            <TextInput
+              id="rpc"
+              value={rpcEndpoint}
+              onChange={setRpcEndpoint}
+              placeholder="https://rpc.aethelred.network"
+            />
           </FormField>
-          <FormField label="WebSocket Endpoint" description="WebSocket endpoint for real-time updates" htmlFor="ws">
-            <TextInput id="ws" value={wsEndpoint} onChange={setWsEndpoint} placeholder="wss://ws.aethelred.network" />
+          <FormField
+            label="WebSocket Endpoint"
+            description="WebSocket endpoint for real-time updates"
+            htmlFor="ws"
+          >
+            <TextInput
+              id="ws"
+              value={wsEndpoint}
+              onChange={setWsEndpoint}
+              placeholder="wss://ws.aethelred.network"
+            />
           </FormField>
           <FormField label="Gas Price Strategy" htmlFor="gas">
             <SelectInput
@@ -839,7 +1057,9 @@ function NetworkTab() {
       {/* TEE Enclave Preferences */}
       <MedicalCard>
         <h4 className="text-base font-semibold text-slate-900 mb-1">TEE Enclave Preferences</h4>
-        <p className="text-xs text-slate-500 mb-5">Choose your preferred Trusted Execution Environment</p>
+        <p className="text-xs text-slate-500 mb-5">
+          Choose your preferred Trusted Execution Environment
+        </p>
 
         <div className="space-y-3 mb-5">
           {TEE_PLATFORMS.map((platform) => (
@@ -853,13 +1073,18 @@ function NetworkTab() {
               }`}
             >
               <div className="flex items-center gap-3">
-                <Cpu className={`w-5 h-5 ${teePlatform === platform ? 'text-brand-600' : 'text-slate-400'}`} />
+                <Cpu
+                  className={`w-5 h-5 ${teePlatform === platform ? 'text-brand-600' : 'text-slate-400'}`}
+                />
                 <div>
                   <p className="text-sm font-semibold text-slate-900">{platform}</p>
                   <p className="text-xs text-slate-500">
-                    {platform === 'Intel SGX' && 'Industry-standard enclave technology with hardware-level isolation'}
-                    {platform === 'AWS Nitro' && 'Cloud-native enclaves with AWS integration and scalability'}
-                    {platform === 'AMD SEV' && 'Memory encryption technology for virtual machine isolation'}
+                    {platform === 'Intel SGX' &&
+                      'Industry-standard enclave technology with hardware-level isolation'}
+                    {platform === 'AWS Nitro' &&
+                      'Cloud-native enclaves with AWS integration and scalability'}
+                    {platform === 'AMD SEV' &&
+                      'Memory encryption technology for virtual machine isolation'}
                   </p>
                 </div>
               </div>
@@ -884,7 +1109,9 @@ function NetworkTab() {
         <div className="space-y-3">
           <div className="flex items-center justify-between py-2 border-b border-slate-100">
             <span className="text-sm text-slate-500">Connection</span>
-            <Badge variant="success" dot>Connected</Badge>
+            <Badge variant="success" dot>
+              Connected
+            </Badge>
           </div>
           <div className="flex items-center justify-between py-2 border-b border-slate-100">
             <span className="text-sm text-slate-500">Chain ID</span>
@@ -896,7 +1123,9 @@ function NetworkTab() {
           </div>
           <div className="flex items-center justify-between py-2">
             <span className="text-sm text-slate-500">TEE Enclave</span>
-            <Badge variant="success" dot>{teePlatform} Active</Badge>
+            <Badge variant="success" dot>
+              {teePlatform} Active
+            </Badge>
           </div>
         </div>
       </MedicalCard>

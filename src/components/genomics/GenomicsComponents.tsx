@@ -11,19 +11,56 @@
 
 import React from 'react';
 import {
-  Dna, Shield, ShieldCheck, AlertTriangle, CheckCircle,
-  TrendingUp, TrendingDown, Minus, Eye, FileText,
-  Heart, Brain, Droplets, CircleDot, Ribbon, Zap,
+  Dna,
+  Shield,
+  ShieldCheck,
+  AlertTriangle,
+  CheckCircle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Eye,
+  FileText,
+  Heart,
+  Brain,
+  Droplets,
+  CircleDot,
+  Ribbon,
+  Zap,
 } from 'lucide-react';
 import {
-  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-  AreaChart, Area, LineChart, Line, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, CartesianGrid, ReferenceLine,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  AreaChart,
+  Area,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  ReferenceLine,
 } from 'recharts';
 
-import { MedicalCard, ChartTooltip, TEEBadge, StatusBadge, EncryptionBadge, TruncatedHash } from '@/components/ui/PagePrimitives';
+import {
+  MedicalCard,
+  ChartTooltip,
+  TEEBadge,
+  StatusBadge,
+  EncryptionBadge,
+  TruncatedHash,
+} from '@/components/ui/PagePrimitives';
 import { Badge, ProgressRing } from '@/components/ui/SharedComponents';
-import { BRAND, CHART_COLORS, GENOMIC_RISK_CATEGORIES, EXTENDED_STATUS_STYLES } from '@/lib/constants';
+import {
+  BRAND,
+  CHART_COLORS,
+  GENOMIC_RISK_CATEGORIES,
+  EXTENDED_STATUS_STYLES,
+} from '@/lib/constants';
 import { formatNumber, formatDate, formatDateTime, timeAgo } from '@/lib/utils';
 import type {
   GenomicProfile,
@@ -61,13 +98,14 @@ function getRiskCategoryMeta(categoryId: string) {
 // Metabolism rate styles
 // ============================================================
 
-const METABOLISM_STYLES: Record<MetabolismRate, { variant: string; label: string; color: string }> = {
-  poor: { variant: 'error', label: 'Poor Metabolizer', color: '#ef4444' },
-  intermediate: { variant: 'warning', label: 'Intermediate', color: '#f59e0b' },
-  normal: { variant: 'success', label: 'Normal', color: '#10b981' },
-  rapid: { variant: 'info', label: 'Rapid', color: '#3b82f6' },
-  ultra_rapid: { variant: 'medical', label: 'Ultra Rapid', color: '#8b5cf6' },
-};
+const METABOLISM_STYLES: Record<MetabolismRate, { variant: string; label: string; color: string }> =
+  {
+    poor: { variant: 'error', label: 'Poor Metabolizer', color: '#ef4444' },
+    intermediate: { variant: 'warning', label: 'Intermediate', color: '#f59e0b' },
+    normal: { variant: 'success', label: 'Normal', color: '#10b981' },
+    rapid: { variant: 'info', label: 'Rapid', color: '#3b82f6' },
+    ultra_rapid: { variant: 'medical', label: 'Ultra Rapid', color: '#8b5cf6' },
+  };
 
 // ============================================================
 // Risk level badge mapping
@@ -86,9 +124,7 @@ const RISK_LEVEL_STYLES: Record<string, string> = {
 
 export function MetabolismBadge({ rate }: { rate: MetabolismRate }) {
   const style = METABOLISM_STYLES[rate];
-  return (
-    <Badge variant={style.variant as any}>{style.label}</Badge>
-  );
+  return <Badge variant={style.variant as any}>{style.label}</Badge>;
 }
 
 // ============================================================
@@ -110,7 +146,9 @@ export function GenomicProfileCard({ overview }: { overview: GenomicsOverview })
             <p className="text-xs text-slate-500">Whole genome sequencing analysis</p>
           </div>
         </div>
-        <Badge variant="success" dot>Completed</Badge>
+        <Badge variant="success" dot>
+          Completed
+        </Badge>
       </div>
 
       {/* Stats grid */}
@@ -147,7 +185,9 @@ export function GenomicProfileCard({ overview }: { overview: GenomicsOverview })
       {/* High risk conditions */}
       {overview.highRiskConditions.length > 0 && (
         <div className="border-t border-slate-100 pt-4 mt-2">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">High Risk Conditions</p>
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">
+            High Risk Conditions
+          </p>
           <div className="space-y-2">
             {overview.highRiskConditions.map((condition, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
@@ -234,47 +274,46 @@ export function BiomarkerCard({ biomarker }: { biomarker: Biomarker }) {
   }));
 
   // Trend icon and color
-  const TrendIcon = trend === 'improving'
-    ? TrendingUp
-    : trend === 'worsening'
-    ? TrendingDown
-    : Minus;
+  const TrendIcon =
+    trend === 'improving' ? TrendingUp : trend === 'worsening' ? TrendingDown : Minus;
 
-  const trendColor = trend === 'improving'
-    ? 'text-emerald-600'
-    : trend === 'worsening'
-    ? 'text-rose-600'
-    : 'text-slate-400';
+  const trendColor =
+    trend === 'improving'
+      ? 'text-emerald-600'
+      : trend === 'worsening'
+        ? 'text-rose-600'
+        : 'text-slate-400';
 
   // Status colors
-  const statusColor = status === 'normal'
-    ? 'bg-emerald-500'
-    : status === 'borderline'
-    ? 'bg-amber-500'
-    : 'bg-rose-500';
+  const statusColor =
+    status === 'normal'
+      ? 'bg-emerald-500'
+      : status === 'borderline'
+        ? 'bg-amber-500'
+        : 'bg-rose-500';
 
-  const statusBg = status === 'normal'
-    ? 'bg-emerald-50 text-emerald-700'
-    : status === 'borderline'
-    ? 'bg-amber-50 text-amber-700'
-    : 'bg-rose-50 text-rose-700';
+  const statusBg =
+    status === 'normal'
+      ? 'bg-emerald-50 text-emerald-700'
+      : status === 'borderline'
+        ? 'bg-amber-50 text-amber-700'
+        : 'bg-rose-50 text-rose-700';
 
   // Sparkline stroke color
-  const sparkStroke = status === 'normal'
-    ? '#10b981'
-    : status === 'borderline'
-    ? '#f59e0b'
-    : '#f43f5e';
+  const sparkStroke =
+    status === 'normal' ? '#10b981' : status === 'borderline' ? '#f59e0b' : '#f43f5e';
 
   // Reference range bar visualization (proportional position of current value)
   const rangeLow = referenceRange.low;
   const rangeHigh = referenceRange.high;
-  const rangeSpan = rangeHigh - rangeLow ||
+  const rangeSpan =
+    rangeHigh - rangeLow ||
     /* istanbul ignore next -- range always has non-zero span in test data */
     1;
   const barMin = Math.min(rangeLow * 0.7, currentValue * 0.9);
   const barMax = Math.max(rangeHigh * 1.3, currentValue * 1.1);
-  const barSpan = barMax - barMin ||
+  const barSpan =
+    barMax - barMin ||
     /* istanbul ignore next -- bar span always non-zero in test data */
     1;
   const normalStartPct = ((rangeLow - barMin) / barSpan) * 100;
@@ -300,7 +339,9 @@ export function BiomarkerCard({ biomarker }: { biomarker: Biomarker }) {
 
       {/* Status + Trend */}
       <div className="flex items-center gap-2 mb-3">
-        <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${statusBg}`}>{status}</span>
+        <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${statusBg}`}>
+          {status}
+        </span>
         <span className={`flex items-center gap-0.5 text-xs ${trendColor}`}>
           <TrendIcon className="w-3 h-3" />
           {trend}
@@ -323,7 +364,9 @@ export function BiomarkerCard({ biomarker }: { biomarker: Biomarker }) {
         </div>
         <div className="flex justify-between mt-1">
           <span className="text-[10px] text-slate-400">{rangeLow}</span>
-          <span className="text-[10px] text-slate-400">{rangeHigh} {unit}</span>
+          <span className="text-[10px] text-slate-400">
+            {rangeHigh} {unit}
+          </span>
         </div>
       </div>
 
@@ -366,23 +409,26 @@ export function BiomarkerTrendChart({ biomarker }: { biomarker: Biomarker }) {
   const dataMax = Math.max(...allValues, referenceRange.high);
   const padding = (dataMax - dataMin) * 0.15;
 
-  const TrendIcon = biomarker.trend === 'improving'
-    ? TrendingUp
-    : biomarker.trend === 'worsening'
-    ? TrendingDown
-    : Minus;
+  const TrendIcon =
+    biomarker.trend === 'improving'
+      ? TrendingUp
+      : biomarker.trend === 'worsening'
+        ? TrendingDown
+        : Minus;
 
-  const trendColor = biomarker.trend === 'improving'
-    ? 'text-emerald-600'
-    : biomarker.trend === 'worsening'
-    ? 'text-rose-600'
-    : 'text-slate-400';
+  const trendColor =
+    biomarker.trend === 'improving'
+      ? 'text-emerald-600'
+      : biomarker.trend === 'worsening'
+        ? 'text-rose-600'
+        : 'text-slate-400';
 
-  const statusVariant = biomarker.status === 'normal'
-    ? 'success'
-    : biomarker.status === 'borderline'
-    ? 'warning'
-    : 'error';
+  const statusVariant =
+    biomarker.status === 'normal'
+      ? 'success'
+      : biomarker.status === 'borderline'
+        ? 'warning'
+        : 'error';
 
   return (
     <MedicalCard>
@@ -502,10 +548,7 @@ export function RiskScoreRadar({ scores }: { scores: PolygenicRiskScore[] }) {
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
             <PolarGrid stroke="#e2e8f0" />
-            <PolarAngleAxis
-              dataKey="category"
-              tick={{ fontSize: 11, fill: '#64748b' }}
-            />
+            <PolarAngleAxis dataKey="category" tick={{ fontSize: 11, fill: '#64748b' }} />
             <PolarRadiusAxis
               angle={30}
               domain={[0, 100]}
@@ -562,7 +605,9 @@ export function RiskScoreCard({ score }: { score: PolygenicRiskScore }) {
 
       {/* Modifiable factors */}
       <div className="mb-3">
-        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">Modifiable Factors</p>
+        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">
+          Modifiable Factors
+        </p>
         <ul className="space-y-1">
           {score.modifiableFactors.map((f, i) => (
             <li key={i} className="text-xs text-slate-600 flex items-center gap-1.5">
@@ -575,7 +620,9 @@ export function RiskScoreCard({ score }: { score: PolygenicRiskScore }) {
 
       {/* Non-modifiable factors */}
       <div className="mb-3">
-        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">Non-Modifiable Factors</p>
+        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">
+          Non-Modifiable Factors
+        </p>
         <ul className="space-y-1">
           {score.nonModifiableFactors.map((f, i) => (
             <li key={i} className="text-xs text-slate-600 flex items-center gap-1.5">
@@ -588,7 +635,9 @@ export function RiskScoreCard({ score }: { score: PolygenicRiskScore }) {
 
       {/* Recommended interventions */}
       <div className="mb-3">
-        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">Interventions</p>
+        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">
+          Interventions
+        </p>
         <ul className="space-y-1">
           {score.recommendedInterventions.map((r, i) => (
             <li key={i} className="text-xs text-slate-600 flex items-center gap-1.5">
@@ -631,7 +680,9 @@ export function GenomicReportCard({ report }: { report: GenomicReport }) {
       </div>
 
       <h4 className="text-sm font-semibold text-slate-900 mb-0.5 line-clamp-1">{report.title}</h4>
-      <p className="text-xs text-slate-400 mb-3">{report.category} &middot; {formatDate(report.generatedAt)}</p>
+      <p className="text-xs text-slate-400 mb-3">
+        {report.category} &middot; {formatDate(report.generatedAt)}
+      </p>
       <p className="text-xs text-slate-600 line-clamp-3 mb-4">{report.summary}</p>
 
       <div className="flex items-center gap-4 mb-3">
@@ -647,9 +698,7 @@ export function GenomicReportCard({ report }: { report: GenomicReport }) {
 
       <div className="flex items-center justify-between">
         <TEEBadge verified={report.teeVerified} />
-        {report.teeVerified && (
-          <TruncatedHash hash={report.attestation} startLen={8} endLen={6} />
-        )}
+        {report.teeVerified && <TruncatedHash hash={report.attestation} startLen={8} endLen={6} />}
       </div>
     </MedicalCard>
   );

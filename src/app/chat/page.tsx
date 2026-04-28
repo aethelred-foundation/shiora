@@ -193,10 +193,7 @@ export default function ChatPage() {
           </div>
 
           {/* Messages area */}
-          <div
-            ref={messagesContainerRef}
-            className="flex-1 overflow-y-auto p-6"
-          >
+          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-6">
             {isLoadingMessages && activeConversation ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-pulse flex flex-col items-center gap-3">
@@ -210,12 +207,10 @@ export default function ChatPage() {
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-100 to-brand-100 flex items-center justify-center mb-4">
                   <Bot className="w-8 h-8 text-brand-400" />
                 </div>
-                <h2 className="text-xl font-semibold text-slate-800 mb-2">
-                  Shiora on Aethelred
-                </h2>
+                <h2 className="text-xl font-semibold text-slate-800 mb-2">Shiora on Aethelred</h2>
                 <p className="text-sm text-slate-500 mb-6 text-center max-w-md">
-                  Ask me anything about your health data. All responses are
-                  verified through TEE attestation for tamper-proof analysis.
+                  Ask me anything about your health data. All responses are verified through TEE
+                  attestation for tamper-proof analysis.
                 </p>
                 <div className="flex items-center gap-4 mb-8">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200">
@@ -231,20 +226,13 @@ export default function ChatPage() {
                     {activeModel.name}
                   </span>
                 </div>
-                <SuggestedPrompts
-                  prompts={suggestedPrompts}
-                  onSelect={handlePromptSelect}
-                />
+                <SuggestedPrompts prompts={suggestedPrompts} onSelect={handlePromptSelect} />
               </div>
             ) : (
               /* Message list */
               <div>
                 {messages.map((msg) => (
-                  <ChatBubble
-                    key={msg.id}
-                    message={msg}
-                    isUser={msg.role === 'user'}
-                  />
+                  <ChatBubble key={msg.id} message={msg} isUser={msg.role === 'user'} />
                 ))}
                 {isSending && <TypingIndicator />}
                 <div ref={messagesEndRef} />
@@ -255,11 +243,7 @@ export default function ChatPage() {
           {/* Input area */}
           <div className="flex-shrink-0 border-t border-slate-200 p-4 bg-white/70 backdrop-blur-sm">
             <div className="max-w-3xl mx-auto">
-              <ChatInput
-                onSend={handleSend}
-                disabled={false}
-                isLoading={isSending}
-              />
+              <ChatInput onSend={handleSend} disabled={false} isLoading={isSending} />
               <div className="flex items-center justify-center gap-3 mt-2">
                 <span className="text-xs text-slate-400 flex items-center gap-1">
                   <Shield className="w-3 h-3" />

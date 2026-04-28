@@ -8,8 +8,11 @@ import { useNetwork, AETHELRED_CONFIG } from '@/hooks/useNetwork';
 function createWrapper() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   return ({ children }: { children: React.ReactNode }) =>
-    React.createElement(QueryClientProvider, { client: qc },
-      React.createElement(AppProvider, null, children));
+    React.createElement(
+      QueryClientProvider,
+      { client: qc },
+      React.createElement(AppProvider, null, children),
+    );
 }
 
 describe('useNetwork', () => {
@@ -51,7 +54,9 @@ describe('useNetwork', () => {
     const { result } = renderHook(() => useNetwork(), { wrapper: createWrapper() });
     act(() => result.current.reconnect());
     expect(result.current.isConnected).toBe(false);
-    act(() => { jest.advanceTimersByTime(600); });
+    act(() => {
+      jest.advanceTimersByTime(600);
+    });
     expect(result.current.isConnected).toBe(true);
     jest.useRealTimers();
   });
@@ -84,15 +89,21 @@ describe('useNetwork', () => {
 
   it('responds to online/offline events', () => {
     const { result } = renderHook(() => useNetwork(), { wrapper: createWrapper() });
-    act(() => { window.dispatchEvent(new Event('offline')); });
+    act(() => {
+      window.dispatchEvent(new Event('offline'));
+    });
     expect(result.current.isConnected).toBe(false);
-    act(() => { window.dispatchEvent(new Event('online')); });
+    act(() => {
+      window.dispatchEvent(new Event('online'));
+    });
     expect(result.current.isConnected).toBe(true);
   });
 
   it('seeds recent blocks from server data on first load', async () => {
     const { result } = renderHook(() => useNetwork(), { wrapper: createWrapper() });
-    await waitFor(() => expect(result.current.recentBlocks.length).toBeGreaterThan(0), { timeout: 5000 });
+    await waitFor(() => expect(result.current.recentBlocks.length).toBeGreaterThan(0), {
+      timeout: 5000,
+    });
     expect(result.current.recentBlocks[0]).toBeDefined();
   });
 
@@ -103,7 +114,9 @@ describe('useNetwork', () => {
 
   it('computes averageBlockTime from blocks with timestamps', async () => {
     const { result } = renderHook(() => useNetwork(), { wrapper: createWrapper() });
-    await waitFor(() => expect(result.current.recentBlocks.length).toBeGreaterThanOrEqual(2), { timeout: 5000 });
+    await waitFor(() => expect(result.current.recentBlocks.length).toBeGreaterThanOrEqual(2), {
+      timeout: 5000,
+    });
     expect(result.current.averageBlockTime).toBeGreaterThan(0);
   });
 
@@ -111,12 +124,16 @@ describe('useNetwork', () => {
     jest.useFakeTimers();
     const { result } = renderHook(() => useNetwork(), { wrapper: createWrapper() });
 
-    await act(async () => { jest.advanceTimersByTime(50); });
+    await act(async () => {
+      jest.advanceTimersByTime(50);
+    });
 
     const initialHeight = result.current.state.blockHeight;
 
     // Advance the 3-second AppContext interval to trigger block height change
-    await act(async () => { jest.advanceTimersByTime(3100); });
+    await act(async () => {
+      jest.advanceTimersByTime(3100);
+    });
 
     expect(result.current.state.blockHeight).toBe(initialHeight + 1);
 
@@ -129,7 +146,9 @@ describe('useNetwork', () => {
 
     const { result } = renderHook(() => useNetwork(), { wrapper: createWrapper() });
 
-    await act(async () => { jest.advanceTimersByTime(3100); });
+    await act(async () => {
+      jest.advanceTimersByTime(3100);
+    });
 
     expect(result.current.state).toBeDefined();
 
@@ -137,4 +156,3 @@ describe('useNetwork', () => {
     jest.useRealTimers();
   });
 });
-

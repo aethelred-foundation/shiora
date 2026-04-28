@@ -31,7 +31,7 @@ describe('ErrorPage', () => {
   it('renders the error description', () => {
     render(<ErrorPage error={baseError} reset={mockReset} />);
     expect(
-      screen.getByText(/An unexpected error occurred while loading this page/)
+      screen.getByText(/An unexpected error occurred while loading this page/),
     ).toBeInTheDocument();
   });
 
@@ -149,7 +149,7 @@ describe('ErrorPage', () => {
     const copyBtn = screen.getByTitle('Copy error details');
     fireEvent.click(copyBtn);
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      expect.stringContaining('Digest: digest123')
+      expect.stringContaining('Digest: digest123'),
     );
     // @ts-ignore
     process.env.NODE_ENV = originalEnv;
@@ -168,7 +168,7 @@ describe('ErrorPage', () => {
     fireEvent.click(copyBtn);
     // Should not include "Digest:" in the copied text
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      expect.not.stringContaining('Digest:')
+      expect.not.stringContaining('Digest:'),
     );
     // @ts-ignore
     process.env.NODE_ENV = originalEnv;
@@ -185,7 +185,7 @@ describe('ErrorPage', () => {
     const copyBtn = screen.getByTitle('Copy error details');
     fireEvent.click(copyBtn);
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      expect.not.stringContaining('Stack:')
+      expect.not.stringContaining('Stack:'),
     );
     // @ts-ignore
     process.env.NODE_ENV = originalEnv;
@@ -196,7 +196,9 @@ describe('ErrorPage', () => {
     // @ts-ignore
     process.env.NODE_ENV = 'development';
     // Make clipboard.writeText reject
-    (navigator.clipboard.writeText as jest.Mock).mockRejectedValueOnce(new Error('Clipboard denied'));
+    (navigator.clipboard.writeText as jest.Mock).mockRejectedValueOnce(
+      new Error('Clipboard denied'),
+    );
     render(<ErrorPage error={baseError} reset={mockReset} />);
     fireEvent.click(screen.getByText('Show Error Details'));
     const copyBtn = screen.getByTitle('Copy error details');

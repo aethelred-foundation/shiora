@@ -81,7 +81,8 @@ export async function GET(request: NextRequest) {
     entries: data,
     total: data.length,
     currentCycleDay: data.length > 0 ? data[data.length - 1].day : /* istanbul ignore next */ 1,
-    currentPhase: data.length > 0 ? data[data.length - 1].phase : /* istanbul ignore next */ 'follicular',
+    currentPhase:
+      data.length > 0 ? data[data.length - 1].phase : /* istanbul ignore next */ 'follicular',
     averageCycleLength: 28,
   });
 }

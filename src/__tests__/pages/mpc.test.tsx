@@ -24,9 +24,30 @@ jest.mock('@/hooks/useMPC', () => ({
         status: 'computing',
         creatorAddress: '0xcreator1',
         participants: [
-          { id: 'p-1', anonymousId: 'anon-1', joinedAt: Date.now(), dataPointsContributed: 1200, roundsCompleted: 5, status: 'active' },
-          { id: 'p-2', anonymousId: 'anon-2', joinedAt: Date.now(), dataPointsContributed: 800, roundsCompleted: 5, status: 'active' },
-          { id: 'p-3', anonymousId: 'anon-3', joinedAt: Date.now(), dataPointsContributed: 600, roundsCompleted: 3, status: 'enrolled' },
+          {
+            id: 'p-1',
+            anonymousId: 'anon-1',
+            joinedAt: Date.now(),
+            dataPointsContributed: 1200,
+            roundsCompleted: 5,
+            status: 'active',
+          },
+          {
+            id: 'p-2',
+            anonymousId: 'anon-2',
+            joinedAt: Date.now(),
+            dataPointsContributed: 800,
+            roundsCompleted: 5,
+            status: 'active',
+          },
+          {
+            id: 'p-3',
+            anonymousId: 'anon-3',
+            joinedAt: Date.now(),
+            dataPointsContributed: 600,
+            roundsCompleted: 3,
+            status: 'enrolled',
+          },
         ],
         minParticipants: 3,
         maxParticipants: 10,
@@ -47,8 +68,22 @@ jest.mock('@/hooks/useMPC', () => ({
         status: 'completed',
         creatorAddress: '0xcreator2',
         participants: [
-          { id: 'p-4', anonymousId: 'anon-4', joinedAt: Date.now(), dataPointsContributed: 2000, roundsCompleted: 10, status: 'completed' },
-          { id: 'p-5', anonymousId: 'anon-5', joinedAt: Date.now(), dataPointsContributed: 1500, roundsCompleted: 10, status: 'completed' },
+          {
+            id: 'p-4',
+            anonymousId: 'anon-4',
+            joinedAt: Date.now(),
+            dataPointsContributed: 2000,
+            roundsCompleted: 10,
+            status: 'completed',
+          },
+          {
+            id: 'p-5',
+            anonymousId: 'anon-5',
+            joinedAt: Date.now(),
+            dataPointsContributed: 1500,
+            roundsCompleted: 10,
+            status: 'completed',
+          },
         ],
         minParticipants: 2,
         maxParticipants: 5,
@@ -142,33 +177,57 @@ beforeEach(() => {
 
 describe('MPCLabPage', () => {
   it('renders the page heading', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     expect(screen.getByText('MPC Computation Lab')).toBeInTheDocument();
   });
 
   it('renders the page description', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     expect(screen.getByText(/Run privacy-preserving multi-party computations/)).toBeInTheDocument();
   });
 
   it('renders navigation', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
   });
 
   it('renders footer', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   });
 
   it('renders TEE badge and Network Live badge', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     expect(screen.getAllByText('Intel SGX Verified').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Network Live')).toBeInTheDocument();
   });
 
   it('renders tab navigation with Sessions, Create, Results, Datasets', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     expect(screen.getAllByText(/Sessions/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Create')).toBeInTheDocument();
     expect(screen.getByText('Results')).toBeInTheDocument();
@@ -178,7 +237,11 @@ describe('MPCLabPage', () => {
   // --- Sessions Tab ---
 
   it('renders Sessions tab by default with stat cards', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     expect(screen.getByText('Active Sessions')).toBeInTheDocument();
     expect(screen.getByText('Total Participants')).toBeInTheDocument();
     expect(screen.getByText('Avg Privacy Budget')).toBeInTheDocument();
@@ -186,25 +249,41 @@ describe('MPCLabPage', () => {
   });
 
   it('renders MPC Sessions section heading', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     expect(screen.getByText('MPC Sessions')).toBeInTheDocument();
   });
 
   it('renders session cards', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     expect(screen.getByText('Federated Biomarker Discovery')).toBeInTheDocument();
     expect(screen.getByText('Privacy-Preserving Drug Interaction')).toBeInTheDocument();
   });
 
   it('clicks a session card to select it', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Federated Biomarker Discovery'));
     expect(mockSelectSession).toHaveBeenCalledWith('sess-1');
   });
 
   it('shows no sessions message when sessions is empty', () => {
     mockOverrides = { sessions: [] };
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     expect(screen.getByText('No MPC sessions found')).toBeInTheDocument();
   });
 
@@ -224,7 +303,11 @@ describe('MPCLabPage', () => {
         ],
       },
     };
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     expect(screen.getByText(/Convergence — Federated Biomarker Discovery/)).toBeInTheDocument();
     expect(screen.getByText('Privacy Budget (epsilon)')).toBeInTheDocument();
   });
@@ -232,7 +315,11 @@ describe('MPCLabPage', () => {
   // --- Create Tab ---
 
   it('switches to Create tab and shows form elements', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Create'));
     expect(screen.getAllByText(/Create MPC Session/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Protocol')).toBeInTheDocument();
@@ -245,14 +332,22 @@ describe('MPCLabPage', () => {
   });
 
   it('shows protocol details panel on Create tab', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Create'));
     expect(screen.getByText('Protocol Details')).toBeInTheDocument();
     expect(screen.getByText('Budget Guide')).toBeInTheDocument();
   });
 
   it('shows privacy guarantees on Create tab', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Create'));
     expect(screen.getByText('Differential privacy noise injection')).toBeInTheDocument();
     expect(screen.getByText('TEE-verified computation')).toBeInTheDocument();
@@ -260,7 +355,11 @@ describe('MPCLabPage', () => {
   });
 
   it('fills in session name field', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Create'));
     const nameInput = screen.getByPlaceholderText('e.g. Federated Biomarker Discovery');
     fireEvent.change(nameInput, { target: { value: 'New Session' } });
@@ -268,7 +367,11 @@ describe('MPCLabPage', () => {
   });
 
   it('fills in description textarea', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Create'));
     const descInput = screen.getByPlaceholderText(/Describe the purpose and scope/);
     fireEvent.change(descInput, { target: { value: 'Test description' } });
@@ -276,7 +379,11 @@ describe('MPCLabPage', () => {
   });
 
   it('changes min participants field', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Create'));
     const inputs = screen.getAllByRole('spinbutton');
     // First number input is min, second is max
@@ -285,7 +392,11 @@ describe('MPCLabPage', () => {
   });
 
   it('changes max participants field', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Create'));
     const inputs = screen.getAllByRole('spinbutton');
     fireEvent.change(inputs[1], { target: { value: '20' } });
@@ -293,7 +404,11 @@ describe('MPCLabPage', () => {
   });
 
   it('changes privacy budget slider', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Create'));
     const slider = screen.getByRole('slider');
     fireEvent.change(slider, { target: { value: '3.5' } });
@@ -301,7 +416,11 @@ describe('MPCLabPage', () => {
   });
 
   it('toggles data type checkboxes', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Create'));
     const checkboxes = screen.getAllByRole('checkbox');
     // Toggle the first unchecked checkbox
@@ -317,7 +436,11 @@ describe('MPCLabPage', () => {
   });
 
   it('clicks Create MPC Session button', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Create'));
     const createBtn = screen.getByRole('button', { name: 'Create MPC Session' });
     fireEvent.click(createBtn);
@@ -327,7 +450,11 @@ describe('MPCLabPage', () => {
   // --- Results Tab ---
 
   it('switches to Results tab and shows results', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Results'));
     expect(screen.getByText('Computation Results')).toBeInTheDocument();
     expect(screen.getByText(/1 completed MPC results/)).toBeInTheDocument();
@@ -335,7 +462,11 @@ describe('MPCLabPage', () => {
 
   it('shows no results message when results is empty', () => {
     mockOverrides = { results: [] };
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Results'));
     expect(screen.getByText('No computation results yet')).toBeInTheDocument();
   });
@@ -355,7 +486,11 @@ describe('MPCLabPage', () => {
         ],
       },
     };
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Results'));
     expect(screen.getByText('Convergence Trend')).toBeInTheDocument();
   });
@@ -363,7 +498,11 @@ describe('MPCLabPage', () => {
   // --- Datasets Tab ---
 
   it('switches to Datasets tab and shows datasets', () => {
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Datasets'));
     expect(screen.getByText('Available Datasets')).toBeInTheDocument();
     expect(screen.getByText('Cardiac Health Records')).toBeInTheDocument();
@@ -372,7 +511,11 @@ describe('MPCLabPage', () => {
 
   it('shows no datasets message when datasets is empty', () => {
     mockOverrides = { datasets: [] };
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     fireEvent.click(screen.getByText('Datasets'));
     expect(screen.getByText('No datasets available')).toBeInTheDocument();
   });
@@ -381,7 +524,11 @@ describe('MPCLabPage', () => {
 
   it('handles empty sessions for avgBudget calculation', () => {
     mockOverrides = { sessions: [] };
-    render(<TestWrapper><MPCLabPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MPCLabPage />
+      </TestWrapper>,
+    );
     // Should render 0.0 for avg budget without crashing
     expect(screen.getByText('Avg Privacy Budget')).toBeInTheDocument();
   });

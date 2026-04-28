@@ -6,12 +6,16 @@
 'use client';
 
 import React from 'react';
-import {
-  Brain, Eye, ChevronDown, Info, BarChart3,
-} from 'lucide-react';
+import { Brain, Eye, ChevronDown, Info, BarChart3 } from 'lucide-react';
 
 import { useExplainableAI } from '@/hooks/useExplainableAI';
-import { SHAPWaterfall, FeatureImportanceChart, ModelCardViewer, BiasHeatmap, DecisionPath } from '@/components/xai/XAIComponents';
+import {
+  SHAPWaterfall,
+  FeatureImportanceChart,
+  ModelCardViewer,
+  BiasHeatmap,
+  DecisionPath,
+} from '@/components/xai/XAIComponents';
 import { MedicalCard } from '@/components/ui/PagePrimitives';
 import { Badge } from '@/components/ui/SharedComponents';
 import { AI_MODELS } from '@/lib/constants';
@@ -40,7 +44,9 @@ export default function ExplainabilityTab() {
             <Brain className="w-5 h-5 text-violet-500" />
             <div>
               <p className="text-sm font-semibold text-slate-900">Select AI Model</p>
-              <p className="text-xs text-slate-400">Choose a model to view its explainability details</p>
+              <p className="text-xs text-slate-400">
+                Choose a model to view its explainability details
+              </p>
             </div>
           </div>
           <div className="relative">
@@ -62,9 +68,7 @@ export default function ExplainabilityTab() {
 
       {/* SHAP Values + Feature Importance Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {xai.selectedResult && (
-          <SHAPWaterfall shapValues={xai.selectedResult.shapValues} />
-        )}
+        {xai.selectedResult && <SHAPWaterfall shapValues={xai.selectedResult.shapValues} />}
         {xai.featureImportances.length > 0 && (
           <FeatureImportanceChart features={xai.featureImportances} />
         )}
@@ -78,7 +82,9 @@ export default function ExplainabilityTab() {
               <Eye className="w-4 h-4 text-brand-500" />
               <h4 className="text-sm font-semibold text-slate-900">AI Explanation</h4>
             </div>
-            <p className="text-sm text-slate-600 leading-relaxed mb-3">{xai.selectedResult.explanation}</p>
+            <p className="text-sm text-slate-600 leading-relaxed mb-3">
+              {xai.selectedResult.explanation}
+            </p>
             <div className="flex items-center gap-2">
               <Badge variant="brand">
                 <BarChart3 className="w-3 h-3 mr-1" />
@@ -95,14 +101,10 @@ export default function ExplainabilityTab() {
       )}
 
       {/* Model Card */}
-      {xai.selectedModelCard && (
-        <ModelCardViewer card={xai.selectedModelCard} />
-      )}
+      {xai.selectedModelCard && <ModelCardViewer card={xai.selectedModelCard} />}
 
       {/* Bias Report */}
-      {xai.selectedBiasReport && (
-        <BiasHeatmap report={xai.selectedBiasReport} />
-      )}
+      {xai.selectedBiasReport && <BiasHeatmap report={xai.selectedBiasReport} />}
 
       {/* Info box */}
       <div className="p-5 bg-violet-50 border border-violet-200 rounded-2xl">
@@ -111,10 +113,10 @@ export default function ExplainabilityTab() {
           <div>
             <h4 className="text-sm font-semibold text-violet-900 mb-1">About Explainable AI</h4>
             <p className="text-sm text-violet-700">
-              All AI models in Shiora produce explainability artifacts including SHAP values, feature
-              importance rankings, and decision paths. These artifacts are generated inside TEE enclaves
-              and verified on-chain, ensuring that you can trust not only the prediction but also the
-              explanation of how that prediction was made.
+              All AI models in Shiora produce explainability artifacts including SHAP values,
+              feature importance rankings, and decision paths. These artifacts are generated inside
+              TEE enclaves and verified on-chain, ensuring that you can trust not only the
+              prediction but also the explanation of how that prediction was made.
             </p>
           </div>
         </div>

@@ -19,10 +19,7 @@ export async function GET(request: NextRequest) {
   if (blocked) return blocked;
 
   try {
-    const query = parseSearchParams(
-      AnomalyListQuerySchema,
-      request.nextUrl.searchParams,
-    );
+    const query = parseSearchParams(AnomalyListQuerySchema, request.nextUrl.searchParams);
 
     let anomalies = generateMockAnomalies();
 

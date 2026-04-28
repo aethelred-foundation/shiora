@@ -12,3 +12,6 @@ yarn.lock
 .vercel
 .turbo
 public
+.shiora-data
+next-env.d.ts
+db/migrations/*.sql

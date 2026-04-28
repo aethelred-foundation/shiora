@@ -9,17 +9,26 @@
 
 import React, { useState, useMemo } from 'react';
 import {
-  Shield, ShieldCheck, ShieldAlert, Clock, Calendar,
-  CheckCircle, XCircle, AlertTriangle, Download,
-  Trash2, FileText, Database, Loader2,
-  Eye, Send, Package, ChevronDown,
+  Shield,
+  ShieldCheck,
+  ShieldAlert,
+  Clock,
+  Calendar,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Download,
+  Trash2,
+  FileText,
+  Database,
+  Loader2,
+  Eye,
+  Send,
+  Package,
+  ChevronDown,
 } from 'lucide-react';
 
-import type {
-  PrivacyRequest,
-  PrivacyRequestType,
-  PrivacyRequestStatus,
-} from '@/types';
+import type { PrivacyRequest, PrivacyRequestType, PrivacyRequestStatus } from '@/types';
 import { formatDate, formatDateTime, timeAgo } from '@/lib/utils';
 import { MedicalCard } from '@/components/ui/PagePrimitives';
 import { Badge } from '@/components/ui/SharedComponents';
@@ -42,7 +51,11 @@ const DATA_CATEGORIES = [
 ];
 
 const EXPORT_FORMATS = [
-  { id: 'json', label: 'JSON (FHIR R4)', description: 'Standard healthcare interoperability format' },
+  {
+    id: 'json',
+    label: 'JSON (FHIR R4)',
+    description: 'Standard healthcare interoperability format',
+  },
   { id: 'csv', label: 'CSV', description: 'Spreadsheet-compatible tabular format' },
   { id: 'xml', label: 'XML (CDA)', description: 'Clinical Document Architecture format' },
 ];
@@ -51,16 +64,34 @@ const EXPORT_FORMATS = [
 // Type helpers
 // ============================================================
 
-const TYPE_CONFIG: Record<PrivacyRequestType, { icon: React.ReactNode; label: string; variant: 'info' | 'warning' | 'brand' | 'medical' }> = {
+const TYPE_CONFIG: Record<
+  PrivacyRequestType,
+  { icon: React.ReactNode; label: string; variant: 'info' | 'warning' | 'brand' | 'medical' }
+> = {
   access: { icon: <Eye className="w-4 h-4" />, label: 'Data Access', variant: 'info' },
-  portability: { icon: <Package className="w-4 h-4" />, label: 'Data Portability', variant: 'brand' },
+  portability: {
+    icon: <Package className="w-4 h-4" />,
+    label: 'Data Portability',
+    variant: 'brand',
+  },
   erasure: { icon: <Trash2 className="w-4 h-4" />, label: 'Data Erasure', variant: 'warning' },
-  rectification: { icon: <FileText className="w-4 h-4" />, label: 'Rectification', variant: 'medical' },
+  rectification: {
+    icon: <FileText className="w-4 h-4" />,
+    label: 'Rectification',
+    variant: 'medical',
+  },
 };
 
-const STATUS_CONFIG: Record<PrivacyRequestStatus, { icon: React.ReactNode; label: string; variant: 'warning' | 'info' | 'success' | 'error' }> = {
+const STATUS_CONFIG: Record<
+  PrivacyRequestStatus,
+  { icon: React.ReactNode; label: string; variant: 'warning' | 'info' | 'success' | 'error' }
+> = {
   pending: { icon: <Clock className="w-4 h-4" />, label: 'Pending', variant: 'warning' },
-  processing: { icon: <Loader2 className="w-4 h-4 animate-spin" />, label: 'Processing', variant: 'info' },
+  processing: {
+    icon: <Loader2 className="w-4 h-4 animate-spin" />,
+    label: 'Processing',
+    variant: 'info',
+  },
   completed: { icon: <CheckCircle className="w-4 h-4" />, label: 'Completed', variant: 'success' },
   denied: { icon: <XCircle className="w-4 h-4" />, label: 'Denied', variant: 'error' },
 };
@@ -240,7 +271,9 @@ export function DataExportPanel({ onSubmit, isLoading = false }: DataExportPanel
               ? 'Select categories...'
               : `${selectedCategories.length} categor${selectedCategories.length === 1 ? 'y' : 'ies'} selected`}
           </span>
-          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showCategories ? 'rotate-180' : ''}`} />
+          <ChevronDown
+            className={`w-4 h-4 text-slate-400 transition-transform ${showCategories ? 'rotate-180' : ''}`}
+          />
         </button>
 
         {showCategories && (
@@ -323,9 +356,7 @@ export function ErasureRequestPanel({ onSubmit, isLoading = false }: ErasureRequ
         </div>
         <div>
           <h3 className="text-sm font-semibold text-slate-900">Request Data Erasure</h3>
-          <p className="text-xs text-slate-500">
-            Right to be forgotten (GDPR Article 17)
-          </p>
+          <p className="text-xs text-slate-500">Right to be forgotten (GDPR Article 17)</p>
         </div>
       </div>
 
@@ -335,9 +366,9 @@ export function ErasureRequestPanel({ onSubmit, isLoading = false }: ErasureRequ
         <div>
           <p className="text-sm font-medium text-red-800">Permanent Deletion Warning</p>
           <p className="text-xs text-red-600 mt-1">
-            Data erasure is irreversible. Once your data is deleted, it cannot be recovered.
-            This includes all associated IPFS pins, blockchain anchors, and TEE attestations
-            for the selected categories. Please review your selection carefully before submitting.
+            Data erasure is irreversible. Once your data is deleted, it cannot be recovered. This
+            includes all associated IPFS pins, blockchain anchors, and TEE attestations for the
+            selected categories. Please review your selection carefully before submitting.
           </p>
         </div>
       </div>
@@ -358,7 +389,9 @@ export function ErasureRequestPanel({ onSubmit, isLoading = false }: ErasureRequ
               ? 'Select categories to erase...'
               : `${selectedCategories.length} categor${selectedCategories.length === 1 ? 'y' : 'ies'} selected for deletion`}
           </span>
-          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showCategories ? 'rotate-180' : ''}`} />
+          <ChevronDown
+            className={`w-4 h-4 text-slate-400 transition-transform ${showCategories ? 'rotate-180' : ''}`}
+          />
         </button>
 
         {showCategories && (
@@ -392,8 +425,8 @@ export function ErasureRequestPanel({ onSubmit, isLoading = false }: ErasureRequ
           />
           <span className="text-xs text-slate-600">
             I understand that this action is permanent and irreversible. All selected data
-            categories will be permanently deleted from Shiora, including associated IPFS pins
-            and blockchain records.
+            categories will be permanently deleted from Shiora, including associated IPFS pins and
+            blockchain records.
           </span>
         </label>
       )}

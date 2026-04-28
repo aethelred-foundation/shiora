@@ -10,31 +10,105 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
-  Heart, Activity, ShieldCheck, Brain, FolderLock,
-  KeyRound, TrendingUp, Users, Clock, FileText,
-  ChevronRight, ArrowUpRight, Lock, Cpu, Wifi,
-  BarChart3, Zap, TestTube2, ScanLine, Pill,
-  HeartPulse, AlertTriangle, CheckCircle,
-  MessageSquare, Store, Vote, Watch, Trophy,
-  DollarSign, ScrollText, Landmark, Globe,
-  Stethoscope, Dna, Network, Siren, Fingerprint,
-  FlaskConical, Server, Gauge,
+  Heart,
+  Activity,
+  ShieldCheck,
+  Brain,
+  FolderLock,
+  KeyRound,
+  TrendingUp,
+  Users,
+  Clock,
+  FileText,
+  ChevronRight,
+  ArrowUpRight,
+  Lock,
+  Cpu,
+  Wifi,
+  BarChart3,
+  Zap,
+  TestTube2,
+  ScanLine,
+  Pill,
+  HeartPulse,
+  AlertTriangle,
+  CheckCircle,
+  MessageSquare,
+  Store,
+  Vote,
+  Watch,
+  Trophy,
+  DollarSign,
+  ScrollText,
+  Landmark,
+  Globe,
+  Stethoscope,
+  Dna,
+  Network,
+  Siren,
+  Fingerprint,
+  FlaskConical,
+  Server,
+  Gauge,
 } from 'lucide-react';
 import {
-  AreaChart, Area, BarChart, Bar, LineChart, Line,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  PieChart, Pie, Cell,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
 } from 'recharts';
 
 import { useApp } from '@/contexts/AppContext';
-import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, AnimatedNumber } from '@/components/ui/SharedComponents';
-import { MedicalCard, HealthMetricCard, SectionHeader, ChartTooltip, TEEBadge, EncryptionBadge, StatusBadge } from '@/components/ui/PagePrimitives';
-import { RewardsSummary } from '@/components/rewards/RewardsComponents';
-import { BRAND, CHART_COLORS, CYCLE_PHASE_COLORS, AI_MODELS, RECORD_TYPES, PROVIDER_NAMES } from '@/lib/constants';
 import {
-  seededRandom, seededInt, seededHex, seededPick, seededAddress,
-  formatNumber, formatBytes, formatDate, formatDateTime,
-  timeAgo, generateDayLabel, generateCID, generateTxHash,
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  AnimatedNumber,
+} from '@/components/ui/SharedComponents';
+import {
+  MedicalCard,
+  HealthMetricCard,
+  SectionHeader,
+  ChartTooltip,
+  TEEBadge,
+  EncryptionBadge,
+  StatusBadge,
+} from '@/components/ui/PagePrimitives';
+import { RewardsSummary } from '@/components/rewards/RewardsComponents';
+import {
+  BRAND,
+  CHART_COLORS,
+  CYCLE_PHASE_COLORS,
+  AI_MODELS,
+  RECORD_TYPES,
+  PROVIDER_NAMES,
+} from '@/lib/constants';
+import {
+  seededRandom,
+  seededInt,
+  seededHex,
+  seededPick,
+  seededAddress,
+  formatNumber,
+  formatBytes,
+  formatDate,
+  formatDateTime,
+  timeAgo,
+  generateDayLabel,
+  generateCID,
+  generateTxHash,
 } from '@/lib/utils';
 
 // ============================================================
@@ -57,7 +131,13 @@ function generateCycleData() {
     const phase = i < 5 ? 'menstrual' : i < 13 ? 'follicular' : i < 16 ? 'ovulation' : 'luteal';
     return {
       day: `Day ${i + 1}`,
-      temperature: parseFloat((97.0 + (phase === 'luteal' || phase === 'ovulation' ? 0.5 : 0) + seededRandom(SEED + i * 2) * 0.4).toFixed(1)),
+      temperature: parseFloat(
+        (
+          97.0 +
+          (phase === 'luteal' || phase === 'ovulation' ? 0.5 : 0) +
+          seededRandom(SEED + i * 2) * 0.4
+        ).toFixed(1),
+      ),
       phase,
     };
   });
@@ -65,7 +145,18 @@ function generateCycleData() {
 
 function generateRecentRecords() {
   const types = ['lab_result', 'imaging', 'prescription', 'vitals', 'notes'] as const;
-  const labels = ['Complete Blood Count', 'Pelvic Ultrasound', 'Estradiol Prescription', 'Vitals Check', 'Progress Notes', 'Thyroid Panel', 'Mammogram', 'Progesterone Rx', 'Blood Pressure', 'Visit Summary'];
+  const labels = [
+    'Complete Blood Count',
+    'Pelvic Ultrasound',
+    'Estradiol Prescription',
+    'Vitals Check',
+    'Progress Notes',
+    'Thyroid Panel',
+    'Mammogram',
+    'Progesterone Rx',
+    'Blood Pressure',
+    'Visit Summary',
+  ];
   return Array.from({ length: 6 }, (_, i) => ({
     id: `rec-${seededHex(SEED + i * 100, 8)}`,
     type: seededPick(SEED + i * 7, types),
@@ -78,7 +169,14 @@ function generateRecentRecords() {
 }
 
 function generateAccessActivity() {
-  const actions = ['Viewed lab results', 'Downloaded imaging', 'Requested access', 'Access expired', 'Access granted', 'Revoked access'];
+  const actions = [
+    'Viewed lab results',
+    'Downloaded imaging',
+    'Requested access',
+    'Access expired',
+    'Access granted',
+    'Revoked access',
+  ];
   return Array.from({ length: 5 }, (_, i) => ({
     id: `act-${i}`,
     provider: seededPick(SEED + i * 13, PROVIDER_NAMES),
@@ -166,7 +264,9 @@ function QuickActionCard({
     <Link href={href}>
       <MedicalCard className="group h-full">
         <div className="flex items-start gap-4">
-          <div className={`w-11 h-11 rounded-xl ${color} flex items-center justify-center shrink-0`}>
+          <div
+            className={`w-11 h-11 rounded-xl ${color} flex items-center justify-center shrink-0`}
+          >
             {icon}
           </div>
           <div className="flex-1 min-w-0">
@@ -211,7 +311,6 @@ export default function DashboardPage() {
 
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-
           {/* ─── Hero Section ─── */}
           <div className="bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 rounded-2xl p-8 mb-8 text-white relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/3 translate-x-1/3" />
@@ -223,12 +322,11 @@ export default function DashboardPage() {
                     <Heart className="w-6 h-6 text-white/80" />
                     <span className="text-sm font-medium text-white/70">Shiora on Aethelred</span>
                   </div>
-                  <h1 className="text-3xl font-bold mb-2">
-                    Welcome back{welcomeSuffix}
-                  </h1>
+                  <h1 className="text-3xl font-bold mb-2">Welcome back{welcomeSuffix}</h1>
                   <p className="text-brand-100 max-w-xl">
-                    Your health data is protected by TEE-verified encryption on the Aethelred blockchain.
-                    All AI inferences run inside secure enclaves — your data never leaves the enclave unencrypted.
+                    Your health data is protected by TEE-verified encryption on the Aethelred
+                    blockchain. All AI inferences run inside secure enclaves — your data never
+                    leaves the enclave unencrypted.
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -296,7 +394,11 @@ export default function DashboardPage() {
 
           {/* ─── Clinical Alerts Banner ─── */}
           <div className="mb-8 space-y-3">
-            <SectionHeader title="Clinical Alerts" subtitle="Active alerts requiring attention" size="sm" />
+            <SectionHeader
+              title="Clinical Alerts"
+              subtitle="Active alerts requiring attention"
+              size="sm"
+            />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Link href="/clinical">
                 <MedicalCard className="group border-l-4 border-l-rose-500">
@@ -307,9 +409,13 @@ export default function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <p className="text-sm font-semibold text-slate-900">Drug Interaction</p>
-                        <span className="px-1.5 py-0.5 rounded text-2xs font-medium bg-rose-100 text-rose-700">Major</span>
+                        <span className="px-1.5 py-0.5 rounded text-2xs font-medium bg-rose-100 text-rose-700">
+                          Major
+                        </span>
                       </div>
-                      <p className="text-xs text-slate-500">Warfarin + Aspirin: increased bleeding risk</p>
+                      <p className="text-xs text-slate-500">
+                        Warfarin + Aspirin: increased bleeding risk
+                      </p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-brand-500 transition-colors shrink-0 mt-1" />
                   </div>
@@ -324,7 +430,9 @@ export default function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <p className="text-sm font-semibold text-slate-900">Overdue Screening</p>
-                        <span className="px-1.5 py-0.5 rounded text-2xs font-medium bg-amber-100 text-amber-700">Medium</span>
+                        <span className="px-1.5 py-0.5 rounded text-2xs font-medium bg-amber-100 text-amber-700">
+                          Medium
+                        </span>
                       </div>
                       <p className="text-xs text-slate-500">Annual HbA1c test overdue by 45 days</p>
                     </div>
@@ -341,9 +449,13 @@ export default function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <p className="text-sm font-semibold text-slate-900">Pharmacogenomic Flag</p>
-                        <span className="px-1.5 py-0.5 rounded text-2xs font-medium bg-violet-100 text-violet-700">Info</span>
+                        <span className="px-1.5 py-0.5 rounded text-2xs font-medium bg-violet-100 text-violet-700">
+                          Info
+                        </span>
                       </div>
-                      <p className="text-xs text-slate-500">CYP2D6 poor metabolizer: codeine caution</p>
+                      <p className="text-xs text-slate-500">
+                        CYP2D6 poor metabolizer: codeine caution
+                      </p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-brand-500 transition-colors shrink-0 mt-1" />
                   </div>
@@ -421,17 +533,24 @@ export default function DashboardPage() {
             <MedicalCard className="lg:col-span-2" padding={false}>
               <div className="p-5 pb-0">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="text-base font-semibold text-slate-900">Cycle Temperature Tracking</h3>
+                  <h3 className="text-base font-semibold text-slate-900">
+                    Cycle Temperature Tracking
+                  </h3>
                   <div className="flex items-center gap-3">
                     {Object.values(CYCLE_PHASE_COLORS).map((phase) => (
                       <div key={phase.label} className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: phase.stroke }} />
+                        <span
+                          className="w-2.5 h-2.5 rounded-full"
+                          style={{ backgroundColor: phase.stroke }}
+                        />
                         <span className="text-2xs text-slate-500">{phase.label}</span>
                       </div>
                     ))}
                   </div>
                 </div>
-                <p className="text-xs text-slate-400 mb-4">Basal body temperature over current cycle</p>
+                <p className="text-xs text-slate-400 mb-4">
+                  Basal body temperature over current cycle
+                </p>
               </div>
               <div className="px-2 pb-4">
                 <ResponsiveContainer width="100%" height={220}>
@@ -445,8 +564,19 @@ export default function DashboardPage() {
                       ))}
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} interval={4} />
-                    <YAxis domain={[96.5, 98.5]} tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+                    <XAxis
+                      dataKey="day"
+                      tick={{ fontSize: 10, fill: '#94a3b8' }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#e2e8f0' }}
+                      interval={4}
+                    />
+                    <YAxis
+                      domain={[96.5, 98.5]}
+                      tick={{ fontSize: 10, fill: '#94a3b8' }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
                     <Tooltip content={<ChartTooltip formatValue={(v) => `${v}°F`} />} />
                     <Area
                       type="monotone"
@@ -466,7 +596,9 @@ export default function DashboardPage() {
             <MedicalCard padding={false}>
               <div className="p-5 pb-0">
                 <h3 className="text-base font-semibold text-slate-900">Storage Breakdown</h3>
-                <p className="text-xs text-slate-400 mt-0.5">{formatBytes(healthData.storageUsed)} used</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {formatBytes(healthData.storageUsed)} used
+                </p>
               </div>
               <div className="flex items-center justify-center py-4">
                 <ResponsiveContainer width={180} height={180}>
@@ -492,7 +624,10 @@ export default function DashboardPage() {
                 {storageBreakdown.map((item) => (
                   <div key={item.name} className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                      <span
+                        className="w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: item.color }}
+                      />
                       <span className="text-slate-600">{item.name}</span>
                     </div>
                     <span className="text-slate-900 font-medium">{item.value}%</span>
@@ -510,15 +645,23 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-base font-semibold text-slate-900">Network Activity</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">TPS and AI inferences over 30 days</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      TPS and AI inferences over 30 days
+                    </p>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: BRAND.sky }} />
+                      <span
+                        className="w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: BRAND.sky }}
+                      />
                       <span className="text-2xs text-slate-500">TPS</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#a78bfa' }} />
+                      <span
+                        className="w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: '#a78bfa' }}
+                      />
                       <span className="text-2xs text-slate-500">Inferences</span>
                     </div>
                   </div>
@@ -528,11 +671,33 @@ export default function DashboardPage() {
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={tpsHistory} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="day" tick={{ fontSize: 9, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} interval={6} />
-                    <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+                    <XAxis
+                      dataKey="day"
+                      tick={{ fontSize: 9, fill: '#94a3b8' }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#e2e8f0' }}
+                      interval={6}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10, fill: '#94a3b8' }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
                     <Tooltip content={<ChartTooltip />} />
-                    <Bar dataKey="tps" fill={BRAND.sky} radius={[3, 3, 0, 0]} barSize={8} name="TPS" />
-                    <Bar dataKey="inferences" fill="#a78bfa" radius={[3, 3, 0, 0]} barSize={8} name="Inferences" />
+                    <Bar
+                      dataKey="tps"
+                      fill={BRAND.sky}
+                      radius={[3, 3, 0, 0]}
+                      barSize={8}
+                      name="TPS"
+                    />
+                    <Bar
+                      dataKey="inferences"
+                      fill="#a78bfa"
+                      radius={[3, 3, 0, 0]}
+                      barSize={8}
+                      name="Inferences"
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -542,7 +707,15 @@ export default function DashboardPage() {
             <MedicalCard>
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-base font-semibold text-slate-900">TEE Status</h3>
-                <StatusBadge status={teeState.status === 'operational' ? 'Operational' : /* istanbul ignore next */ teeState.status === 'degraded' ? 'Degraded' : 'Offline'} />
+                <StatusBadge
+                  status={
+                    teeState.status === 'operational'
+                      ? 'Operational'
+                      : /* istanbul ignore next */ teeState.status === 'degraded'
+                        ? 'Degraded'
+                        : 'Offline'
+                  }
+                />
               </div>
 
               <div className="space-y-4">
@@ -552,19 +725,27 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-slate-100">
                   <span className="text-sm text-slate-500">Enclave Uptime</span>
-                  <span className="text-sm font-medium text-emerald-600">{teeState.enclaveUptime}%</span>
+                  <span className="text-sm font-medium text-emerald-600">
+                    {teeState.enclaveUptime}%
+                  </span>
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-slate-100">
                   <span className="text-sm text-slate-500">Last Attestation</span>
-                  <span className="text-sm font-medium text-slate-700">{timeAgo(teeState.lastAttestation)}</span>
+                  <span className="text-sm font-medium text-slate-700">
+                    {timeAgo(teeState.lastAttestation)}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-slate-100">
                   <span className="text-sm text-slate-500">Attestations Today</span>
-                  <span className="text-sm font-bold text-slate-900">{teeState.attestationsToday}</span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {teeState.attestationsToday}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between py-2">
                   <span className="text-sm text-slate-500">Inferences</span>
-                  <span className="text-sm font-bold text-slate-900">{formatNumber(teeState.inferencesCompleted)}</span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {formatNumber(teeState.inferencesCompleted)}
+                  </span>
                 </div>
               </div>
 
@@ -572,7 +753,8 @@ export default function DashboardPage() {
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
                   <p className="text-xs text-emerald-700">
-                    All TEE enclaves are verified and operational. Health data is processed exclusively inside secure enclaves.
+                    All TEE enclaves are verified and operational. Health data is processed
+                    exclusively inside secure enclaves.
                   </p>
                 </div>
               </div>
@@ -585,13 +767,19 @@ export default function DashboardPage() {
             <MedicalCard padding={false}>
               <div className="p-5 pb-3 flex items-center justify-between">
                 <h3 className="text-base font-semibold text-slate-900">Recent Records</h3>
-                <Link href="/records" className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1">
+                <Link
+                  href="/records"
+                  className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1"
+                >
                   View All <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
               <div className="divide-y divide-slate-100">
                 {recentRecords.map((record) => (
-                  <div key={record.id} className="px-5 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors">
+                  <div
+                    key={record.id}
+                    className="px-5 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors"
+                  >
                     <div className="w-9 h-9 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
                       {RECORD_ICON_MAP[record.type] || <FileText className="w-4 h-4" />}
                     </div>
@@ -611,27 +799,45 @@ export default function DashboardPage() {
             <MedicalCard padding={false}>
               <div className="p-5 pb-3 flex items-center justify-between">
                 <h3 className="text-base font-semibold text-slate-900">Access Activity</h3>
-                <Link href="/access" className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1">
+                <Link
+                  href="/access"
+                  className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1"
+                >
                   Manage <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
               <div className="divide-y divide-slate-100">
                 {accessActivity.map((activity) => (
-                  <div key={activity.id} className="px-5 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors">
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                      activity.status === 'success' ? 'bg-emerald-50 text-emerald-600' :
-                      activity.status === 'warning' ? 'bg-amber-50 text-amber-600' :
-                      'bg-accent-50 text-accent-600'
-                    }`}>
-                      {activity.status === 'success' ? <CheckCircle className="w-4 h-4" /> :
-                       activity.status === 'warning' ? <AlertTriangle className="w-4 h-4" /> :
-                       <KeyRound className="w-4 h-4" />}
+                  <div
+                    key={activity.id}
+                    className="px-5 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors"
+                  >
+                    <div
+                      className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                        activity.status === 'success'
+                          ? 'bg-emerald-50 text-emerald-600'
+                          : activity.status === 'warning'
+                            ? 'bg-amber-50 text-amber-600'
+                            : 'bg-accent-50 text-accent-600'
+                      }`}
+                    >
+                      {activity.status === 'success' ? (
+                        <CheckCircle className="w-4 h-4" />
+                      ) : activity.status === 'warning' ? (
+                        <AlertTriangle className="w-4 h-4" />
+                      ) : (
+                        <KeyRound className="w-4 h-4" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900 truncate">{activity.action}</p>
+                      <p className="text-sm font-medium text-slate-900 truncate">
+                        {activity.action}
+                      </p>
                       <p className="text-xs text-slate-400">{activity.provider}</p>
                     </div>
-                    <span className="text-xs text-slate-400 shrink-0">{timeAgo(activity.timestamp)}</span>
+                    <span className="text-xs text-slate-400 shrink-0">
+                      {timeAgo(activity.timestamp)}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -639,7 +845,11 @@ export default function DashboardPage() {
           </div>
 
           {/* ─── AI Models Overview ─── */}
-          <SectionHeader title="AI Models" subtitle="TEE-verified machine learning models running inside secure enclaves" size="sm" />
+          <SectionHeader
+            title="AI Models"
+            subtitle="TEE-verified machine learning models running inside secure enclaves"
+            size="sm"
+          />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
             {AI_MODELS.map((model) => (
               <MedicalCard key={model.id}>
@@ -655,7 +865,9 @@ export default function DashboardPage() {
                   <span className="text-xs text-slate-400">{model.type}</span>
                   <div className="flex items-center gap-1">
                     <BarChart3 className="w-3 h-3 text-emerald-500" />
-                    <span className="text-xs font-semibold text-emerald-600">{model.accuracy}%</span>
+                    <span className="text-xs font-semibold text-emerald-600">
+                      {model.accuracy}%
+                    </span>
                   </div>
                 </div>
               </MedicalCard>
@@ -671,7 +883,9 @@ export default function DashboardPage() {
                   <Cpu className="w-4 h-4 text-emerald-600" />
                   <p className="text-xs text-emerald-600 font-medium">Active Enclaves</p>
                 </div>
-                <p className="text-2xl font-bold text-emerald-700"><AnimatedNumber value={8} /></p>
+                <p className="text-2xl font-bold text-emerald-700">
+                  <AnimatedNumber value={8} />
+                </p>
                 <p className="text-xs text-emerald-500 mt-1">SGX + Nitro + SEV</p>
               </div>
               <div className="bg-brand-50 rounded-xl p-4">
@@ -687,7 +901,9 @@ export default function DashboardPage() {
                   <Zap className="w-4 h-4 text-violet-600" />
                   <p className="text-xs text-violet-600 font-medium">Compute TPS</p>
                 </div>
-                <p className="text-2xl font-bold text-violet-700"><AnimatedNumber value={342} /></p>
+                <p className="text-2xl font-bold text-violet-700">
+                  <AnimatedNumber value={342} />
+                </p>
                 <p className="text-xs text-violet-500 mt-1">Secure operations/sec</p>
               </div>
               <div className="bg-amber-50 rounded-xl p-4">
@@ -700,7 +916,10 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="mt-3 flex justify-end">
-              <Link href="/tee-explorer" className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1">
+              <Link
+                href="/tee-explorer"
+                className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1"
+              >
                 Explore TEE Details <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -720,7 +939,10 @@ export default function DashboardPage() {
                     <p className="text-xs text-slate-400">30-day prediction summary</p>
                   </div>
                 </div>
-                <Link href="/twin" className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1">
+                <Link
+                  href="/twin"
+                  className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1"
+                >
                   View Twin <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
@@ -745,7 +967,8 @@ export default function DashboardPage() {
                 <div className="flex items-start gap-2">
                   <Brain className="w-4 h-4 text-brand-600 mt-0.5 shrink-0" />
                   <p className="text-xs text-brand-700">
-                    Your twin predicts improved cardiovascular markers with current exercise regimen. Consider increasing fiber intake for optimal LDL reduction.
+                    Your twin predicts improved cardiovascular markers with current exercise
+                    regimen. Consider increasing fiber intake for optimal LDL reduction.
                   </p>
                 </div>
               </div>
@@ -763,7 +986,10 @@ export default function DashboardPage() {
                     <p className="text-xs text-slate-400">Regulatory framework scores</p>
                   </div>
                 </div>
-                <Link href="/compliance" className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1">
+                <Link
+                  href="/compliance"
+                  className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1"
+                >
                   Full Report <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
@@ -778,10 +1004,29 @@ export default function DashboardPage() {
                   <div key={fw.name} className="text-center">
                     <div className="relative w-12 h-12 mx-auto mb-1.5">
                       <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
-                        <circle cx="18" cy="18" r="16" fill="none" stroke="#e2e8f0" strokeWidth="3" />
-                        <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray={`${fw.score} ${100 - fw.score}`} strokeLinecap="round" className={fw.color} />
+                        <circle
+                          cx="18"
+                          cy="18"
+                          r="16"
+                          fill="none"
+                          stroke="#e2e8f0"
+                          strokeWidth="3"
+                        />
+                        <circle
+                          cx="18"
+                          cy="18"
+                          r="16"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeDasharray={`${fw.score} ${100 - fw.score}`}
+                          strokeLinecap="round"
+                          className={fw.color}
+                        />
                       </svg>
-                      <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-900">{fw.score}</span>
+                      <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-900">
+                        {fw.score}
+                      </span>
                     </div>
                     <p className="text-2xs font-medium text-slate-500">{fw.name}</p>
                   </div>
@@ -791,7 +1036,8 @@ export default function DashboardPage() {
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
                   <p className="text-xs text-emerald-700">
-                    Overall compliance score: 87%. All frameworks meeting minimum thresholds. HITRUST assessment due in 14 days.
+                    Overall compliance score: 87%. All frameworks meeting minimum thresholds.
+                    HITRUST assessment due in 14 days.
                   </p>
                 </div>
               </div>
@@ -801,18 +1047,62 @@ export default function DashboardPage() {
           {/* ─── Navigate Quick Actions ─── */}
           <SectionHeader title="Explore Platform" subtitle="Navigate to key features" size="sm" />
           <div className="flex gap-4 overflow-x-auto pb-2 mb-10 scrollbar-hide">
-            {([
-              { label: 'Chat with AI', href: '/chat', icon: <MessageSquare className="w-5 h-5 text-white" />, gradient: 'bg-gradient-to-br from-brand-400 to-brand-600' },
-              { label: 'Clinical', href: '/clinical', icon: <Stethoscope className="w-5 h-5 text-white" />, gradient: 'bg-gradient-to-br from-rose-400 to-rose-600' },
-              { label: 'Digital Twin', href: '/twin', icon: <Fingerprint className="w-5 h-5 text-white" />, gradient: 'bg-gradient-to-br from-cyan-400 to-cyan-600' },
-              { label: 'MPC Lab', href: '/mpc', icon: <Network className="w-5 h-5 text-white" />, gradient: 'bg-gradient-to-br from-purple-400 to-purple-600' },
-              { label: 'Marketplace', href: '/marketplace', icon: <Store className="w-5 h-5 text-white" />, gradient: 'bg-gradient-to-br from-emerald-400 to-emerald-600' },
-              { label: 'Governance', href: '/governance', icon: <Vote className="w-5 h-5 text-white" />, gradient: 'bg-gradient-to-br from-amber-400 to-amber-600' },
-              { label: 'Emergency', href: '/emergency', icon: <Siren className="w-5 h-5 text-white" />, gradient: 'bg-gradient-to-br from-red-400 to-red-600' },
-              { label: 'Genomics', href: '/genomics', icon: <Dna className="w-5 h-5 text-white" />, gradient: 'bg-gradient-to-br from-fuchsia-400 to-fuchsia-600' },
-            ] as const).map((item) => (
+            {(
+              [
+                {
+                  label: 'Chat with AI',
+                  href: '/chat',
+                  icon: <MessageSquare className="w-5 h-5 text-white" />,
+                  gradient: 'bg-gradient-to-br from-brand-400 to-brand-600',
+                },
+                {
+                  label: 'Clinical',
+                  href: '/clinical',
+                  icon: <Stethoscope className="w-5 h-5 text-white" />,
+                  gradient: 'bg-gradient-to-br from-rose-400 to-rose-600',
+                },
+                {
+                  label: 'Digital Twin',
+                  href: '/twin',
+                  icon: <Fingerprint className="w-5 h-5 text-white" />,
+                  gradient: 'bg-gradient-to-br from-cyan-400 to-cyan-600',
+                },
+                {
+                  label: 'MPC Lab',
+                  href: '/mpc',
+                  icon: <Network className="w-5 h-5 text-white" />,
+                  gradient: 'bg-gradient-to-br from-purple-400 to-purple-600',
+                },
+                {
+                  label: 'Marketplace',
+                  href: '/marketplace',
+                  icon: <Store className="w-5 h-5 text-white" />,
+                  gradient: 'bg-gradient-to-br from-emerald-400 to-emerald-600',
+                },
+                {
+                  label: 'Governance',
+                  href: '/governance',
+                  icon: <Vote className="w-5 h-5 text-white" />,
+                  gradient: 'bg-gradient-to-br from-amber-400 to-amber-600',
+                },
+                {
+                  label: 'Emergency',
+                  href: '/emergency',
+                  icon: <Siren className="w-5 h-5 text-white" />,
+                  gradient: 'bg-gradient-to-br from-red-400 to-red-600',
+                },
+                {
+                  label: 'Genomics',
+                  href: '/genomics',
+                  icon: <Dna className="w-5 h-5 text-white" />,
+                  gradient: 'bg-gradient-to-br from-fuchsia-400 to-fuchsia-600',
+                },
+              ] as const
+            ).map((item) => (
               <Link key={item.href} href={item.href} className="group shrink-0">
-                <div className={`${item.gradient} rounded-2xl p-5 min-w-[150px] flex flex-col items-start gap-3 shadow-sm hover:shadow-md transition-shadow`}>
+                <div
+                  className={`${item.gradient} rounded-2xl p-5 min-w-[150px] flex flex-col items-start gap-3 shadow-sm hover:shadow-md transition-shadow`}
+                >
                   <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
                     {item.icon}
                   </div>
@@ -857,10 +1147,16 @@ export default function DashboardPage() {
               </div>
               <div className="bg-accent-50 rounded-xl p-4">
                 <p className="text-xs text-accent-600 mb-1">Recent Proposal</p>
-                <p className="text-sm font-medium text-accent-800 line-clamp-2">{governanceActivity.recentProposal.title}</p>
+                <p className="text-sm font-medium text-accent-800 line-clamp-2">
+                  {governanceActivity.recentProposal.title}
+                </p>
                 <div className="flex items-center gap-2 mt-2">
-                  <span className="text-xs text-emerald-600">{formatNumber(governanceActivity.recentProposal.forVotes)} For</span>
-                  <span className="text-xs text-red-500">{formatNumber(governanceActivity.recentProposal.againstVotes)} Against</span>
+                  <span className="text-xs text-emerald-600">
+                    {formatNumber(governanceActivity.recentProposal.forVotes)} For
+                  </span>
+                  <span className="text-xs text-red-500">
+                    {formatNumber(governanceActivity.recentProposal.againstVotes)} Against
+                  </span>
                 </div>
               </div>
             </div>
@@ -890,7 +1186,9 @@ export default function DashboardPage() {
                   {marketplaceEarnings.recentSales.map((sale) => (
                     <div key={sale.id} className="flex items-center justify-between">
                       <span className="text-xs text-slate-700 truncate">{sale.title}</span>
-                      <span className="text-xs font-semibold text-emerald-600">+{sale.amount} AETHEL</span>
+                      <span className="text-xs font-semibold text-emerald-600">
+                        +{sale.amount} AETHEL
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -905,27 +1203,39 @@ export default function DashboardPage() {
             <SectionHeader title="Platform Stats" icon={Globe} />
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mt-4">
               <div className="text-center p-3">
-                <p className="text-2xl font-bold text-slate-900"><AnimatedNumber value={12847} /></p>
+                <p className="text-2xl font-bold text-slate-900">
+                  <AnimatedNumber value={12847} />
+                </p>
                 <p className="text-xs text-slate-500 mt-1">Total Users</p>
               </div>
               <div className="text-center p-3">
-                <p className="text-2xl font-bold text-slate-900"><AnimatedNumber value={847} suffix="K" /></p>
+                <p className="text-2xl font-bold text-slate-900">
+                  <AnimatedNumber value={847} suffix="K" />
+                </p>
                 <p className="text-xs text-slate-500 mt-1">Health Records</p>
               </div>
               <div className="text-center p-3">
-                <p className="text-2xl font-bold text-slate-900"><AnimatedNumber value={2.1} decimals={1} suffix="M" /></p>
+                <p className="text-2xl font-bold text-slate-900">
+                  <AnimatedNumber value={2.1} decimals={1} suffix="M" />
+                </p>
                 <p className="text-xs text-slate-500 mt-1">TEE Attestations</p>
               </div>
               <div className="text-center p-3">
-                <p className="text-2xl font-bold text-slate-900"><AnimatedNumber value={45.2} decimals={1} suffix="K AETHEL" /></p>
+                <p className="text-2xl font-bold text-slate-900">
+                  <AnimatedNumber value={45.2} decimals={1} suffix="K AETHEL" />
+                </p>
                 <p className="text-xs text-slate-500 mt-1">Marketplace Volume</p>
               </div>
               <div className="text-center p-3">
-                <p className="text-2xl font-bold text-slate-900"><AnimatedNumber value={67} /></p>
+                <p className="text-2xl font-bold text-slate-900">
+                  <AnimatedNumber value={67} />
+                </p>
                 <p className="text-xs text-slate-500 mt-1">Governance Proposals</p>
               </div>
               <div className="text-center p-3">
-                <p className="text-2xl font-bold text-slate-900"><AnimatedNumber value={12} /></p>
+                <p className="text-2xl font-bold text-slate-900">
+                  <AnimatedNumber value={12} />
+                </p>
                 <p className="text-xs text-slate-500 mt-1">Research Studies</p>
               </div>
             </div>
@@ -947,7 +1257,9 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-amber-500" />
                   <span className="text-sm text-slate-500">TPS</span>
-                  <span className="text-sm font-bold text-slate-900">{formatNumber(realTime.tps)}</span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {formatNumber(realTime.tps)}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-brand-500" />
@@ -964,7 +1276,9 @@ export default function DashboardPage() {
                       style={{ width: `${realTime.networkLoad}%` }}
                     />
                   </div>
-                  <span className="text-sm font-medium text-slate-700">{realTime.networkLoad}%</span>
+                  <span className="text-sm font-medium text-slate-700">
+                    {realTime.networkLoad}%
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-slate-500">$AETHEL</span>
@@ -973,7 +1287,6 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-
         </div>
       </main>
 

@@ -5,10 +5,15 @@ import { AppProvider } from '@/contexts/AppContext';
 import { useAccessControl } from '@/hooks/useAccessControl';
 
 function createWrapper() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } } });
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
+  });
   return ({ children }: { children: React.ReactNode }) =>
-    React.createElement(QueryClientProvider, { client: qc },
-      React.createElement(AppProvider, null, children));
+    React.createElement(
+      QueryClientProvider,
+      { client: qc },
+      React.createElement(AppProvider, null, children),
+    );
 }
 
 describe('useAccessControl', () => {
@@ -130,8 +135,10 @@ describe('useAccessControl', () => {
     expect(typeof result.current.counts.expired).toBe('number');
     expect(typeof result.current.counts.revoked).toBe('number');
     expect(result.current.counts.total).toBe(
-      result.current.counts.active + result.current.counts.pending +
-      result.current.counts.expired + result.current.counts.revoked
+      result.current.counts.active +
+        result.current.counts.pending +
+        result.current.counts.expired +
+        result.current.counts.revoked,
     );
   });
 
@@ -157,7 +164,8 @@ describe('useAccessControl', () => {
       ok: false,
       status: 400,
       headers: { get: () => 'application/json' },
-      json: () => Promise.resolve({ success: false, error: { code: 'INVALID', message: 'Invalid grant' } }),
+      json: () =>
+        Promise.resolve({ success: false, error: { code: 'INVALID', message: 'Invalid grant' } }),
     });
 
     await act(async () => {
@@ -183,7 +191,8 @@ describe('useAccessControl', () => {
       ok: false,
       status: 400,
       headers: { get: () => 'application/json' },
-      json: () => Promise.resolve({ success: false, error: { code: 'FAIL', message: 'Revoke failed' } }),
+      json: () =>
+        Promise.resolve({ success: false, error: { code: 'FAIL', message: 'Revoke failed' } }),
     });
 
     await act(async () => {
@@ -208,7 +217,8 @@ describe('useAccessControl', () => {
       ok: false,
       status: 400,
       headers: { get: () => 'application/json' },
-      json: () => Promise.resolve({ success: false, error: { code: 'FAIL', message: 'Modify failed' } }),
+      json: () =>
+        Promise.resolve({ success: false, error: { code: 'FAIL', message: 'Modify failed' } }),
     });
 
     await act(async () => {

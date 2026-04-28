@@ -4,14 +4,41 @@ import React, { useState, useEffect, useRef, useCallback, Fragment } from 'react
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-  X, Search, ChevronDown, Bell,
-  CheckCircle, AlertTriangle, AlertCircle, Info,
-  ExternalLink, Shield, Activity, Heart,
-  Menu, Home, FolderLock, Brain, KeyRound, Settings,
-  LayoutDashboard, FileHeart, MessageSquare, Lock,
-  Store, Vote, Watch, Link as LinkIcon, Users,
-  Microscope, Stethoscope, ShieldCheck, Cpu, Dna,
-  Fingerprint, Network, Siren,
+  X,
+  Search,
+  ChevronDown,
+  Bell,
+  CheckCircle,
+  AlertTriangle,
+  AlertCircle,
+  Info,
+  ExternalLink,
+  Shield,
+  Activity,
+  Heart,
+  Menu,
+  Home,
+  FolderLock,
+  Brain,
+  KeyRound,
+  Settings,
+  LayoutDashboard,
+  FileHeart,
+  MessageSquare,
+  Lock,
+  Store,
+  Vote,
+  Watch,
+  Link as LinkIcon,
+  Users,
+  Microscope,
+  Stethoscope,
+  ShieldCheck,
+  Cpu,
+  Dna,
+  Fingerprint,
+  Network,
+  Siren,
 } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
@@ -54,10 +81,18 @@ const NAV_ICON_MAP: Record<string, React.ReactNode> = {
 // LiveDot — Pulsing status indicator
 // ============================================================
 
-export function LiveDot({ color = 'bg-emerald-500', className = '' }: { color?: string; className?: string }) {
+export function LiveDot({
+  color = 'bg-emerald-500',
+  className = '',
+}: {
+  color?: string;
+  className?: string;
+}) {
   return (
     <span className={`relative flex h-2 w-2 ${className}`} aria-hidden="true">
-      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${color} opacity-75`} />
+      <span
+        className={`animate-ping absolute inline-flex h-full w-full rounded-full ${color} opacity-75`}
+      />
       <span className={`relative inline-flex rounded-full h-2 w-2 ${color}`} />
     </span>
   );
@@ -68,13 +103,13 @@ export function LiveDot({ color = 'bg-emerald-500', className = '' }: { color?: 
 // ============================================================
 
 const BADGE_VARIANTS: Record<string, string> = {
-  success:  'bg-emerald-50 text-emerald-700 ring-emerald-200',
-  error:    'bg-red-50 text-red-700 ring-red-200',
-  warning:  'bg-amber-50 text-amber-700 ring-amber-200',
-  info:     'bg-accent-50 text-accent-700 ring-accent-200',
-  neutral:  'bg-slate-100 text-slate-600 ring-slate-200',
-  brand:    'bg-brand-50 text-brand-700 ring-brand-200',
-  medical:  'bg-violet-50 text-violet-700 ring-violet-200',
+  success: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  error: 'bg-red-50 text-red-700 ring-red-200',
+  warning: 'bg-amber-50 text-amber-700 ring-amber-200',
+  info: 'bg-accent-50 text-accent-700 ring-accent-200',
+  neutral: 'bg-slate-100 text-slate-600 ring-slate-200',
+  brand: 'bg-brand-50 text-brand-700 ring-brand-200',
+  medical: 'bg-violet-50 text-violet-700 ring-violet-200',
 };
 
 export function Badge({
@@ -90,8 +125,14 @@ export function Badge({
 }) {
   const colors = BADGE_VARIANTS[variant] || /* istanbul ignore next */ BADGE_VARIANTS.neutral;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ring-1 ring-inset ${colors} ${className}`}>
-      {dot && <span className={`w-1.5 h-1.5 rounded-full ${variant === 'success' ? 'bg-emerald-500' : variant === 'error' ? 'bg-red-500' : variant === 'warning' ? 'bg-amber-500' : variant === 'info' ? 'bg-accent-500' : variant === 'brand' ? 'bg-brand-500' : variant === 'medical' ? 'bg-violet-500' : 'bg-slate-400'}`} />}
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ring-1 ring-inset ${colors} ${className}`}
+    >
+      {dot && (
+        <span
+          className={`w-1.5 h-1.5 rounded-full ${variant === 'success' ? 'bg-emerald-500' : variant === 'error' ? 'bg-red-500' : variant === 'warning' ? 'bg-amber-500' : variant === 'info' ? 'bg-accent-500' : variant === 'brand' ? 'bg-brand-500' : variant === 'medical' ? 'bg-violet-500' : 'bg-slate-400'}`}
+        />
+      )}
       {children}
     </span>
   );
@@ -124,18 +165,38 @@ export function ProgressRing({
   const offset = circumference * (1 - progress);
 
   return (
-    <div className="relative inline-flex items-center justify-center" role="progressbar" aria-valuenow={value} aria-valuemin={0} aria-valuemax={max}>
+    <div
+      className="relative inline-flex items-center justify-center"
+      role="progressbar"
+      aria-valuenow={value}
+      aria-valuemin={0}
+      aria-valuemax={max}
+    >
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={trackColor} strokeWidth={strokeWidth} />
         <circle
-          cx={size / 2} cy={size / 2} r={radius}
-          fill="none" stroke={color} strokeWidth={strokeWidth}
-          strokeDasharray={circumference} strokeDashoffset={offset}
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={trackColor}
+          strokeWidth={strokeWidth}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
           strokeLinecap="round"
           className="transition-all duration-500"
         />
       </svg>
-      {children && <div className="absolute inset-0 flex items-center justify-center">{children}</div>}
+      {children && (
+        <div className="absolute inset-0 flex items-center justify-center">{children}</div>
+      )}
     </div>
   );
 }
@@ -165,7 +226,10 @@ export function AnimatedNumber({
   useEffect(() => {
     const start = prevRef.current;
     const diff = value - start;
-    if (Math.abs(diff) < 0.01) { setDisplay(value); return; }
+    if (Math.abs(diff) < 0.01) {
+      setDisplay(value);
+      return;
+    }
 
     const startTime = performance.now();
     let raf: number;
@@ -185,7 +249,9 @@ export function AnimatedNumber({
 
   return (
     <span className={className}>
-      {prefix}{display.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}{suffix}
+      {prefix}
+      {display.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+      {suffix}
     </span>
   );
 }
@@ -227,7 +293,9 @@ export function Tabs({
         >
           {tab.label}
           {tab.count !== undefined && (
-            <span className={`ml-1.5 text-xs ${activeTab === tab.id ? 'text-brand-600' : 'text-slate-400'}`}>
+            <span
+              className={`ml-1.5 text-xs ${activeTab === tab.id ? 'text-brand-600' : 'text-slate-400'}`}
+            >
               {tab.count}
             </span>
           )}
@@ -258,10 +326,20 @@ const MODAL_SIZES = {
   xl: 'max-w-4xl',
 };
 
-export function Modal({ open, onClose, title, description, children, size = 'md', showClose = true }: ModalProps) {
+export function Modal({
+  open,
+  onClose,
+  title,
+  description,
+  children,
+  size = 'md',
+  showClose = true,
+}: ModalProps) {
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
     document.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
     return () => {
@@ -273,17 +351,35 @@ export function Modal({ open, onClose, title, description, children, size = 'md'
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby={title ? 'modal-title' : undefined}>
-      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div className={`relative bg-white rounded-2xl shadow-float border border-slate-200 w-full ${MODAL_SIZES[size]} max-h-[90vh] flex flex-col animate-scale-in`}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={title ? 'modal-title' : undefined}
+    >
+      <div
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm animate-fade-in"
+        onClick={onClose}
+      />
+      <div
+        className={`relative bg-white rounded-2xl shadow-float border border-slate-200 w-full ${MODAL_SIZES[size]} max-h-[90vh] flex flex-col animate-scale-in`}
+      >
         {(title || showClose) && (
           <div className="flex items-center justify-between p-5 border-b border-slate-100">
             <div>
-              {title && <h3 id="modal-title" className="text-lg font-semibold text-slate-900">{title}</h3>}
+              {title && (
+                <h3 id="modal-title" className="text-lg font-semibold text-slate-900">
+                  {title}
+                </h3>
+              )}
               {description && <p className="text-sm text-slate-500 mt-0.5">{description}</p>}
             </div>
             {showClose && (
-              <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600" aria-label="Close">
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600"
+                aria-label="Close"
+              >
                 <X className="w-5 h-5" />
               </button>
             )}
@@ -322,8 +418,12 @@ export function ConfirmDialog({
     <Modal open={open} onClose={onClose} size="sm" showClose={false}>
       <div className="text-center">
         <div className="flex justify-center mb-4">
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${variant === 'danger' ? 'bg-red-50' : 'bg-brand-50'}`}>
-            <AlertTriangle className={`w-6 h-6 ${variant === 'danger' ? 'text-red-500' : 'text-brand-600'}`} />
+          <div
+            className={`w-12 h-12 rounded-full flex items-center justify-center ${variant === 'danger' ? 'bg-red-50' : 'bg-brand-50'}`}
+          >
+            <AlertTriangle
+              className={`w-6 h-6 ${variant === 'danger' ? 'text-red-500' : 'text-brand-600'}`}
+            />
           </div>
         </div>
         <h3 className="text-lg font-semibold text-slate-900 mb-2">{title}</h3>
@@ -336,7 +436,10 @@ export function ConfirmDialog({
             {cancelLabel}
           </button>
           <button
-            onClick={() => { onConfirm(); onClose(); }}
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
             className={`px-4 py-2 text-sm font-medium text-white rounded-xl transition-colors ${
               variant === 'danger'
                 ? 'bg-red-500 hover:bg-red-600'
@@ -366,7 +469,9 @@ interface DrawerProps {
 export function Drawer({ open, onClose, title, children, width = 'max-w-lg' }: DrawerProps) {
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
     document.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
     return () => {
@@ -378,13 +483,29 @@ export function Drawer({ open, onClose, title, children, width = 'max-w-lg' }: D
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-labelledby={title ? 'drawer-title' : undefined}>
-      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div className={`relative bg-white ${width} w-full h-full shadow-float border-l border-slate-200 flex flex-col animate-slide-in-right overflow-hidden`}>
+    <div
+      className="fixed inset-0 z-50 flex justify-end"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={title ? 'drawer-title' : undefined}
+    >
+      <div
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm animate-fade-in"
+        onClick={onClose}
+      />
+      <div
+        className={`relative bg-white ${width} w-full h-full shadow-float border-l border-slate-200 flex flex-col animate-slide-in-right overflow-hidden`}
+      >
         {title && (
           <div className="flex items-center justify-between p-5 border-b border-slate-100 shrink-0">
-            <h3 id="drawer-title" className="text-lg font-semibold text-slate-900">{title}</h3>
-            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600" aria-label="Close">
+            <h3 id="drawer-title" className="text-lg font-semibold text-slate-900">
+              {title}
+            </h3>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600"
+              aria-label="Close"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -417,7 +538,11 @@ export function ToastContainer() {
   const { notifications, removeNotification } = useApp();
 
   return (
-    <div className="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 max-w-sm w-full pointer-events-none" role="status" aria-live="polite">
+    <div
+      className="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 max-w-sm w-full pointer-events-none"
+      role="status"
+      aria-live="polite"
+    >
       {notifications.map((n) => (
         <div
           key={n.id}
@@ -428,7 +553,11 @@ export function ToastContainer() {
             <p className="text-sm font-semibold text-slate-900">{n.title}</p>
             <p className="text-xs text-slate-500 mt-0.5">{n.message}</p>
           </div>
-          <button onClick={() => removeNotification(n.id)} className="shrink-0 p-1 rounded hover:bg-slate-100 text-slate-400" aria-label="Dismiss">
+          <button
+            onClick={() => removeNotification(n.id)}
+            className="shrink-0 p-1 rounded hover:bg-slate-100 text-slate-400"
+            aria-label="Dismiss"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -443,40 +572,165 @@ export function ToastContainer() {
 
 const SEARCH_ITEMS = [
   // ── Pages (21 total) ──
-  { label: 'Dashboard', href: '/', section: 'Pages', icon: <LayoutDashboard className="w-4 h-4" /> },
-  { label: 'Health Records', href: '/records', section: 'Pages', icon: <FileHeart className="w-4 h-4" /> },
-  { label: 'Health AI Chat', href: '/chat', section: 'Pages', icon: <MessageSquare className="w-4 h-4" /> },
-  { label: 'AI Insights', href: '/insights', section: 'Pages', icon: <Brain className="w-4 h-4" /> },
-  { label: 'Clinical Decision Support', href: '/clinical', section: 'Pages', icon: <Stethoscope className="w-4 h-4" /> },
+  {
+    label: 'Dashboard',
+    href: '/',
+    section: 'Pages',
+    icon: <LayoutDashboard className="w-4 h-4" />,
+  },
+  {
+    label: 'Health Records',
+    href: '/records',
+    section: 'Pages',
+    icon: <FileHeart className="w-4 h-4" />,
+  },
+  {
+    label: 'Health AI Chat',
+    href: '/chat',
+    section: 'Pages',
+    icon: <MessageSquare className="w-4 h-4" />,
+  },
+  {
+    label: 'AI Insights',
+    href: '/insights',
+    section: 'Pages',
+    icon: <Brain className="w-4 h-4" />,
+  },
+  {
+    label: 'Clinical Decision Support',
+    href: '/clinical',
+    section: 'Pages',
+    icon: <Stethoscope className="w-4 h-4" />,
+  },
   { label: 'Data Vault', href: '/vault', section: 'Pages', icon: <Lock className="w-4 h-4" /> },
-  { label: 'Marketplace', href: '/marketplace', section: 'Pages', icon: <Store className="w-4 h-4" /> },
-  { label: 'Governance', href: '/governance', section: 'Pages', icon: <Vote className="w-4 h-4" /> },
-  { label: 'Compliance Center', href: '/compliance', section: 'Pages', icon: <ShieldCheck className="w-4 h-4" /> },
-  { label: 'TEE Explorer', href: '/tee-explorer', section: 'Pages', icon: <Cpu className="w-4 h-4" /> },
+  {
+    label: 'Marketplace',
+    href: '/marketplace',
+    section: 'Pages',
+    icon: <Store className="w-4 h-4" />,
+  },
+  {
+    label: 'Governance',
+    href: '/governance',
+    section: 'Pages',
+    icon: <Vote className="w-4 h-4" />,
+  },
+  {
+    label: 'Compliance Center',
+    href: '/compliance',
+    section: 'Pages',
+    icon: <ShieldCheck className="w-4 h-4" />,
+  },
+  {
+    label: 'TEE Explorer',
+    href: '/tee-explorer',
+    section: 'Pages',
+    icon: <Cpu className="w-4 h-4" />,
+  },
   { label: 'Wearables', href: '/wearables', section: 'Pages', icon: <Watch className="w-4 h-4" /> },
   { label: 'FHIR Bridge', href: '/fhir', section: 'Pages', icon: <LinkIcon className="w-4 h-4" /> },
   { label: 'Alerts', href: '/alerts', section: 'Pages', icon: <Bell className="w-4 h-4" /> },
   { label: 'Community', href: '/community', section: 'Pages', icon: <Users className="w-4 h-4" /> },
-  { label: 'Research', href: '/research', section: 'Pages', icon: <Microscope className="w-4 h-4" /> },
+  {
+    label: 'Research',
+    href: '/research',
+    section: 'Pages',
+    icon: <Microscope className="w-4 h-4" />,
+  },
   { label: 'Genomics Lab', href: '/genomics', section: 'Pages', icon: <Dna className="w-4 h-4" /> },
-  { label: 'Digital Health Twin', href: '/twin', section: 'Pages', icon: <Fingerprint className="w-4 h-4" /> },
+  {
+    label: 'Digital Health Twin',
+    href: '/twin',
+    section: 'Pages',
+    icon: <Fingerprint className="w-4 h-4" />,
+  },
   { label: 'MPC Lab', href: '/mpc', section: 'Pages', icon: <Network className="w-4 h-4" /> },
   { label: 'Emergency', href: '/emergency', section: 'Pages', icon: <Siren className="w-4 h-4" /> },
-  { label: 'Access Control', href: '/access', section: 'Pages', icon: <Shield className="w-4 h-4" /> },
-  { label: 'Settings', href: '/settings', section: 'Pages', icon: <Settings className="w-4 h-4" /> },
+  {
+    label: 'Access Control',
+    href: '/access',
+    section: 'Pages',
+    icon: <Shield className="w-4 h-4" />,
+  },
+  {
+    label: 'Settings',
+    href: '/settings',
+    section: 'Pages',
+    icon: <Settings className="w-4 h-4" />,
+  },
   // ── Actions ──
-  { label: 'Upload Health Data', href: '/records', section: 'Actions', icon: <FolderLock className="w-4 h-4" /> },
-  { label: 'Explore TEE Attestations', href: '/tee-explorer', section: 'Actions', icon: <Cpu className="w-4 h-4" /> },
-  { label: 'Manage Provider Access', href: '/access', section: 'Actions', icon: <KeyRound className="w-4 h-4" /> },
-  { label: 'Cycle Predictions', href: '/insights', section: 'Actions', icon: <Brain className="w-4 h-4" /> },
-  { label: 'Chat with AI', href: '/chat', section: 'Actions', icon: <MessageSquare className="w-4 h-4" /> },
-  { label: 'Browse Marketplace', href: '/marketplace', section: 'Actions', icon: <Store className="w-4 h-4" /> },
-  { label: 'Vote on Proposals', href: '/governance', section: 'Actions', icon: <Vote className="w-4 h-4" /> },
-  { label: 'Check Drug Interactions', href: '/clinical', section: 'Actions', icon: <Stethoscope className="w-4 h-4" /> },
-  { label: 'Run Twin Simulation', href: '/twin', section: 'Actions', icon: <Fingerprint className="w-4 h-4" /> },
-  { label: 'View Compliance Report', href: '/compliance', section: 'Actions', icon: <ShieldCheck className="w-4 h-4" /> },
-  { label: 'Emergency Card', href: '/emergency', section: 'Actions', icon: <Siren className="w-4 h-4" /> },
-  { label: 'Genomic Profile', href: '/genomics', section: 'Actions', icon: <Dna className="w-4 h-4" /> },
+  {
+    label: 'Upload Health Data',
+    href: '/records',
+    section: 'Actions',
+    icon: <FolderLock className="w-4 h-4" />,
+  },
+  {
+    label: 'Explore TEE Attestations',
+    href: '/tee-explorer',
+    section: 'Actions',
+    icon: <Cpu className="w-4 h-4" />,
+  },
+  {
+    label: 'Manage Provider Access',
+    href: '/access',
+    section: 'Actions',
+    icon: <KeyRound className="w-4 h-4" />,
+  },
+  {
+    label: 'Cycle Predictions',
+    href: '/insights',
+    section: 'Actions',
+    icon: <Brain className="w-4 h-4" />,
+  },
+  {
+    label: 'Chat with AI',
+    href: '/chat',
+    section: 'Actions',
+    icon: <MessageSquare className="w-4 h-4" />,
+  },
+  {
+    label: 'Browse Marketplace',
+    href: '/marketplace',
+    section: 'Actions',
+    icon: <Store className="w-4 h-4" />,
+  },
+  {
+    label: 'Vote on Proposals',
+    href: '/governance',
+    section: 'Actions',
+    icon: <Vote className="w-4 h-4" />,
+  },
+  {
+    label: 'Check Drug Interactions',
+    href: '/clinical',
+    section: 'Actions',
+    icon: <Stethoscope className="w-4 h-4" />,
+  },
+  {
+    label: 'Run Twin Simulation',
+    href: '/twin',
+    section: 'Actions',
+    icon: <Fingerprint className="w-4 h-4" />,
+  },
+  {
+    label: 'View Compliance Report',
+    href: '/compliance',
+    section: 'Actions',
+    icon: <ShieldCheck className="w-4 h-4" />,
+  },
+  {
+    label: 'Emergency Card',
+    href: '/emergency',
+    section: 'Actions',
+    icon: <Siren className="w-4 h-4" />,
+  },
+  {
+    label: 'Genomic Profile',
+    href: '/genomics',
+    section: 'Actions',
+    icon: <Dna className="w-4 h-4" />,
+  },
 ];
 
 export function SearchOverlay() {
@@ -511,8 +765,15 @@ export function SearchOverlay() {
   const sections = Array.from(new Set(filtered.map((i) => i.section)));
 
   return (
-    <div className="fixed inset-0 z-[55] flex items-start justify-center pt-[20vh]" role="search" aria-label="Site search">
-      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm animate-fade-in" onClick={() => setSearchOpen(false)} />
+    <div
+      className="fixed inset-0 z-[55] flex items-start justify-center pt-[20vh]"
+      role="search"
+      aria-label="Site search"
+    >
+      <div
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm animate-fade-in"
+        onClick={() => setSearchOpen(false)}
+      />
       <div className="relative bg-white rounded-2xl shadow-float border border-slate-200 w-full max-w-lg animate-scale-in overflow-hidden">
         <div className="flex items-center gap-3 px-4 border-b border-slate-100">
           <Search className="w-5 h-5 text-slate-400 shrink-0" />
@@ -523,7 +784,9 @@ export function SearchOverlay() {
             placeholder="Search pages, actions..."
             className="w-full py-3.5 bg-transparent text-slate-900 placeholder:text-slate-400 focus:outline-none text-sm"
           />
-          <kbd className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 text-xs text-slate-400 bg-slate-100 border border-slate-200 rounded">esc</kbd>
+          <kbd className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 text-xs text-slate-400 bg-slate-100 border border-slate-200 rounded">
+            esc
+          </kbd>
         </div>
         <div className="max-h-72 overflow-y-auto p-2">
           {filtered.length === 0 && (
@@ -531,7 +794,9 @@ export function SearchOverlay() {
           )}
           {sections.map((section) => (
             <div key={section}>
-              <p className="px-3 py-1.5 text-xs font-medium text-slate-400 uppercase tracking-wider">{section}</p>
+              <p className="px-3 py-1.5 text-xs font-medium text-slate-400 uppercase tracking-wider">
+                {section}
+              </p>
               {filtered
                 .filter((i) => i.section === section)
                 .map((item) => (
@@ -560,7 +825,10 @@ export function SearchOverlay() {
 function ShioraLogo() {
   return (
     <div className="flex items-center gap-1">
-      <span className="text-lg font-extrabold tracking-wider text-brand-500 uppercase" style={{ fontFamily: "'Inter', sans-serif", letterSpacing: '0.08em' }}>
+      <span
+        className="text-lg font-extrabold tracking-wider text-brand-500 uppercase"
+        style={{ fontFamily: "'Inter', sans-serif", letterSpacing: '0.08em' }}
+      >
         SHIORA
       </span>
       <span className="w-2 h-2 rounded-full bg-accent-500" />
@@ -614,7 +882,10 @@ export function TopNav() {
     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50';
 
   return (
-    <nav className="sticky top-0 z-40 bg-surface-50/95 backdrop-blur-xl border-b border-surface-200" aria-label="Main navigation">
+    <nav
+      className="sticky top-0 z-40 bg-surface-50/95 backdrop-blur-xl border-b border-surface-200"
+      aria-label="Main navigation"
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Left: Logo + Nav */}
@@ -646,7 +917,10 @@ export function TopNav() {
               {/* Platform dropdown */}
               <div className="relative" ref={platformMenuRef}>
                 <button
-                  onClick={() => { setPlatformMenuOpen(!platformMenuOpen); setMoreMenuOpen(false); }}
+                  onClick={() => {
+                    setPlatformMenuOpen(!platformMenuOpen);
+                    setMoreMenuOpen(false);
+                  }}
                   className={`flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                     /* istanbul ignore next -- active styling depends on current route */
                     isSecondaryActive
@@ -655,7 +929,9 @@ export function TopNav() {
                   }`}
                 >
                   Platform
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${platformMenuOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 transition-transform ${platformMenuOpen ? 'rotate-180' : ''}`}
+                  />
                 </button>
 
                 {platformMenuOpen && (
@@ -683,11 +959,16 @@ export function TopNav() {
               {/* More dropdown */}
               <div className="relative" ref={moreMenuRef}>
                 <button
-                  onClick={() => { setMoreMenuOpen(!moreMenuOpen); setPlatformMenuOpen(false); }}
+                  onClick={() => {
+                    setMoreMenuOpen(!moreMenuOpen);
+                    setPlatformMenuOpen(false);
+                  }}
                   className={`flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${moreButtonClass}`}
                 >
                   More
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${moreMenuOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 transition-transform ${moreMenuOpen ? 'rotate-180' : ''}`}
+                  />
                 </button>
 
                 {moreMenuOpen && (
@@ -720,7 +1001,9 @@ export function TopNav() {
             <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs">
               <LiveDot color="bg-emerald-500" />
               <span className="text-slate-500">Block</span>
-              <span className="font-mono font-medium text-slate-700">{formatNumber(realTime.blockHeight)}</span>
+              <span className="font-mono font-medium text-slate-700">
+                {formatNumber(realTime.blockHeight)}
+              </span>
             </div>
 
             {/* Search button */}
@@ -830,7 +1113,10 @@ export function Footer() {
               <ul className="space-y-2">
                 {section.links.map((link) => (
                   <li key={link.label}>
-                    <Link href={link.href} className="text-sm text-slate-500 hover:text-brand-600 transition-colors">
+                    <Link
+                      href={link.href}
+                      className="text-sm text-slate-500 hover:text-brand-600 transition-colors"
+                    >
                       {link.label}
                     </Link>
                   </li>

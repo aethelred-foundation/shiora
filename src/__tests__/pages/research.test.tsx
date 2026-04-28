@@ -125,19 +125,31 @@ beforeEach(() => {
 
 describe('ResearchPage', () => {
   it('renders the research portal title', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     expect(screen.getByText('Research Portal')).toBeInTheDocument();
   });
 
   it('renders the page description', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     expect(
-      screen.getByText(/Contribute your anonymized health data to IRB-approved research studies/)
+      screen.getByText(/Contribute your anonymized health data to IRB-approved research studies/),
     ).toBeInTheDocument();
   });
 
   it('renders all three tabs', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     const tabs = screen.getAllByRole('tab');
     const tabLabels = tabs.map((t) => t.textContent);
     expect(tabLabels).toContainEqual(expect.stringContaining('Available Studies'));
@@ -146,7 +158,11 @@ describe('ResearchPage', () => {
   });
 
   it('renders stat cards', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     expect(screen.getByText('Active Studies')).toBeInTheDocument();
     expect(screen.getAllByText('My Contributions').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Total Earned')).toBeInTheDocument();
@@ -154,12 +170,20 @@ describe('ResearchPage', () => {
   });
 
   it('renders the search input on studies tab', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     expect(screen.getByPlaceholderText('Search studies...')).toBeInTheDocument();
   });
 
   it('renders status filter tabs', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     const tabs = screen.getAllByRole('tab');
     const tabLabels = tabs.map((t) => t.textContent);
     expect(tabLabels).toContain('All');
@@ -167,21 +191,33 @@ describe('ResearchPage', () => {
   });
 
   it('renders study cards on studies tab', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     expect(screen.getByText('Reproductive Health AI Study')).toBeInTheDocument();
     expect(screen.getByText('Cardiac Monitoring Research')).toBeInTheDocument();
     expect(screen.getByText('Completed Sleep Study')).toBeInTheDocument();
   });
 
   it('renders the security notice', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     expect(screen.getByText('Privacy-Preserving Research')).toBeInTheDocument();
   });
 
   // --- Search ---
 
   it('filters studies by search query', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     const searchInput = screen.getByPlaceholderText('Search studies...');
     fireEvent.change(searchInput, { target: { value: 'Cardiac' } });
     expect(screen.getByText('Cardiac Monitoring Research')).toBeInTheDocument();
@@ -189,7 +225,11 @@ describe('ResearchPage', () => {
   });
 
   it('filters studies by institution', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     const searchInput = screen.getByPlaceholderText('Search studies...');
     fireEvent.change(searchInput, { target: { value: 'Stanford' } });
     expect(screen.getByText('Reproductive Health AI Study')).toBeInTheDocument();
@@ -197,7 +237,11 @@ describe('ResearchPage', () => {
   });
 
   it('filters studies by principal investigator', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     const searchInput = screen.getByPlaceholderText('Search studies...');
     fireEvent.change(searchInput, { target: { value: 'Alice' } });
     expect(screen.getByText('Completed Sleep Study')).toBeInTheDocument();
@@ -207,7 +251,11 @@ describe('ResearchPage', () => {
   // --- Status filters ---
 
   it('filters studies by status', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     const tabs = screen.getAllByRole('tab');
     const recruitingTab = tabs.find((t) => t.textContent?.includes('Recruiting'));
     expect(recruitingTab).toBeTruthy();
@@ -217,7 +265,11 @@ describe('ResearchPage', () => {
   });
 
   it('shows no studies message when filter matches nothing', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     const tabs = screen.getAllByRole('tab');
     const suspendedTab = tabs.find((t) => t.textContent?.includes('Suspended'));
     expect(suspendedTab).toBeTruthy();
@@ -228,7 +280,11 @@ describe('ResearchPage', () => {
   // --- Enroll ---
 
   it('clicks Enroll on a recruiting study to open modal', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     const enrollButtons = screen.getAllByText('Enroll');
     fireEvent.click(enrollButtons[0]);
     // EnrollModal should open with the study (title appears in card + modal)
@@ -238,7 +294,11 @@ describe('ResearchPage', () => {
   // --- My Contributions tab ---
 
   it('switches to My Contributions tab', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     const tabs = screen.getAllByRole('tab');
     const contributionsTab = tabs.find((t) => t.textContent?.includes('My Contributions'));
     expect(contributionsTab).toBeDefined();
@@ -250,7 +310,11 @@ describe('ResearchPage', () => {
   // --- About Research tab ---
 
   it('switches to About Research tab', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     const tabs = screen.getAllByRole('tab');
     const aboutTab = tabs.find((t) => t.textContent === 'About Research');
     expect(aboutTab).toBeDefined();
@@ -261,7 +325,11 @@ describe('ResearchPage', () => {
   });
 
   it('renders privacy features on About tab', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     const tabs = screen.getAllByRole('tab');
     const aboutTab = tabs.find((t) => t.textContent === 'About Research');
     fireEvent.click(aboutTab!);
@@ -272,7 +340,11 @@ describe('ResearchPage', () => {
   });
 
   it('renders data usage section on About tab', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     const tabs = screen.getAllByRole('tab');
     const aboutTab = tabs.find((t) => t.textContent === 'About Research');
     fireEvent.click(aboutTab!);
@@ -285,7 +357,11 @@ describe('ResearchPage', () => {
 
   it('shows loading spinner when isLoading is true', () => {
     mockOverrides = { isLoading: true };
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     // Should not show study cards
     expect(screen.queryByText('Reproductive Health AI Study')).not.toBeInTheDocument();
   });
@@ -294,7 +370,11 @@ describe('ResearchPage', () => {
 
   it('shows error message when error occurs', () => {
     mockOverrides = { error: new Error('Network error') };
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     expect(screen.getByText('Failed to load studies')).toBeInTheDocument();
   });
 
@@ -302,7 +382,11 @@ describe('ResearchPage', () => {
 
   it('shows loading on contributions tab when isLoadingContributions is true', () => {
     mockOverrides = { isLoadingContributions: true };
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     const tabs = screen.getAllByRole('tab');
     const contributionsTab = tabs.find((t) => t.textContent?.includes('My Contributions'));
     fireEvent.click(contributionsTab!);
@@ -315,7 +399,11 @@ describe('ResearchPage', () => {
   it('does not open modal for non-existent study id', () => {
     // handleEnroll only sets enrollTarget if study is found
     // We verify by ensuring the normal flow works
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     // All studies are present, so enroll should work
     const enrollButtons = screen.getAllByText('Enroll');
     expect(enrollButtons.length).toBeGreaterThan(0);
@@ -324,7 +412,11 @@ describe('ResearchPage', () => {
   // --- handleConfirmEnroll ---
 
   it('calls enrollMutation and contributeMutation when confirming enrollment', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     // Click Enroll to open modal
     const enrollButtons = screen.getAllByText('Enroll');
     fireEvent.click(enrollButtons[0]);
@@ -349,7 +441,11 @@ describe('ResearchPage', () => {
   // --- Modal close ---
 
   it('closes enroll modal when Cancel is clicked', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     // Click Enroll to open modal
     const enrollButtons = screen.getAllByText('Enroll');
     fireEvent.click(enrollButtons[0]);
@@ -362,7 +458,11 @@ describe('ResearchPage', () => {
   // --- Empty search result ---
 
   it('shows empty state when search matches nothing', () => {
-    render(<TestWrapper><ResearchPage /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <ResearchPage />
+      </TestWrapper>,
+    );
     const searchInput = screen.getByPlaceholderText('Search studies...');
     fireEvent.change(searchInput, { target: { value: 'xyznonexistent' } });
     expect(screen.getByText('No studies match your filters')).toBeInTheDocument();

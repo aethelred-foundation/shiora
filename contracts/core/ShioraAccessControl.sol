@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraAccessControl
@@ -117,9 +117,13 @@ contract ShioraAccessControl is Ownable, ReentrancyGuard, Pausable {
     // ────────────────────────────────────────────────────────
 
     modifier onlyGrantOwner(bytes32 grantId) {
+        _onlyGrantOwner(grantId);
+        _;
+    }
+
+    function _onlyGrantOwner(bytes32 grantId) internal view {
         if (_grants[grantId].owner == address(0)) revert GrantNotFound();
         if (_grants[grantId].owner != msg.sender) revert NotGrantOwner();
-        _;
     }
 
     // ────────────────────────────────────────────────────────

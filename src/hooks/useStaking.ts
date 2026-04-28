@@ -11,11 +11,7 @@ import { useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 
-import type {
-  StakingPosition,
-  StakingReward,
-  StakingStats,
-} from '@/types';
+import type { StakingPosition, StakingReward, StakingStats } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Query keys
@@ -112,8 +108,7 @@ export function useStaking(): UseStakingReturn {
   // ---- Mutations ----
 
   const stakeMutation = useMutation({
-    mutationFn: (amount: number) =>
-      api.post<StakingPosition>('/api/staking', { amount }),
+    mutationFn: (amount: number) => api.post<StakingPosition>('/api/staking', { amount }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [POSITIONS_KEY] });
     },
@@ -128,16 +123,14 @@ export function useStaking(): UseStakingReturn {
   });
 
   const withdrawMutation = useMutation({
-    mutationFn: (positionId: string) =>
-      api.post<void>(`/api/staking/${positionId}/withdraw`),
+    mutationFn: (positionId: string) => api.post<void>(`/api/staking/${positionId}/withdraw`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [POSITIONS_KEY] });
     },
   });
 
   const claimMutation = useMutation({
-    mutationFn: (positionId: string) =>
-      api.post<void>('/api/staking/rewards', { positionId }),
+    mutationFn: (positionId: string) => api.post<void>('/api/staking/rewards', { positionId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [REWARDS_KEY] });
     },

@@ -7,8 +7,11 @@ import { useNotifications } from '@/hooks/useNotifications';
 function createWrapper() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   return ({ children }: { children: React.ReactNode }) =>
-    React.createElement(QueryClientProvider, { client: qc },
-      React.createElement(AppProvider, null, children));
+    React.createElement(
+      QueryClientProvider,
+      { client: qc },
+      React.createElement(AppProvider, null, children),
+    );
 }
 
 describe('useNotifications', () => {
@@ -146,7 +149,9 @@ describe('useNotifications', () => {
       destination: {},
       currentTime: 0,
     };
-    (window as unknown as Record<string, unknown>).AudioContext = jest.fn().mockReturnValue(mockAudioCtx);
+    (window as unknown as Record<string, unknown>).AudioContext = jest
+      .fn()
+      .mockReturnValue(mockAudioCtx);
 
     const { result } = renderHook(() => useNotifications(), { wrapper: createWrapper() });
     act(() => result.current.setPreferences({ sound: true }));
@@ -170,7 +175,10 @@ describe('useNotifications', () => {
     act(() => result.current.setPreferences({ desktop: true }));
     act(() => result.current.add('success', 'Desktop', 'notification'));
 
-    expect(MockNotif).toHaveBeenCalledWith('Desktop', expect.objectContaining({ body: 'notification' }));
+    expect(MockNotif).toHaveBeenCalledWith(
+      'Desktop',
+      expect.objectContaining({ body: 'notification' }),
+    );
 
     delete (window as unknown as Record<string, unknown>).Notification;
   });

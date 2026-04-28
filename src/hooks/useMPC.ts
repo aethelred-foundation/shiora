@@ -82,8 +82,7 @@ export function useMPC(): UseMPCReturn {
 
   // ---- Create session mutation ----
   const createMutation = useMutation({
-    mutationFn: (form: CreateMPCSessionForm) =>
-      api.post<MPCSession>('/api/mpc/sessions', form),
+    mutationFn: (form: CreateMPCSessionForm) => api.post<MPCSession>('/api/mpc/sessions', form),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [SESSIONS_KEY] });
     },

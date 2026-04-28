@@ -2,7 +2,11 @@
 
 import { NextRequest } from 'next/server';
 import { GET as listGrants, POST as createGrant } from '@/app/api/access/route';
-import { GET as getGrant, PATCH as patchGrant, DELETE as deleteGrant } from '@/app/api/access/[id]/route';
+import {
+  GET as getGrant,
+  PATCH as patchGrant,
+  DELETE as deleteGrant,
+} from '@/app/api/access/[id]/route';
 import { GET as getAudit } from '@/app/api/access/audit/route';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
@@ -47,14 +51,26 @@ const mockedUpdateAccessGrant = updateAccessGrant as jest.MockedFunction<typeof 
 const mockedListAccessGrants = listAccessGrants as jest.MockedFunction<typeof listAccessGrants>;
 const mockedCreateAccessGrant = createAccessGrant as jest.MockedFunction<typeof createAccessGrant>;
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
-const mockedGenerateMockAuditLog = generateMockAuditLog as jest.MockedFunction<typeof generateMockAuditLog>;
+const mockedGenerateMockAuditLog = generateMockAuditLog as jest.MockedFunction<
+  typeof generateMockAuditLog
+>;
 
 afterEach(() => {
-  mockedUpdateAccessGrant.mockImplementation((...args: unknown[]) => actualStore.updateAccessGrant(...args));
-  mockedListAccessGrants.mockImplementation((...args: unknown[]) => actualStore.listAccessGrants(...args));
-  mockedCreateAccessGrant.mockImplementation((...args: unknown[]) => actualStore.createAccessGrant(...args));
-  mockedRunMiddleware.mockImplementation((...args: unknown[]) => actualMiddleware.runMiddleware(...args));
-  mockedGenerateMockAuditLog.mockImplementation((...args: unknown[]) => actualMockData.generateMockAuditLog(...args));
+  mockedUpdateAccessGrant.mockImplementation((...args: unknown[]) =>
+    actualStore.updateAccessGrant(...args),
+  );
+  mockedListAccessGrants.mockImplementation((...args: unknown[]) =>
+    actualStore.listAccessGrants(...args),
+  );
+  mockedCreateAccessGrant.mockImplementation((...args: unknown[]) =>
+    actualStore.createAccessGrant(...args),
+  );
+  mockedRunMiddleware.mockImplementation((...args: unknown[]) =>
+    actualMiddleware.runMiddleware(...args),
+  );
+  mockedGenerateMockAuditLog.mockImplementation((...args: unknown[]) =>
+    actualMockData.generateMockAuditLog(...args),
+  );
 });
 
 const addr = seededAddress(5555);
@@ -170,9 +186,9 @@ describe('/api/access', () => {
     mockedListAccessGrants.mockImplementationOnce(() => {
       throw new Error('Unexpected list error');
     });
-    await expect(
-      listGrants(authed('http://localhost:3000/api/access')),
-    ).rejects.toThrow('Unexpected list error');
+    await expect(listGrants(authed('http://localhost:3000/api/access'))).rejects.toThrow(
+      'Unexpected list error',
+    );
     // afterEach handles restoration
   });
 
@@ -222,10 +238,9 @@ describe('/api/access/[id]', () => {
   });
 
   it('GET returns grant details', async () => {
-    const res = await getGrant(
-      authed(`http://localhost:3000/api/access/${grantId}`),
-      { params: Promise.resolve({ id: grantId }) },
-    );
+    const res = await getGrant(authed(`http://localhost:3000/api/access/${grantId}`), {
+      params: Promise.resolve({ id: grantId }),
+    });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -235,10 +250,9 @@ describe('/api/access/[id]', () => {
   });
 
   it('GET returns 404 for nonexistent grant', async () => {
-    const res = await getGrant(
-      authed('http://localhost:3000/api/access/nonexistent'),
-      { params: Promise.resolve({ id: 'nonexistent' }) },
-    );
+    const res = await getGrant(authed('http://localhost:3000/api/access/nonexistent'), {
+      params: Promise.resolve({ id: 'nonexistent' }),
+    });
     expect(res.status).toBe(404);
   });
 
@@ -328,10 +342,9 @@ describe('/api/access/[id]', () => {
   });
 
   it('GET returns 401 for unauthenticated request', async () => {
-    const res = await getGrant(
-      new NextRequest('http://localhost:3000/api/access/some-id'),
-      { params: Promise.resolve({ id: 'some-id' }) },
-    );
+    const res = await getGrant(new NextRequest('http://localhost:3000/api/access/some-id'), {
+      params: Promise.resolve({ id: 'some-id' }),
+    });
     expect(res.status).toBe(401);
   });
 
@@ -463,10 +476,9 @@ describe('/api/access/[id]', () => {
 
   it('GET returns 401 from inner requireAuth when middleware is bypassed', async () => {
     mockedRunMiddleware.mockReturnValueOnce(null);
-    const res = await getGrant(
-      new NextRequest('http://localhost:3000/api/access/some-id'),
-      { params: Promise.resolve({ id: 'some-id' }) },
-    );
+    const res = await getGrant(new NextRequest('http://localhost:3000/api/access/some-id'), {
+      params: Promise.resolve({ id: 'some-id' }),
+    });
     expect(res.status).toBe(401);
   });
 
@@ -551,7 +563,9 @@ describe('/api/access/audit', () => {
   });
 
   it('GET filters audit log by startDate', async () => {
-    const res = await getAudit(authed('http://localhost:3000/api/access/audit?startDate=2025-01-01'));
+    const res = await getAudit(
+      authed('http://localhost:3000/api/access/audit?startDate=2025-01-01'),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -565,7 +579,9 @@ describe('/api/access/audit', () => {
   });
 
   it('GET filters audit log by date range', async () => {
-    const res = await getAudit(authed('http://localhost:3000/api/access/audit?startDate=2025-01-01&endDate=2099-12-31'));
+    const res = await getAudit(
+      authed('http://localhost:3000/api/access/audit?startDate=2025-01-01&endDate=2099-12-31'),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -585,8 +601,8 @@ describe('/api/access/audit', () => {
     mockedGenerateMockAuditLog.mockImplementationOnce(() => {
       throw new Error('Unexpected audit error');
     });
-    await expect(
-      getAudit(authed('http://localhost:3000/api/access/audit')),
-    ).rejects.toThrow('Unexpected audit error');
+    await expect(getAudit(authed('http://localhost:3000/api/access/audit'))).rejects.toThrow(
+      'Unexpected audit error',
+    );
   });
 });

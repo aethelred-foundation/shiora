@@ -9,28 +9,57 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Vote, Coins, Shield, Users, Wallet,
-  Plus, TrendingUp, Clock, CheckCircle,
-  Gift, ArrowUpRight, Lock, Unlock,
-  BarChart3, PieChart as PieChartIcon,
+  Vote,
+  Coins,
+  Shield,
+  Users,
+  Wallet,
+  Plus,
+  TrendingUp,
+  Clock,
+  CheckCircle,
+  Gift,
+  ArrowUpRight,
+  Lock,
+  Unlock,
+  BarChart3,
+  PieChart as PieChartIcon,
 } from 'lucide-react';
-import {
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
-} from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 import { useApp } from '@/contexts/AppContext';
-import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, Tabs } from '@/components/ui/SharedComponents';
-import { MedicalCard, SectionHeader, StatusBadge, HealthMetricCard } from '@/components/ui/PagePrimitives';
+import {
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  Tabs,
+} from '@/components/ui/SharedComponents';
+import {
+  MedicalCard,
+  SectionHeader,
+  StatusBadge,
+  HealthMetricCard,
+} from '@/components/ui/PagePrimitives';
 import { ChartTooltip } from '@/components/ui/PagePrimitives';
-import { ProposalCard, VotingBar, DelegationPanel, ProposalTimeline, QuorumMeter } from '@/components/governance/GovernanceComponents';
-import { StakePanel, RewardCalculator, UnstakeTimer, StakingChart } from '@/components/governance/StakingComponents';
+import {
+  ProposalCard,
+  VotingBar,
+  DelegationPanel,
+  ProposalTimeline,
+  QuorumMeter,
+} from '@/components/governance/GovernanceComponents';
+import {
+  StakePanel,
+  RewardCalculator,
+  UnstakeTimer,
+  StakingChart,
+} from '@/components/governance/StakingComponents';
 import { useGovernance } from '@/hooks/useGovernance';
 import { useStaking } from '@/hooks/useStaking';
 import { BRAND, CHART_COLORS } from '@/lib/constants';
-import {
-  seededRandom, seededInt, seededHex,
-  formatNumber, formatDate, timeAgo,
-} from '@/lib/utils';
+import { seededRandom, seededInt, seededHex, formatNumber, formatDate, timeAgo } from '@/lib/utils';
 
 import type { ProposalStatus } from '@/types';
 
@@ -100,7 +129,6 @@ export default function GovernancePage() {
 
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
             <div>
@@ -148,7 +176,9 @@ export default function GovernancePage() {
               unit="AETHEL"
               trend={3.8}
               trendLabel="this week"
-              sparklineData={[7800000, 7900000, 8000000, 8100000, 8200000, 8400000, 8600000, 8750000]}
+              sparklineData={[
+                7800000, 7900000, 8000000, 8100000, 8200000, 8400000, 8600000, 8750000,
+              ]}
               sparklineColor="#10b981"
             />
             <HealthMetricCard
@@ -158,7 +188,9 @@ export default function GovernancePage() {
               unit="AETHEL"
               trend={1.2}
               trendLabel="net inflow"
-              sparklineData={[2200000, 2250000, 2300000, 2350000, 2380000, 2400000, 2430000, 2450000]}
+              sparklineData={[
+                2200000, 2250000, 2300000, 2350000, 2380000, 2400000, 2430000, 2450000,
+              ]}
               sparklineColor="#fb923c"
             />
           </div>
@@ -176,7 +208,9 @@ export default function GovernancePage() {
                     key={f.label}
                     onClick={() => governance.setStatusFilter(f.value)}
                     className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
-                      governance.statusFilter === f.value ? 'bg-brand-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      governance.statusFilter === f.value
+                        ? 'bg-brand-500 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
                     {f.label}
@@ -194,7 +228,9 @@ export default function GovernancePage() {
               {governance.proposals.length === 0 && !governance.isLoading && (
                 <div className="text-center py-12">
                   <Vote className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                  <p className="text-sm text-slate-500">No proposals found with the selected filter.</p>
+                  <p className="text-sm text-slate-500">
+                    No proposals found with the selected filter.
+                  </p>
                 </div>
               )}
             </div>
@@ -203,7 +239,11 @@ export default function GovernancePage() {
           {/* My Votes Tab */}
           {activeTab === 'my-votes' && (
             <div className="space-y-4">
-              <SectionHeader title="Voting History" subtitle="Your past votes on protocol proposals" size="sm" />
+              <SectionHeader
+                title="Voting History"
+                subtitle="Your past votes on protocol proposals"
+                size="sm"
+              />
               {governance.votes.slice(0, 10).map((vote) => {
                 const proposal = governance.proposals.find((p) => p.id === vote.proposalId);
                 return (
@@ -214,8 +254,20 @@ export default function GovernancePage() {
                           {proposal?.title ?? vote.proposalId}
                         </h4>
                         <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
-                          <Badge variant={vote.support === 'for' ? 'success' : vote.support === 'against' ? 'error' : 'neutral'}>
-                            {vote.support === 'for' ? 'Voted For' : vote.support === 'against' ? 'Voted Against' : 'Abstained'}
+                          <Badge
+                            variant={
+                              vote.support === 'for'
+                                ? 'success'
+                                : vote.support === 'against'
+                                  ? 'error'
+                                  : 'neutral'
+                            }
+                          >
+                            {vote.support === 'for'
+                              ? 'Voted For'
+                              : vote.support === 'against'
+                                ? 'Voted Against'
+                                : 'Abstained'}
                           </Badge>
                           <span>{formatNumber(vote.weight)} VP</span>
                           <span>{timeAgo(vote.timestamp)}</span>
@@ -242,23 +294,33 @@ export default function GovernancePage() {
                 />
                 <RewardCalculator currentAPY={staking.stats.currentAPY} />
                 <MedicalCard>
-                  <h4 className="text-sm font-semibold text-slate-900 mb-4">Your Staking Summary</h4>
+                  <h4 className="text-sm font-semibold text-slate-900 mb-4">
+                    Your Staking Summary
+                  </h4>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between py-2 border-b border-slate-100">
                       <span className="text-xs text-slate-500">Total Staked</span>
-                      <span className="text-sm font-bold text-slate-900">{formatNumber(staking.totalStaked)} AETHEL</span>
+                      <span className="text-sm font-bold text-slate-900">
+                        {formatNumber(staking.totalStaked)} AETHEL
+                      </span>
                     </div>
                     <div className="flex items-center justify-between py-2 border-b border-slate-100">
                       <span className="text-xs text-slate-500">Pending Rewards</span>
-                      <span className="text-sm font-bold text-emerald-600">{formatNumber(staking.pendingRewards)} AETHEL</span>
+                      <span className="text-sm font-bold text-emerald-600">
+                        {formatNumber(staking.pendingRewards)} AETHEL
+                      </span>
                     </div>
                     <div className="flex items-center justify-between py-2 border-b border-slate-100">
                       <span className="text-xs text-slate-500">Active Positions</span>
-                      <span className="text-sm font-bold text-slate-900">{staking.positions.filter((p) => p.status === 'staked').length}</span>
+                      <span className="text-sm font-bold text-slate-900">
+                        {staking.positions.filter((p) => p.status === 'staked').length}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between py-2">
                       <span className="text-xs text-slate-500">Current APY</span>
-                      <span className="text-sm font-bold text-brand-600">{staking.stats.currentAPY}%</span>
+                      <span className="text-sm font-bold text-brand-600">
+                        {staking.stats.currentAPY}%
+                      </span>
                     </div>
                   </div>
                 </MedicalCard>
@@ -271,19 +333,30 @@ export default function GovernancePage() {
                   <MedicalCard key={pos.id}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                          pos.status === 'staked' ? 'bg-emerald-50 text-emerald-600' :
-                          pos.status === 'unstaking' ? 'bg-amber-50 text-amber-600' :
-                          'bg-slate-100 text-slate-500'
-                        }`}>
-                          {pos.status === 'staked' ? <Lock className="w-5 h-5" /> :
-                           pos.status === 'unstaking' ? <Clock className="w-5 h-5" /> :
-                           <Unlock className="w-5 h-5" />}
+                        <div
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                            pos.status === 'staked'
+                              ? 'bg-emerald-50 text-emerald-600'
+                              : pos.status === 'unstaking'
+                                ? 'bg-amber-50 text-amber-600'
+                                : 'bg-slate-100 text-slate-500'
+                          }`}
+                        >
+                          {pos.status === 'staked' ? (
+                            <Lock className="w-5 h-5" />
+                          ) : pos.status === 'unstaking' ? (
+                            <Clock className="w-5 h-5" />
+                          ) : (
+                            <Unlock className="w-5 h-5" />
+                          )}
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-slate-900">{formatNumber(pos.amount)} AETHEL</p>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {formatNumber(pos.amount)} AETHEL
+                          </p>
                           <p className="text-xs text-slate-400">
-                            Staked {formatDate(pos.stakedAt)} &middot; Earned {formatNumber(pos.rewardsEarned)} AETHEL
+                            Staked {formatDate(pos.stakedAt)} &middot; Earned{' '}
+                            {formatNumber(pos.rewardsEarned)} AETHEL
                           </p>
                         </div>
                       </div>
@@ -291,7 +364,15 @@ export default function GovernancePage() {
                         {pos.status === 'unstaking' && pos.unlockAt && (
                           <UnstakeTimer unlockAt={pos.unlockAt} />
                         )}
-                        <StatusBadge status={pos.status === 'staked' ? 'Active' : pos.status === 'unstaking' ? 'Pending' : 'Expired'} />
+                        <StatusBadge
+                          status={
+                            pos.status === 'staked'
+                              ? 'Active'
+                              : pos.status === 'unstaking'
+                                ? 'Pending'
+                                : 'Expired'
+                          }
+                        />
                         {pos.status === 'staked' && (
                           <button
                             onClick={() => staking.unstake.mutate(pos.id)}
@@ -323,12 +404,17 @@ export default function GovernancePage() {
               <MedicalCard padding={false}>
                 <div className="divide-y divide-slate-100">
                   {staking.rewards.slice(0, 8).map((reward) => (
-                    <div key={reward.id} className="px-5 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors">
+                    <div
+                      key={reward.id}
+                      className="px-5 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors"
+                    >
                       <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                         <Gift className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-900">+{reward.amount} AETHEL</p>
+                        <p className="text-sm font-medium text-slate-900">
+                          +{reward.amount} AETHEL
+                        </p>
                         <p className="text-xs text-slate-400">{reward.source.replace(/_/g, ' ')}</p>
                       </div>
                       <div className="text-right shrink-0">
@@ -357,9 +443,12 @@ export default function GovernancePage() {
                 />
 
                 <MedicalCard>
-                  <h4 className="text-sm font-semibold text-slate-900 mb-4">Delegate Voting Power</h4>
+                  <h4 className="text-sm font-semibold text-slate-900 mb-4">
+                    Delegate Voting Power
+                  </h4>
                   <p className="text-xs text-slate-500 mb-4">
-                    Delegate your voting power to a trusted address. You retain your staking rewards.
+                    Delegate your voting power to a trusted address. You retain your staking
+                    rewards.
                   </p>
                   <div className="space-y-3">
                     <div>
@@ -374,7 +463,9 @@ export default function GovernancePage() {
                     </div>
                     <button
                       onClick={handleDelegate}
-                      disabled={!delegateAddress.startsWith('aeth1') || delegateAddress.length !== 43}
+                      disabled={
+                        !delegateAddress.startsWith('aeth1') || delegateAddress.length !== 43
+                      }
                       className="w-full py-2.5 text-sm font-medium rounded-xl bg-brand-500 text-white hover:bg-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Delegate
@@ -397,17 +488,23 @@ export default function GovernancePage() {
                     </div>
                     <div>
                       <p className="text-xs text-slate-500">Treasury Balance</p>
-                      <p className="text-2xl font-bold text-slate-900">{formatNumber(governance.stats.treasuryBalance)} AETHEL</p>
+                      <p className="text-2xl font-bold text-slate-900">
+                        {formatNumber(governance.stats.treasuryBalance)} AETHEL
+                      </p>
                     </div>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-slate-500">Inflows (30d)</span>
-                      <span className="text-emerald-600 font-medium">+{formatNumber(seededInt(SEED, 50000, 120000))} AETHEL</span>
+                      <span className="text-emerald-600 font-medium">
+                        +{formatNumber(seededInt(SEED, 50000, 120000))} AETHEL
+                      </span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-slate-500">Outflows (30d)</span>
-                      <span className="text-red-600 font-medium">-{formatNumber(seededInt(SEED + 1, 30000, 80000))} AETHEL</span>
+                      <span className="text-red-600 font-medium">
+                        -{formatNumber(seededInt(SEED + 1, 30000, 80000))} AETHEL
+                      </span>
                     </div>
                   </div>
                 </MedicalCard>
@@ -416,7 +513,9 @@ export default function GovernancePage() {
                 <MedicalCard className="lg:col-span-2" padding={false}>
                   <div className="p-5 pb-0">
                     <h3 className="text-base font-semibold text-slate-900">Treasury Allocation</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Distribution of treasury spending</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Distribution of treasury spending
+                    </p>
                   </div>
                   <div className="flex items-center gap-8 p-5">
                     <ResponsiveContainer width={180} height={180}>
@@ -441,7 +540,10 @@ export default function GovernancePage() {
                       {treasuryBreakdown.map((item) => (
                         <div key={item.name} className="flex items-center justify-between text-xs">
                           <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                            <span
+                              className="w-2.5 h-2.5 rounded-full"
+                              style={{ backgroundColor: item.color }}
+                            />
                             <span className="text-slate-600">{item.name}</span>
                           </div>
                           <span className="text-slate-900 font-medium">{item.value}%</span>
@@ -453,7 +555,11 @@ export default function GovernancePage() {
               </div>
 
               {/* Treasury proposals */}
-              <SectionHeader title="Spending Proposals" subtitle="Recent treasury allocation proposals" size="sm" />
+              <SectionHeader
+                title="Spending Proposals"
+                subtitle="Recent treasury allocation proposals"
+                size="sm"
+              />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {governance.proposals
                   .filter((p) => p.type === 'treasury')

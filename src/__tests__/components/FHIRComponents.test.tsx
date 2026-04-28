@@ -17,8 +17,11 @@ import type { FHIRResource, FHIRMapping, FHIRResourceType } from '@/types';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return React.createElement(QueryClientProvider, { client: qc },
-    React.createElement(AppProvider, null, children));
+  return React.createElement(
+    QueryClientProvider,
+    { client: qc },
+    React.createElement(AppProvider, null, children),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -30,7 +33,11 @@ const mockResource: FHIRResource = {
   resourceType: 'Patient',
   status: 'active',
   lastUpdated: Date.now() - 86400000,
-  rawJson: JSON.stringify({ resourceType: 'Patient', id: 'res-001', name: [{ family: 'Doe', given: ['Jane'] }] }),
+  rawJson: JSON.stringify({
+    resourceType: 'Patient',
+    id: 'res-001',
+    name: [{ family: 'Doe', given: ['Jane'] }],
+  }),
   mappedRecordId: 'record-123',
 };
 
@@ -57,9 +64,7 @@ const mockMappings: FHIRMapping[] = [
     id: 'map-2',
     fhirResourceType: 'Observation',
     shioraRecordType: 'lab_result',
-    fieldMappings: [
-      { fhirPath: 'valueQuantity', shioraField: 'description' },
-    ],
+    fieldMappings: [{ fhirPath: 'valueQuantity', shioraField: 'description' }],
     isDefault: false,
   },
 ];
@@ -73,7 +78,7 @@ describe('FHIRBadge', () => {
     render(
       <TestWrapper>
         <FHIRBadge resourceType="Patient" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Patient')).toBeInTheDocument();
   });
@@ -82,18 +87,27 @@ describe('FHIRBadge', () => {
     render(
       <TestWrapper>
         <FHIRBadge resourceType="Observation" />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Observation')).toBeInTheDocument();
   });
 
   it('renders all common FHIR resource types without crashing', () => {
-    const types: FHIRResourceType[] = ['Patient', 'Observation', 'MedicationRequest', 'Condition', 'DiagnosticReport', 'Immunization', 'Procedure', 'AllergyIntolerance'];
+    const types: FHIRResourceType[] = [
+      'Patient',
+      'Observation',
+      'MedicationRequest',
+      'Condition',
+      'DiagnosticReport',
+      'Immunization',
+      'Procedure',
+      'AllergyIntolerance',
+    ];
     types.forEach((type) => {
       const { unmount } = render(
         <TestWrapper>
           <FHIRBadge resourceType={type} />
-        </TestWrapper>
+        </TestWrapper>,
       );
       unmount();
     });
@@ -109,7 +123,7 @@ describe('ResourceViewer', () => {
     render(
       <TestWrapper>
         <ResourceViewer resource={mockResource} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Patient')).toBeInTheDocument();
   });
@@ -118,7 +132,7 @@ describe('ResourceViewer', () => {
     render(
       <TestWrapper>
         <ResourceViewer resource={mockResource} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('res-001')).toBeInTheDocument();
   });
@@ -127,7 +141,7 @@ describe('ResourceViewer', () => {
     render(
       <TestWrapper>
         <ResourceViewer resource={mockResource} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('active')).toBeInTheDocument();
   });
@@ -136,7 +150,7 @@ describe('ResourceViewer', () => {
     render(
       <TestWrapper>
         <ResourceViewer resource={mockResource} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Yes')).toBeInTheDocument();
   });
@@ -145,7 +159,7 @@ describe('ResourceViewer', () => {
     render(
       <TestWrapper>
         <ResourceViewer resource={mockUnmappedResource} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('No')).toBeInTheDocument();
   });
@@ -154,7 +168,7 @@ describe('ResourceViewer', () => {
     render(
       <TestWrapper>
         <ResourceViewer resource={mockResource} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Show Raw FHIR JSON')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Show Raw FHIR JSON'));
@@ -173,7 +187,7 @@ describe('MappingTable', () => {
     render(
       <TestWrapper>
         <MappingTable mappings={mockMappings} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('FHIR to Shiora Mappings')).toBeInTheDocument();
   });
@@ -182,7 +196,7 @@ describe('MappingTable', () => {
     render(
       <TestWrapper>
         <MappingTable mappings={mockMappings} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('2 resource type mappings configured')).toBeInTheDocument();
   });
@@ -191,7 +205,7 @@ describe('MappingTable', () => {
     render(
       <TestWrapper>
         <MappingTable mappings={mockMappings} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('FHIR Type')).toBeInTheDocument();
     expect(screen.getByText('Shiora Type')).toBeInTheDocument();
@@ -203,7 +217,7 @@ describe('MappingTable', () => {
     render(
       <TestWrapper>
         <MappingTable mappings={mockMappings} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('2 fields')).toBeInTheDocument();
     expect(screen.getByText('1 fields')).toBeInTheDocument();
@@ -219,7 +233,7 @@ describe('ImportWizard', () => {
     render(
       <TestWrapper>
         <ImportWizard onImport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Import FHIR Resources')).toBeInTheDocument();
   });
@@ -228,7 +242,7 @@ describe('ImportWizard', () => {
     render(
       <TestWrapper>
         <ImportWizard onImport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Source')).toBeInTheDocument();
     expect(screen.getByText('Preview')).toBeInTheDocument();
@@ -239,7 +253,7 @@ describe('ImportWizard', () => {
     render(
       <TestWrapper>
         <ImportWizard onImport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByPlaceholderText(/Paste FHIR Bundle JSON/)).toBeInTheDocument();
   });
@@ -248,7 +262,7 @@ describe('ImportWizard', () => {
     render(
       <TestWrapper>
         <ImportWizard onImport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByPlaceholderText(/https:\/\/fhir.example.com/)).toBeInTheDocument();
   });
@@ -257,7 +271,7 @@ describe('ImportWizard', () => {
     render(
       <TestWrapper>
         <ImportWizard onImport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Preview Resources')).toBeDisabled();
   });
@@ -266,7 +280,7 @@ describe('ImportWizard', () => {
     render(
       <TestWrapper>
         <ImportWizard onImport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.change(screen.getByPlaceholderText(/Paste FHIR Bundle JSON/), {
       target: { value: '{"resourceType":"Bundle"}' },
@@ -278,7 +292,7 @@ describe('ImportWizard', () => {
     render(
       <TestWrapper>
         <ImportWizard onImport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.change(screen.getByPlaceholderText(/Paste FHIR Bundle JSON/), {
       target: { value: '{"resourceType":"Bundle"}' },
@@ -291,7 +305,7 @@ describe('ImportWizard', () => {
     render(
       <TestWrapper>
         <ImportWizard onImport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.change(screen.getByPlaceholderText(/Paste FHIR Bundle JSON/), {
       target: { value: '{"resourceType":"Bundle"}' },
@@ -306,7 +320,7 @@ describe('ImportWizard', () => {
     render(
       <TestWrapper>
         <ImportWizard onImport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.change(screen.getByPlaceholderText(/Paste FHIR Bundle JSON/), {
       target: { value: '{"resourceType":"Bundle"}' },
@@ -320,7 +334,7 @@ describe('ImportWizard', () => {
     render(
       <TestWrapper>
         <ImportWizard onImport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.change(screen.getByPlaceholderText(/Paste FHIR Bundle JSON/), {
       target: { value: '{"resourceType":"Bundle"}' },
@@ -339,7 +353,7 @@ describe('ImportWizard', () => {
     render(
       <TestWrapper>
         <ImportWizard onImport={onImport} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.change(screen.getByPlaceholderText(/Paste FHIR Bundle JSON/), {
       target: { value: '{"resourceType":"Bundle"}' },
@@ -354,7 +368,7 @@ describe('ImportWizard', () => {
     render(
       <TestWrapper>
         <ImportWizard onImport={jest.fn()} isLoading={true} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.change(screen.getByPlaceholderText(/Paste FHIR Bundle JSON/), {
       target: { value: '{"resourceType":"Bundle"}' },
@@ -368,7 +382,7 @@ describe('ImportWizard', () => {
     render(
       <TestWrapper>
         <ImportWizard onImport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.change(screen.getByPlaceholderText(/https:\/\/fhir.example.com/), {
       target: { value: 'https://fhir.server.com/api' },
@@ -386,7 +400,7 @@ describe('ExportConfigPanel', () => {
     render(
       <TestWrapper>
         <ExportConfigPanel onExport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Export FHIR Resources')).toBeInTheDocument();
   });
@@ -395,7 +409,7 @@ describe('ExportConfigPanel', () => {
     render(
       <TestWrapper>
         <ExportConfigPanel onExport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Rendered in lowercase (CSS uppercase is visual only)
     expect(screen.getByText('json')).toBeInTheDocument();
@@ -406,7 +420,7 @@ describe('ExportConfigPanel', () => {
     render(
       <TestWrapper>
         <ExportConfigPanel onExport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Resource Types')).toBeInTheDocument();
     // Multiple FHIR resource type labels should appear
@@ -417,7 +431,7 @@ describe('ExportConfigPanel', () => {
     render(
       <TestWrapper>
         <ExportConfigPanel onExport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Destination')).toBeInTheDocument();
     expect(screen.getByRole('combobox')).toBeInTheDocument();
@@ -427,7 +441,7 @@ describe('ExportConfigPanel', () => {
     render(
       <TestWrapper>
         <ExportConfigPanel onExport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Export Resources')).toBeInTheDocument();
   });
@@ -437,7 +451,7 @@ describe('ExportConfigPanel', () => {
     render(
       <TestWrapper>
         <ExportConfigPanel onExport={onExport} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Export Resources'));
     expect(onExport).toHaveBeenCalled();
@@ -447,7 +461,7 @@ describe('ExportConfigPanel', () => {
     render(
       <TestWrapper>
         <ExportConfigPanel onExport={jest.fn()} isLoading />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Exporting...')).toBeInTheDocument();
   });
@@ -456,12 +470,12 @@ describe('ExportConfigPanel', () => {
     render(
       <TestWrapper>
         <ExportConfigPanel onExport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Click on a resource type button to toggle it
     const buttons = screen.getAllByRole('button');
     // Patient should be initially selected - click to deselect
-    const patientBtn = buttons.find(b => b.textContent === 'Patient');
+    const patientBtn = buttons.find((b) => b.textContent === 'Patient');
     if (patientBtn) fireEvent.click(patientBtn);
     // Click again to reselect
     if (patientBtn) fireEvent.click(patientBtn);
@@ -471,7 +485,7 @@ describe('ExportConfigPanel', () => {
     render(
       <TestWrapper>
         <ExportConfigPanel onExport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('xml'));
     // xml should now be selected (brand-600 style)
@@ -482,7 +496,7 @@ describe('ExportConfigPanel', () => {
     render(
       <TestWrapper>
         <ExportConfigPanel onExport={jest.fn()} isLoading={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const select = screen.getByRole('combobox');
     fireEvent.change(select, { target: { value: 'Epic MyChart' } });

@@ -2,11 +2,27 @@
 
 import React from 'react';
 import {
-  Shield, ShieldCheck, ShieldX, Loader2, Lock,
-  CheckCircle, XCircle, Clock, Hash, Layers,
-  Eye, EyeOff, Fingerprint, Brain, Heart,
-  Pill, BarChart3, UserCheck, Calendar,
-  AlertTriangle, Zap,
+  Shield,
+  ShieldCheck,
+  ShieldX,
+  Loader2,
+  Lock,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Hash,
+  Layers,
+  Eye,
+  EyeOff,
+  Fingerprint,
+  Brain,
+  Heart,
+  Pill,
+  BarChart3,
+  UserCheck,
+  Calendar,
+  AlertTriangle,
+  Zap,
 } from 'lucide-react';
 
 import type { ZKClaim, ZKClaimType, ZKProof } from '@/types';
@@ -63,7 +79,10 @@ const CLAIM_TYPE_EXPLAINERS: Record<ZKClaimType, { proves: string; hides: string
   },
 };
 
-const STATUS_CONFIG: Record<string, { badge: 'success' | 'warning' | 'error' | 'info' | 'neutral'; label: string }> = {
+const STATUS_CONFIG: Record<
+  string,
+  { badge: 'success' | 'warning' | 'error' | 'info' | 'neutral'; label: string }
+> = {
   verified: { badge: 'success', label: 'Verified' },
   proving: { badge: 'info', label: 'Proving' },
   unproven: { badge: 'neutral', label: 'Unproven' },
@@ -82,14 +101,15 @@ interface ProofGeneratorProps {
 }
 
 export function ProofGenerator({ claimType, onGenerate, isLoading }: ProofGeneratorProps) {
-  const estimatedGas = {
-    age_range: '~85,000',
-    condition_present: '~120,000',
-    medication_active: '~95,000',
-    data_quality: '~72,000',
-    provider_verified: '~105,000',
-    fertility_window: '~110,000',
-  }[claimType] ??
+  const estimatedGas =
+    {
+      age_range: '~85,000',
+      condition_present: '~120,000',
+      medication_active: '~95,000',
+      data_quality: '~72,000',
+      provider_verified: '~105,000',
+      fertility_window: '~110,000',
+    }[claimType] ??
     /* istanbul ignore next -- claimType always found in gas map */
     '~100,000';
 
@@ -100,12 +120,8 @@ export function ProofGenerator({ claimType, onGenerate, isLoading }: ProofGenera
           {CLAIM_TYPE_ICONS[claimType]}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-slate-900">
-            {CLAIM_TYPE_LABELS[claimType]}
-          </h3>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {CLAIM_TYPE_EXPLAINERS[claimType].proves}
-          </p>
+          <h3 className="text-sm font-semibold text-slate-900">{CLAIM_TYPE_LABELS[claimType]}</h3>
+          <p className="text-xs text-slate-500 mt-0.5">{CLAIM_TYPE_EXPLAINERS[claimType].proves}</p>
         </div>
       </div>
 
@@ -177,7 +193,9 @@ export function ProofVerifier({ proof }: ProofVerifierProps) {
         <div className="flex items-center gap-2 text-xs">
           <Hash className="w-3.5 h-3.5 text-slate-400" />
           <span className="text-slate-500">Proof Hash:</span>
-          <span className="font-mono text-slate-700">{truncateAddress(proof.proofHash, 10, 6)}</span>
+          <span className="font-mono text-slate-700">
+            {truncateAddress(proof.proofHash, 10, 6)}
+          </span>
         </div>
         <div className="flex items-start gap-2 text-xs">
           <Eye className="w-3.5 h-3.5 text-slate-400 mt-0.5" />
@@ -227,19 +245,19 @@ export function ClaimBadge({ claim }: ClaimBadgeProps) {
 
   return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-slate-200 text-xs">
-      <span className="text-violet-600">
-        {CLAIM_TYPE_ICONS[claim.claimType]}
-      </span>
-      <span className="font-medium text-slate-700">
-        {CLAIM_TYPE_LABELS[claim.claimType]}
-      </span>
+      <span className="text-violet-600">{CLAIM_TYPE_ICONS[claim.claimType]}</span>
+      <span className="font-medium text-slate-700">{CLAIM_TYPE_LABELS[claim.claimType]}</span>
       <span
         className={`w-1.5 h-1.5 rounded-full ${
-          claim.status === 'verified' ? 'bg-emerald-500' :
-          claim.status === 'proving' ? 'bg-brand-500 animate-pulse' :
-          claim.status === 'failed' ? 'bg-red-500' :
-          claim.status === 'expired' ? 'bg-amber-500' :
-          'bg-slate-400'
+          claim.status === 'verified'
+            ? 'bg-emerald-500'
+            : claim.status === 'proving'
+              ? 'bg-brand-500 animate-pulse'
+              : claim.status === 'failed'
+                ? 'bg-red-500'
+                : claim.status === 'expired'
+                  ? 'bg-amber-500'
+                  : 'bg-slate-400'
         }`}
       />
     </span>
@@ -264,9 +282,7 @@ export function ZKPExplainer({ claimType }: ZKPExplainerProps) {
           <Lock className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-slate-900 mb-2">
-            How This ZK Proof Works
-          </h3>
+          <h3 className="text-sm font-semibold text-slate-900 mb-2">How This ZK Proof Works</h3>
 
           <div className="space-y-3">
             <div className="flex items-start gap-2">
@@ -294,8 +310,8 @@ export function ZKPExplainer({ claimType }: ZKPExplainerProps) {
             <div className="flex items-start gap-2">
               <Shield className="w-3.5 h-3.5 text-brand-600 mt-0.5 shrink-0" />
               <p className="text-2xs text-slate-500">
-                ZK proofs are generated inside a TEE enclave and verified on the Aethelred blockchain.
-                Your private data never leaves the enclave.
+                ZK proofs are generated inside a TEE enclave and verified on the Aethelred
+                blockchain. Your private data never leaves the enclave.
               </p>
             </div>
           </div>
@@ -356,9 +372,7 @@ export function ZKPDashboard({ claims, proofs }: ZKPDashboardProps) {
           {Object.entries(typeBreakdown).map(([type, count]) => (
             <div key={type} className="flex items-center justify-between py-1.5">
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-violet-600">
-                  {CLAIM_TYPE_ICONS[type as ZKClaimType]}
-                </span>
+                <span className="text-violet-600">{CLAIM_TYPE_ICONS[type as ZKClaimType]}</span>
                 <span className="text-slate-700">
                   {CLAIM_TYPE_LABELS[type as ZKClaimType] ??
                     /* istanbul ignore next -- type always in CLAIM_TYPE_LABELS */
@@ -376,7 +390,10 @@ export function ZKPDashboard({ claims, proofs }: ZKPDashboardProps) {
         <h3 className="text-sm font-semibold text-slate-900 mb-3">Recent Proofs</h3>
         <div className="space-y-3">
           {recentProofs.map((proof) => (
-            <div key={proof.id} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+            <div
+              key={proof.id}
+              className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0"
+            >
               <div className="flex items-center gap-2">
                 {proof.verified ? (
                   <CheckCircle className="w-4 h-4 text-emerald-500" />
@@ -387,9 +404,7 @@ export function ZKPDashboard({ claims, proofs }: ZKPDashboardProps) {
                   <p className="text-xs font-medium text-slate-700">
                     {CLAIM_TYPE_LABELS[proof.claimType]}
                   </p>
-                  <p className="text-2xs text-slate-400">
-                    {timeAgo(proof.createdAt)}
-                  </p>
+                  <p className="text-2xs text-slate-400">{timeAgo(proof.createdAt)}</p>
                 </div>
               </div>
               <Badge variant={proof.verified ? 'success' : 'info'}>

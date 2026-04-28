@@ -9,14 +9,37 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Watch, RefreshCw, Activity, Database,
-  ShieldCheck, Clock, CheckCircle, AlertTriangle,
-  XCircle, Apple, CircleDot, Zap, Compass,
+  Watch,
+  RefreshCw,
+  Activity,
+  Database,
+  ShieldCheck,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  Apple,
+  CircleDot,
+  Zap,
+  Compass,
 } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
-import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, Tabs, Modal } from '@/components/ui/SharedComponents';
-import { MedicalCard, SectionHeader, StatusBadge, HealthMetricCard } from '@/components/ui/PagePrimitives';
+import {
+  TopNav,
+  Footer,
+  ToastContainer,
+  SearchOverlay,
+  Badge,
+  Tabs,
+  Modal,
+} from '@/components/ui/SharedComponents';
+import {
+  MedicalCard,
+  SectionHeader,
+  StatusBadge,
+  HealthMetricCard,
+} from '@/components/ui/PagePrimitives';
 import {
   DeviceCard,
   WearableChart,
@@ -79,7 +102,6 @@ export default function WearablesPage() {
 
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-
           {/* ---- Header ---- */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
@@ -124,7 +146,9 @@ export default function WearablesPage() {
             <HealthMetricCard
               icon={<ShieldCheck className="w-5 h-5" />}
               label="TEE Attestations"
-              value={wearables.syncBatches.filter((b) => b.status === 'completed').length.toString()}
+              value={wearables.syncBatches
+                .filter((b) => b.status === 'completed')
+                .length.toString()}
               unit="verified syncs"
               sparklineData={[5, 6, 7, 7, 8, 9, 9, 10]}
               sparklineColor="#10b981"
@@ -132,14 +156,22 @@ export default function WearablesPage() {
             <HealthMetricCard
               icon={<Clock className="w-5 h-5" />}
               label="Last Sync"
-              value={connectedDevices.length > 0 ? timeAgo(Math.max(...connectedDevices.map((d) => d.lastSync))) : 'N/A'}
+              value={
+                connectedDevices.length > 0
+                  ? timeAgo(Math.max(...connectedDevices.map((d) => d.lastSync)))
+                  : 'N/A'
+              }
               sparklineData={[0, 1, 1, 2, 2, 3, 3, 1]}
               sparklineColor="#fb923c"
             />
           </div>
 
           {/* ---- Device Grid ---- */}
-          <SectionHeader title="Devices" subtitle="Connect and manage your wearable devices" size="sm" />
+          <SectionHeader
+            title="Devices"
+            subtitle="Connect and manage your wearable devices"
+            size="sm"
+          />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-10">
             {wearables.devices.map((device) => (
               <DeviceCard
@@ -156,7 +188,11 @@ export default function WearablesPage() {
           {/* ---- Data Visualization ---- */}
           {connectedDevices.length > 0 && (
             <>
-              <SectionHeader title="Data Visualization" subtitle="Health metrics from connected devices" size="sm" />
+              <SectionHeader
+                title="Data Visualization"
+                subtitle="Health metrics from connected devices"
+                size="sm"
+              />
 
               {/* Metric selector */}
               <div className="flex flex-wrap gap-2 mb-6">
@@ -180,9 +216,11 @@ export default function WearablesPage() {
                 <WearableChart
                   dataPoints={wearables.dataPoints}
                   metric={wearables.selectedMetric}
-                  color={METRIC_COLORS[wearables.selectedMetric] ??
+                  color={
+                    METRIC_COLORS[wearables.selectedMetric] ??
                     /* istanbul ignore next -- selectedMetric always in METRIC_COLORS */
-                    BRAND.sky}
+                    BRAND.sky
+                  }
                 />
               </div>
 
@@ -194,17 +232,31 @@ export default function WearablesPage() {
           )}
 
           {/* ---- Sync History ---- */}
-          <SectionHeader title="Sync History" subtitle="Recent device synchronization batches" size="sm" />
+          <SectionHeader
+            title="Sync History"
+            subtitle="Recent device synchronization batches"
+            size="sm"
+          />
           <MedicalCard padding={false}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100">
-                    <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Device</th>
-                    <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Data Points</th>
-                    <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
-                    <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">TEE Attestation</th>
-                    <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Synced</th>
+                    <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                      Device
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                      Data Points
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                      Status
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                      TEE Attestation
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                      Synced
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -225,15 +277,21 @@ export default function WearablesPage() {
                                 {providerMeta.name.charAt(0)}
                               </div>
                             )}
-                            <span className="text-slate-700">{providerMeta?.name ?? 'Unknown'}</span>
+                            <span className="text-slate-700">
+                              {providerMeta?.name ?? 'Unknown'}
+                            </span>
                           </div>
                         </td>
-                        <td className="px-5 py-3 font-medium text-slate-900">{batch.dataPointCount}</td>
+                        <td className="px-5 py-3 font-medium text-slate-900">
+                          {batch.dataPointCount}
+                        </td>
                         <td className="px-5 py-3">
                           <StatusBadge status={batch.status} styles={EXTENDED_STATUS_STYLES} />
                         </td>
                         <td className="px-5 py-3">
-                          <code className="text-xs text-slate-500 font-mono">{truncateAddress(batch.attestation, 8, 6)}</code>
+                          <code className="text-xs text-slate-500 font-mono">
+                            {truncateAddress(batch.attestation, 8, 6)}
+                          </code>
                         </td>
                         <td className="px-5 py-3 text-slate-500">{timeAgo(batch.syncedAt)}</td>
                       </tr>
@@ -243,7 +301,6 @@ export default function WearablesPage() {
               </table>
             </div>
           </MedicalCard>
-
         </div>
       </main>
 

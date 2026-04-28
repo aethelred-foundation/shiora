@@ -36,7 +36,14 @@ jest.mock('@/contexts/AppContext', () => {
 
 const defaultDisconnectedApp = {
   wallet: { connected: false, address: '', balance: 0, aethelBalance: 0 },
-  realTime: { blockHeight: 100000, tps: 1200, epoch: 42, networkLoad: 65, activeValidators: 150, stakedPercentage: 72 },
+  realTime: {
+    blockHeight: 100000,
+    tps: 1200,
+    epoch: 42,
+    networkLoad: 65,
+    activeValidators: 150,
+    stakedPercentage: 72,
+  },
   notifications: [],
   addNotification: jest.fn(),
   removeNotification: jest.fn(),
@@ -48,7 +55,12 @@ const defaultDisconnectedApp = {
 
 const defaultConnectedApp = {
   ...defaultDisconnectedApp,
-  wallet: { connected: true, address: 'aeth1abcdef1234567890abcdef1234567890abcdef', balance: 1000, aethelBalance: 500.5 },
+  wallet: {
+    connected: true,
+    address: 'aeth1abcdef1234567890abcdef1234567890abcdef',
+    balance: 1000,
+    aethelBalance: 500.5,
+  },
 };
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
@@ -70,7 +82,7 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Connect Wallet')).toBeInTheDocument();
   });
@@ -79,17 +91,19 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
-    expect(screen.getByText('Choose your preferred wallet to connect to Shiora')).toBeInTheDocument();
+    expect(
+      screen.getByText('Choose your preferred wallet to connect to Shiora'),
+    ).toBeInTheDocument();
   });
 
   it('shows wallet options in connect modal', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     expect(screen.getByText('Keplr')).toBeInTheDocument();
@@ -100,7 +114,7 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     expect(screen.getByText('Mainnet')).toBeInTheDocument();
@@ -111,7 +125,7 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     fireEvent.click(screen.getByText('Testnet'));
@@ -122,7 +136,7 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     fireEvent.click(screen.getByText('Testnet'));
@@ -134,7 +148,7 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     expect(screen.getByText('Aethelred Mainnet')).toBeInTheDocument();
@@ -144,7 +158,7 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     const descriptions = screen.getAllByText('Cosmos ecosystem wallet');
@@ -155,19 +169,21 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     expect(screen.getByText('Keplr')).toBeInTheDocument();
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByText('Choose your preferred wallet to connect to Shiora')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Choose your preferred wallet to connect to Shiora'),
+    ).not.toBeInTheDocument();
   });
 
   it('attempts to connect when Keplr is clicked', async () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     fireEvent.click(screen.getByText('Keplr'));
@@ -178,7 +194,7 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     fireEvent.click(screen.getByText('Leap'));
@@ -192,7 +208,7 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     await act(async () => {
@@ -208,7 +224,7 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     await act(async () => {
@@ -226,7 +242,7 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     expect(screen.getByText('Wallet extension not found')).toBeInTheDocument();
@@ -238,7 +254,7 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     fireEvent.click(screen.getByText('Testnet'));
@@ -253,7 +269,7 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     await act(async () => {
@@ -261,7 +277,9 @@ describe('WalletConnect - disconnected state', () => {
     });
     // Modal should close after connect succeeds
     await waitFor(() => {
-      expect(screen.queryByText('Choose your preferred wallet to connect to Shiora')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Choose your preferred wallet to connect to Shiora'),
+      ).not.toBeInTheDocument();
     });
   });
 });
@@ -319,7 +337,9 @@ describe('WalletConnect - connected state', () => {
   it('opens sign message modal', () => {
     render(<WalletConnect />);
     fireEvent.click(screen.getByText('Sign Message'));
-    expect(screen.getByText('Sign a message with your wallet to prove ownership')).toBeInTheDocument();
+    expect(
+      screen.getByText('Sign a message with your wallet to prove ownership'),
+    ).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Enter message to sign...')).toBeInTheDocument();
   });
 
@@ -385,7 +405,11 @@ describe('WalletConnect - connected state', () => {
   it('shows Signing... state while signing', async () => {
     // Make signMessage hang so we can capture the signing state
     let resolveSign!: (value: { signature: string }) => void;
-    mockSignMessage.mockReturnValue(new Promise((resolve) => { resolveSign = resolve; }));
+    mockSignMessage.mockReturnValue(
+      new Promise((resolve) => {
+        resolveSign = resolve;
+      }),
+    );
 
     render(<WalletConnect />);
     fireEvent.click(screen.getByText('Sign Message'));
@@ -419,7 +443,7 @@ describe('WalletConnect — loading state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
 

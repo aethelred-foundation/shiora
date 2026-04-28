@@ -3,11 +3,7 @@
 import { useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
-import type {
-  RewardEntry,
-  RewardStreak,
-  RewardStats,
-} from '@/types';
+import type { RewardEntry, RewardStreak, RewardStats } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Query keys
@@ -75,8 +71,7 @@ export function useRewards(): UseRewardsReturn {
 
   const dailyEarningsQuery = useQuery({
     queryKey: [DAILY_EARNINGS_KEY],
-    queryFn: () =>
-      api.get<{ day: string; earned: number }[]>('/api/rewards/history'),
+    queryFn: () => api.get<{ day: string; earned: number }[]>('/api/rewards/history'),
     staleTime: 30_000,
   });
 
@@ -91,10 +86,7 @@ export function useRewards(): UseRewardsReturn {
   const rewards = useMemo(() => rewardsQuery.data ?? [], [rewardsQuery.data]);
   const streaks = streaksQuery.data ?? [];
 
-  const recentRewards = useMemo(
-    () => rewards.filter((r) => !r.claimedAt).slice(0, 5),
-    [rewards],
-  );
+  const recentRewards = useMemo(() => rewards.filter((r) => !r.claimedAt).slice(0, 5), [rewards]);
 
   const dailyEarnings = dailyEarningsQuery.data ?? [];
 

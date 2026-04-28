@@ -10,10 +10,26 @@
 
 import React, { useState } from 'react';
 import {
-  Heart, Phone, Mail, Shield, ShieldCheck,
-  AlertTriangle, AlertOctagon, CheckCircle, ChevronDown, ChevronRight,
-  Clock, User, Building2, Activity, Pill, Siren,
-  ArrowRight, Star, QrCode, FileHeart,
+  Heart,
+  Phone,
+  Mail,
+  Shield,
+  ShieldCheck,
+  AlertTriangle,
+  AlertOctagon,
+  CheckCircle,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  User,
+  Building2,
+  Activity,
+  Pill,
+  Siren,
+  ArrowRight,
+  Star,
+  QrCode,
+  FileHeart,
 } from 'lucide-react';
 
 import { MedicalCard, TEEBadge, TruncatedHash } from '@/components/ui/PagePrimitives';
@@ -47,13 +63,20 @@ const ESI_COLORS: Record<number, { bg: string; text: string; ring: string; label
   2: { bg: 'bg-orange-50', text: 'text-orange-700', ring: 'ring-orange-200', label: 'Emergent' },
   3: { bg: 'bg-yellow-50', text: 'text-yellow-700', ring: 'ring-yellow-200', label: 'Urgent' },
   4: { bg: 'bg-cyan-50', text: 'text-cyan-700', ring: 'ring-cyan-200', label: 'Less Urgent' },
-  5: { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200', label: 'Non-Urgent' },
+  5: {
+    bg: 'bg-emerald-50',
+    text: 'text-emerald-700',
+    ring: 'ring-emerald-200',
+    label: 'Non-Urgent',
+  },
 };
 
 export function ESILevelBadge({ level }: { level: number }) {
   const style = ESI_COLORS[level] ?? ESI_COLORS[5];
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ring-1 ring-inset ${style.bg} ${style.text} ${style.ring}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ring-1 ring-inset ${style.bg} ${style.text} ${style.ring}`}
+    >
       ESI {level} — {style.label}
     </span>
   );
@@ -75,27 +98,41 @@ export function EmergencyInfoCard({ card }: { card: EmergencyCard }) {
             </div>
             <div>
               <h3 className="text-lg font-semibold text-slate-900">Emergency Information Card</h3>
-              <p className="text-xs text-slate-500">Critical medical information for first responders</p>
+              <p className="text-xs text-slate-500">
+                Critical medical information for first responders
+              </p>
             </div>
           </div>
-          <Badge variant="error" dot>Emergency</Badge>
+          <Badge variant="error" dot>
+            Emergency
+          </Badge>
         </div>
 
         {/* Blood Type — large display */}
         <div className="flex items-center gap-6 mb-6">
           <div className="text-center p-4 bg-red-50 rounded-2xl border border-red-100 min-w-[100px]">
-            <p className="text-xs font-medium text-red-600 uppercase tracking-wider mb-1">Blood Type</p>
+            <p className="text-xs font-medium text-red-600 uppercase tracking-wider mb-1">
+              Blood Type
+            </p>
             <p className="text-4xl font-bold text-red-700">{card.bloodType}</p>
           </div>
 
           <div className="flex-1 grid grid-cols-2 gap-3">
             <div className="p-3 bg-slate-50 rounded-xl">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Organ Donor</p>
-              <p className="text-sm font-semibold text-slate-900">{card.organDonor ? 'Yes' : 'No'}</p>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">
+                Organ Donor
+              </p>
+              <p className="text-sm font-semibold text-slate-900">
+                {card.organDonor ? 'Yes' : 'No'}
+              </p>
             </div>
             <div className="p-3 bg-slate-50 rounded-xl">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Insurance</p>
-              <p className="text-sm font-semibold text-slate-900 truncate">{card.insuranceInfo.split('—')[0].trim()}</p>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">
+                Insurance
+              </p>
+              <p className="text-sm font-semibold text-slate-900 truncate">
+                {card.insuranceInfo.split('—')[0].trim()}
+              </p>
             </div>
           </div>
         </div>
@@ -108,7 +145,10 @@ export function EmergencyInfoCard({ card }: { card: EmergencyCard }) {
           </p>
           <div className="flex flex-wrap gap-2">
             {card.allergies.map((allergy, i) => (
-              <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-200">
+              <span
+                key={i}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-200"
+              >
                 <AlertTriangle className="w-3 h-3" />
                 {allergy}
               </span>
@@ -124,7 +164,10 @@ export function EmergencyInfoCard({ card }: { card: EmergencyCard }) {
           </p>
           <div className="flex flex-wrap gap-2">
             {card.conditions.map((condition, i) => (
-              <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200">
+              <span
+                key={i}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200"
+              >
                 {condition}
               </span>
             ))}
@@ -141,9 +184,15 @@ export function EmergencyInfoCard({ card }: { card: EmergencyCard }) {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
-                  <th className="py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Dosage</th>
-                  <th className="py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Frequency</th>
+                  <th className="py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Dosage
+                  </th>
+                  <th className="py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Frequency
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -170,7 +219,9 @@ export function EmergencyInfoCard({ card }: { card: EmergencyCard }) {
 
         {/* Primary Physician */}
         <div className="mb-5 p-3 bg-slate-50 rounded-xl">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Primary Physician</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+            Primary Physician
+          </p>
           <p className="text-sm font-medium text-slate-900">{card.primaryPhysician}</p>
         </div>
 
@@ -254,9 +305,11 @@ export function CareTeamMemberCard({ member }: { member: CareTeamMember }) {
     <MedicalCard>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-            member.isActive ? 'bg-brand-50 text-brand-600' : 'bg-slate-100 text-slate-400'
-          }`}>
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+              member.isActive ? 'bg-brand-50 text-brand-600' : 'bg-slate-100 text-slate-400'
+            }`}
+          >
             <User className="w-5 h-5" />
           </div>
           <div>
@@ -296,7 +349,9 @@ export function CareTeamMemberCard({ member }: { member: CareTeamMember }) {
         <span className="text-xs text-slate-400">
           Last interaction: {timeAgo(member.lastInteraction)}
         </span>
-        <span className={`text-xs font-medium ${member.isActive ? 'text-emerald-600' : 'text-slate-400'}`}>
+        <span
+          className={`text-xs font-medium ${member.isActive ? 'text-emerald-600' : 'text-slate-400'}`}
+        >
           {member.isActive ? 'Active' : 'Inactive'}
         </span>
       </div>
@@ -322,10 +377,16 @@ export function ProtocolAccordion({ protocol }: { protocol: EmergencyProtocol })
         className="w-full text-left flex items-center justify-between"
       >
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-            isCritical ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'
-          }`}>
-            {isCritical ? <AlertOctagon className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+              isCritical ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'
+            }`}
+          >
+            {isCritical ? (
+              <AlertOctagon className="w-5 h-5" />
+            ) : (
+              <AlertTriangle className="w-5 h-5" />
+            )}
           </div>
           <div>
             <h4 className="text-sm font-semibold text-slate-900">{protocol.name}</h4>
@@ -348,11 +409,14 @@ export function ProtocolAccordion({ protocol }: { protocol: EmergencyProtocol })
           <ol className="space-y-3">
             {protocol.steps.map((step) => (
               <li key={step.order} className="flex gap-3">
-                <span className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                  isCritical ? 'bg-red-500' :
-                  /* istanbul ignore next -- isCritical is always true in test data */
-                  'bg-amber-500'
-                }`}>
+                <span
+                  className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
+                    isCritical
+                      ? 'bg-red-500'
+                      : /* istanbul ignore next -- isCritical is always true in test data */
+                        'bg-amber-500'
+                  }`}
+                >
                   {step.order}
                 </span>
                 <div className="flex-1">
@@ -413,9 +477,12 @@ export function TriageResult({ assessment }: { assessment: TriageAssessment }) {
         <div className="flex items-center gap-3">
           <div
             className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg font-bold"
-            style={{ backgroundColor: triageLevel?.color ??
-              /* istanbul ignore next -- triageLevel always found for valid ESI levels */
-              '#94a3b8' }}
+            style={{
+              backgroundColor:
+                triageLevel?.color ??
+                /* istanbul ignore next -- triageLevel always found for valid ESI levels */
+                '#94a3b8',
+            }}
           >
             {assessment.esiLevel}
           </div>
@@ -429,10 +496,15 @@ export function TriageResult({ assessment }: { assessment: TriageAssessment }) {
 
       {/* Symptoms */}
       <div className="mb-4">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Reported Symptoms</p>
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+          Reported Symptoms
+        </p>
         <div className="flex flex-wrap gap-1.5">
           {assessment.symptoms.map((symptom, i) => (
-            <span key={i} className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+            <span
+              key={i}
+              className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700"
+            >
               {symptom}
             </span>
           ))}
@@ -441,11 +513,15 @@ export function TriageResult({ assessment }: { assessment: TriageAssessment }) {
 
       {/* Vital Signs */}
       <div className="mb-4">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Vital Signs</p>
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+          Vital Signs
+        </p>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           {Object.entries(assessment.vitalSigns).map(([key, value]) => (
             <div key={key} className="p-2 bg-slate-50 rounded-lg text-center">
-              <p className="text-xs text-slate-400 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</p>
+              <p className="text-xs text-slate-400 capitalize">
+                {key.replace(/([A-Z])/g, ' $1').trim()}
+              </p>
               <p className="text-sm font-semibold text-slate-900">
                 {typeof value === 'number' ? value.toFixed(value % 1 === 0 ? 0 : 1) : value}
               </p>
@@ -456,13 +532,19 @@ export function TriageResult({ assessment }: { assessment: TriageAssessment }) {
 
       {/* Disposition */}
       <div className="mb-4 p-3 bg-brand-50 rounded-xl">
-        <p className="text-xs font-semibold text-brand-600 uppercase tracking-wider mb-1">Disposition Recommendation</p>
-        <p className="text-sm font-semibold text-brand-800 capitalize">{assessment.disposition.replace(/_/g, ' ')}</p>
+        <p className="text-xs font-semibold text-brand-600 uppercase tracking-wider mb-1">
+          Disposition Recommendation
+        </p>
+        <p className="text-sm font-semibold text-brand-800 capitalize">
+          {assessment.disposition.replace(/_/g, ' ')}
+        </p>
       </div>
 
       {/* Reasoning */}
       <div className="mb-4">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">AI Reasoning</p>
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+          AI Reasoning
+        </p>
         <p className="text-sm text-slate-600 leading-relaxed">{assessment.reasoning}</p>
       </div>
 
@@ -474,7 +556,13 @@ export function TriageResult({ assessment }: { assessment: TriageAssessment }) {
               value={assessment.confidence}
               size={36}
               strokeWidth={3}
-              color={assessment.confidence >= 90 ? '#10b981' : assessment.confidence >= 80 ? '#eab308' : '#f43f5e'}
+              color={
+                assessment.confidence >= 90
+                  ? '#10b981'
+                  : assessment.confidence >= 80
+                    ? '#eab308'
+                    : '#f43f5e'
+              }
             >
               <span className="text-[10px] font-bold text-slate-900">{assessment.confidence}</span>
             </ProgressRing>
@@ -495,9 +583,8 @@ export function TriageResult({ assessment }: { assessment: TriageAssessment }) {
 // ============================================================
 
 export function HandoffCard({ handoff }: { handoff: CareHandoff }) {
-  const qualityColor = handoff.qualityScore >= 90 ? '#10b981'
-    : handoff.qualityScore >= 75 ? '#eab308'
-    : '#f43f5e';
+  const qualityColor =
+    handoff.qualityScore >= 90 ? '#10b981' : handoff.qualityScore >= 75 ? '#eab308' : '#f43f5e';
 
   return (
     <MedicalCard>
@@ -518,14 +605,18 @@ export function HandoffCard({ handoff }: { handoff: CareHandoff }) {
 
       {/* Patient summary */}
       <div className="mb-4">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Patient Summary</p>
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+          Patient Summary
+        </p>
         <p className="text-sm text-slate-600 leading-relaxed">{handoff.patientSummary}</p>
       </div>
 
       {/* Outstanding Issues */}
       {handoff.outstandingIssues.length > 0 && (
         <div className="mb-4">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Outstanding Issues</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+            Outstanding Issues
+          </p>
           <ul className="space-y-1">
             {handoff.outstandingIssues.map((issue, i) => (
               <li key={i} className="text-xs text-slate-600 flex items-start gap-1.5">
@@ -540,10 +631,15 @@ export function HandoffCard({ handoff }: { handoff: CareHandoff }) {
       {/* Medications */}
       {handoff.medications.length > 0 && (
         <div className="mb-4">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Current Medications</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+            Current Medications
+          </p>
           <div className="flex flex-wrap gap-1.5">
             {handoff.medications.map((med, i) => (
-              <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-200">
+              <span
+                key={i}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-200"
+              >
                 <Pill className="w-3 h-3" />
                 {med}
               </span>
@@ -575,7 +671,9 @@ export function HandoffCard({ handoff }: { handoff: CareHandoff }) {
                 style={{ width: `${handoff.completenessScore}%` }}
               />
             </div>
-            <span className="text-xs font-semibold text-slate-700">{handoff.completenessScore}</span>
+            <span className="text-xs font-semibold text-slate-700">
+              {handoff.completenessScore}
+            </span>
           </div>
         </div>
       </div>

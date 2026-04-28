@@ -10,8 +10,15 @@
 
 import React, { useState } from 'react';
 import {
-  ShieldCheck, ShieldOff, Clock, AlertTriangle,
-  Plus, Search, ChevronDown, Loader2, History,
+  ShieldCheck,
+  ShieldOff,
+  Clock,
+  AlertTriangle,
+  Plus,
+  Search,
+  ChevronDown,
+  Loader2,
+  History,
   Filter,
 } from 'lucide-react';
 
@@ -32,9 +39,11 @@ import {
 // ============================================================
 
 function getScopeLabel(scopeId: string): string {
-  return CONSENT_SCOPES.find((s) => s.id === scopeId)?.label ??
+  return (
+    CONSENT_SCOPES.find((s) => s.id === scopeId)?.label ??
     /* istanbul ignore next -- scope always found for known scope IDs */
-    scopeId;
+    scopeId
+  );
 }
 
 // ============================================================
@@ -106,7 +115,8 @@ export default function ConsentTab() {
   ).length;
 
   const revokedToday = consents.filter(
-    (c) => c.status === 'revoked' && c.revokedAt && c.revokedAt >= todayMs && c.revokedAt < tomorrowMs,
+    (c) =>
+      c.status === 'revoked' && c.revokedAt && c.revokedAt >= todayMs && c.revokedAt < tomorrowMs,
   ).length;
 
   return (
@@ -165,11 +175,16 @@ export default function ConsentTab() {
           {/* Status filter dropdown */}
           <div className="relative">
             <button
-              onClick={() => { setStatusDropdownOpen(!statusDropdownOpen); setScopeDropdownOpen(false); }}
+              onClick={() => {
+                setStatusDropdownOpen(!statusDropdownOpen);
+                setScopeDropdownOpen(false);
+              }}
               className="inline-flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors"
             >
               <Filter className="w-3.5 h-3.5 text-slate-400" />
-              {statusFilter ? statusOptions.find((o) => o.value === statusFilter)?.label : 'All Statuses'}
+              {statusFilter
+                ? statusOptions.find((o) => o.value === statusFilter)?.label
+                : 'All Statuses'}
               <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
             </button>
             {statusDropdownOpen && (
@@ -179,7 +194,10 @@ export default function ConsentTab() {
                   {statusOptions.map((opt) => (
                     <button
                       key={opt.label}
-                      onClick={() => { setStatusFilter(opt.value); setStatusDropdownOpen(false); }}
+                      onClick={() => {
+                        setStatusFilter(opt.value);
+                        setStatusDropdownOpen(false);
+                      }}
                       className={`w-full text-left px-3 py-2 text-sm transition-colors ${
                         statusFilter === opt.value
                           ? 'bg-brand-50 text-brand-700'
@@ -197,7 +215,10 @@ export default function ConsentTab() {
           {/* Scope filter dropdown */}
           <div className="relative">
             <button
-              onClick={() => { setScopeDropdownOpen(!scopeDropdownOpen); setStatusDropdownOpen(false); }}
+              onClick={() => {
+                setScopeDropdownOpen(!scopeDropdownOpen);
+                setStatusDropdownOpen(false);
+              }}
               className="inline-flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors"
             >
               {scopeFilter ? getScopeLabel(scopeFilter) : 'All Scopes'}
@@ -210,7 +231,10 @@ export default function ConsentTab() {
                   {scopeOptions.map((opt) => (
                     <button
                       key={opt.label}
-                      onClick={() => { setScopeFilter(opt.value); setScopeDropdownOpen(false); }}
+                      onClick={() => {
+                        setScopeFilter(opt.value);
+                        setScopeDropdownOpen(false);
+                      }}
                       className={`w-full text-left px-3 py-2 text-sm transition-colors ${
                         scopeFilter === opt.value
                           ? 'bg-brand-50 text-brand-700'

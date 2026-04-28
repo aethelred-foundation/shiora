@@ -16,7 +16,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // "Health Records" appears in both the page heading and the nav
     expect(screen.getAllByText('Health Records').length).toBeGreaterThanOrEqual(1);
@@ -26,10 +26,10 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(
-      screen.getByText(/AES-256 encrypted, IPFS-pinned, and TEE-verified/)
+      screen.getByText(/AES-256 encrypted, IPFS-pinned, and TEE-verified/),
     ).toBeInTheDocument();
   });
 
@@ -37,7 +37,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Upload Record')).toBeInTheDocument();
   });
@@ -46,7 +46,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Total Records')).toBeInTheDocument();
     expect(screen.getByText('Encrypted')).toBeInTheDocument();
@@ -58,7 +58,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getAllByText('All').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Labs').length).toBeGreaterThanOrEqual(1);
@@ -73,7 +73,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Click on "Labs" tab
@@ -89,7 +89,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByPlaceholderText('Search records...')).toBeInTheDocument();
   });
@@ -98,7 +98,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const searchInput = screen.getByPlaceholderText('Search records...');
@@ -113,7 +113,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const gridButton = screen.getByLabelText('Grid view');
@@ -135,7 +135,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Record')).toBeInTheDocument();
     // "Provider" may appear in nav; use getAllByText
@@ -149,7 +149,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Click Date sort header
@@ -166,7 +166,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Click on the first record row in the table
@@ -184,7 +184,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/Showing \d+ of \d+ records/)).toBeInTheDocument();
   });
@@ -193,7 +193,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const searchInput = screen.getByPlaceholderText('Search records...');
@@ -206,7 +206,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const recordHeader = screen.getByText('Record').closest('th');
@@ -222,7 +222,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const sizeHeaders = screen.getAllByText('Size');
@@ -236,7 +236,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Date is the default sort field. Click it to toggle from desc to asc
@@ -252,7 +252,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Switch to grid view
@@ -270,7 +270,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Switch to grid view
@@ -287,7 +287,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Click a row to open the modal
@@ -309,7 +309,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Open the modal
@@ -326,7 +326,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     const searchInput = screen.getByPlaceholderText('Search records...');
@@ -340,7 +340,7 @@ describe('RecordsPage', () => {
     render(
       <TestWrapper>
         <RecordsPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Click on Rx tab

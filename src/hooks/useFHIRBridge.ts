@@ -51,7 +51,9 @@ export interface UseFHIRBridgeReturn {
 
   exportMutation: {
     mutate: (config: Omit<FHIRExportConfig, 'id' | 'lastExportAt'>) => void;
-    mutateAsync: (config: Omit<FHIRExportConfig, 'id' | 'lastExportAt'>) => Promise<FHIRExportConfig>;
+    mutateAsync: (
+      config: Omit<FHIRExportConfig, 'id' | 'lastExportAt'>,
+    ) => Promise<FHIRExportConfig>;
     isLoading: boolean;
     error: Error | null;
   };
@@ -99,8 +101,7 @@ export function useFHIRBridge(): UseFHIRBridgeReturn {
   // ---- Mutations ----
 
   const importMut = useMutation({
-    mutationFn: (source: string) =>
-      api.post<FHIRImportJob>('/api/fhir/import', { source }),
+    mutationFn: (source: string) => api.post<FHIRImportJob>('/api/fhir/import', { source }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [IMPORT_JOBS_KEY] });
       queryClient.invalidateQueries({ queryKey: [RESOURCES_KEY] });

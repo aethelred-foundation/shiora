@@ -126,20 +126,11 @@ export function useGenomics(): UseGenomicsReturn {
     [pharmacogenomicsQuery.data],
   );
 
-  const biomarkers = useMemo(
-    () => biomarkersQuery.data ?? [],
-    [biomarkersQuery.data],
-  );
+  const biomarkers = useMemo(() => biomarkersQuery.data ?? [], [biomarkersQuery.data]);
 
-  const riskScores = useMemo(
-    () => riskScoresQuery.data ?? [],
-    [riskScoresQuery.data],
-  );
+  const riskScores = useMemo(() => riskScoresQuery.data ?? [], [riskScoresQuery.data]);
 
-  const reports = useMemo(
-    () => reportsQuery.data ?? [],
-    [reportsQuery.data],
-  );
+  const reports = useMemo(() => reportsQuery.data ?? [], [reportsQuery.data]);
 
   const refetch = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: [OVERVIEW_KEY] });

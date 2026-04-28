@@ -6,17 +6,8 @@
 
 import { NextRequest } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
-import {
-  successResponse,
-  errorResponse,
-  HTTP,
-} from '@/lib/api/responses';
-import {
-  seededHex,
-  seededInt,
-  seededPick,
-  generateAttestation,
-} from '@/lib/utils';
+import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
+import { seededHex, seededInt, seededPick, generateAttestation } from '@/lib/utils';
 import { AI_MODELS, TEE_PLATFORMS } from '@/lib/constants';
 
 // ────────────────────────────────────────────────────────────
@@ -113,10 +104,6 @@ export async function POST(request: NextRequest) {
       message: 'Message processed. TEE attestation generated.',
     });
   } catch {
-    return errorResponse(
-      'INVALID_BODY',
-      'Request body must be valid JSON.',
-      HTTP.BAD_REQUEST,
-    );
+    return errorResponse('INVALID_BODY', 'Request body must be valid JSON.', HTTP.BAD_REQUEST);
   }
 }

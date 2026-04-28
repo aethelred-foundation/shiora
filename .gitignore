@@ -31,6 +31,9 @@ Thumbs.db
 tsconfig.tsbuildinfo
 *.tsbuildinfo
 
+# Runtime data
+.shiora-data/
+
 # Coverage
 coverage/
 

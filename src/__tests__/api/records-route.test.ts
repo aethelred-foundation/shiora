@@ -2,7 +2,10 @@
 
 jest.mock('@/lib/api/middleware', () => {
   const actual = jest.requireActual('@/lib/api/middleware');
-  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+  return {
+    ...actual,
+    runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)),
+  };
 });
 
 jest.mock('@/lib/api/store', () => {
@@ -17,16 +20,26 @@ jest.mock('@/lib/api/store', () => {
 
 import { NextRequest, NextResponse } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
-import { listRecords as storeListRecords, updateRecord as storeUpdateRecord, softDeleteRecord as storeSoftDeleteRecord } from '@/lib/api/store';
+import {
+  listRecords as storeListRecords,
+  updateRecord as storeUpdateRecord,
+  softDeleteRecord as storeSoftDeleteRecord,
+} from '@/lib/api/store';
 
 import { POST as createRecord, GET as listRecords } from '@/app/api/records/route';
-import { GET as getRecord, PATCH as patchRecord, DELETE as deleteRecord } from '@/app/api/records/[id]/route';
+import {
+  GET as getRecord,
+  PATCH as patchRecord,
+  DELETE as deleteRecord,
+} from '@/app/api/records/[id]/route';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
 
 const mockedStoreListRecords = storeListRecords as jest.MockedFunction<typeof storeListRecords>;
 const mockedStoreUpdateRecord = storeUpdateRecord as jest.MockedFunction<typeof storeUpdateRecord>;
-const mockedStoreSoftDeleteRecord = storeSoftDeleteRecord as jest.MockedFunction<typeof storeSoftDeleteRecord>;
+const mockedStoreSoftDeleteRecord = storeSoftDeleteRecord as jest.MockedFunction<
+  typeof storeSoftDeleteRecord
+>;
 const actualStore = jest.requireActual('@/lib/api/store');
 
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
@@ -36,16 +49,18 @@ afterEach(() => {
     const actual = jest.requireActual('@/lib/api/middleware');
     return actual.runMiddleware(...args);
   });
-  mockedStoreListRecords.mockImplementation((...args: unknown[]) => actualStore.listRecords(...args));
-  mockedStoreUpdateRecord.mockImplementation((...args: unknown[]) => actualStore.updateRecord(...args));
-  mockedStoreSoftDeleteRecord.mockImplementation((...args: unknown[]) => actualStore.softDeleteRecord(...args));
+  mockedStoreListRecords.mockImplementation((...args: unknown[]) =>
+    actualStore.listRecords(...args),
+  );
+  mockedStoreUpdateRecord.mockImplementation((...args: unknown[]) =>
+    actualStore.updateRecord(...args),
+  );
+  mockedStoreSoftDeleteRecord.mockImplementation((...args: unknown[]) =>
+    actualStore.softDeleteRecord(...args),
+  );
 });
 
-function createAuthedRequest(
-  url: string,
-  init: RequestInit,
-  token: string,
-): NextRequest {
+function createAuthedRequest(url: string, init: RequestInit, token: string): NextRequest {
   return new NextRequest(url, {
     ...init,
     headers: {
@@ -60,25 +75,37 @@ describe('/api/records middleware blocking', () => {
   const { token } = createSessionToken(address);
 
   it('GET listRecords returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await listRecords(createAuthedRequest('http://localhost:3001/api/records', { method: 'GET' }, token));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
+    const res = await listRecords(
+      createAuthedRequest('http://localhost:3001/api/records', { method: 'GET' }, token),
+    );
     expect(res.status).toBe(403);
   });
 
   it('POST createRecord returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await createRecord(
-      createAuthedRequest('http://localhost:3001/api/records', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'lab_result', label: 'Test' }),
-      }, token),
+      createAuthedRequest(
+        'http://localhost:3001/api/records',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'lab_result', label: 'Test' }),
+        },
+        token,
+      ),
     );
     expect(res.status).toBe(403);
   });
 
   it('GET getRecord returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await getRecord(
       createAuthedRequest('http://localhost:3001/api/records/rec-test', { method: 'GET' }, token),
       { params: Promise.resolve({ id: 'rec-test' }) },
@@ -87,22 +114,34 @@ describe('/api/records middleware blocking', () => {
   });
 
   it('PATCH patchRecord returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await patchRecord(
-      createAuthedRequest('http://localhost:3001/api/records/rec-test', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ label: 'Updated' }),
-      }, token),
+      createAuthedRequest(
+        'http://localhost:3001/api/records/rec-test',
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ label: 'Updated' }),
+        },
+        token,
+      ),
       { params: Promise.resolve({ id: 'rec-test' }) },
     );
     expect(res.status).toBe(403);
   });
 
   it('DELETE deleteRecord returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await deleteRecord(
-      createAuthedRequest('http://localhost:3001/api/records/rec-test', { method: 'DELETE' }, token),
+      createAuthedRequest(
+        'http://localhost:3001/api/records/rec-test',
+        { method: 'DELETE' },
+        token,
+      ),
       { params: Promise.resolve({ id: 'rec-test' }) },
     );
     expect(res.status).toBe(403);
@@ -122,7 +161,12 @@ describe('/api/records inner requireAuth branches', () => {
       new NextRequest('http://localhost:3001/api/records', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'lab_result', label: 'Test', provider: 'Test', encryption: 'AES-256-GCM' }),
+        body: JSON.stringify({
+          type: 'lab_result',
+          label: 'Test',
+          provider: 'Test',
+          encryption: 'AES-256-GCM',
+        }),
       }),
     );
     expect(res.status).toBe(401);
@@ -130,10 +174,9 @@ describe('/api/records inner requireAuth branches', () => {
 
   it('GET getRecord returns 401 from inner requireAuth when middleware is bypassed', async () => {
     mockedRunMiddleware.mockReturnValueOnce(null);
-    const res = await getRecord(
-      new NextRequest('http://localhost:3001/api/records/rec-test'),
-      { params: Promise.resolve({ id: 'rec-test' }) },
-    );
+    const res = await getRecord(new NextRequest('http://localhost:3001/api/records/rec-test'), {
+      params: Promise.resolve({ id: 'rec-test' }),
+    });
     expect(res.status).toBe(401);
   });
 
@@ -201,9 +244,9 @@ describe('/api/records route handlers', () => {
 
     expect(listResponse.status).toBe(200);
     const listBody = await listResponse.json();
-    expect(
-      listBody.data.some((record: { id: string }) => record.id === createdBody.data.id),
-    ).toBe(true);
+    expect(listBody.data.some((record: { id: string }) => record.id === createdBody.data.id)).toBe(
+      true,
+    );
 
     const deleteResponse = await deleteRecord(
       createAuthedRequest(
@@ -298,19 +341,13 @@ describe('/api/records additional filters and branches', () => {
   });
 
   it('GET returns 401 for unauthenticated request', async () => {
-    const res = await listRecords(
-      new NextRequest('http://localhost:3001/api/records'),
-    );
+    const res = await listRecords(new NextRequest('http://localhost:3001/api/records'));
     expect(res.status).toBe(401);
   });
 
   it('GET returns 422 for invalid query params', async () => {
     const res = await listRecords(
-      createAuthedRequest(
-        'http://localhost:3001/api/records?page=-1',
-        { method: 'GET' },
-        token,
-      ),
+      createAuthedRequest('http://localhost:3001/api/records?page=-1', { method: 'GET' }, token),
     );
     expect(res.status).toBe(422);
   });
@@ -576,19 +613,17 @@ describe('/api/records/[id] GET and PATCH', () => {
   });
 
   it('GET returns 401 for unauthenticated request', async () => {
-    const res = await getRecord(
-      new NextRequest(`http://localhost:3001/api/records/${recordId}`),
-      { params: Promise.resolve({ id: recordId }) },
-    );
+    const res = await getRecord(new NextRequest(`http://localhost:3001/api/records/${recordId}`), {
+      params: Promise.resolve({ id: recordId }),
+    });
     expect(res.status).toBe(401);
   });
 
   it('GET returns 401 from inner requireAuth when middleware bypassed', async () => {
     mockedRunMiddleware.mockReturnValueOnce(null);
-    const res = await getRecord(
-      new NextRequest(`http://localhost:3001/api/records/${recordId}`),
-      { params: Promise.resolve({ id: recordId }) },
-    );
+    const res = await getRecord(new NextRequest(`http://localhost:3001/api/records/${recordId}`), {
+      params: Promise.resolve({ id: recordId }),
+    });
     expect(res.status).toBe(401);
   });
 
@@ -721,11 +756,7 @@ describe('/api/records/[id] GET and PATCH', () => {
     });
     await expect(
       listRecords(
-        createAuthedRequest(
-          'http://localhost:3001/api/records',
-          { method: 'GET' },
-          token,
-        ),
+        createAuthedRequest('http://localhost:3001/api/records', { method: 'GET' }, token),
       ),
     ).rejects.toThrow('DB connection lost');
   });

@@ -18,8 +18,11 @@ import type { ChatMessage, ChatConversation, ChatSuggestedPrompt } from '@/types
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return React.createElement(QueryClientProvider, { client: qc },
-    React.createElement(AppProvider, null, children));
+  return React.createElement(
+    QueryClientProvider,
+    { client: qc },
+    React.createElement(AppProvider, null, children),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -91,7 +94,7 @@ describe('ChatBubble', () => {
     render(
       <TestWrapper>
         <ChatBubble message={mockUserMessage} isUser />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('What is my heart rate trend?')).toBeInTheDocument();
   });
@@ -100,7 +103,7 @@ describe('ChatBubble', () => {
     render(
       <TestWrapper>
         <ChatBubble message={mockAssistantMessage} isUser={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Your heart rate trend looks stable.')).toBeInTheDocument();
   });
@@ -109,7 +112,7 @@ describe('ChatBubble', () => {
     render(
       <TestWrapper>
         <ChatBubble message={mockAssistantMessage} isUser={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('HealthAI-v3')).toBeInTheDocument();
   });
@@ -118,7 +121,7 @@ describe('ChatBubble', () => {
     render(
       <TestWrapper>
         <ChatBubble message={mockAssistantMessage} isUser={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('92%')).toBeInTheDocument();
   });
@@ -127,7 +130,7 @@ describe('ChatBubble', () => {
     render(
       <TestWrapper>
         <ChatBubble message={mockAssistantMessage} isUser={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Intel SGX')).toBeInTheDocument();
   });
@@ -136,7 +139,7 @@ describe('ChatBubble', () => {
     render(
       <TestWrapper>
         <ChatBubble message={mockAssistantMessage} isUser={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // truncated hash should appear somewhere
     expect(screen.getByText(/0xdeadbeef/)).toBeInTheDocument();
@@ -152,7 +155,7 @@ describe('TypingIndicator', () => {
     const { container } = render(
       <TestWrapper>
         <TypingIndicator />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const dots = container.querySelectorAll('.animate-bounce');
     expect(dots.length).toBe(3);
@@ -169,7 +172,7 @@ describe('ChatInput', () => {
     render(
       <TestWrapper>
         <ChatInput onSend={onSend} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByPlaceholderText('Ask your health AI assistant...')).toBeInTheDocument();
   });
@@ -179,7 +182,7 @@ describe('ChatInput', () => {
     render(
       <TestWrapper>
         <ChatInput onSend={onSend} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const sendBtn = screen.getByRole('button', { name: /send message/i });
     expect(sendBtn).toBeDisabled();
@@ -190,7 +193,7 @@ describe('ChatInput', () => {
     render(
       <TestWrapper>
         <ChatInput onSend={onSend} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const textarea = screen.getByPlaceholderText('Ask your health AI assistant...');
     fireEvent.change(textarea, { target: { value: 'Hello AI' } });
@@ -204,7 +207,7 @@ describe('ChatInput', () => {
     render(
       <TestWrapper>
         <ChatInput onSend={onSend} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const textarea = screen.getByPlaceholderText('Ask your health AI assistant...');
     fireEvent.change(textarea, { target: { value: 'Hello AI' } });
@@ -217,7 +220,7 @@ describe('ChatInput', () => {
     const { container } = render(
       <TestWrapper>
         <ChatInput onSend={onSend} isLoading />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.querySelector('.animate-spin')).toBeInTheDocument();
   });
@@ -227,7 +230,7 @@ describe('ChatInput', () => {
     render(
       <TestWrapper>
         <ChatInput onSend={onSend} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const textarea = screen.getByPlaceholderText('Ask your health AI assistant...');
     fireEvent.change(textarea, { target: { value: 'Hello' } });
@@ -240,7 +243,7 @@ describe('ChatInput', () => {
     render(
       <TestWrapper>
         <ChatInput onSend={onSend} disabled />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const textarea = screen.getByPlaceholderText('Ask your health AI assistant...');
     expect(textarea).toBeDisabled();
@@ -251,7 +254,7 @@ describe('ChatInput', () => {
     render(
       <TestWrapper>
         <ChatInput onSend={onSend} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const textarea = screen.getByPlaceholderText('Ask your health AI assistant...');
     fireEvent.change(textarea, { target: { value: 'Test message' } });
@@ -271,7 +274,7 @@ describe('SuggestedPrompts', () => {
     render(
       <TestWrapper>
         <SuggestedPrompts prompts={mockPrompts} onSelect={onSelect} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('When is my next predicted period?')).toBeInTheDocument();
     expect(screen.getByText('Analyze my recent heart rate trends')).toBeInTheDocument();
@@ -282,7 +285,7 @@ describe('SuggestedPrompts', () => {
     render(
       <TestWrapper>
         <SuggestedPrompts prompts={mockPrompts} onSelect={onSelect} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Cycle')).toBeInTheDocument();
     expect(screen.getByText('Health')).toBeInTheDocument();
@@ -293,7 +296,7 @@ describe('SuggestedPrompts', () => {
     render(
       <TestWrapper>
         <SuggestedPrompts prompts={mockPrompts} onSelect={onSelect} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('When is my next predicted period?').closest('button')!);
     expect(onSelect).toHaveBeenCalledWith('When is my next predicted period?');
@@ -306,7 +309,7 @@ describe('SuggestedPrompts', () => {
     const { container } = render(
       <TestWrapper>
         <SuggestedPrompts prompts={unknownPrompt} onSelect={jest.fn()} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Falls back to MessageSquare icon
     expect(container.querySelector('svg')).toBeInTheDocument();
@@ -329,7 +332,7 @@ describe('ConversationList', () => {
           onCreate={jest.fn()}
           onDelete={jest.fn()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Heart Rate Analysis')).toBeInTheDocument();
     expect(screen.getByText('Sleep Patterns')).toBeInTheDocument();
@@ -345,7 +348,7 @@ describe('ConversationList', () => {
           onCreate={jest.fn()}
           onDelete={jest.fn()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('New Conversation')).toBeInTheDocument();
   });
@@ -361,7 +364,7 @@ describe('ConversationList', () => {
           onCreate={onCreate}
           onDelete={jest.fn()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('New Conversation'));
     expect(onCreate).toHaveBeenCalled();
@@ -377,7 +380,7 @@ describe('ConversationList', () => {
           onCreate={jest.fn()}
           onDelete={jest.fn()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('No conversations yet')).toBeInTheDocument();
   });
@@ -393,7 +396,7 @@ describe('ConversationList', () => {
           onCreate={jest.fn()}
           onDelete={jest.fn()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Heart Rate Analysis'));
     expect(onSelect).toHaveBeenCalledWith('conv-1');
@@ -410,7 +413,7 @@ describe('ConversationList', () => {
           onCreate={jest.fn()}
           onDelete={onDelete}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const deleteBtn = screen.getByLabelText('Delete Heart Rate Analysis');
     fireEvent.click(deleteBtn);
@@ -427,7 +430,7 @@ describe('ConversationList', () => {
           onCreate={jest.fn()}
           onDelete={jest.fn()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Your heart rate is stable.')).toBeInTheDocument();
   });
@@ -442,7 +445,7 @@ describe('ConversationList', () => {
           onCreate={jest.fn()}
           onDelete={jest.fn()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('4')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
@@ -468,7 +471,7 @@ describe('ConversationList', () => {
           onCreate={jest.fn()}
           onDelete={jest.fn()}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('No messages yet')).toBeInTheDocument();
   });
@@ -483,7 +486,7 @@ describe('AttestationProof', () => {
     render(
       <TestWrapper>
         <AttestationProof messages={[mockUserMessage, mockAssistantMessage]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Attestation Chain')).toBeInTheDocument();
   });
@@ -492,7 +495,7 @@ describe('AttestationProof', () => {
     render(
       <TestWrapper>
         <AttestationProof messages={[mockUserMessage, mockAssistantMessage]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/1 verified attestation/)).toBeInTheDocument();
   });
@@ -501,7 +504,7 @@ describe('AttestationProof', () => {
     render(
       <TestWrapper>
         <AttestationProof messages={[mockAssistantMessage]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Intel SGX')).toBeInTheDocument();
   });
@@ -510,7 +513,7 @@ describe('AttestationProof', () => {
     render(
       <TestWrapper>
         <AttestationProof messages={[mockUserMessage]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('No attestations yet')).toBeInTheDocument();
   });
@@ -519,7 +522,7 @@ describe('AttestationProof', () => {
     render(
       <TestWrapper>
         <AttestationProof messages={[mockAssistantMessage]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Total Attestations')).toBeInTheDocument();
   });
@@ -528,7 +531,7 @@ describe('AttestationProof', () => {
     render(
       <TestWrapper>
         <AttestationProof messages={[mockAssistantMessage]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Verified')).toBeInTheDocument();
   });
@@ -537,7 +540,7 @@ describe('AttestationProof', () => {
     render(
       <TestWrapper>
         <AttestationProof messages={[mockAssistantMessage]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('HealthAI-v3')).toBeInTheDocument();
   });
@@ -551,7 +554,7 @@ describe('AttestationProof', () => {
     render(
       <TestWrapper>
         <AttestationProof messages={[mockAssistantMessage, msg2]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/2 verified attestations/)).toBeInTheDocument();
   });
@@ -560,7 +563,7 @@ describe('AttestationProof', () => {
     render(
       <TestWrapper>
         <AttestationProof messages={[mockAssistantMessage]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('TEE Platforms')).toBeInTheDocument();
   });

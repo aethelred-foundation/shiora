@@ -62,32 +62,56 @@ const mockStats: MarketplaceStats = {
 
 describe('QualityScoreBadge', () => {
   it('renders score value', () => {
-    render(<TestWrapper><QualityScoreBadge score={88} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <QualityScoreBadge score={88} />
+      </TestWrapper>,
+    );
     expect(screen.getByText('88')).toBeInTheDocument();
   });
 
   it('renders with high score (>= 90) green', () => {
-    render(<TestWrapper><QualityScoreBadge score={95} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <QualityScoreBadge score={95} />
+      </TestWrapper>,
+    );
     expect(screen.getByText('95')).toBeInTheDocument();
   });
 
   it('renders with medium score (75-89) brand color', () => {
-    render(<TestWrapper><QualityScoreBadge score={80} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <QualityScoreBadge score={80} />
+      </TestWrapper>,
+    );
     expect(screen.getByText('80')).toBeInTheDocument();
   });
 
   it('renders with low-medium score (60-74) orange', () => {
-    render(<TestWrapper><QualityScoreBadge score={65} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <QualityScoreBadge score={65} />
+      </TestWrapper>,
+    );
     expect(screen.getByText('65')).toBeInTheDocument();
   });
 
   it('renders with low score (< 60) red', () => {
-    render(<TestWrapper><QualityScoreBadge score={45} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <QualityScoreBadge score={45} />
+      </TestWrapper>,
+    );
     expect(screen.getByText('45')).toBeInTheDocument();
   });
 
   it('accepts custom size', () => {
-    render(<TestWrapper><QualityScoreBadge score={88} size={60} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <QualityScoreBadge score={88} size={60} />
+      </TestWrapper>,
+    );
     expect(screen.getByText('88')).toBeInTheDocument();
   });
 });
@@ -98,36 +122,60 @@ describe('QualityScoreBadge', () => {
 
 describe('DataListingCard', () => {
   it('renders listing title and category', () => {
-    render(<TestWrapper><DataListingCard listing={mockListing} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <DataListingCard listing={mockListing} />
+      </TestWrapper>,
+    );
     expect(screen.getByText('Menstrual Cycle Dataset')).toBeInTheDocument();
     expect(screen.getByText('Menstrual Cycles')).toBeInTheDocument();
   });
 
   it('renders quality score', () => {
-    render(<TestWrapper><DataListingCard listing={mockListing} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <DataListingCard listing={mockListing} />
+      </TestWrapper>,
+    );
     expect(screen.getByText('92/100')).toBeInTheDocument();
   });
 
   it('renders TEE Verified badge when teeVerified', () => {
-    render(<TestWrapper><DataListingCard listing={mockListing} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <DataListingCard listing={mockListing} />
+      </TestWrapper>,
+    );
     expect(screen.getByText('TEE Verified')).toBeInTheDocument();
   });
 
   it('renders price', () => {
-    render(<TestWrapper><DataListingCard listing={mockListing} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <DataListingCard listing={mockListing} />
+      </TestWrapper>,
+    );
     expect(screen.getByText('15.50')).toBeInTheDocument();
   });
 
   it('renders Purchase button for active listing with onPurchase', () => {
     const onPurchase = jest.fn();
-    render(<TestWrapper><DataListingCard listing={mockListing} onPurchase={onPurchase} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <DataListingCard listing={mockListing} onPurchase={onPurchase} />
+      </TestWrapper>,
+    );
     const btn = screen.getByText('Purchase');
     fireEvent.click(btn);
     expect(onPurchase).toHaveBeenCalledWith('listing-1');
   });
 
   it('renders StatusBadge for inactive listing without onPurchase', () => {
-    render(<TestWrapper><DataListingCard listing={mockListingInactive} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <DataListingCard listing={mockListingInactive} />
+      </TestWrapper>,
+    );
     // No Purchase button
     expect(screen.queryByText('Purchase')).not.toBeInTheDocument();
   });
@@ -137,7 +185,7 @@ describe('DataListingCard', () => {
     render(
       <TestWrapper>
         <DataListingCard listing={mockListing} isOwner={true} onWithdraw={onWithdraw} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const btn = screen.getByText('Withdraw');
     fireEvent.click(btn);
@@ -148,7 +196,7 @@ describe('DataListingCard', () => {
     render(
       <TestWrapper>
         <DataListingCard listing={mockListingInactive} isOwner={true} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('Withdraw')).not.toBeInTheDocument();
     expect(screen.queryByText('Purchase')).not.toBeInTheDocument();
@@ -158,35 +206,55 @@ describe('DataListingCard', () => {
     render(
       <TestWrapper>
         <DataListingCard listing={mockListingInactive} isOwner={false} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.queryByText('Purchase')).not.toBeInTheDocument();
   });
 
   it('renders data points count', () => {
-    render(<TestWrapper><DataListingCard listing={mockListing} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <DataListingCard listing={mockListing} />
+      </TestWrapper>,
+    );
     expect(screen.getByText(/50\.0K data points/)).toBeInTheDocument();
   });
 
   it('renders anonymization level badge', () => {
-    render(<TestWrapper><DataListingCard listing={mockListing} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <DataListingCard listing={mockListing} />
+      </TestWrapper>,
+    );
     expect(screen.getByText('k-anonymity')).toBeInTheDocument();
   });
 
   it('renders unknown category with fallback', () => {
     const unknownCat = { ...mockListing, category: 'unknown_cat' as any };
-    render(<TestWrapper><DataListingCard listing={unknownCat} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <DataListingCard listing={unknownCat} />
+      </TestWrapper>,
+    );
     expect(screen.getByText('unknown_cat')).toBeInTheDocument();
   });
 
   it('renders quality bar with medium score color', () => {
     const midQuality = { ...mockListing, qualityScore: 80 };
-    render(<TestWrapper><DataListingCard listing={midQuality} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <DataListingCard listing={midQuality} />
+      </TestWrapper>,
+    );
     expect(screen.getByText('80/100')).toBeInTheDocument();
   });
 
   it('renders quality bar with low score color', () => {
-    render(<TestWrapper><DataListingCard listing={mockListingLowQuality} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <DataListingCard listing={mockListingLowQuality} />
+      </TestWrapper>,
+    );
     expect(screen.getByText('55/100')).toBeInTheDocument();
   });
 });
@@ -197,7 +265,11 @@ describe('DataListingCard', () => {
 
 describe('MarketplaceStatsBar', () => {
   it('renders all stat cards', () => {
-    render(<TestWrapper><MarketplaceStatsBar stats={mockStats} /></TestWrapper>);
+    render(
+      <TestWrapper>
+        <MarketplaceStatsBar stats={mockStats} />
+      </TestWrapper>,
+    );
     expect(screen.getByText('Total Listings')).toBeInTheDocument();
     expect(screen.getByText('156')).toBeInTheDocument();
     expect(screen.getByText('Total Volume')).toBeInTheDocument();
@@ -216,8 +288,14 @@ describe('PurchaseModal', () => {
   it('renders nothing when listing is null', () => {
     const { container } = render(
       <TestWrapper>
-        <PurchaseModal listing={null} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <PurchaseModal
+          listing={null}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     expect(container.firstChild).toBeNull();
   });
@@ -225,8 +303,14 @@ describe('PurchaseModal', () => {
   it('renders listing details when open', () => {
     render(
       <TestWrapper>
-        <PurchaseModal listing={mockListing} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <PurchaseModal
+          listing={mockListing}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText('Menstrual Cycle Dataset')).toBeInTheDocument();
     expect(screen.getByText('Menstrual Cycles')).toBeInTheDocument();
@@ -236,8 +320,15 @@ describe('PurchaseModal', () => {
   it('shows insufficient balance warning when balance < price', () => {
     render(
       <TestWrapper>
-        <PurchaseModal listing={mockListing} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={false} aethelBalance={5} />
-      </TestWrapper>
+        <PurchaseModal
+          listing={mockListing}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={false}
+          aethelBalance={5}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText(/Insufficient AETHEL balance/)).toBeInTheDocument();
   });
@@ -245,8 +336,14 @@ describe('PurchaseModal', () => {
   it('shows TEE verified message when teeVerified', () => {
     render(
       <TestWrapper>
-        <PurchaseModal listing={mockListing} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <PurchaseModal
+          listing={mockListing}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText(/TEE-verified/)).toBeInTheDocument();
   });
@@ -254,8 +351,14 @@ describe('PurchaseModal', () => {
   it('does not show TEE message when not teeVerified', () => {
     render(
       <TestWrapper>
-        <PurchaseModal listing={mockListingInactive} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <PurchaseModal
+          listing={mockListingInactive}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     expect(screen.queryByText(/TEE-verified/)).not.toBeInTheDocument();
   });
@@ -264,11 +367,17 @@ describe('PurchaseModal', () => {
     const onConfirm = jest.fn();
     render(
       <TestWrapper>
-        <PurchaseModal listing={mockListing} open={true} onClose={jest.fn()} onConfirm={onConfirm} isLoading={false} />
-      </TestWrapper>
+        <PurchaseModal
+          listing={mockListing}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={onConfirm}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     const btns = screen.getAllByText('Confirm Purchase');
-    const btn = btns.find(el => el.tagName === 'BUTTON') ?? btns[0];
+    const btn = btns.find((el) => el.tagName === 'BUTTON') ?? btns[0];
     fireEvent.click(btn);
     expect(onConfirm).toHaveBeenCalled();
   });
@@ -277,8 +386,14 @@ describe('PurchaseModal', () => {
     const onClose = jest.fn();
     render(
       <TestWrapper>
-        <PurchaseModal listing={mockListing} open={true} onClose={onClose} onConfirm={jest.fn()} isLoading={false} />
-      </TestWrapper>
+        <PurchaseModal
+          listing={mockListing}
+          open={true}
+          onClose={onClose}
+          onConfirm={jest.fn()}
+          isLoading={false}
+        />
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Cancel'));
     expect(onClose).toHaveBeenCalled();
@@ -287,8 +402,14 @@ describe('PurchaseModal', () => {
   it('shows Processing... when loading', () => {
     render(
       <TestWrapper>
-        <PurchaseModal listing={mockListing} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={true} />
-      </TestWrapper>
+        <PurchaseModal
+          listing={mockListing}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={true}
+        />
+      </TestWrapper>,
     );
     expect(screen.getByText('Processing...')).toBeInTheDocument();
   });
@@ -296,11 +417,18 @@ describe('PurchaseModal', () => {
   it('disables confirm when cannot afford', () => {
     render(
       <TestWrapper>
-        <PurchaseModal listing={mockListing} open={true} onClose={jest.fn()} onConfirm={jest.fn()} isLoading={false} aethelBalance={5} />
-      </TestWrapper>
+        <PurchaseModal
+          listing={mockListing}
+          open={true}
+          onClose={jest.fn()}
+          onConfirm={jest.fn()}
+          isLoading={false}
+          aethelBalance={5}
+        />
+      </TestWrapper>,
     );
     const btns = screen.getAllByText('Confirm Purchase');
-    const btn = btns.find(el => el.tagName === 'BUTTON') ?? btns[0];
+    const btn = btns.find((el) => el.tagName === 'BUTTON') ?? btns[0];
     expect(btn).toBeDisabled();
   });
 });
@@ -314,7 +442,7 @@ describe('RevenueChart', () => {
     render(
       <TestWrapper>
         <RevenueChart data={[{ day: 'Day 1', revenue: 100, transactions: 5 }]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Marketplace Revenue')).toBeInTheDocument();
     expect(screen.getByText('AETHEL volume over 30 days')).toBeInTheDocument();

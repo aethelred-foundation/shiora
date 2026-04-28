@@ -6,6 +6,7 @@ import {
   logRequest,
   handleOptions,
   extractAuth,
+  requireAdmin,
   requireAuth,
   runMiddleware,
   runMiddlewareWithOptions,
@@ -129,6 +130,29 @@ describe('requireAuth', () => {
   });
 });
 
+describe('requireAdmin', () => {
+  it('returns unauthorized response for unauthenticated request', () => {
+    const req = new NextRequest('http://localhost:3000/api/admin');
+    const result = requireAdmin(req);
+    expect('status' in result).toBe(true);
+    if ('status' in result) {
+      expect(result.status).toBe(401);
+    }
+  });
+
+  it('allows authenticated admin in non-production test mode', () => {
+    const req = new NextRequest('http://localhost:3000/api/admin', {
+      headers: { authorization: `Bearer ${TEST_TOKEN}` },
+    });
+    const result = requireAdmin(req);
+    expect('status' in result).toBe(false);
+    if (!('status' in result)) {
+      expect(result.isAdmin).toBe(true);
+      expect(result.walletAddress).toBe(TEST_ADDRESS);
+    }
+  });
+});
+
 describe('runMiddleware', () => {
   it('returns null for valid request', () => {
     const req = makeReq('http://localhost:3000/api/test');
@@ -158,6 +182,21 @@ describe('runMiddleware', () => {
       headers: { authorization: `Bearer ${TEST_TOKEN}` },
     });
     const result = runMiddleware(req, { requireAuth: true });
+    expect(result).toBeNull();
+  });
+
+  it('checks admin auth when requireAdmin is true', () => {
+    const req = new NextRequest('http://localhost:3000/api/test');
+    const result = runMiddleware(req, { requireAdmin: true });
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe(401);
+  });
+
+  it('passes with admin auth when requireAdmin is true and token valid in test mode', () => {
+    const req = new NextRequest('http://localhost:3000/api/test', {
+      headers: { authorization: `Bearer ${TEST_TOKEN}` },
+    });
+    const result = runMiddleware(req, { requireAdmin: true });
     expect(result).toBeNull();
   });
 });
@@ -294,15 +333,9 @@ describe('logRequest non-test behavior', () => {
         },
       });
       logReqDev(req);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[API]'),
-      );
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('req-abc-123'),
-      );
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('192.168.1.100'),
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[API]'));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('req-abc-123'));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('192.168.1.100'));
     } finally {
       consoleSpy.mockRestore();
       jest.resetModules();
@@ -336,9 +369,7 @@ describe('logRequest non-test behavior', () => {
         headers: { 'x-real-ip': '10.0.0.5' },
       });
       logReqDev(req);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('unknown'),
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('unknown'));
     } finally {
       consoleSpy.mockRestore();
       jest.resetModules();
@@ -369,9 +400,7 @@ describe('logRequest non-test behavior', () => {
       const { logRequest: logReqDev } = require('@/lib/api/middleware');
       const req = new NextRequest('http://localhost:3000/api/test');
       logReqDev(req);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('unknown'),
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('unknown'));
     } finally {
       consoleSpy.mockRestore();
       jest.resetModules();
@@ -406,9 +435,7 @@ describe('logRequest non-test behavior', () => {
       });
       logReqDev(req);
       // The first element of split(',') is empty string, trim() -> '', so || 'unknown'
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('unknown'),
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('unknown'));
     } finally {
       consoleSpy.mockRestore();
       jest.resetModules();
@@ -462,18 +489,99 @@ describe('requireAuth with invalidReason', () => {
   });
 });
 
+describe('requireAdmin with production allowlist', () => {
+  it('rejects authenticated non-admin wallets in production', () => {
+    jest.resetModules();
+
+    jest.doMock('@/lib/api/env', () => ({
+      serverEnv: {
+        isTest: false,
+        isProduction: true,
+        isDevelopment: false,
+        nodeEnv: 'production',
+        allowedOrigins: ['http://localhost:3000'],
+        adminWallets: ['aeth1adminwallet'],
+        hasConfiguredAdminWallets: true,
+        hasConfiguredSessionSecret: true,
+        sessionSecret: 'test-secret-at-least-32-chars-long-for-mocking',
+        sessionTtlHours: 24,
+        enableHsts: true,
+        allowInsecureWalletHeader: false,
+        allowDemoStoreInProduction: false,
+      },
+    }));
+
+    try {
+      const { createSessionToken: createToken } = require('@/lib/api/session');
+      const { requireAdmin: requireAdminProd } = require('@/lib/api/middleware');
+      const { token } = createToken('aeth1regularwallet');
+      const req = new NextRequest('http://localhost:3000/api/admin', {
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      const result = requireAdminProd(req);
+      expect('status' in result).toBe(true);
+      if ('status' in result) {
+        expect(result.status).toBe(403);
+      }
+    } finally {
+      jest.resetModules();
+    }
+  });
+
+  it('allows authenticated allowlisted admin wallets in production', () => {
+    jest.resetModules();
+
+    jest.doMock('@/lib/api/env', () => ({
+      serverEnv: {
+        isTest: false,
+        isProduction: true,
+        isDevelopment: false,
+        nodeEnv: 'production',
+        allowedOrigins: ['http://localhost:3000'],
+        adminWallets: ['aeth1adminwallet'],
+        hasConfiguredAdminWallets: true,
+        hasConfiguredSessionSecret: true,
+        sessionSecret: 'test-secret-at-least-32-chars-long-for-mocking',
+        sessionTtlHours: 24,
+        enableHsts: true,
+        allowInsecureWalletHeader: false,
+        allowDemoStoreInProduction: false,
+      },
+    }));
+
+    try {
+      const { createSessionToken: createToken } = require('@/lib/api/session');
+      const { requireAdmin: requireAdminProd } = require('@/lib/api/middleware');
+      const { token } = createToken('aeth1adminwallet');
+      const req = new NextRequest('http://localhost:3000/api/admin', {
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      const result = requireAdminProd(req);
+      expect('status' in result).toBe(false);
+      if (!('status' in result)) {
+        expect(result.isAdmin).toBe(true);
+      }
+    } finally {
+      jest.resetModules();
+    }
+  });
+});
+
 describe('runMiddlewareWithOptions rate limiting', () => {
   it('returns rate limit response when limit is exceeded', () => {
     const ip = `middleware-rl-${Date.now()}`;
     // Exhaust the rate limit
     for (let i = 0; i < 3; i++) {
-      runMiddlewareWithOptions(makeReq('http://localhost:3000/api/test', { ip }), { maxRequests: 3 });
+      runMiddlewareWithOptions(makeReq('http://localhost:3000/api/test', { ip }), {
+        maxRequests: 3,
+      });
     }
     // Next request should be rate limited
-    const result = runMiddlewareWithOptions(
-      makeReq('http://localhost:3000/api/test', { ip }),
-      { maxRequests: 3 },
-    );
+    const result = runMiddlewareWithOptions(makeReq('http://localhost:3000/api/test', { ip }), {
+      maxRequests: 3,
+    });
     expect(result).not.toBeNull();
     expect(result!.status).toBe(429);
   });

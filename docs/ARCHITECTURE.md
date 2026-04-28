@@ -181,12 +181,12 @@ All mock data uses deterministic seeded random number generation (`seededRandom`
 
 ### AI Models (TEE-Verified)
 
-| Model             | Type             | Accuracy | Purpose                          |
-|-------------------|------------------|----------|----------------------------------|
-| Cycle LSTM        | LSTM             | 96.2%    | Menstrual cycle timing prediction|
-| Anomaly Detector  | Isolation Forest | 93.8%    | Unusual health pattern detection |
-| Fertility XGBoost | XGBoost          | 91.5%    | Fertile window prediction        |
-| Health Transformer| Transformer      | 94.7%    | Personalized health insights     |
+| Model              | Type             | Accuracy | Purpose                           |
+| ------------------ | ---------------- | -------- | --------------------------------- |
+| Cycle LSTM         | LSTM             | 96.2%    | Menstrual cycle timing prediction |
+| Anomaly Detector   | Isolation Forest | 93.8%    | Unusual health pattern detection  |
+| Fertility XGBoost  | XGBoost          | 91.5%    | Fertile window prediction         |
+| Health Transformer | Transformer      | 94.7%    | Personalized health insights      |
 
 ## IPFS Storage
 

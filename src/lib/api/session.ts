@@ -26,10 +26,7 @@ function decodeBase64Url(value: string): string {
 }
 
 function sign(payload: string): string {
-  return crypto
-    .createHmac('sha256', serverEnv.sessionSecret)
-    .update(payload)
-    .digest('base64url');
+  return crypto.createHmac('sha256', serverEnv.sessionSecret).update(payload).digest('base64url');
 }
 
 function safeCompare(a: string, b: string): boolean {
@@ -95,11 +92,7 @@ export function extractSessionToken(request: NextRequest): string | null {
   return request.cookies.get(SESSION_COOKIE_NAME)?.value ?? null;
 }
 
-export function applySessionCookie(
-  response: NextResponse,
-  token: string,
-  expiresAt: number,
-): void {
+export function applySessionCookie(response: NextResponse, token: string, expiresAt: number): void {
   response.cookies.set({
     name: SESSION_COOKIE_NAME,
     value: token,

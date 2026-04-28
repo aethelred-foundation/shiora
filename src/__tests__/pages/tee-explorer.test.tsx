@@ -16,7 +16,9 @@ jest.mock('@/hooks/useTEEExplorer', () => ({
 import { useTEEExplorer } from '@/hooks/useTEEExplorer';
 const mockUseTEEExplorer = useTEEExplorer as jest.MockedFunction<typeof useTEEExplorer>;
 
-function makeDefaultHookReturn(overrides: Partial<ReturnType<typeof useTEEExplorer>> = {}): ReturnType<typeof useTEEExplorer> {
+function makeDefaultHookReturn(
+  overrides: Partial<ReturnType<typeof useTEEExplorer>> = {},
+): ReturnType<typeof useTEEExplorer> {
   return {
     stats: {
       totalEnclaves: 24,
@@ -114,7 +116,7 @@ describe('TEEExplorerPage', () => {
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('TEE Computation Explorer')).toBeInTheDocument();
   });
@@ -123,10 +125,10 @@ describe('TEEExplorerPage', () => {
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(
-      screen.getByText(/Monitor trusted execution environments, browse attestation chains/)
+      screen.getByText(/Monitor trusted execution environments, browse attestation chains/),
     ).toBeInTheDocument();
   });
 
@@ -134,7 +136,7 @@ describe('TEEExplorerPage', () => {
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
   });
@@ -143,7 +145,7 @@ describe('TEEExplorerPage', () => {
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   });
@@ -152,7 +154,7 @@ describe('TEEExplorerPage', () => {
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Intel SGX Verified')).toBeInTheDocument();
     expect(screen.getByText('Network Live')).toBeInTheDocument();
@@ -162,7 +164,7 @@ describe('TEEExplorerPage', () => {
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Overview')).toBeInTheDocument();
     expect(screen.getByText('Attestations')).toBeInTheDocument();
@@ -175,7 +177,7 @@ describe('TEEExplorerPage', () => {
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Total Enclaves')).toBeInTheDocument();
     expect(screen.getByText('Attestation Success Rate')).toBeInTheDocument();
@@ -187,7 +189,7 @@ describe('TEEExplorerPage', () => {
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Platform Distribution')).toBeInTheDocument();
     expect(screen.getByText('Daily Attestation Volume')).toBeInTheDocument();
@@ -197,7 +199,7 @@ describe('TEEExplorerPage', () => {
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('TEE Network Health: Operational')).toBeInTheDocument();
   });
@@ -206,7 +208,7 @@ describe('TEEExplorerPage', () => {
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Attestations'));
     expect(screen.getByText('Attestation Records')).toBeInTheDocument();
@@ -216,7 +218,7 @@ describe('TEEExplorerPage', () => {
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const computeJobsElements = screen.getAllByText('Compute Jobs');
     fireEvent.click(computeJobsElements[0]);
@@ -227,7 +229,7 @@ describe('TEEExplorerPage', () => {
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Enclaves'));
     expect(screen.getByText('TEE Enclaves')).toBeInTheDocument();
@@ -237,7 +239,7 @@ describe('TEEExplorerPage', () => {
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Verification Chain'));
     expect(screen.getByText('Verification Pipeline')).toBeInTheDocument();
@@ -251,28 +253,32 @@ describe('TEEExplorerPage', () => {
   // ---- Empty state tests for attestations, jobs, enclaves tabs ----
 
   it('shows empty state on Attestations tab when no attestations exist', () => {
-    mockUseTEEExplorer.mockReturnValue(makeDefaultHookReturn({
-      attestations: [],
-      isLoadingAttestations: false,
-    }));
+    mockUseTEEExplorer.mockReturnValue(
+      makeDefaultHookReturn({
+        attestations: [],
+        isLoadingAttestations: false,
+      }),
+    );
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Attestations'));
     expect(screen.getByText('No attestations found')).toBeInTheDocument();
   });
 
   it('shows empty state on Compute Jobs tab when no jobs exist', () => {
-    mockUseTEEExplorer.mockReturnValue(makeDefaultHookReturn({
-      jobs: [],
-      isLoadingJobs: false,
-    }));
+    mockUseTEEExplorer.mockReturnValue(
+      makeDefaultHookReturn({
+        jobs: [],
+        isLoadingJobs: false,
+      }),
+    );
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const computeJobsElements = screen.getAllByText('Compute Jobs');
     fireEvent.click(computeJobsElements[0]);
@@ -280,40 +286,46 @@ describe('TEEExplorerPage', () => {
   });
 
   it('shows empty state on Enclaves tab when no enclaves exist', () => {
-    mockUseTEEExplorer.mockReturnValue(makeDefaultHookReturn({
-      enclaves: [],
-      isLoadingEnclaves: false,
-    }));
+    mockUseTEEExplorer.mockReturnValue(
+      makeDefaultHookReturn({
+        enclaves: [],
+        isLoadingEnclaves: false,
+      }),
+    );
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Enclaves'));
     expect(screen.getByText('No enclaves found')).toBeInTheDocument();
   });
 
   it('renders error state when there is an error', () => {
-    mockUseTEEExplorer.mockReturnValue(makeDefaultHookReturn({
-      error: new Error('Failed to fetch TEE data'),
-    }));
+    mockUseTEEExplorer.mockReturnValue(
+      makeDefaultHookReturn({
+        error: new Error('Failed to fetch TEE data'),
+      }),
+    );
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Error loading TEE data')).toBeInTheDocument();
     expect(screen.getByText('Failed to fetch TEE data')).toBeInTheDocument();
   });
 
   it('renders stat cards with placeholder values when stats are null', () => {
-    mockUseTEEExplorer.mockReturnValue(makeDefaultHookReturn({
-      stats: null,
-    }));
+    mockUseTEEExplorer.mockReturnValue(
+      makeDefaultHookReturn({
+        stats: null,
+      }),
+    );
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // When stats is null, the stat card values show '--'
     const dashes = screen.getAllByText('--');
@@ -324,7 +336,7 @@ describe('TEEExplorerPage', () => {
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Attestations'));
     // Table headers (some may appear multiple times due to attestation data)
@@ -338,7 +350,7 @@ describe('TEEExplorerPage', () => {
     render(
       <TestWrapper>
         <TEEExplorerPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const computeJobsElements = screen.getAllByText('Compute Jobs');
     fireEvent.click(computeJobsElements[0]);

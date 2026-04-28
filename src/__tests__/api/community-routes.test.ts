@@ -35,7 +35,9 @@ import { runMiddleware } from '@/lib/api/middleware';
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
 
 afterEach(() => {
-  mockedRunMiddleware.mockImplementation((...args: unknown[]) => actualMiddleware.runMiddleware(...args));
+  mockedRunMiddleware.mockImplementation((...args: unknown[]) =>
+    actualMiddleware.runMiddleware(...args),
+  );
 });
 
 describe('/api/community/circles', () => {
@@ -59,7 +61,13 @@ describe('/api/community/circles', () => {
 
   it('GET falls back to cat.label when circle name not in CIRCLE_NAMES', async () => {
     mockCommunityCategories = [
-      { id: 'unknown_category', label: 'Unknown Label', icon: 'Star', color: '#fff', description: 'Test' },
+      {
+        id: 'unknown_category',
+        label: 'Unknown Label',
+        icon: 'Star',
+        color: '#fff',
+        description: 'Test',
+      },
     ];
     const res = await getCircles(new NextRequest('http://localhost:3000/api/community/circles'));
     expect(res.status).toBe(200);

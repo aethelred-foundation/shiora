@@ -6,12 +6,7 @@
 import { NextRequest } from 'next/server';
 import { successResponse } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
-import {
-  seededRandom,
-  seededHex,
-  seededInt,
-  generateAttestation,
-} from '@/lib/utils';
+import { seededRandom, seededHex, seededInt, generateAttestation } from '@/lib/utils';
 import type { TwinPrediction } from '@/types';
 
 const SEED = 2200;
@@ -122,9 +117,27 @@ export async function GET(request: NextRequest) {
     const p60Noise = (seededRandom(baseSeed + 2) - 0.5) * 2;
     const p90Noise = (seededRandom(baseSeed + 3) - 0.5) * 2.5;
 
-    const predicted30d = parseFloat((currentValue + def.driftRate * 1 + p30Noise * (def.unit === '%' ? 0.05 : def.unit === 'kg/m2' ? 0.1 : 0.5)).toFixed(decimals));
-    const predicted60d = parseFloat((currentValue + def.driftRate * 2 + p60Noise * (def.unit === '%' ? 0.05 : def.unit === 'kg/m2' ? 0.1 : 0.5)).toFixed(decimals));
-    const predicted90d = parseFloat((currentValue + def.driftRate * 3 + p90Noise * (def.unit === '%' ? 0.05 : def.unit === 'kg/m2' ? 0.1 : 0.5)).toFixed(decimals));
+    const predicted30d = parseFloat(
+      (
+        currentValue +
+        def.driftRate * 1 +
+        p30Noise * (def.unit === '%' ? 0.05 : def.unit === 'kg/m2' ? 0.1 : 0.5)
+      ).toFixed(decimals),
+    );
+    const predicted60d = parseFloat(
+      (
+        currentValue +
+        def.driftRate * 2 +
+        p60Noise * (def.unit === '%' ? 0.05 : def.unit === 'kg/m2' ? 0.1 : 0.5)
+      ).toFixed(decimals),
+    );
+    const predicted90d = parseFloat(
+      (
+        currentValue +
+        def.driftRate * 3 +
+        p90Noise * (def.unit === '%' ? 0.05 : def.unit === 'kg/m2' ? 0.1 : 0.5)
+      ).toFixed(decimals),
+    );
 
     const confidenceBand = Math.round(seededRandom(baseSeed + 4) * 8 + 88); // 88-96%
 

@@ -3,7 +3,7 @@
 ## Supported Versions
 
 | Version | Supported |
-|---------|-----------|
+| ------- | --------- |
 | Latest  | Yes       |
 
 ## Reporting a Vulnerability
@@ -32,6 +32,7 @@ The Aethelred Foundation takes security seriously. If you discover a security vu
 ### Scope
 
 This policy applies to:
+
 - The Shiora frontend application
 - The backend API and AI services
 - Smart contracts
@@ -48,7 +49,7 @@ For comprehensive technical security documentation including the defense-in-dept
 
 ## Security Measures
 
-- All dependencies are monitored via Dependabot and `npm audit`
+- Production dependencies are checked with the `npm audit` release gate
 - Health data is encrypted before leaving the browser
 - Processing occurs exclusively inside Trusted Execution Environments (TEE)
 - HIPAA and GDPR compliance enforced at every layer

@@ -36,7 +36,9 @@ export async function GET(request: NextRequest) {
       id: `dp-${seededHex(SEED + 2000 + i * 7, 12)}`,
       deviceId: `device-${seededHex(SEED, 12)}`,
       metric,
-      value: parseFloat((seededRandom(SEED + 2000 + i * 13) * (cfg.max - cfg.min) + cfg.min).toFixed(1)),
+      value: parseFloat(
+        (seededRandom(SEED + 2000 + i * 13) * (cfg.max - cfg.min) + cfg.min).toFixed(1),
+      ),
       unit: cfg.unit,
       timestamp: now - (50 - i) * 1800000 + seededInt(SEED + i * 3, 0, 600000),
       source: 'apple_health',
@@ -50,7 +52,11 @@ export async function GET(request: NextRequest) {
       id: `device-${seededHex(SEED + i * 100, 12)}`,
       provider: provider.id,
       deviceName: provider.name,
-      status: connected ? (seededRandom(SEED + i * 3) > 0.8 ? 'syncing' : 'connected') : 'disconnected',
+      status: connected
+        ? seededRandom(SEED + i * 3) > 0.8
+          ? 'syncing'
+          : 'connected'
+        : 'disconnected',
       lastSync: connected ? Date.now() - seededInt(SEED + i * 5, 1, 48) * 3600000 : 0,
       dataPointsSynced: connected ? seededInt(SEED + i * 7, 1000, 50000) : 0,
       batteryLevel: connected ? seededInt(SEED + i * 9, 20, 100) : null,

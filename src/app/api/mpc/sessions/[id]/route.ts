@@ -4,10 +4,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  successResponse,
-  notFoundResponse,
-} from '@/lib/api/responses';
+import { successResponse, notFoundResponse } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
   seededRandom,
@@ -97,15 +94,17 @@ function generateSessions(): MPCSession[] {
     const maxPart = seededInt(s + 2, 8, 20);
     const currentParticipants = seededInt(s + 3, minPart, maxPart);
     const totalRounds = seededInt(s + 4, 10, 50);
-    const currentRound = status === 'completed'
-      ? totalRounds
-      : status === 'failed'
-        ? seededInt(s + 5, 1, totalRounds - 1)
-        : seededInt(s + 5, 0, totalRounds - 1);
+    const currentRound =
+      status === 'completed'
+        ? totalRounds
+        : status === 'failed'
+          ? seededInt(s + 5, 1, totalRounds - 1)
+          : seededInt(s + 5, 0, totalRounds - 1);
     const budgetTotal = parseFloat((seededRandom(s + 6) * 8 + 2).toFixed(2));
-    const budgetRemaining = status === 'completed'
-      ? 0
-      : parseFloat((budgetTotal * seededRandom(s + 7) * 0.6 + budgetTotal * 0.2).toFixed(2));
+    const budgetRemaining =
+      status === 'completed'
+        ? 0
+        : parseFloat((budgetTotal * seededRandom(s + 7) * 0.6 + budgetTotal * 0.2).toFixed(2));
     const createdAt = Date.now() - seededInt(s + 8, 86_400_000, 86_400_000 * 30);
 
     sessions.push({
@@ -123,8 +122,12 @@ function generateSessions(): MPCSession[] {
       privacyBudgetTotal: budgetTotal,
       privacyBudgetRemaining: budgetRemaining,
       createdAt,
-      startedAt: status !== 'setup' ? createdAt + seededInt(s + 10, 3600_000, 86_400_000) : undefined,
-      completedAt: status === 'completed' ? createdAt + seededInt(s + 11, 86_400_000 * 3, 86_400_000 * 14) : undefined,
+      startedAt:
+        status !== 'setup' ? createdAt + seededInt(s + 10, 3600_000, 86_400_000) : undefined,
+      completedAt:
+        status === 'completed'
+          ? createdAt + seededInt(s + 11, 86_400_000 * 3, 86_400_000 * 14)
+          : undefined,
       attestation: generateAttestation(s + 12),
       txHash: generateTxHash(s + 13),
     });
