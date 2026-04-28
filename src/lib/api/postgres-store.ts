@@ -787,6 +787,39 @@ function listingFromRow(row: MarketplaceListingRow): DataListing {
   };
 }
 
+function applyMarketplaceListingUpdates(
+  listing: DataListing,
+  updates: Partial<DataListing>,
+): DataListing {
+  const nextListing: DataListing = {
+    ...listing,
+    dateRange: { ...listing.dateRange },
+  };
+
+  if (updates.sellerReputation !== undefined) {
+    nextListing.sellerReputation = updates.sellerReputation;
+  }
+  if (updates.category !== undefined) nextListing.category = updates.category;
+  if (updates.title !== undefined) nextListing.title = updates.title;
+  if (updates.description !== undefined) nextListing.description = updates.description;
+  if (updates.dataPoints !== undefined) nextListing.dataPoints = updates.dataPoints;
+  if (updates.dateRange !== undefined) {
+    nextListing.dateRange = { ...updates.dateRange };
+  }
+  if (updates.qualityScore !== undefined) nextListing.qualityScore = updates.qualityScore;
+  if (updates.anonymizationLevel !== undefined) {
+    nextListing.anonymizationLevel = updates.anonymizationLevel;
+  }
+  if (updates.price !== undefined) nextListing.price = updates.price;
+  if (updates.status !== undefined) nextListing.status = updates.status;
+  if (updates.teeVerified !== undefined) nextListing.teeVerified = updates.teeVerified;
+  if (updates.attestation !== undefined) nextListing.attestation = updates.attestation;
+  if (updates.expiresAt !== undefined) nextListing.expiresAt = updates.expiresAt;
+  if (updates.purchaseCount !== undefined) nextListing.purchaseCount = updates.purchaseCount;
+
+  return nextListing;
+}
+
 export async function listMarketplaceListings(walletAddress?: string): Promise<DataListing[]> {
   return withStoreSession(walletAddress, async (client) => {
     const result = await client.query<MarketplaceListingRow>(
@@ -877,6 +910,13 @@ export async function updateMarketplaceListing(
   walletAddress?: string,
 ): Promise<DataListing | undefined> {
   return withStoreSession(walletAddress, async (client) => {
+    const existingResult = await client.query<MarketplaceListingRow>(
+      'SELECT * FROM shiora_marketplace_listings WHERE id = $1 LIMIT 1',
+      [id],
+    );
+    const existing = existingResult.rows[0];
+    if (!existing) return undefined;
+
     const setClauses = ['updated_at = now()'];
     const values: unknown[] = [];
 
@@ -911,21 +951,19 @@ export async function updateMarketplaceListing(
     const result = await client.query<MarketplaceListingRow>(
       `UPDATE shiora_marketplace_listings
        SET ${setClauses.join(', ')}
-       WHERE id = $${values.length}
-       RETURNING *`,
+       WHERE id = $${values.length}`,
       values,
     );
 
-    const updated = result.rows[0];
-    if (!updated) return undefined;
+    if (result.rowCount === 0) return undefined;
 
     await appendAuditEntry(client, {
       operation: 'marketplace.update',
-      ownerAddress: walletAddress ?? updated.seller_address,
+      ownerAddress: walletAddress ?? existing.seller_address,
       entityId: id,
       changedFields: Object.keys(updates),
     });
 
-    return listingFromRow(updated);
+    return applyMarketplaceListingUpdates(listingFromRow(existing), updates);
   });
 }

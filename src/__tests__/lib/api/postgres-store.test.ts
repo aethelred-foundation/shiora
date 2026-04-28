@@ -25,6 +25,31 @@ function result<T extends QueryResultRow>(rows: T[]): QueryResult<T> {
   };
 }
 
+function marketplaceListingRow(overrides: QueryResultRow = {}): QueryResultRow {
+  return {
+    id: 'listing-postgres-1',
+    seller_address: seededAddress(30303),
+    seller_reputation: 95,
+    category: 'vitals_timeseries',
+    title: 'Synthetic Vitals',
+    description: 'An anonymized vitals cohort',
+    data_points: 1200,
+    date_range_start: 1,
+    date_range_end: 2,
+    quality_score: 91,
+    anonymization_level: 'differential-privacy',
+    price: '42.5',
+    currency: 'AETHEL',
+    status: 'active',
+    tee_verified: true,
+    attestation: 'attestation',
+    created_at_epoch: 10,
+    expires_at_epoch: 20,
+    purchase_count: 3,
+    ...overrides,
+  };
+}
+
 describe('postgres-store', () => {
   const owner = seededAddress(30303);
   const queries: CapturedQuery[] = [];
@@ -61,30 +86,16 @@ describe('postgres-store', () => {
         return result([] as T[]);
       }
 
+      if (text.includes('SELECT * FROM shiora_marketplace_listings')) {
+        return result([marketplaceListingRow() as T]);
+      }
+
       if (text.includes('UPDATE shiora_marketplace_listings')) {
-        return result([
-          {
-            id: values?.[values.length - 1],
-            seller_address: owner,
-            seller_reputation: 95,
-            category: 'vitals_timeseries',
-            title: 'Synthetic Vitals',
-            description: 'An anonymized vitals cohort',
-            data_points: 1200,
-            date_range_start: 1,
-            date_range_end: 2,
-            quality_score: 91,
-            anonymization_level: 'differential-privacy',
-            price: '42.5',
-            currency: 'AETHEL',
-            status: 'withdrawn',
-            tee_verified: true,
-            attestation: 'attestation',
-            created_at_epoch: 10,
-            expires_at_epoch: 20,
-            purchase_count: 3,
-          },
-        ] as T[]);
+        return {
+          ...result([] as T[]),
+          command: 'UPDATE',
+          rowCount: 1,
+        };
       }
 
       return result([] as T[]);
@@ -160,5 +171,12 @@ describe('postgres-store', () => {
       text: 'SELECT set_config($1, $2, true)',
       values: ['app.is_admin', 'false'],
     });
+    expect(
+      queries.some(
+        (query) =>
+          query.text.includes('UPDATE shiora_marketplace_listings') &&
+          query.text.includes('RETURNING'),
+      ),
+    ).toBe(false);
   });
 });
