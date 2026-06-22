@@ -114,6 +114,33 @@ describe('PHI envelope encryption', () => {
     expect(() => openString({ ...sealed, alg: 'rot13' as never })).toThrow(/algorithm/);
   });
 
+  it('throws when no data-encryption key is configured in production', () => {
+    const prevNodeEnv = process.env.NODE_ENV;
+    delete process.env.SHIORA_DATA_ENCRYPTION_KEY;
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error NODE_ENV is normally read-only; overridden for this case
+    process.env.NODE_ENV = 'production';
+    __resetKekCacheForTests();
+
+    try {
+      expect(() => sealString('x')).toThrow(/must be set in production/);
+    } finally {
+      // @ts-expect-error restore
+      process.env.NODE_ENV = prevNodeEnv;
+      __resetKekCacheForTests();
+    }
+  });
+
+  it('rejects a malformed wrapped DEK', () => {
+    const sealed = sealString('x');
+    expect(() => openString({ ...sealed, dek: 'only-one-part' })).toThrow(/Malformed wrapped DEK/);
+  });
+
+  it('rejects an unknown KEK version on open', () => {
+    const sealed = sealString('x');
+    expect(() => openString({ ...sealed, v: 999 })).toThrow(/Unknown KEK version/);
+  });
+
   it('isSealed rejects non-envelope values', () => {
     expect(isSealed(null)).toBe(false);
     expect(isSealed('string')).toBe(false);

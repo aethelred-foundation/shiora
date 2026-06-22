@@ -3,6 +3,7 @@
 import {
   AuditChain,
   GENESIS_HASH,
+  computeEntryHash,
   verifyAuditChain,
   type ChainedAuditEntry,
 } from '@/lib/crypto/audit-chain';
@@ -95,5 +96,24 @@ describe('tamper-evident audit chain', () => {
 
   it('verifies an empty chain as valid', () => {
     expect(verifyAuditChain([]).valid).toBe(true);
+  });
+
+  it('computeEntryHash is deterministic and 256-bit for identical inputs', () => {
+    const entry = { action: 'RECORD_READ', actor: 'aeth1x', success: true, timestamp: 't' } as const;
+    const h1 = computeEntryHash(GENESIS_HASH, 0, entry);
+    const h2 = computeEntryHash(GENESIS_HASH, 0, entry);
+    expect(h1).toBe(h2);
+    expect(h1).toHaveLength(64);
+  });
+
+  it('canonicalizes array and undefined metadata values deterministically', () => {
+    const chain = new AuditChain();
+    const entry = chain.append({
+      action: 'CONSENT_CREATE',
+      actor: 'aeth1x',
+      success: true,
+      metadata: { scopes: ['read', 'write'], missing: undefined },
+    });
+    expect(verifyAuditChain([entry]).valid).toBe(true);
   });
 });
