@@ -49,6 +49,11 @@ For comprehensive technical security documentation including the defense-in-dept
 ## Security Measures
 
 - All dependencies are monitored via Dependabot and `npm audit`
-- Health data is encrypted before leaving the browser
-- Processing occurs exclusively inside Trusted Execution Environments (TEE)
-- HIPAA and GDPR compliance enforced at every layer
+- Authentication uses secp256k1 wallet-signature verification with HMAC-signed, `__Host-`-scoped sessions
+- Protected Health Information is encrypted at rest using AES-256-GCM envelope encryption with per-record keys (`src/lib/crypto/envelope.ts`)
+- Access and mutation events are recorded in a tamper-evident, hash-chained audit log (`src/lib/crypto/audit-chain.ts`)
+- Target architecture adds client-side encryption and TEE-only processing of decrypted data
+
+Shiora is **designed for** HIPAA and GDPR. The current control status — what is
+implemented today versus in progress — is tracked in
+[docs/COMPLIANCE.md](docs/COMPLIANCE.md).

@@ -2,7 +2,9 @@
 
 ## Security Model Overview
 
-Shiora Health AI implements a defense-in-depth security architecture designed to protect sensitive women's health data at every layer. The core principle is that health data is encrypted before it leaves the user's browser and can only be decrypted inside a Trusted Execution Environment (TEE) -- never on a standard server.
+Shiora Health AI implements a defense-in-depth security architecture designed to protect sensitive women's health data at every layer. The target security model is that health data is encrypted client-side before it leaves the user's browser and is decrypted only inside a Trusted Execution Environment (TEE) -- never on a standard server.
+
+Implemented today: AES-256-GCM envelope encryption of PHI at rest (`src/lib/crypto/envelope.ts`) and a tamper-evident, hash-chained audit log (`src/lib/crypto/audit-chain.ts`). Client-side encryption and TEE-only processing are in development. See [COMPLIANCE.md](COMPLIANCE.md) for per-control status.
 
 ### Security Layers
 
