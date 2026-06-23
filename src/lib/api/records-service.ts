@@ -11,7 +11,7 @@
 // audit logic via EncryptedRecordRepository.
 // ============================================================
 
-import { AuditChain } from '@/lib/crypto/audit-chain';
+import { getAuditLog } from '@/lib/api/audit-log';
 import {
   EncryptedRecordRepository,
   type RecordUpdate,
@@ -32,7 +32,7 @@ function createStore(): RecordStorePort {
 
 function repo(): EncryptedRecordRepository {
   if (!repository) {
-    repository = new EncryptedRecordRepository(createStore(), new AuditChain());
+    repository = new EncryptedRecordRepository(createStore(), getAuditLog());
   }
   return repository;
 }

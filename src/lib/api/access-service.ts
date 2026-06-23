@@ -7,7 +7,7 @@
 // in-memory — both via the generic EncryptedDocumentRepository.
 // ============================================================
 
-import { AuditChain } from '@/lib/crypto/audit-chain';
+import { getAuditLog } from '@/lib/api/audit-log';
 import { EncryptedDocumentRepository } from '@/lib/persistence/encrypted-documents';
 import { InMemoryDocumentStore, type DocumentStorePort } from '@/lib/persistence/document-store';
 import { PgDocumentStore } from '@/lib/persistence/pg-document-store';
@@ -29,7 +29,7 @@ function repo(): EncryptedDocumentRepository<MockAccessGrant> {
   if (!repository) {
     repository = new EncryptedDocumentRepository<MockAccessGrant>(
       createStore(),
-      new AuditChain(),
+      getAuditLog(),
       COLLECTION,
       { create: 'GRANT_CREATE', update: 'GRANT_UPDATE' },
     );

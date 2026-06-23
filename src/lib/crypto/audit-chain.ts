@@ -87,8 +87,21 @@ export function computeEntryHash(
  * bucket) and the head hash is anchored on-chain; this class is the
  * authoritative in-process implementation of the linking + verification logic.
  */
-export class AuditChain {
+export interface AuditRecorder {
+  /**
+   * Record an audit entry into a tamper-evident chain, returning its chained
+   * form. Async so a persistent implementation can write to its backing store.
+   */
+  record(entry: Omit<AuditEntry, 'timestamp'> & { timestamp?: string }): Promise<ChainedAuditEntry>;
+}
+
+export class AuditChain implements AuditRecorder {
   private readonly entries: ChainedAuditEntry[] = [];
+
+  /** Async {@link AuditRecorder} adapter over {@link AuditChain.append}. */
+  async record(entry: Omit<AuditEntry, 'timestamp'> & { timestamp?: string }): Promise<ChainedAuditEntry> {
+    return this.append(entry);
+  }
 
   /** Append a new audit entry and return its chained form. */
   append(entry: Omit<AuditEntry, 'timestamp'> & { timestamp?: string }): ChainedAuditEntry {

@@ -7,7 +7,7 @@
 // serves every owner-scoped collection (access grants, consent, …).
 // ============================================================
 
-import { AuditChain, type AuditAction } from '@/lib/crypto/audit-chain';
+import { type AuditAction, type AuditRecorder } from '@/lib/crypto/audit-chain';
 import { openJson, sealJson } from '@/lib/crypto/envelope';
 import type { DocumentStorePort, StoredDocument } from './document-store';
 
@@ -20,7 +20,7 @@ export interface DocumentAuditActions {
 export class EncryptedDocumentRepository<T extends { id: string }> {
   constructor(
     private readonly store: DocumentStorePort,
-    private readonly audit: AuditChain,
+    private readonly audit: AuditRecorder,
     private readonly collection: string,
     private readonly actions: DocumentAuditActions,
   ) {}
@@ -28,7 +28,7 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
   /** Encrypt and persist a new document, returning it unchanged. */
   async create(ownerKey: string, document: T): Promise<T> {
     await this.persist(ownerKey, document);
-    this.record(this.actions.create, ownerKey, document.id);
+    await this.record(this.actions.create, ownerKey, document.id);
     return document;
   }
 
@@ -57,7 +57,7 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
     const current = this.open(ownerKey, row);
     const next = { ...current, ...patch, id: current.id } as T;
     await this.persist(ownerKey, next);
-    this.record(this.actions.update, ownerKey, id);
+    await this.record(this.actions.update, ownerKey, id);
     return next;
   }
 
@@ -82,8 +82,8 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
     return openJson<T>(row.sealed, this.aad(ownerKey, row.id));
   }
 
-  private record(action: AuditAction, actor: string, resourceId: string): void {
-    this.audit.append({
+  private async record(action: AuditAction, actor: string, resourceId: string): Promise<void> {
+    await this.audit.record({
       action,
       actor,
       resource: this.collection,

@@ -34,6 +34,14 @@ describe('tamper-evident audit chain', () => {
     expect(chain.head()).toBe(b.hash);
   });
 
+  it('record() is an async adapter over append()', async () => {
+    const chain = new AuditChain();
+    const entry = await chain.record(sampleEntry('SESSION_CREATE', 'aeth1abc'));
+    expect(entry.seq).toBe(0);
+    expect(chain.length).toBe(1);
+    expect(chain.verify().valid).toBe(true);
+  });
+
   it('verifies an untampered chain', () => {
     const chain = new AuditChain();
     for (let i = 0; i < 25; i++) {

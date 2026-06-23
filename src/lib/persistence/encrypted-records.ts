@@ -12,7 +12,7 @@
 // generated from a fixed seed.
 // ============================================================
 
-import { AuditChain } from '@/lib/crypto/audit-chain';
+import type { AuditRecorder } from '@/lib/crypto/audit-chain';
 import { openJson, sealJson } from '@/lib/crypto/envelope';
 import type { MockHealthRecord } from '@/lib/api/mock-data';
 import type { RecordStorePort, StoredRecord } from './record-store';
@@ -41,7 +41,7 @@ function phiAad(ownerAddress: string, id: string): string {
 export class EncryptedRecordRepository {
   constructor(
     private readonly store: RecordStorePort,
-    private readonly audit: AuditChain,
+    private readonly audit: AuditRecorder,
   ) {}
 
   /** Encrypt and persist a new health record. */
@@ -70,7 +70,7 @@ export class EncryptedRecordRepository {
     };
 
     await this.store.put(row);
-    this.record('RECORD_CREATE', ownerAddress, record.id);
+    await this.record('RECORD_CREATE', ownerAddress, record.id);
     return this.toRecord(row);
   }
 
@@ -80,7 +80,7 @@ export class EncryptedRecordRepository {
     if (!row || row.deleted) {
       return undefined;
     }
-    this.record('RECORD_READ', ownerAddress, id);
+    await this.record('RECORD_READ', ownerAddress, id);
     return this.toRecord(row);
   }
 
@@ -124,7 +124,7 @@ export class EncryptedRecordRepository {
     }
 
     await this.store.put(next);
-    this.record('RECORD_UPDATE', ownerAddress, id);
+    await this.record('RECORD_UPDATE', ownerAddress, id);
     return this.toRecord(next);
   }
 
@@ -137,7 +137,7 @@ export class EncryptedRecordRepository {
 
     const next: StoredRecord = { ...existing, deleted: true };
     await this.store.put(next);
-    this.record('RECORD_DELETE', ownerAddress, id);
+    await this.record('RECORD_DELETE', ownerAddress, id);
     return this.toRecord(next);
   }
 
@@ -151,8 +151,8 @@ export class EncryptedRecordRepository {
     return openJson<SealedPhiPayload>(row.sealedPhi, phiAad(row.ownerAddress, row.id));
   }
 
-  private record(action: 'RECORD_CREATE' | 'RECORD_READ' | 'RECORD_UPDATE' | 'RECORD_DELETE', actor: string, resourceId: string): void {
-    this.audit.append({ action, actor, resource: 'record', resourceId, success: true });
+  private async record(action: 'RECORD_CREATE' | 'RECORD_READ' | 'RECORD_UPDATE' | 'RECORD_DELETE', actor: string, resourceId: string): Promise<void> {
+    await this.audit.record({ action, actor, resource: 'record', resourceId, success: true });
   }
 
   private toRecord(row: StoredRecord): MockHealthRecord {
