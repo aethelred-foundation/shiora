@@ -17,7 +17,7 @@ import {
   buildPurchaseReceipt,
   getMarketplaceListing,
   updateMarketplaceListing,
-} from '@/lib/api/store';
+} from '@/lib/api/marketplace-service';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   if (blocked) return blocked;
 
   const { id } = await context.params;
-  const listing = getMarketplaceListing(id);
+  const listing = await getMarketplaceListing(id);
   if (!listing) {
     return notFoundResponse('MarketplaceListing', id);
   }
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   if ('status' in auth) return auth;
 
   const { id } = await context.params;
-  const listing = getMarketplaceListing(id);
+  const listing = await getMarketplaceListing(id);
   if (!listing) {
     return notFoundResponse('MarketplaceListing', id);
   }
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     );
   }
 
-  updateMarketplaceListing(id, {
+  await updateMarketplaceListing(id, {
     status: 'sold',
     purchaseCount: listing.purchaseCount + 1,
   });
@@ -85,7 +85,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   if ('status' in auth) return auth;
 
   const { id } = await context.params;
-  const listing = getMarketplaceListing(id);
+  const listing = await getMarketplaceListing(id);
   if (!listing) {
     return notFoundResponse('MarketplaceListing', id);
   }
@@ -98,7 +98,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     );
   }
 
-  const withdrawnListing = updateMarketplaceListing(id, {
+  const withdrawnListing = await updateMarketplaceListing(id, {
     status: 'withdrawn',
   });
   if (!withdrawnListing) {

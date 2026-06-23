@@ -23,6 +23,7 @@ export type AuditAction =
   | 'PROOF_VERIFY'
   | 'GOVERNANCE_VOTE'
   | 'MARKETPLACE_LIST'
+  | 'MARKETPLACE_UPDATE'
   | 'MARKETPLACE_PURCHASE';
 
 export interface AuditEntry {

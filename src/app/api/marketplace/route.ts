@@ -19,7 +19,7 @@ import {
   buildMarketplaceListingFromInput,
   createMarketplaceListing,
   listMarketplaceListings,
-} from '@/lib/api/store';
+} from '@/lib/api/marketplace-service';
 import { MARKETPLACE_CATEGORIES } from '@/lib/constants';
 
 const MarketplaceListQuerySchema = z.object({
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const listings = listMarketplaceListings().filter((listing) => {
+    const listings = (await listMarketplaceListings()).filter((listing) => {
       if (query.category && listing.category !== query.category) return false;
       if (query.q) {
         const q = query.q.toLowerCase();
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const listing = createMarketplaceListing(
+    const listing = await createMarketplaceListing(
       buildMarketplaceListingFromInput({
         seller: auth.walletAddress!,
         category: validated.category,
