@@ -24,7 +24,9 @@ export type AuditAction =
   | 'GOVERNANCE_VOTE'
   | 'MARKETPLACE_LIST'
   | 'MARKETPLACE_UPDATE'
-  | 'MARKETPLACE_PURCHASE';
+  | 'MARKETPLACE_PURCHASE'
+  | 'ROLE_ASSIGN'
+  | 'ROLE_REVOKE';
 
 export interface AuditEntry {
   timestamp: string;
