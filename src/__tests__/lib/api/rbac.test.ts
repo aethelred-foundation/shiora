@@ -2,7 +2,7 @@
 
 import { NextRequest } from 'next/server';
 
-import { isAdmin, requireAdmin, requireRole } from '@/lib/api/rbac';
+import { isAdmin, requireAdmin, requireCapability, requireRole } from '@/lib/api/rbac';
 import { assignRole, __resetRolesForTests } from '@/lib/api/roles-service';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
@@ -64,6 +64,27 @@ describe('rbac', () => {
     __resetRolesForTests();
     const { token } = createSessionToken(seededAddress(5));
     const res = await requireRole(reqFor(token), 'government');
+    expect('status' in res && res.status).toBe(403);
+  });
+
+  it('requireCapability returns 401 when unauthenticated', async () => {
+    const res = await requireCapability(reqFor(), 'manage_own_records');
+    expect('status' in res && res.status).toBe(401);
+  });
+
+  it('requireCapability grants access when a role provides the capability', async () => {
+    __resetRolesForTests();
+    const addr = seededAddress(8);
+    await assignRole(addr, 'researcher');
+    const { token } = createSessionToken(addr);
+    const res = await requireCapability(reqFor(token), 'access_research_marketplace');
+    expect('walletAddress' in res && res.walletAddress).toBe(addr);
+  });
+
+  it('requireCapability returns 403 when no role provides the capability', async () => {
+    __resetRolesForTests();
+    const { token } = createSessionToken(seededAddress(9)); // default individual only
+    const res = await requireCapability(reqFor(token), 'run_secure_computation');
     expect('status' in res && res.status).toBe(403);
   });
 

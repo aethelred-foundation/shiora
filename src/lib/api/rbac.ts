@@ -17,6 +17,7 @@ import { type NextRequest, type NextResponse } from 'next/server';
 import { requireAuth, type AuthContext } from './middleware';
 import { errorResponse, HTTP } from './responses';
 import { getRoles } from './roles-service';
+import { capabilitiesFor, type Capability } from './capabilities';
 import type { Role } from './roles';
 
 function adminAllowlist(): Set<string> {
@@ -53,6 +54,30 @@ export async function requireRole(
     return errorResponse(
       'FORBIDDEN',
       `This action requires one of the following roles: ${roles.join(', ')}.`,
+      HTTP.FORBIDDEN,
+    );
+  }
+  return auth;
+}
+
+/**
+ * Require the caller's roles to grant `capability`. Returns the authenticated
+ * context on success, or a 401/403 response.
+ */
+export async function requireCapability(
+  request: NextRequest,
+  capability: Capability,
+): Promise<AuthContext | NextResponse> {
+  const auth = requireAuth(request);
+  if ('status' in auth) {
+    return auth;
+  }
+
+  const held = await getRoles(auth.walletAddress!);
+  if (!capabilitiesFor(held).includes(capability)) {
+    return errorResponse(
+      'FORBIDDEN',
+      `This action requires the '${capability}' capability.`,
       HTTP.FORBIDDEN,
     );
   }
