@@ -7,9 +7,36 @@
 // concrete driver.
 // ============================================================
 
+import { Pool } from 'pg';
+
 export interface SqlClient {
   query<T = Record<string, unknown>>(
     text: string,
     params?: unknown[],
   ): Promise<{ rows: T[] }>;
+}
+
+let _pool: Pool | null = null;
+
+/**
+ * Production SQL client backed by a pooled `pg` connection. The pool is created
+ * lazily and reused. Requires `DATABASE_URL`; throws otherwise so a misconfigured
+ * production deployment fails loudly rather than silently losing PHI.
+ */
+export function getPgClient(): SqlClient {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL must be set to use the Postgres datastore.');
+  }
+  if (!_pool) {
+    _pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  }
+  const pool = _pool;
+  return {
+    query: (text, params) => pool.query(text, params) as Promise<{ rows: never[] }>,
+  };
+}
+
+/** Test-only: drop the cached pool so env changes take effect between cases. */
+export function __resetPgPoolForTests(): void {
+  _pool = null;
 }

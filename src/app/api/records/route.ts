@@ -19,8 +19,9 @@ import {
 } from '@/lib/api/responses';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import type { MockHealthRecord } from '@/lib/api/mock-data';
-import { createRecord, listRecords } from '@/lib/api/store';
-import { generateCID, generateTxHash, generateAttestation, seededHex, seededInt } from '@/lib/utils';
+import { randomUUID } from 'node:crypto';
+import { createRecord, listRecords } from '@/lib/api/records-service';
+import { generateCID, generateTxHash, generateAttestation, seededInt } from '@/lib/utils';
 
 // ────────────────────────────────────────────────────────────
 // GET /api/records
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
       request.nextUrl.searchParams,
     );
 
-    let records = listRecords(auth.walletAddress!);
+    let records = await listRecords(auth.walletAddress!);
 
     // Filter by type
     if (query.type) {
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     const seed = Date.now();
     const newRecord: MockHealthRecord = {
-      id: `rec-${seededHex(seed, 12)}`,
+      id: `rec-${randomUUID().replace(/-/g, '')}`,
       type: validated.type,
       label: validated.label,
       description: validated.description ?? `Encrypted health record uploaded at ${new Date().toISOString()}`,
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
       blockHeight: 2847391 + seededInt(seed + 1, 1, 100),
     };
 
-    const persistedRecord = createRecord(auth.walletAddress!, newRecord);
+    const persistedRecord = await createRecord(auth.walletAddress!, newRecord);
 
     return successResponse(persistedRecord, HTTP.CREATED, {
       message: 'Record created. IPFS pinning and TEE verification in progress.',

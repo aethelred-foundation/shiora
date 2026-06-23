@@ -15,7 +15,7 @@ import {
   HTTP,
 } from '@/lib/api/responses';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
-import { getRecord, softDeleteRecord, updateRecord } from '@/lib/api/store';
+import { getRecord, softDeleteRecord, updateRecord } from '@/lib/api/records-service';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   if ('status' in auth) return auth;
 
   const { id } = await context.params;
-  const record = getRecord(auth.walletAddress!, id);
+  const record = await getRecord(auth.walletAddress!, id);
 
   if (!record) {
     return notFoundResponse('Record', id);
@@ -77,7 +77,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   if ('status' in auth) return auth;
 
   const { id } = await context.params;
-  const record = getRecord(auth.walletAddress!, id);
+  const record = await getRecord(auth.walletAddress!, id);
 
   if (!record) {
     return notFoundResponse('Record', id);
@@ -88,7 +88,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const validated = RecordUpdateSchema.parse(body);
 
     // Build updated record (mock — not persisted)
-    const updated = updateRecord(auth.walletAddress!, id, {
+    const updated = await updateRecord(auth.walletAddress!, id, {
       ...(validated.label !== undefined && { label: validated.label }),
       ...(validated.description !== undefined && { description: validated.description }),
       ...(validated.tags !== undefined && { tags: validated.tags }),
@@ -120,13 +120,13 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   if ('status' in auth) return auth;
 
   const { id } = await context.params;
-  const record = getRecord(auth.walletAddress!, id);
+  const record = await getRecord(auth.walletAddress!, id);
 
   if (!record) {
     return notFoundResponse('Record', id);
   }
 
-  const deletedRecord = softDeleteRecord(auth.walletAddress!, id);
+  const deletedRecord = await softDeleteRecord(auth.walletAddress!, id);
   if (!deletedRecord) {
     return notFoundResponse('Record', id);
   }
