@@ -2,6 +2,8 @@
 
 import {
   AUDIT_CHAIN_DDL,
+  DOCUMENTS_DDL,
+  DOCUMENTS_OWNER_INDEX_DDL,
   HEALTH_RECORDS_DDL,
   HEALTH_RECORDS_OWNER_INDEX_DDL,
   MIGRATIONS,
@@ -24,11 +26,20 @@ describe('persistence schema', () => {
     expect(AUDIT_CHAIN_DDL).toContain('prev_hash  text NOT NULL');
   });
 
-  it('orders migrations: tables before their index dependency is fine, audit last', () => {
+  it('defines the generic documents table with a sealed payload column', () => {
+    expect(DOCUMENTS_DDL).toContain('CREATE TABLE IF NOT EXISTS documents');
+    expect(DOCUMENTS_DDL).toContain('sealed     jsonb NOT NULL');
+    expect(DOCUMENTS_DDL).toContain('PRIMARY KEY (collection, id)');
+    expect(DOCUMENTS_OWNER_INDEX_DDL).toContain('idx_documents_owner');
+  });
+
+  it('orders migrations: tables and their indexes, records and documents', () => {
     expect(MIGRATIONS).toEqual([
       HEALTH_RECORDS_DDL,
       HEALTH_RECORDS_OWNER_INDEX_DDL,
       AUDIT_CHAIN_DDL,
+      DOCUMENTS_DDL,
+      DOCUMENTS_OWNER_INDEX_DDL,
     ]);
   });
 });

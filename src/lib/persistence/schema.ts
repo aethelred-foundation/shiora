@@ -48,9 +48,30 @@ CREATE TABLE IF NOT EXISTS audit_chain (
 );
 `.trim();
 
+export const DOCUMENTS_DDL = `
+CREATE TABLE IF NOT EXISTS documents (
+  collection text NOT NULL,
+  owner_key  text NOT NULL,
+  id         text NOT NULL,
+  sealed     jsonb NOT NULL,
+  deleted    boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (collection, id)
+);
+`.trim();
+
+export const DOCUMENTS_OWNER_INDEX_DDL = `
+CREATE INDEX IF NOT EXISTS idx_documents_owner
+  ON documents (collection, owner_key)
+  WHERE deleted = false;
+`.trim();
+
 /** Ordered list of statements that bring a fresh database up to schema. */
 export const MIGRATIONS: readonly string[] = [
   HEALTH_RECORDS_DDL,
   HEALTH_RECORDS_OWNER_INDEX_DDL,
   AUDIT_CHAIN_DDL,
+  DOCUMENTS_DDL,
+  DOCUMENTS_OWNER_INDEX_DDL,
 ];

@@ -18,9 +18,10 @@ import {
   HTTP,
 } from '@/lib/api/responses';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
+import { randomUUID } from 'node:crypto';
 import type { MockAccessGrant } from '@/lib/api/mock-data';
-import { createAccessGrant, listAccessGrants } from '@/lib/api/store';
-import { seededHex, generateTxHash, generateAttestation } from '@/lib/utils';
+import { createAccessGrant, listAccessGrants } from '@/lib/api/access-service';
+import { generateTxHash, generateAttestation } from '@/lib/utils';
 
 // ────────────────────────────────────────────────────────────
 // GET /api/access
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
       request.nextUrl.searchParams,
     );
 
-    const allGrants = listAccessGrants(auth.walletAddress!);
+    const allGrants = await listAccessGrants(auth.walletAddress!);
     let grants = [...allGrants];
 
     // Filter by status
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
     const expiresAt = Date.now() + validated.durationDays * 86400000;
 
     const newGrant: MockAccessGrant = {
-      id: `grant-${seededHex(seed, 8)}`,
+      id: `grant-${randomUUID().replace(/-/g, '')}`,
       provider: validated.provider,
       specialty: validated.specialty,
       address: validated.address,
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
       ownerAddress: auth.walletAddress!,
     };
 
-    const persistedGrant = createAccessGrant(auth.walletAddress!, newGrant);
+    const persistedGrant = await createAccessGrant(auth.walletAddress!, newGrant);
 
     return successResponse(persistedGrant, HTTP.CREATED, {
       message: 'Access grant created. Pending blockchain confirmation.',

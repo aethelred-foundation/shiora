@@ -1,0 +1,94 @@
+// ============================================================
+// Shiora on Aethelred — Encrypted Document Repository
+//
+// Generic policy layer over DocumentStorePort: seals each document at rest
+// with envelope encryption (AAD-bound to collection:owner:id), decrypts on
+// read, and appends a tamper-evident audit entry on every mutation. One class
+// serves every owner-scoped collection (access grants, consent, …).
+// ============================================================
+
+import { AuditChain, type AuditAction } from '@/lib/crypto/audit-chain';
+import { openJson, sealJson } from '@/lib/crypto/envelope';
+import type { DocumentStorePort, StoredDocument } from './document-store';
+
+/** Audit action names emitted for a collection's mutations. */
+export interface DocumentAuditActions {
+  create: AuditAction;
+  update: AuditAction;
+}
+
+export class EncryptedDocumentRepository<T extends { id: string }> {
+  constructor(
+    private readonly store: DocumentStorePort,
+    private readonly audit: AuditChain,
+    private readonly collection: string,
+    private readonly actions: DocumentAuditActions,
+  ) {}
+
+  /** Encrypt and persist a new document, returning it unchanged. */
+  async create(ownerKey: string, document: T): Promise<T> {
+    await this.persist(ownerKey, document);
+    this.record(this.actions.create, ownerKey, document.id);
+    return document;
+  }
+
+  /** Fetch and decrypt a single document. */
+  async get(ownerKey: string, id: string): Promise<T | undefined> {
+    const row = await this.store.findById(this.collection, ownerKey, id);
+    if (!row || row.deleted) {
+      return undefined;
+    }
+    return this.open(ownerKey, row);
+  }
+
+  /** List and decrypt all of an owner's non-deleted documents. */
+  async list(ownerKey: string): Promise<T[]> {
+    const rows = await this.store.findByOwner(this.collection, ownerKey);
+    return rows.filter((row) => !row.deleted).map((row) => this.open(ownerKey, row));
+  }
+
+  /** Merge a patch into an existing document and re-seal it. */
+  async update(ownerKey: string, id: string, patch: Partial<T>): Promise<T | undefined> {
+    const row = await this.store.findById(this.collection, ownerKey, id);
+    if (!row || row.deleted) {
+      return undefined;
+    }
+
+    const current = this.open(ownerKey, row);
+    const next = { ...current, ...patch, id: current.id } as T;
+    await this.persist(ownerKey, next);
+    this.record(this.actions.update, ownerKey, id);
+    return next;
+  }
+
+  // -- internals -----------------------------------------------------------
+
+  private aad(ownerKey: string, id: string): string {
+    return `${this.collection}:${ownerKey}:${id}`;
+  }
+
+  private async persist(ownerKey: string, document: T): Promise<void> {
+    const sealed = sealJson<T>(document, this.aad(ownerKey, document.id));
+    await this.store.put({
+      collection: this.collection,
+      ownerKey,
+      id: document.id,
+      sealed,
+      deleted: false,
+    });
+  }
+
+  private open(ownerKey: string, row: StoredDocument): T {
+    return openJson<T>(row.sealed, this.aad(ownerKey, row.id));
+  }
+
+  private record(action: AuditAction, actor: string, resourceId: string): void {
+    this.audit.append({
+      action,
+      actor,
+      resource: this.collection,
+      resourceId,
+      success: true,
+    });
+  }
+}

@@ -16,7 +16,7 @@ import {
   HTTP,
 } from '@/lib/api/responses';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
-import { getAccessGrant, updateAccessGrant } from '@/lib/api/store';
+import { getAccessGrant, updateAccessGrant } from '@/lib/api/access-service';
 import { generateTxHash } from '@/lib/utils';
 
 interface RouteContext {
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   if ('status' in auth) return auth;
 
   const { id } = await context.params;
-  const grant = getAccessGrant(auth.walletAddress!, id);
+  const grant = await getAccessGrant(auth.walletAddress!, id);
 
   if (!grant) {
     return notFoundResponse('AccessGrant', id);
@@ -76,7 +76,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   if ('status' in auth) return auth;
 
   const { id } = await context.params;
-  const grant = getAccessGrant(auth.walletAddress!, id);
+  const grant = await getAccessGrant(auth.walletAddress!, id);
 
   if (!grant) {
     return notFoundResponse('AccessGrant', id);
@@ -94,7 +94,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const body = await request.json();
     const validated = GrantUpdateSchema.parse(body);
 
-    const updated = updateAccessGrant(auth.walletAddress!, id, {
+    const updated = await updateAccessGrant(auth.walletAddress!, id, {
       ...(validated.scope !== undefined && { scope: validated.scope }),
       ...(validated.canView !== undefined && { canView: validated.canView }),
       ...(validated.canDownload !== undefined && { canDownload: validated.canDownload }),
@@ -129,7 +129,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   if ('status' in auth) return auth;
 
   const { id } = await context.params;
-  const grant = getAccessGrant(auth.walletAddress!, id);
+  const grant = await getAccessGrant(auth.walletAddress!, id);
 
   if (!grant) {
     return notFoundResponse('AccessGrant', id);
@@ -143,7 +143,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     );
   }
 
-  const revokedGrant = updateAccessGrant(auth.walletAddress!, id, {
+  const revokedGrant = await updateAccessGrant(auth.walletAddress!, id, {
     status: 'Revoked',
   });
 
