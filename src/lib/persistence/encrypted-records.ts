@@ -8,9 +8,8 @@
 // so the same logic runs over the in-memory driver (dev/test) or Postgres
 // (production) without change.
 //
-// This is the drop-in replacement for the seeded `src/lib/api/store.ts` record
-// functions; the data it returns is real, owner-scoped, and encrypted at rest
-// rather than generated from a fixed seed.
+// The data it returns is real, owner-scoped, and encrypted at rest rather than
+// generated from a fixed seed.
 // ============================================================
 
 import { AuditChain } from '@/lib/crypto/audit-chain';
