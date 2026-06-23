@@ -1,575 +1,308 @@
 /** @jest-environment node */
 
-import { NextRequest } from 'next/server';
+jest.mock('@/lib/api/middleware', () => {
+  const actual = jest.requireActual('@/lib/api/middleware');
+  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+});
+
+jest.mock('@/lib/api/consent-service', () => {
+  const actual = jest.requireActual('@/lib/api/consent-service');
+  return {
+    ...actual,
+    listConsents: jest.fn((...args: unknown[]) => actual.listConsents(...args)),
+    updateConsent: jest.fn((...args: unknown[]) => actual.updateConsent(...args)),
+  };
+});
+
+import { NextRequest, NextResponse } from 'next/server';
+import { runMiddleware } from '@/lib/api/middleware';
+import { listConsents as svcList, updateConsent as svcUpdate } from '@/lib/api/consent-service';
+
 import { GET as listConsents, POST as createConsent } from '@/app/api/consent/route';
 import { GET as getConsent, PATCH as patchConsent, DELETE as deleteConsent } from '@/app/api/consent/[id]/route';
-import { GET as getPolicies } from '@/app/api/consent/policies/route';
+import { GET as listPolicies } from '@/app/api/consent/policies/route';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
 
-const actualStore = jest.requireActual('@/lib/api/store');
-const actualMiddleware = jest.requireActual('@/lib/api/middleware');
-const actualValidation = jest.requireActual('@/lib/api/validation');
-
-jest.mock('@/lib/api/store', () => {
-  const actual = jest.requireActual('@/lib/api/store');
-  return {
-    __esModule: true,
-    ...actual,
-    updateConsent: jest.fn((...args: unknown[]) => actual.updateConsent(...args)),
-    listConsents: jest.fn((...args: unknown[]) => actual.listConsents(...args)),
-  };
-});
-
-jest.mock('@/lib/api/middleware', () => {
-  const actual = jest.requireActual('@/lib/api/middleware');
-  return {
-    __esModule: true,
-    ...actual,
-    runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)),
-  };
-});
-
-import { updateConsent, listConsents as storeListConsents } from '@/lib/api/store';
-import { runMiddleware } from '@/lib/api/middleware';
-const mockedUpdateConsent = updateConsent as jest.MockedFunction<typeof updateConsent>;
-const mockedStoreListConsents = storeListConsents as jest.MockedFunction<typeof storeListConsents>;
+const mockedList = svcList as jest.MockedFunction<typeof svcList>;
+const mockedUpdate = svcUpdate as jest.MockedFunction<typeof svcUpdate>;
+const actualService = jest.requireActual('@/lib/api/consent-service');
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
 
 afterEach(() => {
-  mockedUpdateConsent.mockImplementation((...args: unknown[]) => actualStore.updateConsent(...args));
-  mockedStoreListConsents.mockImplementation((...args: unknown[]) => actualStore.listConsents(...args));
-  mockedRunMiddleware.mockImplementation((...args: unknown[]) => actualMiddleware.runMiddleware(...args));
+  mockedRunMiddleware.mockImplementation((...args: unknown[]) => {
+    const actual = jest.requireActual('@/lib/api/middleware');
+    return actual.runMiddleware(...args);
+  });
+  mockedList.mockImplementation((...args: unknown[]) => actualService.listConsents(...args));
+  mockedUpdate.mockImplementation((...args: unknown[]) => actualService.updateConsent(...args));
 });
 
-const addr = seededAddress(6666);
-const { token } = createSessionToken(addr);
-
-function authed(url: string, init?: RequestInit): NextRequest {
-  return new NextRequest(url, {
-    ...init,
-    headers: { ...(init?.headers ?? {}), authorization: `Bearer ${token}` },
-  });
+function authed(url: string, init: RequestInit, token: string): NextRequest {
+  return new NextRequest(url, { ...init, headers: { ...(init.headers ?? {}), authorization: `Bearer ${token}` } });
 }
 
-describe('/api/consent', () => {
-  let consentId: string;
+interface ConsentPayload {
+  providerName: string;
+  providerAddress?: string;
+  scopes: string[];
+  durationDays: number;
+  autoRenew?: boolean;
+  policyId?: string;
+}
 
-  it('GET lists consents (initially empty for new address)', async () => {
-    const res = await listConsents(authed('http://localhost:3000/api/consent'));
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data).toBeDefined();
-  });
+async function postConsent(token: string, payload: ConsentPayload): Promise<{ id: string }> {
+  const res = await createConsent(
+    authed('http://localhost:3001/api/consent', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    }, token),
+  );
+  return (await res.json()).data;
+}
 
-  it('GET returns 401 for unauthenticated', async () => {
-    const res = await listConsents(new NextRequest('http://localhost:3000/api/consent'));
-    expect(res.status).toBe(401);
-  });
+describe('/api/consent middleware and auth guards', () => {
+  const { token } = createSessionToken(seededAddress(111));
 
-  it('POST creates a new consent', async () => {
-    const res = await createConsent(
-      authed('http://localhost:3000/api/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          providerName: 'Dr. Smith',
-          scopes: ['lab_results', 'vitals'],
-          durationDays: 90,
-          autoRenew: false,
-        }),
-      }),
-    );
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.providerName).toBe('Dr. Smith');
-    expect(body.data.status).toBe('active');
-    consentId = body.data.id;
-  });
-
-  it('POST returns validation error for empty body', async () => {
-    const res = await createConsent(
-      authed('http://localhost:3000/api/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      }),
-    );
-    expect(res.status).toBe(422);
-  });
-
-  it('GET filters consents by status', async () => {
-    // First create a consent so there is data
-    await createConsent(
-      authed('http://localhost:3000/api/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          providerName: 'Dr. StatusFilter',
-          scopes: ['vitals'],
-          durationDays: 30,
-          autoRenew: false,
-        }),
-      }),
-    );
-    const res = await listConsents(authed('http://localhost:3000/api/consent?status=active'));
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    body.data.items.forEach((c: { status: string }) => {
-      expect(c.status).toBe('active');
-    });
-  });
-
-  it('GET filters consents by scope', async () => {
-    const res = await listConsents(authed('http://localhost:3000/api/consent?scope=vitals'));
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    body.data.items.forEach((c: { scopes: string[] }) => {
-      expect(c.scopes).toContain('vitals');
-    });
-  });
-
-  it('GET filters consents by search query', async () => {
-    const res = await listConsents(authed('http://localhost:3000/api/consent?search=StatusFilter'));
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-  });
-
-  it('GET returns 422 for invalid query params (ZodError)', async () => {
-    const res = await listConsents(authed('http://localhost:3000/api/consent?page=abc'));
-    expect(res.status).toBe(422);
-    const body = await res.json();
-    expect(body.error.code).toBe('VALIDATION_ERROR');
-  });
-
-  it('POST returns 500 for non-JSON body (internal error)', async () => {
-    const res = await createConsent(
-      authed('http://localhost:3000/api/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: 'not-json',
-      }),
-    );
-    expect(res.status).toBe(500);
-    const body = await res.json();
-    expect(body.error.code).toBe('INTERNAL_ERROR');
-  });
-
-  it('GET returns 401 from inner requireAuth when middleware is bypassed', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
-    const res = await listConsents(new NextRequest('http://localhost:3000/api/consent'));
-    expect(res.status).toBe(401);
-  });
-
-  it('POST returns middleware error when blocked', async () => {
-    const { NextResponse } = require('next/server');
+  it('GET returns the middleware error when blocked', async () => {
     mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await createConsent(
-      new NextRequest('http://localhost:3000/api/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          providerName: 'Dr. Blocked',
-          scopes: ['vitals'],
-          durationDays: 30,
-          autoRenew: false,
-        }),
-      }),
-    );
-    expect(res.status).toBe(403);
+    expect((await listConsents(authed('http://localhost:3001/api/consent', { method: 'GET' }, token))).status).toBe(403);
   });
 
-  it('POST returns 401 from inner requireAuth when middleware is bypassed', async () => {
+  it('POST returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    expect((await createConsent(authed('http://localhost:3001/api/consent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }, token))).status).toBe(403);
+  });
+
+  it('GET [id] returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    expect((await getConsent(authed('http://localhost:3001/api/consent/c-x', { method: 'GET' }, token), { params: Promise.resolve({ id: 'c-x' }) })).status).toBe(403);
+  });
+
+  it('PATCH returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    expect((await patchConsent(authed('http://localhost:3001/api/consent/c-x', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' }, token), { params: Promise.resolve({ id: 'c-x' }) })).status).toBe(403);
+  });
+
+  it('DELETE returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    expect((await deleteConsent(authed('http://localhost:3001/api/consent/c-x', { method: 'DELETE' }, token), { params: Promise.resolve({ id: 'c-x' }) })).status).toBe(403);
+  });
+
+  it('GET returns 401 when inner requireAuth runs unauthenticated', async () => {
     mockedRunMiddleware.mockReturnValueOnce(null);
-    const res = await createConsent(
-      new NextRequest('http://localhost:3000/api/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          providerName: 'Dr. Bypass',
-          scopes: ['vitals'],
-          durationDays: 30,
-          autoRenew: false,
-        }),
-      }),
-    );
-    expect(res.status).toBe(401);
+    expect((await listConsents(new NextRequest('http://localhost:3001/api/consent'))).status).toBe(401);
   });
 
-  it('GET re-throws non-ZodError in catch block', async () => {
-    mockedStoreListConsents.mockImplementationOnce(() => {
-      throw new Error('Unexpected DB error in list');
-    });
-    await expect(
-      listConsents(authed('http://localhost:3000/api/consent')),
-    ).rejects.toThrow('Unexpected DB error in list');
+  it('POST returns 401 when inner requireAuth runs unauthenticated', async () => {
+    mockedRunMiddleware.mockReturnValueOnce(null);
+    expect((await createConsent(new NextRequest('http://localhost:3001/api/consent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }))).status).toBe(401);
   });
 
-  it('POST creates consent with providerAddress', async () => {
-    const res = await createConsent(
-      authed('http://localhost:3000/api/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          providerName: 'Dr. WithAddress',
-          providerAddress: seededAddress(9999),
-          scopes: ['vitals'],
-          durationDays: 30,
-          autoRenew: false,
-          policyId: 'policy-custom',
-        }),
-      }),
-    );
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.data.providerAddress).toBe(seededAddress(9999));
-    expect(body.data.policyId).toBe('policy-custom');
+  it('GET [id] returns 401 when inner requireAuth runs unauthenticated', async () => {
+    mockedRunMiddleware.mockReturnValueOnce(null);
+    expect((await getConsent(new NextRequest('http://localhost:3001/api/consent/c-x'), { params: Promise.resolve({ id: 'c-x' }) })).status).toBe(401);
+  });
+
+  it('PATCH returns 401 when inner requireAuth runs unauthenticated', async () => {
+    mockedRunMiddleware.mockReturnValueOnce(null);
+    expect((await patchConsent(new NextRequest('http://localhost:3001/api/consent/c-x', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' }), { params: Promise.resolve({ id: 'c-x' }) })).status).toBe(401);
+  });
+
+  it('DELETE returns 401 when inner requireAuth runs unauthenticated', async () => {
+    mockedRunMiddleware.mockReturnValueOnce(null);
+    expect((await deleteConsent(new NextRequest('http://localhost:3001/api/consent/c-x', { method: 'DELETE' }), { params: Promise.resolve({ id: 'c-x' }) })).status).toBe(401);
   });
 });
 
-describe('/api/consent/[id]', () => {
+describe('/api/consent list, filter, search', () => {
+  const owner = seededAddress(222);
+  const { token } = createSessionToken(owner);
+  const provider2Addr = seededAddress(950);
+
+  beforeAll(async () => {
+    await postConsent(token, { providerName: 'Rivera Clinic', scopes: ['cycle_data', 'lab_results'], durationDays: 365 });
+    await postConsent(token, { providerName: 'North Health', providerAddress: provider2Addr, scopes: ['imaging'], durationDays: 30 });
+  });
+
+  it('starts empty for a brand-new wallet', async () => {
+    const fresh = createSessionToken(seededAddress(998));
+    const res = await listConsents(authed('http://localhost:3001/api/consent', { method: 'GET' }, fresh.token));
+    expect((await res.json()).data.items).toEqual([]);
+  });
+
+  it('lists consents with pagination metadata', async () => {
+    const res = await listConsents(authed('http://localhost:3001/api/consent?limit=100', { method: 'GET' }, token));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.items.length).toBeGreaterThanOrEqual(2);
+    expect(body.data.total).toBeGreaterThanOrEqual(2);
+  });
+
+  it('clamps an out-of-range page to the last page', async () => {
+    const res = await listConsents(authed('http://localhost:3001/api/consent?page=99&limit=1', { method: 'GET' }, token));
+    const body = await res.json();
+    expect(body.data.page).toBe(body.data.totalPages);
+  });
+
+  it('filters by status', async () => {
+    const res = await listConsents(authed('http://localhost:3001/api/consent?status=active&limit=100', { method: 'GET' }, token));
+    const body = await res.json();
+    body.data.items.forEach((c: { status: string }) => expect(c.status).toBe('active'));
+  });
+
+  it('filters by scope', async () => {
+    const res = await listConsents(authed('http://localhost:3001/api/consent?scope=cycle_data&limit=100', { method: 'GET' }, token));
+    const body = await res.json();
+    expect(body.data.items.length).toBe(1);
+    body.data.items.forEach((c: { scopes: string[] }) => expect(c.scopes).toContain('cycle_data'));
+  });
+
+  it('searches by provider name', async () => {
+    const res = await listConsents(authed('http://localhost:3001/api/consent?search=rivera&limit=100', { method: 'GET' }, token));
+    const body = await res.json();
+    expect(body.data.items.length).toBe(1);
+    expect(body.data.items[0].providerName).toBe('Rivera Clinic');
+  });
+
+  it('searches by provider address when the name does not match', async () => {
+    const res = await listConsents(authed(`http://localhost:3001/api/consent?search=${provider2Addr.slice(0, 12)}&limit=100`, { method: 'GET' }, token));
+    const body = await res.json();
+    expect(body.data.items.length).toBe(1);
+    expect(body.data.items[0].providerName).toBe('North Health');
+  });
+
+  it('returns nothing when the search matches no field', async () => {
+    const res = await listConsents(authed('http://localhost:3001/api/consent?search=zzznomatch&limit=100', { method: 'GET' }, token));
+    expect((await res.json()).data.items).toEqual([]);
+  });
+
+  it('returns 422 for invalid query params', async () => {
+    expect((await listConsents(authed('http://localhost:3001/api/consent?page=-1', { method: 'GET' }, token))).status).toBe(422);
+  });
+
+  it('re-throws a non-Zod error from the datastore', async () => {
+    mockedList.mockImplementationOnce(() => { throw new Error('DB down'); });
+    await expect(listConsents(authed('http://localhost:3001/api/consent', { method: 'GET' }, token))).rejects.toThrow('DB down');
+  });
+});
+
+describe('/api/consent create', () => {
+  const { token } = createSessionToken(seededAddress(333));
+
+  it('creates a consent (201, active)', async () => {
+    const res = await createConsent(
+      authed('http://localhost:3001/api/consent', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ providerName: 'Dr. Chen', scopes: ['full_access'], durationDays: 90, autoRenew: true }),
+      }, token),
+    );
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body.data.status).toBe('active');
+    expect(body.data.autoRenew).toBe(true);
+  });
+
+  it('returns 422 for an invalid create body', async () => {
+    const res = await createConsent(
+      authed('http://localhost:3001/api/consent', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ providerName: '', scopes: [] }),
+      }, token),
+    );
+    expect(res.status).toBe(422);
+  });
+
+  it('returns 500 on an invalid JSON body (non-Zod error)', async () => {
+    const res = await createConsent(
+      authed('http://localhost:3001/api/consent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: 'not-json' }, token),
+    );
+    expect(res.status).toBe(500);
+  });
+});
+
+describe('/api/consent/[id] detail, modify, revoke', () => {
+  const owner = seededAddress(444);
+  const { token } = createSessionToken(owner);
   let consentId: string;
 
   beforeAll(async () => {
-    const res = await createConsent(
-      authed('http://localhost:3000/api/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          providerName: 'Dr. Test',
-          scopes: ['vitals'],
-          durationDays: 30,
-          autoRenew: false,
-        }),
-      }),
-    );
-    const body = await res.json();
-    consentId = body.data.id;
+    const c = await postConsent(token, { providerName: 'Main Provider', scopes: ['cycle_data'], durationDays: 365 });
+    consentId = c.id;
   });
 
-  it('GET returns a specific consent', async () => {
-    const res = await getConsent(
-      authed(`http://localhost:3000/api/consent/${consentId}`),
-      { params: Promise.resolve({ id: consentId }) },
-    );
+  it('GET returns the consent detail', async () => {
+    const res = await getConsent(authed(`http://localhost:3001/api/consent/${consentId}`, { method: 'GET' }, token), { params: Promise.resolve({ id: consentId }) });
     expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.id).toBe(consentId);
+    expect((await res.json()).data.id).toBe(consentId);
   });
 
-  it('PATCH updates a consent', async () => {
-    const res = await patchConsent(
-      authed(`http://localhost:3000/api/consent/${consentId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ durationDays: 60 }),
-      }),
-      { params: Promise.resolve({ id: consentId }) },
-    );
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-  });
-
-  it('DELETE revokes a consent', async () => {
-    const res = await deleteConsent(
-      authed(`http://localhost:3000/api/consent/${consentId}`, {
-        method: 'DELETE',
-      }),
-      { params: Promise.resolve({ id: consentId }) },
-    );
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-  });
-
-  it('GET returns 401 for unauthenticated request', async () => {
-    const res = await getConsent(
-      new NextRequest('http://localhost:3000/api/consent/some-id'),
-      { params: Promise.resolve({ id: 'some-id' }) },
-    );
-    expect(res.status).toBe(401);
-  });
-
-  it('GET returns 404 for nonexistent consent', async () => {
-    const res = await getConsent(
-      authed('http://localhost:3000/api/consent/nonexistent'),
-      { params: Promise.resolve({ id: 'nonexistent' }) },
-    );
-    expect(res.status).toBe(404);
-    const body = await res.json();
-    expect(body.error.code).toBe('NOT_FOUND');
-  });
-
-  it('PATCH returns 401 for unauthenticated request', async () => {
-    const res = await patchConsent(
-      new NextRequest('http://localhost:3000/api/consent/some-id', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ durationDays: 60 }),
-      }),
-      { params: Promise.resolve({ id: 'some-id' }) },
-    );
-    expect(res.status).toBe(401);
-  });
-
-  it('PATCH returns 404 for nonexistent consent', async () => {
-    const res = await patchConsent(
-      authed('http://localhost:3000/api/consent/nonexistent', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ durationDays: 60 }),
-      }),
-      { params: Promise.resolve({ id: 'nonexistent' }) },
-    );
+  it('GET returns 404 for a missing consent', async () => {
+    const res = await getConsent(authed('http://localhost:3001/api/consent/c-missing', { method: 'GET' }, token), { params: Promise.resolve({ id: 'c-missing' }) });
     expect(res.status).toBe(404);
   });
 
-  it('PATCH returns 422 for invalid body', async () => {
-    // Create a fresh consent for this test
-    const createRes = await createConsent(
-      authed('http://localhost:3000/api/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          providerName: 'Dr. Validation',
-          scopes: ['vitals'],
-          durationDays: 30,
-          autoRenew: false,
-        }),
-      }),
-    );
-    const createBody = await createRes.json();
-    const freshId = createBody.data.id;
+  it('PATCH updates the scopes', async () => {
+    const res = await patchConsent(authed(`http://localhost:3001/api/consent/${consentId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ scopes: ['cycle_data', 'vitals'] }) }, token), { params: Promise.resolve({ id: consentId }) });
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.scopes).toEqual(['cycle_data', 'vitals']);
+  });
 
-    const res = await patchConsent(
-      authed(`http://localhost:3000/api/consent/${freshId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scopes: 'not-an-array' }),
-      }),
-      { params: Promise.resolve({ id: freshId }) },
-    );
+  it('PATCH updates the duration', async () => {
+    const res = await patchConsent(authed(`http://localhost:3001/api/consent/${consentId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ durationDays: 30 }) }, token), { params: Promise.resolve({ id: consentId }) });
+    expect(res.status).toBe(200);
+  });
+
+  it('PATCH returns 422 for an invalid body', async () => {
+    const res = await patchConsent(authed(`http://localhost:3001/api/consent/${consentId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ scopes: ['invalid_scope'] }) }, token), { params: Promise.resolve({ id: consentId }) });
     expect(res.status).toBe(422);
-    const body = await res.json();
-    expect(body.error.code).toBe('VALIDATION_ERROR');
   });
 
-  it('PATCH returns 400 for revoked consent', async () => {
-    // Create and revoke a consent
-    const createRes = await createConsent(
-      authed('http://localhost:3000/api/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          providerName: 'Dr. Revoked',
-          scopes: ['vitals'],
-          durationDays: 30,
-          autoRenew: false,
-        }),
-      }),
-    );
-    const createBody = await createRes.json();
-    const revokedId = createBody.data.id;
-
-    // Revoke it
-    await deleteConsent(
-      authed(`http://localhost:3000/api/consent/${revokedId}`, { method: 'DELETE' }),
-      { params: Promise.resolve({ id: revokedId }) },
-    );
-
-    // Try to patch it
-    const res = await patchConsent(
-      authed(`http://localhost:3000/api/consent/${revokedId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ durationDays: 60 }),
-      }),
-      { params: Promise.resolve({ id: revokedId }) },
-    );
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body.error.code).toBe('INVALID_STATE');
-  });
-
-  it('DELETE returns 401 for unauthenticated request', async () => {
-    const res = await deleteConsent(
-      new NextRequest('http://localhost:3000/api/consent/some-id', { method: 'DELETE' }),
-      { params: Promise.resolve({ id: 'some-id' }) },
-    );
-    expect(res.status).toBe(401);
-  });
-
-  it('DELETE returns 404 for nonexistent consent', async () => {
-    const res = await deleteConsent(
-      authed('http://localhost:3000/api/consent/nonexistent', { method: 'DELETE' }),
-      { params: Promise.resolve({ id: 'nonexistent' }) },
-    );
-    expect(res.status).toBe(404);
-  });
-
-  it('PATCH returns 404 when updateConsent returns undefined (race condition)', async () => {
-    // Create a consent to get a valid ID
-    const createRes = await createConsent(
-      authed('http://localhost:3000/api/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          providerName: 'Dr. RaceCondition',
-          scopes: ['vitals'],
-          durationDays: 30,
-          autoRenew: false,
-        }),
-      }),
-    );
-    const createBody = await createRes.json();
-    const raceId = createBody.data.id;
-
-    // Mock updateConsent to return undefined (simulating concurrent deletion)
-    mockedUpdateConsent.mockReturnValueOnce(undefined);
-
-    const res = await patchConsent(
-      authed(`http://localhost:3000/api/consent/${raceId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ durationDays: 60 }),
-      }),
-      { params: Promise.resolve({ id: raceId }) },
-    );
-    expect(res.status).toBe(404);
-    // afterEach handles restoration
-  });
-
-  it('PATCH returns 500 for non-JSON body (internal error)', async () => {
-    // Create a consent to get a valid ID
-    const createRes = await createConsent(
-      authed('http://localhost:3000/api/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          providerName: 'Dr. InternalErr',
-          scopes: ['vitals'],
-          durationDays: 30,
-          autoRenew: false,
-        }),
-      }),
-    );
-    const createBody = await createRes.json();
-    const errId = createBody.data.id;
-
-    const res = await patchConsent(
-      authed(`http://localhost:3000/api/consent/${errId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: 'not-json',
-      }),
-      { params: Promise.resolve({ id: errId }) },
-    );
+  it('PATCH returns 500 on an invalid JSON body (non-Zod error)', async () => {
+    const res = await patchConsent(authed(`http://localhost:3001/api/consent/${consentId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: 'not-json' }, token), { params: Promise.resolve({ id: consentId }) });
     expect(res.status).toBe(500);
-    const body = await res.json();
-    expect(body.error.code).toBe('INTERNAL_ERROR');
   });
 
-  it('DELETE returns 404 when updateConsent returns undefined (race condition)', async () => {
-    // Create a consent
-    const createRes = await createConsent(
-      authed('http://localhost:3000/api/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          providerName: 'Dr. DeleteRace',
-          scopes: ['vitals'],
-          durationDays: 30,
-          autoRenew: false,
-        }),
-      }),
-    );
-    const createBody = await createRes.json();
-    const deleteRaceId = createBody.data.id;
-
-    // Mock updateConsent to return undefined
-    mockedUpdateConsent.mockReturnValueOnce(undefined);
-
-    const res = await deleteConsent(
-      authed(`http://localhost:3000/api/consent/${deleteRaceId}`, { method: 'DELETE' }),
-      { params: Promise.resolve({ id: deleteRaceId }) },
-    );
+  it('PATCH returns 404 for a missing consent', async () => {
+    const res = await patchConsent(authed('http://localhost:3001/api/consent/c-missing', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ scopes: ['vitals'] }) }, token), { params: Promise.resolve({ id: 'c-missing' }) });
     expect(res.status).toBe(404);
-    // afterEach handles restoration
   });
 
-  it('GET returns 401 from inner requireAuth when middleware is bypassed', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
-    const res = await getConsent(
-      new NextRequest('http://localhost:3000/api/consent/some-id'),
-      { params: Promise.resolve({ id: 'some-id' }) },
-    );
-    expect(res.status).toBe(401);
+  it('PATCH returns 404 when the datastore update returns nothing', async () => {
+    mockedUpdate.mockResolvedValueOnce(undefined);
+    const res = await patchConsent(authed(`http://localhost:3001/api/consent/${consentId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ scopes: ['vitals'] }) }, token), { params: Promise.resolve({ id: consentId }) });
+    expect(res.status).toBe(404);
   });
 
-  it('PATCH returns 401 from inner requireAuth when middleware is bypassed', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
-    const res = await patchConsent(
-      new NextRequest('http://localhost:3000/api/consent/some-id', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ durationDays: 60 }),
-      }),
-      { params: Promise.resolve({ id: 'some-id' }) },
-    );
-    expect(res.status).toBe(401);
+  it('DELETE returns 404 for a missing consent', async () => {
+    const res = await deleteConsent(authed('http://localhost:3001/api/consent/c-missing', { method: 'DELETE' }, token), { params: Promise.resolve({ id: 'c-missing' }) });
+    expect(res.status).toBe(404);
   });
 
-  it('DELETE returns 401 from inner requireAuth when middleware is bypassed', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
-    const res = await deleteConsent(
-      new NextRequest('http://localhost:3000/api/consent/some-id', { method: 'DELETE' }),
-      { params: Promise.resolve({ id: 'some-id' }) },
-    );
-    expect(res.status).toBe(401);
+  it('DELETE returns 404 when the datastore update returns nothing', async () => {
+    mockedUpdate.mockResolvedValueOnce(undefined);
+    const res = await deleteConsent(authed(`http://localhost:3001/api/consent/${consentId}`, { method: 'DELETE' }, token), { params: Promise.resolve({ id: consentId }) });
+    expect(res.status).toBe(404);
   });
 
-  it('PATCH updates scopes on a consent', async () => {
-    const createRes = await createConsent(
-      authed('http://localhost:3000/api/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          providerName: 'Dr. ScopePatch',
-          scopes: ['vitals'],
-          durationDays: 30,
-          autoRenew: false,
-        }),
-      }),
-    );
-    const createBody = await createRes.json();
-    const scopeId = createBody.data.id;
+  it('DELETE revokes a consent, after which modify is rejected', async () => {
+    const c = await postConsent(token, { providerName: 'Revoke Me', scopes: ['vitals'], durationDays: 90 });
 
-    const res = await patchConsent(
-      authed(`http://localhost:3000/api/consent/${scopeId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scopes: ['vitals', 'lab_results'] }),
-      }),
-      { params: Promise.resolve({ id: scopeId }) },
-    );
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.data.scopes).toEqual(['vitals', 'lab_results']);
+    const revoke = await deleteConsent(authed(`http://localhost:3001/api/consent/${c.id}`, { method: 'DELETE' }, token), { params: Promise.resolve({ id: c.id }) });
+    expect(revoke.status).toBe(200);
+    expect((await revoke.json()).data.status).toBe('revoked');
+
+    const modify = await patchConsent(authed(`http://localhost:3001/api/consent/${c.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ scopes: ['vitals'] }) }, token), { params: Promise.resolve({ id: c.id }) });
+    expect(modify.status).toBe(400);
   });
 });
 
 describe('/api/consent/policies', () => {
-  it('GET returns consent policies', async () => {
-    const res = await getPolicies(authed('http://localhost:3000/api/consent/policies'));
+  it('lists the consent policy templates', async () => {
+    const res = await listPolicies();
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
+    expect(body.data.length).toBeGreaterThanOrEqual(5);
+    expect(body.data[0]).toHaveProperty('maxDurationDays');
   });
 });

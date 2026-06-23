@@ -1,0 +1,69 @@
+// ============================================================
+// Shiora on Aethelred — Consent Service
+//
+// The live, encrypted datastore for patient consent grants. Consents start
+// empty per patient and are encrypted at rest, with every mutation written to
+// the tamper-evident audit chain. Postgres when DATABASE_URL is set, otherwise
+// in-memory — both via the generic EncryptedDocumentRepository.
+// ============================================================
+
+import { AuditChain } from '@/lib/crypto/audit-chain';
+import { EncryptedDocumentRepository } from '@/lib/persistence/encrypted-documents';
+import { InMemoryDocumentStore, type DocumentStorePort } from '@/lib/persistence/document-store';
+import { PgDocumentStore } from '@/lib/persistence/pg-document-store';
+import { getPgClient } from '@/lib/persistence/sql-client';
+import type { ConsentGrant } from '@/types';
+
+const COLLECTION = 'consent';
+
+let repository: EncryptedDocumentRepository<ConsentGrant> | null = null;
+
+function createStore(): DocumentStorePort {
+  if (process.env.DATABASE_URL) {
+    return new PgDocumentStore(getPgClient());
+  }
+  return new InMemoryDocumentStore();
+}
+
+function repo(): EncryptedDocumentRepository<ConsentGrant> {
+  if (!repository) {
+    repository = new EncryptedDocumentRepository<ConsentGrant>(
+      createStore(),
+      new AuditChain(),
+      COLLECTION,
+      { create: 'CONSENT_CREATE', update: 'CONSENT_UPDATE' },
+    );
+  }
+  return repository;
+}
+
+export function listConsents(patientAddress: string): Promise<ConsentGrant[]> {
+  return repo().list(patientAddress);
+}
+
+export function getConsent(
+  patientAddress: string,
+  id: string,
+): Promise<ConsentGrant | undefined> {
+  return repo().get(patientAddress, id);
+}
+
+export function createConsent(
+  patientAddress: string,
+  consent: ConsentGrant,
+): Promise<ConsentGrant> {
+  return repo().create(patientAddress, consent);
+}
+
+export function updateConsent(
+  patientAddress: string,
+  id: string,
+  patch: Partial<ConsentGrant>,
+): Promise<ConsentGrant | undefined> {
+  return repo().update(patientAddress, id, patch);
+}
+
+/** Test-only: reset the singleton so each test starts from empty state. */
+export function __resetConsentForTests(): void {
+  repository = null;
+}

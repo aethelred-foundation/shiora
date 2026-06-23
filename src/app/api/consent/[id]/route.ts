@@ -15,7 +15,7 @@ import type {
 } from '@/types';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import { ConsentUpdateSchema } from '@/lib/api/validation';
-import { getConsent, updateConsent } from '@/lib/api/store';
+import { getConsent, updateConsent } from '@/lib/api/consent-service';
 
 // ---------------------------------------------------------------------------
 // GET /api/consent/[id]
@@ -32,7 +32,7 @@ export async function GET(
   if ('status' in auth) return auth;
 
   const { id } = await params;
-  const consent = getConsent(auth.walletAddress!, id);
+  const consent = await getConsent(auth.walletAddress!, id);
 
   if (!consent) {
     return NextResponse.json(
@@ -69,7 +69,7 @@ export async function PATCH(
   if ('status' in auth) return auth;
 
   const { id } = await params;
-  const consent = getConsent(auth.walletAddress!, id);
+  const consent = await getConsent(auth.walletAddress!, id);
 
   if (!consent) {
     return NextResponse.json(
@@ -95,7 +95,7 @@ export async function PATCH(
 
   try {
     const updates = ConsentUpdateSchema.parse(await request.json());
-    const updatedConsent = updateConsent(auth.walletAddress!, id, {
+    const updatedConsent = await updateConsent(auth.walletAddress!, id, {
       ...(updates.scopes ? { scopes: updates.scopes } : {}),
       ...(updates.durationDays ? {
         expiresAt: Date.now() + updates.durationDays * 86400000,
@@ -162,7 +162,7 @@ export async function DELETE(
   if ('status' in auth) return auth;
 
   const { id } = await params;
-  const consent = getConsent(auth.walletAddress!, id);
+  const consent = await getConsent(auth.walletAddress!, id);
 
   if (!consent) {
     return NextResponse.json(
@@ -175,7 +175,7 @@ export async function DELETE(
     );
   }
 
-  const revokedConsent = updateConsent(auth.walletAddress!, id, {
+  const revokedConsent = await updateConsent(auth.walletAddress!, id, {
     status: 'revoked',
     revokedAt: Date.now(),
   });
