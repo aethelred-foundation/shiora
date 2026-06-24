@@ -1,0 +1,81 @@
+# Shiora — Security & Production-Readiness Remediation Tracker
+
+**Created:** 2026-06-24
+**Source:** External consultant assessment of the Engineering Progress Report.
+**Branch:** `feat/backbone-phi-encryption-audit` (PR #9).
+
+This tracker maps every item from the consultant's assessment to a concrete
+status. Legend:
+
+- ✅ **Done** — addressed in code this work stream (tested, green, pushed).
+- 🔧 **Code-next** — engineering-buildable; scoped for an upcoming code pass.
+- 🏗️ **Infra** — requires provisioning / cloud resources (engineering + ops).
+- 📋 **Process** — human/legal/audit workstream; cannot be produced by code.
+
+---
+
+## Critical gaps (production blockers)
+
+| Item | Status | Notes |
+|---|---|---|
+| Provision Postgres + migrations + backups | 🔧/🏗️ | **Migration runner built** (`migrator.ts`, version-tracked, verified against a real Postgres engine). Provisioning, connection config (`DATABASE_URL`), and backup/PITR are infra tasks. Adapters + schema already exist and are verified. |
+| Move KEK to a managed KMS/HSM | 🔧/🏗️ | Envelope encryption already isolates key access behind a single accessor with a production-throw guard. Next code step: extract a `KeyProvider` seam (env vs. KMS) + versioned key rotation. KMS provisioning is infra. |
+| Audit-chain concurrency hardening | 🔧 | Current chain is correct single-process. Next code step: advance the Postgres head under a transaction / advisory lock (requires adding a transactional primitive to the persistence port). |
+| **Fix Dependabot vulnerabilities (8 high)** | ⚠️ **Re-scoped** | **Investigated and corrected:** all flagged packages are **dev/build tooling, not production runtime** — `ws` is from `jest-environment-jsdom`→`jsdom` (test only), `js-yaml` from `eslint` (dev), `postcss` is build-time. None ship in the deployed PHI runtime. The 2 "high" `ws` advisories are test-tooling. `npm audit fix` **breaks the jsdom test environment** (it bumps `ws` in a way `jsdom` can't use), so these need a **coordinated, tested toolchain upgrade** (jest/jsdom/eslint/next minor bumps), not a blind fix. Production runtime deps (`next`, `react`, `pg`, `zod`) are clean. |
+| Add MFA | ✅ **Done** | **TOTP (RFC 6238) implemented** — `totp.ts` + `mfa-service.ts` + `/api/mfa`, `/api/mfa/enroll`, `/api/mfa/verify`. Secret sealed at rest, audited, authenticator-app compatible. Step-up enforcement on sensitive actions is the remaining wiring. |
+| Distributed rate limiting | 🔧 | Current limiter is in-memory/per-instance. Next code step: a store-backed async limiter; note this requires making the (currently synchronous) middleware chain async — a deliberate, wide refactor. |
+| HIPAA Risk Assessment | 📋 | Security lead. Prerequisite to BAA signing / covered-entity pilots. |
+| BAAs with subprocessors | 📋 | Legal. Required before PHI flows to hosting/KMS/etc. |
+| Penetration test | 📋/🏗️ | Third-party firm; schedule after the infra items above land. |
+
+## Important gaps (before scaling)
+
+| Item | Status | Notes |
+|---|---|---|
+| On-chain audit anchoring | 🔧/🏗️ | Hash chain + durable persistence done. Anchoring the head on the Aethelred L1 needs a chain client (none present) — greenfield integration. |
+| TEE attestation wiring | 🔧/🏗️ | `teeVerified` placeholders remain — intentionally **not** faked. Needs the real `aethelred-tee-worker` integration. |
+| Clinical DS SaMD classification | 📋 | Regulatory counsel. Provider clinical routes are now **auth + capability gated**, but content remains non-validated reference data. |
+| GDPR DPO + DPIA | 📋 | Legal (GDPR Art. 35) for health-data processing at scale. |
+| k-anonymity review (k=5) | 📋/🔧 | Population analytics implemented with k=5 suppression. A privacy engineer should confirm whether differential privacy / TEE-side aggregation is required for payer/government sharing. |
+
+## Build fresh (not started)
+
+| Item | Status | Notes |
+|---|---|---|
+| Employer admin console (org/membership) | 🔧 | New entity, fits the existing encrypted-document pattern. |
+| SANA AI assistant backend | 🔧/🏗️/📋 | Needs an LLM integration + safety guardrails + likely SaMD review. |
+| ZKP prover (real circuits) | 🔧/🏗️ | `/api/zkp/*` returns mock proofs; needs a real prover (Groth16/PLONK). |
+| IPFS storage client | 🔧/🏗️ | `cid` placeholders; needs a content-addressed storage client + node. |
+| Blockchain / L1 integration | 🔧/🏗️ | No chain client; needed for on-chain consent, audit anchoring, consent NFTs. |
+| Migration system | ✅ **Done** | `migrator.ts` (version-tracked, idempotent, Postgres-verified). |
+| Secrets rotation pipeline | 🔧/🏗️ | Depends on the KMS/`KeyProvider` step above. |
+| Observability stack | 🏗️ | Structured audit/request logging exists; metrics/alerting (Prometheus/Datadog) is infra. |
+| Disaster recovery + backup validation | 🏗️/📋 | Backup strategy for encrypted Postgres must be documented + tested. |
+| SOC 2 Type II readiness | 📋 | ~6-month observation window; start early. |
+| Clinical validation framework | 📋 | Required before any decision-support route ships to providers in production. |
+| HITRUST / ISO 27001 | 📋 | Market-dependent; required by enterprise health-system customers. |
+
+---
+
+## Done this work stream (code, tested, pushed)
+
+- **MFA (TOTP, RFC 6238)** — `f15cee1`.
+- **Versioned database migration runner** — `14774c6` (verified vs. real Postgres).
+- **Dependency-vulnerability investigation** — established the flagged CVEs are
+  dev/build tooling only and that the naive `npm audit fix` regresses the test
+  environment; defined the coordinated-upgrade path.
+
+All landed at the repository's 100% coverage gate; lint + type-check clean.
+
+## Recommended immediate next code pass
+
+1. `KeyProvider` seam + versioned key rotation (prepares KMS cutover).
+2. Audit-chain transactional head advancement (Postgres).
+3. Coordinated dev-toolchain upgrade to clear the (non-runtime) Dependabot alerts.
+4. Distributed rate limiter + async middleware refactor.
+5. Employer admin console (org/membership entity).
+
+The consultant's overall sequencing (infra + KMS in weeks 1–4, compliance
+process in months 2+, integrations in month 5+) is endorsed; the engineering
+items above are the parts that do not depend on external provisioning or
+human/legal workstreams and can proceed in parallel.
