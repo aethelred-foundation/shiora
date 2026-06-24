@@ -13,13 +13,14 @@ import { InMemoryDocumentStore, type DocumentStorePort } from '@/lib/persistence
 import { PgDocumentStore } from '@/lib/persistence/pg-document-store';
 import { getPgClient } from '@/lib/persistence/sql-client';
 import type { ConsentGrant } from '@/types';
+import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
 
 const COLLECTION = 'consent';
 
 let repository: EncryptedDocumentRepository<ConsentGrant> | null = null;
 
 function createStore(): DocumentStorePort {
-  if (process.env.DATABASE_URL) {
+  if (shouldUsePostgres()) {
     return new PgDocumentStore(getPgClient());
   }
   return new InMemoryDocumentStore();

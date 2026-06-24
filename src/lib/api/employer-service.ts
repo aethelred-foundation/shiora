@@ -14,6 +14,7 @@ import { EncryptedDocumentRepository } from '@/lib/persistence/encrypted-documen
 import { InMemoryDocumentStore, type DocumentStorePort } from '@/lib/persistence/document-store';
 import { PgDocumentStore } from '@/lib/persistence/pg-document-store';
 import { getPgClient } from '@/lib/persistence/sql-client';
+import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
 
 export interface Organization {
   id: string;
@@ -42,7 +43,7 @@ let orgRepository: EncryptedDocumentRepository<Organization> | null = null;
 let memberRepository: EncryptedDocumentRepository<OrgMembership> | null = null;
 
 function createStore(): DocumentStorePort {
-  if (process.env.DATABASE_URL) {
+  if (shouldUsePostgres()) {
     return new PgDocumentStore(getPgClient());
   }
   return new InMemoryDocumentStore();

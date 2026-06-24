@@ -6,6 +6,7 @@
 import { NextRequest } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
 import { successResponse } from '@/lib/api/responses';
+import { maturitySummary } from '@/lib/api/maturity';
 
 const startTime = Date.now();
 
@@ -28,12 +29,11 @@ export async function GET(request: NextRequest) {
     },
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV ?? 'development',
-    features: {
-      teeVerification: true,
-      ipfsStorage: true,
-      e2eEncryption: true,
-      blockchainAudit: true,
-    },
+    // Honest capability posture. PHI encryption and the audit chain are real;
+    // TEE / IPFS / on-chain anchoring are simulated. The authoritative,
+    // per-feature breakdown is GET /api/system/status.
+    capabilities: maturitySummary(),
+    capabilityDetail: '/api/system/status',
   });
 }
 

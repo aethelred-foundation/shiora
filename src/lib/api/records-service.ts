@@ -20,11 +20,12 @@ import { InMemoryRecordStore, type RecordStorePort } from '@/lib/persistence/rec
 import { PgRecordStore } from '@/lib/persistence/pg-record-store';
 import { getPgClient } from '@/lib/persistence/sql-client';
 import type { MockHealthRecord } from '@/lib/api/mock-data';
+import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
 
 let repository: EncryptedRecordRepository | null = null;
 
 function createStore(): RecordStorePort {
-  if (process.env.DATABASE_URL) {
+  if (shouldUsePostgres()) {
     return new PgRecordStore(getPgClient());
   }
   return new InMemoryRecordStore();

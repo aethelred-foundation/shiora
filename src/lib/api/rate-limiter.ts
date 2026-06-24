@@ -10,6 +10,7 @@
 
 import { getPgClient } from '@/lib/persistence/sql-client';
 import { PgRateLimiter } from '@/lib/persistence/pg-rate-limiter';
+import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
 
 export interface RateLimitDecision {
   /** Whether this request is within the limit and may proceed. */
@@ -76,7 +77,7 @@ export class InMemoryRateLimiter implements RateLimiter {
 let limiter: RateLimiter | null = null;
 
 function createRateLimiter(): RateLimiter {
-  if (process.env.DATABASE_URL) {
+  if (shouldUsePostgres()) {
     return new PgRateLimiter(getPgClient());
   }
   return new InMemoryRateLimiter();

@@ -14,6 +14,7 @@ import { InMemoryDocumentStore, type DocumentStorePort } from '@/lib/persistence
 import { PgDocumentStore } from '@/lib/persistence/pg-document-store';
 import { getPgClient } from '@/lib/persistence/sql-client';
 import { DEFAULT_ROLES, type Role } from './roles';
+import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
 
 export interface RoleAssignment {
   /** Document id — equal to the address (one assignment per address). */
@@ -28,7 +29,7 @@ const COLLECTION = 'role-assignment';
 let repository: EncryptedDocumentRepository<RoleAssignment> | null = null;
 
 function createStore(): DocumentStorePort {
-  if (process.env.DATABASE_URL) {
+  if (shouldUsePostgres()) {
     return new PgDocumentStore(getPgClient());
   }
   return new InMemoryDocumentStore();

@@ -13,13 +13,14 @@ import { InMemoryDocumentStore, type DocumentStorePort } from '@/lib/persistence
 import { PgDocumentStore } from '@/lib/persistence/pg-document-store';
 import { getPgClient } from '@/lib/persistence/sql-client';
 import type { MockAccessGrant } from '@/lib/api/mock-data';
+import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
 
 const COLLECTION = 'access-grant';
 
 let repository: EncryptedDocumentRepository<MockAccessGrant> | null = null;
 
 function createStore(): DocumentStorePort {
-  if (process.env.DATABASE_URL) {
+  if (shouldUsePostgres()) {
     return new PgDocumentStore(getPgClient());
   }
   return new InMemoryDocumentStore();

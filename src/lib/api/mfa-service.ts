@@ -12,6 +12,7 @@ import { PgDocumentStore } from '@/lib/persistence/pg-document-store';
 import { getPgClient } from '@/lib/persistence/sql-client';
 import { getAuditLog } from '@/lib/api/audit-log';
 import { generateTotpSecret, otpauthUri, verifyTotp } from './totp';
+import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
 
 interface MfaEnrollment {
   id: string;
@@ -26,7 +27,7 @@ const COLLECTION = 'mfa';
 let repository: EncryptedDocumentRepository<MfaEnrollment> | null = null;
 
 function createStore(): DocumentStorePort {
-  if (process.env.DATABASE_URL) {
+  if (shouldUsePostgres()) {
     return new PgDocumentStore(getPgClient());
   }
   return new InMemoryDocumentStore();

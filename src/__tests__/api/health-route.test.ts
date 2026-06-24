@@ -38,16 +38,16 @@ describe('/api/health', () => {
     expect(body.data.chain).toBe('Aethelred');
   });
 
-  it('includes features object', async () => {
+  it('reports an honest capability summary, not hard-coded feature claims', async () => {
     const req = new NextRequest('http://localhost:3000/api/health', { method: 'GET' });
     const res = await GET(req);
     const body = await res.json();
-    expect(body.data.features).toEqual({
-      teeVerification: true,
-      ipfsStorage: true,
-      e2eEncryption: true,
-      blockchainAudit: true,
-    });
+    // No more hard-coded teeVerification/ipfsStorage/blockchainAudit = true.
+    expect(body.data.features).toBeUndefined();
+    expect(typeof body.data.capabilities.production).toBe('number');
+    expect(body.data.capabilities.production).toBeGreaterThan(0);
+    expect(body.data.capabilities.simulated).toBeGreaterThan(0);
+    expect(body.data.capabilityDetail).toBe('/api/system/status');
   });
 
   it('includes uptime info', async () => {

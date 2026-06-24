@@ -21,6 +21,7 @@ import { InMemoryAuditStore, type AuditStore } from '@/lib/persistence/audit-sto
 import { PgAuditStore } from '@/lib/persistence/pg-audit-store';
 import { getPgClient } from '@/lib/persistence/sql-client';
 import type { AuditAction, AuditEntry } from '@/lib/api/audit';
+import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
 
 export interface AuditFilter {
   actor?: string;
@@ -71,7 +72,7 @@ export class PersistentAuditLog implements AuditRecorder {
 let instance: PersistentAuditLog | null = null;
 
 function createStore(): AuditStore {
-  if (process.env.DATABASE_URL) {
+  if (shouldUsePostgres()) {
     return new PgAuditStore(getPgClient());
   }
   return new InMemoryAuditStore();

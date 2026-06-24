@@ -17,6 +17,7 @@ import { PgDocumentStore } from '@/lib/persistence/pg-document-store';
 import { getPgClient } from '@/lib/persistence/sql-client';
 import { generateAttestation, generateTxHash, seededInt } from '@/lib/utils';
 import type { DataListing, MarketplaceCategory } from '@/types';
+import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
 
 const COLLECTION = 'marketplace';
 /** Single global scope: the catalog is public, not per-owner. */
@@ -25,7 +26,7 @@ const GLOBAL_KEY = '__global__';
 let repository: EncryptedDocumentRepository<DataListing> | null = null;
 
 function createStore(): DocumentStorePort {
-  if (process.env.DATABASE_URL) {
+  if (shouldUsePostgres()) {
     return new PgDocumentStore(getPgClient());
   }
   return new InMemoryDocumentStore();
