@@ -35,7 +35,7 @@ function describeRoles(address: string, roles: Role[]) {
 }
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = requireAuth(request);
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = await requireAdmin(request);
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = await requireAdmin(request);

@@ -39,7 +39,7 @@ describe('/api/insights', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       NextResponse.json({ error: 'blocked' }, { status: 429 }),
     );
     const req = new NextRequest('http://localhost:3000/api/insights');
@@ -97,7 +97,7 @@ describe('/api/insights/anomalies', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       NextResponse.json({ error: 'blocked' }, { status: 429 }),
     );
     const req = new NextRequest('http://localhost:3000/api/insights/anomalies');
@@ -148,7 +148,7 @@ describe('/api/insights/inferences', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       NextResponse.json({ error: 'blocked' }, { status: 429 }),
     );
     const req = new NextRequest('http://localhost:3000/api/insights/inferences');

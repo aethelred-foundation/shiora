@@ -77,7 +77,7 @@ function generateMockClaims(): ZKClaim[] {
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const claims = generateMockClaims();
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
 // ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   try {

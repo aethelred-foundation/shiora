@@ -92,7 +92,7 @@ describe('/api/chat', () => {
 
   it('GET returns blocked response when middleware blocks', async () => {
     const blockedResponse = NextResponse.json({ error: 'blocked' }, { status: 429 });
-    mockedRunMiddleware.mockReturnValueOnce(blockedResponse);
+    mockedRunMiddleware.mockResolvedValueOnce(blockedResponse);
     const req = new NextRequest('http://localhost:3000/api/chat');
     const res = await getChat(req);
     expect(res.status).toBe(429);
@@ -123,7 +123,7 @@ describe('/api/chat/conversations', () => {
 
   it('GET returns blocked when middleware returns a response', async () => {
     const blockedResponse = NextResponse.json({ error: 'blocked' }, { status: 429 });
-    mockedRunMiddleware.mockReturnValueOnce(blockedResponse);
+    mockedRunMiddleware.mockResolvedValueOnce(blockedResponse);
     const req = new NextRequest('http://localhost:3000/api/chat/conversations');
     const res = await getConversations(req);
     expect(res.status).toBe(429);
@@ -192,7 +192,7 @@ describe('/api/chat/[id]', () => {
 
   it('GET returns blocked when middleware returns a response', async () => {
     const blockedResponse = NextResponse.json({ error: 'blocked' }, { status: 429 });
-    mockedRunMiddleware.mockReturnValueOnce(blockedResponse);
+    mockedRunMiddleware.mockResolvedValueOnce(blockedResponse);
     const res = await getChatById(
       new NextRequest('http://localhost:3000/api/chat/conv-c205925529d6'),
       { params: Promise.resolve({ id: 'conv-c205925529d6' }) },

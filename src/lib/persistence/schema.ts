@@ -67,6 +67,26 @@ CREATE INDEX IF NOT EXISTS idx_documents_owner
   WHERE deleted = false;
 `.trim();
 
+// Cross-instance fixed-window rate limiting. One row per (key, window_start)
+// bucket; the counter is incremented atomically with INSERT ... ON CONFLICT so
+// horizontally-scaled instances share a single source of truth (see
+// src/lib/persistence/pg-rate-limiter.ts). window_start is a bigint epoch-ms
+// bucket boundary; stale rows are pruned out-of-band.
+export const RATE_LIMITS_DDL = `
+CREATE TABLE IF NOT EXISTS rate_limits (
+  key          text    NOT NULL,
+  window_start bigint  NOT NULL,
+  count        integer NOT NULL DEFAULT 0,
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (key, window_start)
+);
+`.trim();
+
+export const RATE_LIMITS_WINDOW_INDEX_DDL = `
+CREATE INDEX IF NOT EXISTS idx_rate_limits_window
+  ON rate_limits (window_start);
+`.trim();
+
 /** Ordered list of statements that bring a fresh database up to schema. */
 export const MIGRATIONS: readonly string[] = [
   HEALTH_RECORDS_DDL,
@@ -74,4 +94,6 @@ export const MIGRATIONS: readonly string[] = [
   AUDIT_CHAIN_DDL,
   DOCUMENTS_DDL,
   DOCUMENTS_OWNER_INDEX_DDL,
+  RATE_LIMITS_DDL,
+  RATE_LIMITS_WINDOW_INDEX_DDL,
 ];

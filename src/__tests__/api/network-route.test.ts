@@ -33,7 +33,7 @@ describe('/api/network/status', () => {
   });
 
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const req = new NextRequest('http://localhost:3000/api/network/status');
     const res = await GET(req);
     expect(res.status).toBe(403);

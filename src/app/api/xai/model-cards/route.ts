@@ -16,7 +16,7 @@ const SEED = 1600;
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const modelCards = AI_MODELS.map((model, i) => ({

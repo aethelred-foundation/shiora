@@ -96,7 +96,7 @@ const PROTOCOLS = [
 ];
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   try {

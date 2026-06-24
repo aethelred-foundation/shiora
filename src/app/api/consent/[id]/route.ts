@@ -25,7 +25,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = requireAuth(request);
@@ -62,7 +62,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = requireAuth(request);
@@ -155,7 +155,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = requireAuth(request);

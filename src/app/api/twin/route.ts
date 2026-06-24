@@ -20,7 +20,7 @@ import type { DigitalTwin, OrganSystem } from '@/types';
 const SEED = 2200;
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   // Generate organ scores for each of the 10 organ systems

@@ -16,7 +16,7 @@ interface RouteContext {
 }
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = await requireCapability(request, 'manage_org_members');

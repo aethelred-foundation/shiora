@@ -17,7 +17,7 @@ import { generateCID, seededHex, seededInt } from '@/lib/utils';
 // ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   try {

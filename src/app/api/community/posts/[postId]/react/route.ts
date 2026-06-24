@@ -5,7 +5,7 @@ import { runMiddleware } from '@/lib/api/middleware';
 interface RouteContext { params: Promise<{ postId: string }> }
 
 export async function POST(request: NextRequest, context: RouteContext) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
   const { postId } = await context.params;
   const body = await request.json();

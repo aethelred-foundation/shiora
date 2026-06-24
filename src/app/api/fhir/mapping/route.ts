@@ -10,7 +10,7 @@ import { seededHex } from '@/lib/utils';
 import { FHIR_RESOURCE_TYPES } from '@/lib/constants';
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const SEED = 1100;

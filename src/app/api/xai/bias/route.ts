@@ -22,7 +22,7 @@ const BIAS_CATEGORIES = [
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const modelId = request.nextUrl.searchParams.get('modelId');

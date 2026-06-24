@@ -51,7 +51,7 @@ function createChallenge(address: string): {
 // exporting non-route functions from a Next.js App Router route file.
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const address = request.nextUrl.searchParams.get('address');

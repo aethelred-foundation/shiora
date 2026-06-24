@@ -64,52 +64,52 @@ describe('/api/consent middleware and auth guards', () => {
   const { token } = createSessionToken(seededAddress(111));
 
   it('GET returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await listConsents(authed('http://localhost:3001/api/consent', { method: 'GET' }, token))).status).toBe(403);
   });
 
   it('POST returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await createConsent(authed('http://localhost:3001/api/consent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }, token))).status).toBe(403);
   });
 
   it('GET [id] returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await getConsent(authed('http://localhost:3001/api/consent/c-x', { method: 'GET' }, token), { params: Promise.resolve({ id: 'c-x' }) })).status).toBe(403);
   });
 
   it('PATCH returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await patchConsent(authed('http://localhost:3001/api/consent/c-x', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' }, token), { params: Promise.resolve({ id: 'c-x' }) })).status).toBe(403);
   });
 
   it('DELETE returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await deleteConsent(authed('http://localhost:3001/api/consent/c-x', { method: 'DELETE' }, token), { params: Promise.resolve({ id: 'c-x' }) })).status).toBe(403);
   });
 
   it('GET returns 401 when inner requireAuth runs unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await listConsents(new NextRequest('http://localhost:3001/api/consent'))).status).toBe(401);
   });
 
   it('POST returns 401 when inner requireAuth runs unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await createConsent(new NextRequest('http://localhost:3001/api/consent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }))).status).toBe(401);
   });
 
   it('GET [id] returns 401 when inner requireAuth runs unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await getConsent(new NextRequest('http://localhost:3001/api/consent/c-x'), { params: Promise.resolve({ id: 'c-x' }) })).status).toBe(401);
   });
 
   it('PATCH returns 401 when inner requireAuth runs unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await patchConsent(new NextRequest('http://localhost:3001/api/consent/c-x', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' }), { params: Promise.resolve({ id: 'c-x' }) })).status).toBe(401);
   });
 
   it('DELETE returns 401 when inner requireAuth runs unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await deleteConsent(new NextRequest('http://localhost:3001/api/consent/c-x', { method: 'DELETE' }), { params: Promise.resolve({ id: 'c-x' }) })).status).toBe(401);
   });
 });

@@ -6,6 +6,8 @@ import {
   DOCUMENTS_OWNER_INDEX_DDL,
   HEALTH_RECORDS_DDL,
   HEALTH_RECORDS_OWNER_INDEX_DDL,
+  RATE_LIMITS_DDL,
+  RATE_LIMITS_WINDOW_INDEX_DDL,
   MIGRATIONS,
 } from '@/lib/persistence/schema';
 
@@ -33,13 +35,22 @@ describe('persistence schema', () => {
     expect(DOCUMENTS_OWNER_INDEX_DDL).toContain('idx_documents_owner');
   });
 
-  it('orders migrations: tables and their indexes, records and documents', () => {
+  it('defines the rate_limits table keyed by window bucket', () => {
+    expect(RATE_LIMITS_DDL).toContain('CREATE TABLE IF NOT EXISTS rate_limits');
+    expect(RATE_LIMITS_DDL).toContain('window_start bigint  NOT NULL');
+    expect(RATE_LIMITS_DDL).toContain('PRIMARY KEY (key, window_start)');
+    expect(RATE_LIMITS_WINDOW_INDEX_DDL).toContain('idx_rate_limits_window');
+  });
+
+  it('orders migrations: tables and their indexes, records, documents, rate limits', () => {
     expect(MIGRATIONS).toEqual([
       HEALTH_RECORDS_DDL,
       HEALTH_RECORDS_OWNER_INDEX_DDL,
       AUDIT_CHAIN_DDL,
       DOCUMENTS_DDL,
       DOCUMENTS_OWNER_INDEX_DDL,
+      RATE_LIMITS_DDL,
+      RATE_LIMITS_WINDOW_INDEX_DDL,
     ]);
   });
 });

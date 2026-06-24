@@ -66,7 +66,7 @@ function findCompartmentById(id: string) {
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const { id } = await context.params;
@@ -90,7 +90,7 @@ const UpdateCompartmentSchema = z.object({
 });
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const { id } = await context.params;

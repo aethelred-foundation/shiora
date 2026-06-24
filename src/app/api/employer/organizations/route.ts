@@ -19,7 +19,7 @@ const OrgCreateSchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = await requireCapability(request, 'manage_org_members');
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = await requireCapability(request, 'manage_org_members');

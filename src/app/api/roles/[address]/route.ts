@@ -16,7 +16,7 @@ interface RouteContext {
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = await requireAdmin(request);

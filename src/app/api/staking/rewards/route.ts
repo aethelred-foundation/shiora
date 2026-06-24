@@ -16,7 +16,7 @@ const SEED = 1450;
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const sources = ['staking_apy', 'marketplace_fees', 'governance_bonus'] as const;
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 // ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   try {

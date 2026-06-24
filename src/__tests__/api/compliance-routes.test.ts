@@ -74,7 +74,7 @@ describe('/api/compliance', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       NextResponse.json({ error: 'blocked' }, { status: 429 }),
     );
     const res = await getCompliance(new NextRequest('http://localhost:3000/api/compliance'));
@@ -119,7 +119,7 @@ describe('/api/compliance/checks', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       NextResponse.json({ error: 'blocked' }, { status: 429 }),
     );
     const res = await getChecks(
@@ -190,7 +190,7 @@ describe('/api/compliance/reports', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       NextResponse.json({ error: 'blocked' }, { status: 429 }),
     );
     const res = await getReports(
@@ -208,7 +208,7 @@ describe('/api/compliance/reports', () => {
   });
 
   it('POST returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       NextResponse.json({ error: 'blocked' }, { status: 429 }),
     );
     const res = await postReport(
@@ -233,7 +233,7 @@ describe('/api/compliance/audit', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       NextResponse.json({ error: 'blocked' }, { status: 429 }),
     );
     const res = await getAudit(

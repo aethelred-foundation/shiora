@@ -80,52 +80,52 @@ describe('/api/access middleware and auth guards', () => {
   const { token } = createSessionToken(seededAddress(111));
 
   it('GET returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await listGrants(authed('http://localhost:3001/api/access', { method: 'GET' }, token))).status).toBe(403);
   });
 
   it('POST returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await createGrant(authed('http://localhost:3001/api/access', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }, token))).status).toBe(403);
   });
 
   it('GET [id] returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await getGrant(authed('http://localhost:3001/api/access/grant-x', { method: 'GET' }, token), { params: Promise.resolve({ id: 'grant-x' }) })).status).toBe(403);
   });
 
   it('PATCH returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await patchGrant(authed('http://localhost:3001/api/access/grant-x', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' }, token), { params: Promise.resolve({ id: 'grant-x' }) })).status).toBe(403);
   });
 
   it('DELETE returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await deleteGrant(authed('http://localhost:3001/api/access/grant-x', { method: 'DELETE' }, token), { params: Promise.resolve({ id: 'grant-x' }) })).status).toBe(403);
   });
 
   it('GET returns 401 when inner requireAuth runs unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await listGrants(new NextRequest('http://localhost:3001/api/access'))).status).toBe(401);
   });
 
   it('POST returns 401 when inner requireAuth runs unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await createGrant(new NextRequest('http://localhost:3001/api/access', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }))).status).toBe(401);
   });
 
   it('GET [id] returns 401 when inner requireAuth runs unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await getGrant(new NextRequest('http://localhost:3001/api/access/grant-x'), { params: Promise.resolve({ id: 'grant-x' }) })).status).toBe(401);
   });
 
   it('PATCH returns 401 when inner requireAuth runs unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await patchGrant(new NextRequest('http://localhost:3001/api/access/grant-x', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' }), { params: Promise.resolve({ id: 'grant-x' }) })).status).toBe(401);
   });
 
   it('DELETE returns 401 when inner requireAuth runs unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await deleteGrant(new NextRequest('http://localhost:3001/api/access/grant-x', { method: 'DELETE' }), { params: Promise.resolve({ id: 'grant-x' }) })).status).toBe(401);
   });
 });
@@ -346,7 +346,7 @@ describe('/api/access/audit log view', () => {
   const { token } = createSessionToken(seededAddress(555));
 
   it('returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await listAudit(authed('http://localhost:3001/api/access/audit', { method: 'GET' }, token))).status).toBe(403);
   });
 

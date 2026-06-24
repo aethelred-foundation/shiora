@@ -54,12 +54,12 @@ const SESSIONS = 'http://localhost:3000/api/mpc/sessions';
 
 describe('/api/mpc/sessions (researcher-gated)', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await getSessions(authed(SESSIONS))).status).toBe(403);
   });
 
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await createSession(authed(SESSIONS, jsonPost({ name: 'Test', protocol: 'secure_sum' })))).status).toBe(403);
   });
 
@@ -123,7 +123,7 @@ describe('/api/mpc/sessions (researcher-gated)', () => {
 
 describe('/api/mpc/sessions/[id] (researcher-gated)', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getSession(authed(`${SESSIONS}/any-id`), { params: Promise.resolve({ id: 'any-id' }) });
     expect(res.status).toBe(403);
   });
@@ -185,7 +185,7 @@ describe('/api/mpc/datasets (researcher-gated)', () => {
   });
 
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await getDatasets(authed('http://localhost:3000/api/mpc/datasets'))).status).toBe(403);
   });
 });
@@ -202,7 +202,7 @@ describe('/api/mpc/results (researcher-gated)', () => {
   });
 
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await getResults(authed('http://localhost:3000/api/mpc/results'))).status).toBe(403);
   });
 });

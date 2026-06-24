@@ -22,13 +22,13 @@ afterEach(() => {
 
 describe('/api/zkp/claims', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getClaims(new NextRequest('http://localhost:3000/api/zkp/claims'));
     expect(res.status).toBe(403);
   });
 
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await createClaim(
       new NextRequest('http://localhost:3000/api/zkp/claims', {
         method: 'POST',
@@ -104,7 +104,7 @@ describe('/api/zkp/claims', () => {
 
 describe('/api/zkp/prove', () => {
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const req = new NextRequest('http://localhost:3000/api/zkp/prove', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -167,7 +167,7 @@ describe('/api/zkp/prove', () => {
 
 describe('/api/zkp/verify', () => {
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const req = new NextRequest('http://localhost:3000/api/zkp/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

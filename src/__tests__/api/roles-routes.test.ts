@@ -52,12 +52,12 @@ function jsonBody(body: unknown) {
 
 describe('GET /api/roles (self)', () => {
   it('returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await getMyRoles(authed({ method: 'GET' }, userToken))).status).toBe(403);
   });
 
   it('returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await getMyRoles(new NextRequest('http://localhost:3001/api/roles'))).status).toBe(401);
   });
 
@@ -72,12 +72,12 @@ describe('GET /api/roles (self)', () => {
 
 describe('POST /api/roles (assign)', () => {
   it('returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await assign(authed(jsonBody({ address: TARGET, role: 'provider' }), adminToken))).status).toBe(403);
   });
 
   it('returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await assign(new NextRequest('http://localhost:3001/api/roles', jsonBody({ address: TARGET, role: 'provider' })))).status).toBe(401);
   });
 
@@ -107,13 +107,13 @@ describe('POST /api/roles (assign)', () => {
 
 describe('DELETE /api/roles (revoke)', () => {
   it('returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await revoke(authed({ ...jsonBody({ address: TARGET, role: 'provider' }), method: 'DELETE' }, adminToken));
     expect(res.status).toBe(403);
   });
 
   it('returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await revoke(new NextRequest('http://localhost:3001/api/roles', { ...jsonBody({ address: TARGET, role: 'provider' }), method: 'DELETE' }))).status).toBe(401);
   });
 
@@ -148,13 +148,13 @@ describe('DELETE /api/roles (revoke)', () => {
 
 describe('GET /api/roles/[address] (admin lookup)', () => {
   it('returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getRolesFor(authed({ method: 'GET' }, adminToken), { params: Promise.resolve({ address: TARGET }) });
     expect(res.status).toBe(403);
   });
 
   it('returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     const res = await getRolesFor(new NextRequest('http://localhost:3001/api/roles/x'), { params: Promise.resolve({ address: TARGET }) });
     expect(res.status).toBe(401);
   });

@@ -50,42 +50,42 @@ async function enrolAndGetSecret(): Promise<string> {
 
 describe('MFA routes — guards', () => {
   it('enroll returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await enroll(authed(ENROLL, { method: 'POST' }, token))).status).toBe(403);
   });
 
   it('enroll returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await enroll(new NextRequest(ENROLL, { method: 'POST' }))).status).toBe(401);
   });
 
   it('status returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await getStatus(authed(MFA, { method: 'GET' }, token))).status).toBe(403);
   });
 
   it('status returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await getStatus(new NextRequest(MFA))).status).toBe(401);
   });
 
   it('verify returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await verify(authed(VERIFY, body({ code: '123456' }), token))).status).toBe(403);
   });
 
   it('verify returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await verify(new NextRequest(VERIFY, body({ code: '123456' })))).status).toBe(401);
   });
 
   it('disable returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await disable(authed(MFA, { ...body({ code: '123456' }), method: 'DELETE' }, token))).status).toBe(403);
   });
 
   it('disable returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await disable(new NextRequest(MFA, { ...body({ code: '123456' }), method: 'DELETE' }))).status).toBe(401);
   });
 });

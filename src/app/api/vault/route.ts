@@ -15,7 +15,7 @@ const SEED = 700;
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const totalCompartments = 8;

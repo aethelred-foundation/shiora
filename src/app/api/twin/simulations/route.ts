@@ -168,7 +168,7 @@ function buildSimulation(scenarioIdx: number): TwinSimulation {
 }
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const simulations = SCENARIOS.map((_, i) => buildSimulation(i));
@@ -176,7 +176,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   try {

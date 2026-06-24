@@ -89,13 +89,13 @@ describe('/api/records middleware blocking', () => {
   const { token } = createSessionToken(address);
 
   it('GET listRecords returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await listRecords(createAuthedRequest('http://localhost:3001/api/records', { method: 'GET' }, token));
     expect(res.status).toBe(403);
   });
 
   it('POST createRecord returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await createRecord(
       createAuthedRequest('http://localhost:3001/api/records', {
         method: 'POST',
@@ -107,7 +107,7 @@ describe('/api/records middleware blocking', () => {
   });
 
   it('GET getRecord returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getRecord(
       createAuthedRequest('http://localhost:3001/api/records/rec-test', { method: 'GET' }, token),
       { params: Promise.resolve({ id: 'rec-test' }) },
@@ -116,7 +116,7 @@ describe('/api/records middleware blocking', () => {
   });
 
   it('PATCH patchRecord returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await patchRecord(
       createAuthedRequest('http://localhost:3001/api/records/rec-test', {
         method: 'PATCH',
@@ -129,7 +129,7 @@ describe('/api/records middleware blocking', () => {
   });
 
   it('DELETE deleteRecord returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await deleteRecord(
       createAuthedRequest('http://localhost:3001/api/records/rec-test', { method: 'DELETE' }, token),
       { params: Promise.resolve({ id: 'rec-test' }) },
@@ -140,13 +140,13 @@ describe('/api/records middleware blocking', () => {
 
 describe('/api/records inner requireAuth branches', () => {
   it('GET returns 401 from inner requireAuth when middleware is bypassed', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     const res = await listRecords(new NextRequest('http://localhost:3001/api/records'));
     expect(res.status).toBe(401);
   });
 
   it('POST returns 401 from inner requireAuth when middleware is bypassed', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     const res = await createRecord(
       new NextRequest('http://localhost:3001/api/records', {
         method: 'POST',
@@ -158,7 +158,7 @@ describe('/api/records inner requireAuth branches', () => {
   });
 
   it('GET getRecord returns 401 from inner requireAuth when middleware is bypassed', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     const res = await getRecord(
       new NextRequest('http://localhost:3001/api/records/rec-test'),
       { params: Promise.resolve({ id: 'rec-test' }) },
@@ -167,7 +167,7 @@ describe('/api/records inner requireAuth branches', () => {
   });
 
   it('PATCH patchRecord returns 401 from inner requireAuth when middleware is bypassed', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     const res = await patchRecord(
       new NextRequest('http://localhost:3001/api/records/rec-test', {
         method: 'PATCH',
@@ -180,7 +180,7 @@ describe('/api/records inner requireAuth branches', () => {
   });
 
   it('DELETE deleteRecord returns 401 from inner requireAuth when middleware is bypassed', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     const res = await deleteRecord(
       new NextRequest('http://localhost:3001/api/records/rec-test', { method: 'DELETE' }),
       { params: Promise.resolve({ id: 'rec-test' }) },

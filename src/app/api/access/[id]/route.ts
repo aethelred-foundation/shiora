@@ -28,7 +28,7 @@ interface RouteContext {
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = requireAuth(request);
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 // ────────────────────────────────────────────────────────────
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = requireAuth(request);
@@ -122,7 +122,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 // ────────────────────────────────────────────────────────────
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = requireAuth(request);

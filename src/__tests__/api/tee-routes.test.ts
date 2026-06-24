@@ -53,7 +53,7 @@ describe('/api/tee/status', () => {
   });
 
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const req = new NextRequest('http://localhost:3000/api/tee/status');
     const res = await getStatus(req);
     expect(res.status).toBe(403);
@@ -107,7 +107,7 @@ describe('/api/tee/attestations', () => {
   });
 
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const req = new NextRequest('http://localhost:3000/api/tee/attestations');
     const res = await getAttestations(req);
     expect(res.status).toBe(403);
@@ -125,7 +125,7 @@ describe('/api/tee/attestations', () => {
 
 describe('/api/tee/explorer', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const req = new NextRequest('http://localhost:3000/api/tee/explorer');
     const res = await getExplorer(req);
     expect(res.status).toBe(403);
@@ -174,7 +174,7 @@ describe('/api/tee/explorer', () => {
 
 describe('/api/tee/explorer/[id]', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getExplorerById(
       new NextRequest('http://localhost:3000/api/tee/explorer/any-id'),
       { params: Promise.resolve({ id: 'any-id' }) },

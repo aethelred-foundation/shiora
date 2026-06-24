@@ -30,7 +30,7 @@ import { seededRandom } from '@/lib/utils';
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const auth = extractAuth(request);
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 // ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   try {
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   audit({

@@ -53,12 +53,12 @@ function req(url: string, token?: string): NextRequest {
 
 describe('GET /api/audit', () => {
   it('returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await getAudit(req('http://localhost:3001/api/audit', adminToken))).status).toBe(403);
   });
 
   it('returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await getAudit(req('http://localhost:3001/api/audit'))).status).toBe(401);
   });
 

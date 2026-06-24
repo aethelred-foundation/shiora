@@ -7,55 +7,34 @@ import { NextRequest, NextResponse } from 'next/server';
 import { errorResponse, HTTP } from './responses';
 import { getCorsHeaders, hasDisallowedOrigin, isMutatingMethod } from './origin';
 import { extractSessionToken, verifySessionToken } from './session';
+import { getRateLimiter } from './rate-limiter';
 import { serverEnv } from './env';
 
 // ────────────────────────────────────────────────────────────
-// In-Memory Rate Limiter
+// Rate Limiting
 // ────────────────────────────────────────────────────────────
-
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
-
-const rateLimitStore = new Map<string, RateLimitEntry>();
-let lastRateLimitCleanupAt = 0;
 
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 100;  // per window
 
 /**
- * Simple in-memory rate limiter keyed by IP address.
- * Returns null if allowed, or a NextResponse if rate limited.
+ * Fixed-window rate limit keyed by client fingerprint, enforced via the
+ * configured {@link getRateLimiter} (in-memory by default; Postgres-backed and
+ * cross-instance when DATABASE_URL is set). Returns null if the request is
+ * allowed, or a 429 NextResponse if the limit is exceeded.
  */
-export function checkRateLimit(
+export async function checkRateLimit(
   request: NextRequest,
   maxRequests: number = RATE_LIMIT_MAX_REQUESTS,
   windowMs: number = RATE_LIMIT_WINDOW_MS,
-): NextResponse | null {
-  const now = Date.now();
-  if (now - lastRateLimitCleanupAt >= 60_000) {
-    lastRateLimitCleanupAt = now;
-    rateLimitStore.forEach((entry, key) => {
-      if (now > entry.resetAt) {
-        rateLimitStore.delete(key);
-      }
-    });
-  }
+): Promise<NextResponse | null> {
+  const decision = await getRateLimiter().consume(
+    getClientFingerprint(request),
+    maxRequests,
+    windowMs,
+  );
 
-  const entry = rateLimitStore.get(getClientFingerprint(request));
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitStore.set(getClientFingerprint(request), {
-      count: 1,
-      resetAt: now + windowMs,
-    });
-    return null;
-  }
-
-  entry.count += 1;
-
-  if (entry.count > maxRequests) {
+  if (!decision.allowed) {
     return errorResponse(
       'RATE_LIMITED',
       `Too many requests. Limit: ${maxRequests} per ${windowMs / 1000}s`,
@@ -206,17 +185,17 @@ interface MiddlewareOptions {
  * Run standard middleware stack: logging, rate limiting.
  * Returns null if all passed, or an error NextResponse.
  */
-export function runMiddleware(
+export async function runMiddleware(
   request: NextRequest,
   options: MiddlewareOptions = {},
-): NextResponse | null {
+): Promise<NextResponse | null> {
   return runMiddlewareWithOptions(request, options);
 }
 
-export function runMiddlewareWithOptions(
+export async function runMiddlewareWithOptions(
   request: NextRequest,
   options: MiddlewareOptions = {},
-): NextResponse | null {
+): Promise<NextResponse | null> {
   logRequest(request);
 
   if (isMutatingMethod(request.method) && hasDisallowedOrigin(request)) {
@@ -229,7 +208,7 @@ export function runMiddlewareWithOptions(
     );
   }
 
-  const rateLimited = checkRateLimit(
+  const rateLimited = await checkRateLimit(
     request,
     options.maxRequests,
     options.windowMs,

@@ -48,12 +48,12 @@ describe.each([
   ['erasure', erasure, 'http://localhost:3000/api/privacy/erasure'],
 ] as const)('/api/privacy/%s', (name, handler, url) => {
   it('returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await handler(post(url, { categories: ['records'] }, token))).status).toBe(403);
   });
 
   it('returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await handler(post(url, { categories: ['records'] }))).status).toBe(401);
   });
 

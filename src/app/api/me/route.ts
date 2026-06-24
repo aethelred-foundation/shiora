@@ -12,7 +12,7 @@ import { getRoles } from '@/lib/api/roles-service';
 import { capabilitiesFor } from '@/lib/api/capabilities';
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = requireAuth(request);

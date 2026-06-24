@@ -10,7 +10,7 @@ import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import { beginMfaEnrollment } from '@/lib/api/mfa-service';
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = requireAuth(request);

@@ -73,7 +73,7 @@ describe('/api/marketplace list, filter, search', () => {
   });
 
   it('returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await listMarketplace(new NextRequest('http://localhost:3001/api/marketplace'))).status).toBe(403);
   });
 
@@ -128,12 +128,12 @@ describe('/api/marketplace create', () => {
   beforeAll(() => actualService.__resetMarketplaceForTests());
 
   it('returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await createListing(authed('http://localhost:3001/api/marketplace', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }, sellerToken))).status).toBe(403);
   });
 
   it('returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await createListing(new NextRequest('http://localhost:3001/api/marketplace', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }))).status).toBe(401);
   });
 
@@ -177,7 +177,7 @@ describe('/api/marketplace create', () => {
 
 describe('/api/marketplace/stats', () => {
   it('returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await getStats(new NextRequest('http://localhost:3001/api/marketplace/stats'))).status).toBe(403);
   });
 
@@ -214,7 +214,7 @@ describe('/api/marketplace/[id] detail, purchase, withdraw', () => {
   });
 
   it('GET returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await getListing(new NextRequest(`http://localhost:3001/api/marketplace/${listingId}`), { params: Promise.resolve({ id: listingId }) })).status).toBe(403);
   });
 
@@ -224,12 +224,12 @@ describe('/api/marketplace/[id] detail, purchase, withdraw', () => {
   });
 
   it('POST purchase returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await purchaseListing(authed(`http://localhost:3001/api/marketplace/${listingId}`, { method: 'POST' }, buyerToken), { params: Promise.resolve({ id: listingId }) })).status).toBe(403);
   });
 
   it('POST purchase returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await purchaseListing(new NextRequest(`http://localhost:3001/api/marketplace/${listingId}`, { method: 'POST' }), { params: Promise.resolve({ id: listingId }) })).status).toBe(401);
   });
 
@@ -252,12 +252,12 @@ describe('/api/marketplace/[id] detail, purchase, withdraw', () => {
   });
 
   it('DELETE withdraw returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await deleteListing(authed(`http://localhost:3001/api/marketplace/${listingId}`, { method: 'DELETE' }, sToken), { params: Promise.resolve({ id: listingId }) })).status).toBe(403);
   });
 
   it('DELETE withdraw returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await deleteListing(new NextRequest(`http://localhost:3001/api/marketplace/${listingId}`, { method: 'DELETE' }), { params: Promise.resolve({ id: listingId }) })).status).toBe(401);
   });
 

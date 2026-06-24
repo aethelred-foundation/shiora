@@ -22,7 +22,7 @@ afterEach(() => {
 
 describe('/api/xai/shap', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getShap(new NextRequest('http://localhost:3000/api/xai/shap?inferenceId=test'));
     expect(res.status).toBe(403);
   });
@@ -45,7 +45,7 @@ describe('/api/xai/shap', () => {
 
 describe('/api/xai/bias', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getBias(new NextRequest('http://localhost:3000/api/xai/bias?modelId=lstm'));
     expect(res.status).toBe(403);
   });
@@ -91,7 +91,7 @@ describe('/api/xai/model-cards', () => {
   });
 
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getModelCards(new NextRequest('http://localhost:3000/api/xai/model-cards'));
     expect(res.status).toBe(403);
   });

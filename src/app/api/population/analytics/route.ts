@@ -12,7 +12,7 @@ import { requireCapability } from '@/lib/api/rbac';
 import { computePopulationAnalytics } from '@/lib/api/population-analytics';
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = await requireCapability(request, 'view_population_analytics');

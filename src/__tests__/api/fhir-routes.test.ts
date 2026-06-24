@@ -29,7 +29,7 @@ describe('/api/fhir', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await getFhir(new NextRequest('http://localhost:3000/api/fhir'));
@@ -101,7 +101,7 @@ describe('/api/fhir/import', () => {
   });
 
   it('POST returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await importFhir(
@@ -183,7 +183,7 @@ describe('/api/fhir/export', () => {
   });
 
   it('POST returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await exportFhir(
@@ -207,7 +207,7 @@ describe('/api/fhir/mapping', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await getMapping(new NextRequest('http://localhost:3000/api/fhir/mapping'));

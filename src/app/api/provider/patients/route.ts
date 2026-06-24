@@ -12,7 +12,7 @@ import { requireCapability } from '@/lib/api/rbac';
 import { listGrantsForProvider } from '@/lib/api/access-service';
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = await requireCapability(request, 'view_granted_records');

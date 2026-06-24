@@ -27,18 +27,18 @@ function makeReq(url: string, init?: RequestInit & { ip?: string }): NextRequest
 }
 
 describe('checkRateLimit', () => {
-  it('allows requests within limit', () => {
+  it('allows requests within limit', async () => {
     const req = makeReq('http://localhost:3000/api/test');
-    const result = checkRateLimit(req, 10);
+    const result = await checkRateLimit(req, 10);
     expect(result).toBeNull();
   });
 
-  it('blocks requests exceeding limit', () => {
+  it('blocks requests exceeding limit', async () => {
     const ip = `rate-limit-${Date.now()}`;
     for (let i = 0; i < 5; i++) {
-      checkRateLimit(makeReq('http://localhost:3000/api/test', { ip }), 5);
+      await checkRateLimit(makeReq('http://localhost:3000/api/test', { ip }), 5);
     }
-    const result = checkRateLimit(makeReq('http://localhost:3000/api/test', { ip }), 5);
+    const result = await checkRateLimit(makeReq('http://localhost:3000/api/test', { ip }), 5);
     expect(result).not.toBeNull();
     expect(result!.status).toBe(429);
   });
@@ -130,111 +130,53 @@ describe('requireAuth', () => {
 });
 
 describe('runMiddleware', () => {
-  it('returns null for valid request', () => {
+  it('returns null for valid request', async () => {
     const req = makeReq('http://localhost:3000/api/test');
-    const result = runMiddleware(req);
+    const result = await runMiddleware(req);
     expect(result).toBeNull();
   });
 
-  it('blocks cross-origin mutations', () => {
+  it('blocks cross-origin mutations', async () => {
     const req = makeReq('http://localhost:3000/api/test', {
       method: 'POST',
       headers: { origin: 'http://evil.example.com' },
     });
-    const result = runMiddleware(req);
+    const result = await runMiddleware(req);
     expect(result).not.toBeNull();
     expect(result!.status).toBe(403);
   });
 
-  it('checks auth when requireAuth is true', () => {
+  it('checks auth when requireAuth is true', async () => {
     const req = new NextRequest('http://localhost:3000/api/test');
-    const result = runMiddleware(req, { requireAuth: true });
+    const result = await runMiddleware(req, { requireAuth: true });
     expect(result).not.toBeNull();
     expect(result!.status).toBe(401);
   });
 
-  it('passes with auth when requireAuth is true and token valid', () => {
+  it('passes with auth when requireAuth is true and token valid', async () => {
     const req = new NextRequest('http://localhost:3000/api/test', {
       headers: { authorization: `Bearer ${TEST_TOKEN}` },
     });
-    const result = runMiddleware(req, { requireAuth: true });
+    const result = await runMiddleware(req, { requireAuth: true });
     expect(result).toBeNull();
   });
 });
 
 describe('runMiddlewareWithOptions', () => {
-  it('delegates to the same logic as runMiddleware', () => {
+  it('delegates to the same logic as runMiddleware', async () => {
     const req = makeReq('http://localhost:3000/api/test');
-    const result = runMiddlewareWithOptions(req);
+    const result = await runMiddlewareWithOptions(req);
     expect(result).toBeNull();
   });
 
-  it('blocks cross-origin mutations', () => {
+  it('blocks cross-origin mutations', async () => {
     const req = makeReq('http://localhost:3000/api/test', {
       method: 'POST',
       headers: { origin: 'http://evil.example.com' },
     });
-    const result = runMiddlewareWithOptions(req);
+    const result = await runMiddlewareWithOptions(req);
     expect(result).not.toBeNull();
     expect(result!.status).toBe(403);
-  });
-});
-
-describe('checkRateLimit cleanup', () => {
-  it('cleans up expired entries after 60s', () => {
-    // Use a unique IP to avoid collisions
-    const ip = `cleanup-test-${Date.now()}`;
-    const req = makeReq('http://localhost:3000/api/test', { ip });
-
-    // First request sets an entry
-    checkRateLimit(req, 100, 1); // 1ms window so it expires immediately
-
-    // Mock Date.now to simulate time passing > 60s
-    const originalDateNow = Date.now;
-    const futureTime = originalDateNow() + 120_000; // 2 minutes later
-    Date.now = jest.fn(() => futureTime);
-
-    try {
-      // This call should trigger cleanup and the entry should be expired
-      const result = checkRateLimit(
-        makeReq('http://localhost:3000/api/test', { ip: `cleanup-trigger-${futureTime}` }),
-        100,
-      );
-      expect(result).toBeNull();
-    } finally {
-      Date.now = originalDateNow;
-    }
-  });
-
-  it('retains unexpired entries during cleanup', async () => {
-    jest.resetModules();
-    const { checkRateLimit: freshCheckRateLimit } = await import('@/lib/api/middleware');
-    const originalDateNow = Date.now;
-    const initialNow = originalDateNow();
-    const ip = `cleanup-retain-${initialNow}`;
-
-    Date.now = jest.fn(() => initialNow);
-    freshCheckRateLimit(makeReq('http://localhost:3000/api/test', { ip }), 1, 600_000);
-
-    const cleanupNow = initialNow + 120_000;
-    Date.now = jest.fn(() => cleanupNow);
-
-    try {
-      freshCheckRateLimit(
-        makeReq('http://localhost:3000/api/test', { ip: `cleanup-trigger-${cleanupNow}` }),
-        10,
-        600_000,
-      );
-      const result = freshCheckRateLimit(
-        makeReq('http://localhost:3000/api/test', { ip }),
-        1,
-        600_000,
-      );
-      expect(result).not.toBeNull();
-      expect(result!.status).toBe(429);
-    } finally {
-      Date.now = originalDateNow;
-    }
   });
 });
 
@@ -283,12 +225,12 @@ describe('requireAuth default message', () => {
 });
 
 describe('getClientIp via x-real-ip', () => {
-  it('uses x-real-ip when x-forwarded-for is absent', () => {
+  it('uses x-real-ip when x-forwarded-for is absent', async () => {
     const req = new NextRequest('http://localhost:3000/api/test', {
       headers: { 'x-real-ip': '10.0.0.1' },
     });
-    // Should not throw, proving the header is read
-    expect(() => checkRateLimit(req)).not.toThrow();
+    // Should resolve without throwing, proving the header is read
+    await expect(checkRateLimit(req)).resolves.toBeNull();
   });
 });
 
@@ -494,14 +436,14 @@ describe('requireAuth with invalidReason', () => {
 });
 
 describe('runMiddlewareWithOptions rate limiting', () => {
-  it('returns rate limit response when limit is exceeded', () => {
+  it('returns rate limit response when limit is exceeded', async () => {
     const ip = `middleware-rl-${Date.now()}`;
     // Exhaust the rate limit
     for (let i = 0; i < 3; i++) {
-      runMiddlewareWithOptions(makeReq('http://localhost:3000/api/test', { ip }), { maxRequests: 3 });
+      await runMiddlewareWithOptions(makeReq('http://localhost:3000/api/test', { ip }), { maxRequests: 3 });
     }
     // Next request should be rate limited
-    const result = runMiddlewareWithOptions(
+    const result = await runMiddlewareWithOptions(
       makeReq('http://localhost:3000/api/test', { ip }),
       { maxRequests: 3 },
     );

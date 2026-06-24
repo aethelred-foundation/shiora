@@ -83,7 +83,7 @@ function generateDatasets(): MPCDataset[] {
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = await requireCapability(request, 'run_secure_computation');

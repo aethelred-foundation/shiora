@@ -101,7 +101,7 @@ const PREDICTION_DEFS: Array<{
 ];
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const predictions: TwinPrediction[] = PREDICTION_DEFS.map((def, i) => {

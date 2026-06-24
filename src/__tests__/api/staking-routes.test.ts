@@ -23,13 +23,13 @@ afterEach(() => {
 
 describe('/api/staking', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getStaking(new NextRequest('http://localhost:3000/api/staking'));
     expect(res.status).toBe(403);
   });
 
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await stake(
       new NextRequest('http://localhost:3000/api/staking', {
         method: 'POST',
@@ -115,13 +115,13 @@ describe('/api/staking', () => {
 
 describe('/api/staking/rewards', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getRewards(new NextRequest('http://localhost:3000/api/staking/rewards'));
     expect(res.status).toBe(403);
   });
 
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await claimRewards(
       new NextRequest('http://localhost:3000/api/staking/rewards', {
         method: 'POST',
@@ -203,7 +203,7 @@ describe('/api/staking/[positionId]/unstake', () => {
   });
 
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await unstake(
       new NextRequest('http://localhost:3000/api/staking/stake-test-1/unstake', { method: 'POST' }),
       { params: Promise.resolve({ positionId: 'stake-test-1' }) },
@@ -235,7 +235,7 @@ describe('/api/staking/[positionId]/withdraw', () => {
   });
 
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await withdraw(
       new NextRequest('http://localhost:3000/api/staking/stake-test-2/withdraw', { method: 'POST' }),
       { params: Promise.resolve({ positionId: 'stake-test-2' }) },

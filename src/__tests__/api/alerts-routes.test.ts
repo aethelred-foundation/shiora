@@ -99,7 +99,7 @@ describe('/api/alerts', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await getAlerts(new NextRequest('http://localhost:3000/api/alerts'));
@@ -168,7 +168,7 @@ describe('/api/alerts', () => {
   });
 
   it('POST returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await postAlert(
@@ -201,7 +201,7 @@ describe('/api/alerts/history', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await getHistory(new NextRequest('http://localhost:3000/api/alerts/history'));
@@ -219,7 +219,7 @@ describe('/api/alerts/rules', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await getRules(new NextRequest('http://localhost:3000/api/alerts/rules'));
@@ -297,7 +297,7 @@ describe('/api/alerts/rules', () => {
   });
 
   it('POST returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await postRule(
@@ -369,7 +369,7 @@ describe('/api/alerts/rules', () => {
   });
 
   it('PATCH returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await patchRule(
@@ -398,7 +398,7 @@ describe('/api/alerts/[id]/resolve', () => {
   });
 
   it('POST returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 403 }),
     );
     const res = await resolveAlert(
@@ -424,7 +424,7 @@ describe('/api/alerts/[id]/acknowledge', () => {
   });
 
   it('POST returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 403 }),
     );
     const res = await acknowledgeAlert(

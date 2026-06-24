@@ -142,7 +142,7 @@ describe('/api/genomics', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       NextResponse.json({ error: 'blocked' }, { status: 429 }),
     );
     const res = await getGenomics(new NextRequest('http://localhost:3000/api/genomics'));
@@ -214,7 +214,7 @@ describe('/api/genomics/biomarkers', () => {
 
   it('GET returns blocked when middleware blocks', async () => {
     const { NextResponse } = require('next/server');
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       NextResponse.json({ error: 'blocked' }, { status: 429 }),
     );
     const res = await getBiomarkers(new NextRequest('http://localhost:3000/api/genomics/biomarkers'));
@@ -232,7 +232,7 @@ describe('/api/genomics/reports', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       NextResponse.json({ error: 'blocked' }, { status: 429 }),
     );
     const res = await getReports(new NextRequest('http://localhost:3000/api/genomics/reports'));
@@ -281,7 +281,7 @@ describe('/api/genomics/reports', () => {
   });
 
   it('POST returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       NextResponse.json({ error: 'blocked' }, { status: 429 }),
     );
     const res = await postReport(

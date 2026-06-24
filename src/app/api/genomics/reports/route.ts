@@ -63,7 +63,7 @@ const REPORT_DATA: Array<{
 ];
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const reports: GenomicReport[] = REPORT_DATA.map((r, i) => ({
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   let body: { category?: string } = {};

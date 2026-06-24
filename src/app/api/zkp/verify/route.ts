@@ -21,7 +21,7 @@ import type { ZKVerificationResult, ZKClaimType } from '@/types';
 // ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   try {

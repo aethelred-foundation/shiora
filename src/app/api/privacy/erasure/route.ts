@@ -16,7 +16,7 @@ import { eraseUserData } from '@/lib/api/privacy';
 import { audit } from '@/lib/api/audit';
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = requireAuth(request);

@@ -14,7 +14,7 @@ import { seededHex, seededInt, generateTxHash } from '@/lib/utils';
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const SEED = 1420;
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 // ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   try {

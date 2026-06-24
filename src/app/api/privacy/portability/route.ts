@@ -17,7 +17,7 @@ import { audit } from '@/lib/api/audit';
 const VALID_FORMATS = ['json', 'csv', 'xml'];
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = requireAuth(request);

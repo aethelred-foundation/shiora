@@ -55,12 +55,12 @@ function req(token?: string): NextRequest {
 
 describe('GET /api/provider/patients', () => {
   it('returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await getPatients(req(providerToken))).status).toBe(403);
   });
 
   it('returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await getPatients(req())).status).toBe(401);
   });
 

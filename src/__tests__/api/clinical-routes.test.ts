@@ -65,7 +65,7 @@ describe('/api/clinical (provider-gated)', () => {
   });
 
   it('returns the blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
+    mockRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
     const res = await getClinical(authed(BASE, providerToken));
     expect(res.status).toBe(429);
   });
@@ -91,7 +91,7 @@ describe.each([
   });
 
   it('returns the blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
+    mockRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
     const res = await handler(authed(url, providerToken));
     expect(res.status).toBe(429);
   });

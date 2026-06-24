@@ -49,7 +49,7 @@ describe('/api/emergency', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await getEmergency(new NextRequest('http://localhost:3000/api/emergency'));
@@ -79,7 +79,7 @@ describe('/api/emergency/triage', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await getTriage(new NextRequest('http://localhost:3000/api/emergency/triage'));
@@ -209,7 +209,7 @@ describe('/api/emergency/triage', () => {
   });
 
   it('POST returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await postTriage(
@@ -232,7 +232,7 @@ describe('/api/emergency/protocols', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await getProtocols(new NextRequest('http://localhost:3000/api/emergency/protocols'));
@@ -258,7 +258,7 @@ describe('/api/emergency/care-team', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await getCareTeam(new NextRequest('http://localhost:3000/api/emergency/care-team'));
@@ -333,7 +333,7 @@ describe('/api/emergency/care-team', () => {
   });
 
   it('POST returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await postCareTeam(
@@ -356,7 +356,7 @@ describe('/api/emergency/handoffs', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await getHandoffs(new NextRequest('http://localhost:3000/api/emergency/handoffs'));
@@ -433,7 +433,7 @@ describe('/api/emergency/handoffs', () => {
   });
 
   it('POST returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
+    mockRunMiddleware.mockResolvedValueOnce(
       new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
     );
     const res = await postHandoff(

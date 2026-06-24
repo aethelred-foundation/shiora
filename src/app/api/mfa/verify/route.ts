@@ -13,7 +13,7 @@ import { confirmMfaEnrollment } from '@/lib/api/mfa-service';
 const CodeSchema = z.object({ code: z.string().regex(/^\d{6}$/, 'code must be 6 digits') });
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = requireAuth(request);

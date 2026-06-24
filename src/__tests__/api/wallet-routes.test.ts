@@ -61,7 +61,7 @@ function createTestChallenge(address: string) {
 
 describe('/api/wallet/challenge', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const req = new NextRequest(`http://localhost:3000/api/wallet/challenge?address=${TEST_ADDRESS}`);
     const res = await getChallenge(req);
     expect(res.status).toBe(403);
@@ -102,7 +102,7 @@ describe('/api/wallet/challenge', () => {
 
 describe('/api/wallet/connect GET', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getConnect(authedReq('http://localhost:3000/api/wallet/connect'));
     expect(res.status).toBe(403);
   });
@@ -127,7 +127,7 @@ describe('/api/wallet/connect GET', () => {
 
 describe('/api/wallet/connect POST', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const req = new NextRequest('http://localhost:3000/api/wallet/connect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -393,7 +393,7 @@ describe('/api/wallet/connect POST', () => {
 
 describe('/api/wallet/connect DELETE', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const req = new NextRequest('http://localhost:3000/api/wallet/connect', { method: 'DELETE' });
     const res = await deleteConnect(req);
     expect(res.status).toBe(403);

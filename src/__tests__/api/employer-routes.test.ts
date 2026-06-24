@@ -59,12 +59,12 @@ function ctx(id: string, address?: string) {
 
 describe('/api/employer/organizations', () => {
   it('returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await listOrgs(authed(ORGS_URL, { method: 'GET' }, adminToken))).status).toBe(403);
   });
 
   it('GET returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await listOrgs(new NextRequest(ORGS_URL))).status).toBe(401);
   });
 
@@ -83,12 +83,12 @@ describe('/api/employer/organizations', () => {
   });
 
   it('POST returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await createOrg(authed(ORGS_URL, jsonBody({ name: 'x' }), adminToken))).status).toBe(403);
   });
 
   it('POST returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await createOrg(new NextRequest(ORGS_URL, jsonBody({ name: 'x' })))).status).toBe(401);
   });
 
@@ -108,12 +108,12 @@ describe('/api/employer/organizations', () => {
 describe('/api/employer/organizations/[id]/members', () => {
   it('GET returns the middleware error when blocked', async () => {
     const id = await createOrgAsAdmin();
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await listMembers(authed(`${ORGS_URL}/${id}/members`, { method: 'GET' }, adminToken), ctx(id))).status).toBe(403);
   });
 
   it('GET returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await listMembers(new NextRequest(`${ORGS_URL}/x/members`), ctx('x'))).status).toBe(401);
   });
 
@@ -145,12 +145,12 @@ describe('/api/employer/organizations/[id]/members', () => {
   });
 
   it('POST returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await addMember(authed(`${ORGS_URL}/x/members`, jsonBody({ address: MEMBER }), adminToken), ctx('x'))).status).toBe(403);
   });
 
   it('POST returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await addMember(new NextRequest(`${ORGS_URL}/x/members`, jsonBody({ address: MEMBER })), ctx('x'))).status).toBe(401);
   });
 
@@ -166,12 +166,12 @@ describe('/api/employer/organizations/[id]/members/[address]', () => {
   }
 
   it('returns the middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await del('x', MEMBER, adminToken)).status).toBe(403);
   });
 
   it('returns 401 when unauthenticated', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await del('x', MEMBER)).status).toBe(401);
   });
 

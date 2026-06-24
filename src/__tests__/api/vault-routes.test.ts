@@ -48,7 +48,7 @@ describe('/api/vault', () => {
   });
 
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getVault(new NextRequest('http://localhost:3000/api/vault'));
     expect(res.status).toBe(403);
   });
@@ -56,13 +56,13 @@ describe('/api/vault', () => {
 
 describe('/api/vault/compartments', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getCompartments(new NextRequest('http://localhost:3000/api/vault/compartments'));
     expect(res.status).toBe(403);
   });
 
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await createCompartment(
       new NextRequest('http://localhost:3000/api/vault/compartments', {
         method: 'POST',
@@ -140,7 +140,7 @@ describe('/api/vault/compartments', () => {
 
 describe('/api/vault/compartments/[id]', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getCompartment(
       new NextRequest('http://localhost:3000/api/vault/compartments/any-id'),
       { params: Promise.resolve({ id: 'any-id' }) },
@@ -149,7 +149,7 @@ describe('/api/vault/compartments/[id]', () => {
   });
 
   it('PATCH returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await patchCompartment(
       new NextRequest('http://localhost:3000/api/vault/compartments/any-id', {
         method: 'PATCH',
@@ -354,7 +354,7 @@ describe('/api/vault/cycle', () => {
   });
 
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getCycle(new NextRequest('http://localhost:3000/api/vault/cycle'));
     expect(res.status).toBe(403);
   });
@@ -362,7 +362,7 @@ describe('/api/vault/cycle', () => {
 
 describe('/api/vault/symptoms', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getSymptoms(new NextRequest('http://localhost:3000/api/vault/symptoms'));
     expect(res.status).toBe(403);
   });
@@ -391,7 +391,7 @@ describe('/api/vault/symptoms POST', () => {
   const { POST: postSymptom } = require('@/app/api/vault/symptoms/route');
 
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const req = new NextRequest('http://localhost:3000/api/vault/symptoms', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

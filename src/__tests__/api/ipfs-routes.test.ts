@@ -44,7 +44,7 @@ describe('/api/ipfs/[cid]', () => {
   const validCid = 'QmYwAPJzv5CZsnANr8SSVkFhVbXViqnbi9HbcJdDgi1a2b';
 
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getIPFS(
       authed(`http://localhost:3000/api/ipfs/${validCid}`),
       { params: Promise.resolve({ cid: validCid }) },
@@ -103,7 +103,7 @@ describe('/api/ipfs/[cid]', () => {
 
 describe('/api/ipfs/upload', () => {
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const formData = new FormData();
     formData.append('file', new File(['test'], 'test.txt', { type: 'text/plain' }));
     const req = new NextRequest('http://localhost:3000/api/ipfs/upload', {

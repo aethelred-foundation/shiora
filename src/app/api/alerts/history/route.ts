@@ -52,7 +52,7 @@ function generateMockHistory(): AlertHistory[] {
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const alertId = request.nextUrl.searchParams.get('alertId');
