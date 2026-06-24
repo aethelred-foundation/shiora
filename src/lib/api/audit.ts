@@ -41,7 +41,11 @@ export type AuditAction =
   | 'CLINICAL_NOTE_CREATE'
   | 'CLINICAL_NOTE_UPDATE'
   | 'DATA_REQUEST_CREATE'
-  | 'DATA_REQUEST_DECIDE';
+  | 'DATA_REQUEST_DECIDE'
+  | 'WELLNESS_PROGRAM_CREATE'
+  | 'WELLNESS_PROGRAM_UPDATE'
+  | 'WELLNESS_ENROLL'
+  | 'WELLNESS_UNENROLL';
 
 export interface AuditEntry {
   timestamp: string;
