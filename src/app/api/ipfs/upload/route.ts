@@ -5,10 +5,10 @@
 
 import { NextRequest } from 'next/server';
 import {
-  successResponse,
   errorResponse,
   HTTP,
 } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { generateCID, seededHex, seededInt } from '@/lib/utils';
 
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     const seed = Date.now();
     const cid = generateCID(seed);
 
-    return successResponse(
+    return simulatedResponse(
       {
         cid,
         filename: file.name,
@@ -70,10 +70,8 @@ export async function POST(request: NextRequest) {
           platform: 'Intel SGX',
         },
       },
+      'ipfs_storage',
       HTTP.CREATED,
-      {
-        message: 'File uploaded. Encryption, IPFS pinning, and TEE processing queued.',
-      },
     );
   } catch {
     return errorResponse(

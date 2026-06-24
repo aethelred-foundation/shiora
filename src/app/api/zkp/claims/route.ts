@@ -6,10 +6,10 @@
 
 import { NextRequest } from 'next/server';
 import {
-  successResponse,
   errorResponse,
   HTTP,
 } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
   seededInt,
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
   if (blocked) return blocked;
 
   const claims = generateMockClaims();
-  return successResponse(claims, HTTP.OK, { total: claims.length });
+  return simulatedResponse(claims, 'zk_proofs', HTTP.OK, { total: claims.length });
 }
 
 // ────────────────────────────────────────────────────────────
@@ -113,9 +113,7 @@ export async function POST(request: NextRequest) {
       createdAt: Date.now(),
     };
 
-    return successResponse(newClaim, HTTP.CREATED, {
-      message: 'ZK claim submitted successfully. Generate a proof to verify this claim.',
-    });
+    return simulatedResponse(newClaim, 'zk_proofs', HTTP.CREATED);
   } catch {
     return errorResponse('INVALID_BODY', 'Invalid JSON body', HTTP.BAD_REQUEST);
   }

@@ -5,7 +5,8 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
+import { errorResponse, HTTP } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { requireCapability } from '@/lib/api/rbac';
 import {
@@ -146,7 +147,7 @@ export async function GET(request: NextRequest) {
   const auth = await requireCapability(request, 'run_secure_computation');
   if ('status' in auth) return auth;
 
-  return successResponse(generateSessions(), HTTP.OK, {
+  return simulatedResponse(generateSessions(), 'secure_mpc', HTTP.OK, {
     queriedAt: new Date().toISOString(),
   });
 }
@@ -194,7 +195,7 @@ export async function POST(request: NextRequest) {
       txHash: generateTxHash(s + 4),
     };
 
-    return successResponse(session, HTTP.CREATED);
+    return simulatedResponse(session, 'secure_mpc', HTTP.CREATED);
   } catch {
     return errorResponse(
       'INVALID_BODY',

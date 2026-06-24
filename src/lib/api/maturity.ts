@@ -20,6 +20,9 @@
 // auditor can see exactly what is real without reading the source.
 // ============================================================
 
+import type { NextResponse } from 'next/server';
+import { successResponse } from './responses';
+
 export type Maturity = 'production' | 'pilot' | 'simulated';
 
 export type Audience =
@@ -261,6 +264,20 @@ export interface SimulationMeta {
 /** Response `meta` block that labels a simulated subsystem's output. */
 export function simulationMeta(feature: FeatureKey): SimulationMeta {
   return { mode: 'simulation', feature, notice: SIMULATION_NOTICE };
+}
+
+/**
+ * Build a success response whose `meta` carries the simulation label for a
+ * simulated subsystem, so no consumer of a single endpoint can mistake the
+ * payload for a verified, on-chain, or clinical result.
+ */
+export function simulatedResponse<T>(
+  data: T,
+  feature: FeatureKey,
+  status = 200,
+  extraMeta?: Record<string, unknown>,
+): NextResponse<{ success: true; data: T; meta?: Record<string, unknown> }> {
+  return successResponse(data, status, { ...simulationMeta(feature), ...(extraMeta ?? {}) });
 }
 
 /** The maturity of a given feature. */

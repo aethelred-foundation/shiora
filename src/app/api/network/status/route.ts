@@ -4,7 +4,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { generateNetworkStatus } from '@/lib/api/mock-data';
 
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   const network = generateNetworkStatus();
 
-  return successResponse(network, 200, {
+  return simulatedResponse(network, 'blockchain_anchoring', 200, {
     chain: 'Aethelred',
     chainId: 'aethelred-1',
     queriedAt: new Date().toISOString(),

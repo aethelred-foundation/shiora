@@ -3,6 +3,7 @@
 import {
   FEATURE_MATURITY,
   simulationMeta,
+  simulatedResponse,
   maturityOf,
   isSimulated,
   featureList,
@@ -27,6 +28,23 @@ describe('feature maturity registry', () => {
     expect(meta.mode).toBe('simulation');
     expect(meta.feature).toBe('zk_proofs');
     expect(meta.notice).toMatch(/simulated subsystem/i);
+  });
+
+  it('wraps a payload in a labelled simulated response', async () => {
+    const res = simulatedResponse({ valid: true }, 'tee_attestation', 200, { queriedAt: 'now' });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data).toEqual({ valid: true });
+    expect(body.meta.mode).toBe('simulation');
+    expect(body.meta.feature).toBe('tee_attestation');
+    expect(body.meta.queriedAt).toBe('now'); // extra meta is preserved
+  });
+
+  it('defaults the simulated response status and omits extra meta', async () => {
+    const res = simulatedResponse([{ id: 1 }], 'secure_mpc');
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.meta.feature).toBe('secure_mpc');
   });
 
   it('lists every feature with its key', () => {

@@ -5,9 +5,9 @@
 
 import { NextRequest } from 'next/server';
 import {
-  successResponse,
   notFoundResponse,
 } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { requireCapability } from '@/lib/api/rbac';
 import {
@@ -191,8 +191,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
   const convergence = generateConvergenceData(session);
 
-  return successResponse({
+  return simulatedResponse({
     ...session,
     convergence,
-  });
+  }, 'secure_mpc');
 }

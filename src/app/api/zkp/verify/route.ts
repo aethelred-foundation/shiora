@@ -5,10 +5,10 @@
 
 import { NextRequest } from 'next/server';
 import {
-  successResponse,
   errorResponse,
   HTTP,
 } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
   seededInt,
@@ -41,8 +41,7 @@ export async function POST(request: NextRequest) {
       gasUsed: seededInt(seed + 5, 50000, 200000),
     };
 
-    return successResponse(result, HTTP.OK, {
-      message: 'ZK proof verified successfully on the Aethelred blockchain.',
+    return simulatedResponse(result, 'zk_proofs', HTTP.OK, {
       txHash: generateTxHash(seed),
     });
   } catch {

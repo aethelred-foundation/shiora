@@ -5,9 +5,9 @@
 
 import { NextRequest } from 'next/server';
 import {
-  successResponse,
   notFoundResponse,
 } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
   seededRandom,
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   }
 
   // Return enriched detail
-  return successResponse({
+  return simulatedResponse({
     ...attestation,
     verification: {
       chainAnchored: attestation.verifiedOnChain,
@@ -100,5 +100,5 @@ export async function GET(request: NextRequest, context: RouteContext) {
       name: AI_MODELS.find((m) => m.id === attestation.modelId)?.name /* istanbul ignore next */ ?? attestation.modelId,
       version: AI_MODELS.find((m) => m.id === attestation.modelId)?.version /* istanbul ignore next */ ?? 'v1.0',
     },
-  });
+  }, 'tee_attestation');
 }

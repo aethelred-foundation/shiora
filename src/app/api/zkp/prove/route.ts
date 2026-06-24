@@ -5,10 +5,10 @@
 
 import { NextRequest } from 'next/server';
 import {
-  successResponse,
   errorResponse,
   HTTP,
 } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
   seededHex,
@@ -44,8 +44,7 @@ export async function POST(request: NextRequest) {
       expiresAt: Date.now() + 90 * 86400000,
     };
 
-    return successResponse(proof, HTTP.CREATED, {
-      message: 'ZK proof generation initiated. Verification pending.',
+    return simulatedResponse(proof, 'zk_proofs', HTTP.CREATED, {
       estimatedGas: seededInt(seed, 50000, 200000),
     });
   } catch {

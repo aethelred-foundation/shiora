@@ -5,10 +5,10 @@
 
 import { NextRequest } from 'next/server';
 import {
-  successResponse,
   errorResponse,
   HTTP,
 } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { CIDSchema } from '@/lib/api/validation';
 import { seededInt, seededHex, seededRandom, seededPick } from '@/lib/utils';
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   const nodeCount = seededInt(seed, 12, 64);
   const pinned = seededRandom(seed) > 0.1; // 90% chance pinned
 
-  return successResponse({
+  return simulatedResponse({
     cid,
     pinStatus: pinned ? 'pinned' : 'pinning',
     dagSize: seededInt(seed * 2, 20, 2000) * 1024,
@@ -71,5 +71,5 @@ export async function GET(request: NextRequest, context: RouteContext) {
       platform: seededPick(seed * 7, TEE_PLATFORMS),
       attestationHash: pinned ? `0x${seededHex(seed * 5, 64)}` : null,
     },
-  });
+  }, 'ipfs_storage');
 }

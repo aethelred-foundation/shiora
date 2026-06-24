@@ -5,7 +5,8 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
+import { errorResponse, HTTP } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
   seededRandom,
@@ -168,22 +169,22 @@ export async function GET(request: NextRequest) {
 
   switch (view) {
     case 'stats':
-      return successResponse(generateStats(), HTTP.OK, {
+      return simulatedResponse(generateStats(), 'tee_attestation', HTTP.OK, {
         queriedAt: new Date().toISOString(),
       });
 
     case 'attestations':
-      return successResponse(generateAttestations(), HTTP.OK, {
+      return simulatedResponse(generateAttestations(), 'tee_attestation', HTTP.OK, {
         queriedAt: new Date().toISOString(),
       });
 
     case 'jobs':
-      return successResponse(generateJobs(), HTTP.OK, {
+      return simulatedResponse(generateJobs(), 'tee_attestation', HTTP.OK, {
         queriedAt: new Date().toISOString(),
       });
 
     case 'enclaves':
-      return successResponse(generateEnclaves(), HTTP.OK, {
+      return simulatedResponse(generateEnclaves(), 'tee_attestation', HTTP.OK, {
         queriedAt: new Date().toISOString(),
       });
 

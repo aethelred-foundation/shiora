@@ -4,7 +4,8 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, HTTP } from '@/lib/api/responses';
+import { HTTP } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { requireCapability } from '@/lib/api/rbac';
 import {
@@ -89,7 +90,7 @@ export async function GET(request: NextRequest) {
   const auth = await requireCapability(request, 'run_secure_computation');
   if ('status' in auth) return auth;
 
-  return successResponse(generateDatasets(), HTTP.OK, {
+  return simulatedResponse(generateDatasets(), 'secure_mpc', HTTP.OK, {
     queriedAt: new Date().toISOString(),
   });
 }
