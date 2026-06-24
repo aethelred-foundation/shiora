@@ -2,41 +2,25 @@
 // Shiora on Aethelred — Persistent Audit Log
 //
 // A durable, tamper-evident audit trail shared across every service. Each
-// mutation appends a SHA-256 hash-linked entry that is sealed and persisted to
-// the document store, so the trail survives restarts and is verifiable end to
-// end (HIPAA Security Rule §164.312(b) audit controls, §164.312(c)(1)
-// integrity — COMPLIANCE.md C-AUD-1/2).
+// mutation appends a SHA-256 hash-linked entry, verifiable end to end (HIPAA
+// Security Rule §164.312(b) audit controls, §164.312(c)(1) integrity —
+// COMPLIANCE.md C-AUD-1/2).
 //
-// The chain head is cached in process and hydrated once from the store, so
-// appends are O(1) after the first. For multi-process Postgres deployments the
-// head should instead be advanced under a transaction/sequence — tracked as
-// C-AUD-3 (durable + L1-anchored).
+// Sequencing is delegated to the AuditStore: the Postgres store advances the
+// chain head safely across processes via the `seq` primary key (C-AUD-3), so
+// the log no longer relies on a per-process cached head.
 // ============================================================
 
 import {
-  GENESIS_HASH,
-  computeEntryHash,
   verifyAuditChain,
   type AuditRecorder,
   type ChainVerification,
   type ChainedAuditEntry,
 } from '@/lib/crypto/audit-chain';
-import { openJson, sealJson } from '@/lib/crypto/envelope';
-import { InMemoryDocumentStore, type DocumentStorePort } from '@/lib/persistence/document-store';
-import { PgDocumentStore } from '@/lib/persistence/pg-document-store';
+import { InMemoryAuditStore, type AuditStore } from '@/lib/persistence/audit-store';
+import { PgAuditStore } from '@/lib/persistence/pg-audit-store';
 import { getPgClient } from '@/lib/persistence/sql-client';
 import type { AuditAction, AuditEntry } from '@/lib/api/audit';
-
-const COLLECTION = 'audit-log';
-const GLOBAL_KEY = '__global__';
-
-function aad(id: string): string {
-  return `${COLLECTION}:${GLOBAL_KEY}:${id}`;
-}
-
-function idForSeq(seq: number): string {
-  return String(seq).padStart(12, '0');
-}
 
 export interface AuditFilter {
   actor?: string;
@@ -47,58 +31,20 @@ export interface AuditFilter {
 }
 
 export class PersistentAuditLog implements AuditRecorder {
-  private head = GENESIS_HASH;
-  private seq = 0;
-  private hydrated = false;
+  constructor(private readonly store: AuditStore) {}
 
-  constructor(private readonly store: DocumentStorePort) {}
-
-  private async readAll(): Promise<ChainedAuditEntry[]> {
-    const rows = await this.store.findByOwner(COLLECTION, GLOBAL_KEY);
-    return rows
-      .map((row) => openJson<ChainedAuditEntry>(row.sealed, aad(row.id)))
-      .sort((a, b) => a.seq - b.seq);
-  }
-
-  private async hydrate(): Promise<void> {
-    if (this.hydrated) return;
-    const entries = await this.readAll();
-    if (entries.length > 0) {
-      this.head = entries[entries.length - 1].hash;
-      this.seq = entries.length;
-    }
-    this.hydrated = true;
-  }
-
-  /** Append a tamper-evident entry and persist it. */
+  /** Append a tamper-evident entry to the chain. */
   async record(entry: Omit<AuditEntry, 'timestamp'> & { timestamp?: string }): Promise<ChainedAuditEntry> {
-    await this.hydrate();
-
     const base: AuditEntry = {
       ...entry,
       timestamp: entry.timestamp ?? new Date().toISOString(),
     };
-    const seq = this.seq;
-    const prevHash = this.head;
-    const hash = computeEntryHash(prevHash, seq, base);
-    const chained: ChainedAuditEntry = { ...base, seq, prevHash, hash };
-
-    const id = idForSeq(seq);
-    await this.store.put({
-      collection: COLLECTION,
-      ownerKey: GLOBAL_KEY,
-      id,
-      sealed: sealJson(chained, aad(id)),
-      deleted: false,
-    });
-    this.head = hash;
-    this.seq = seq + 1;
-    return chained;
+    return this.store.append(base);
   }
 
   /** Query the trail (most recent first), with optional filters. */
   async list(filter: AuditFilter = {}): Promise<ChainedAuditEntry[]> {
-    let entries = await this.readAll();
+    let entries = await this.store.list();
     if (filter.actor) {
       entries = entries.filter((entry) => entry.actor === filter.actor);
     }
@@ -118,17 +64,17 @@ export class PersistentAuditLog implements AuditRecorder {
 
   /** Verify the persisted chain has not been tampered with. */
   async verify(): Promise<ChainVerification> {
-    return verifyAuditChain(await this.readAll());
+    return verifyAuditChain(await this.store.list());
   }
 }
 
 let instance: PersistentAuditLog | null = null;
 
-function createStore(): DocumentStorePort {
+function createStore(): AuditStore {
   if (process.env.DATABASE_URL) {
-    return new PgDocumentStore(getPgClient());
+    return new PgAuditStore(getPgClient());
   }
-  return new InMemoryDocumentStore();
+  return new InMemoryAuditStore();
 }
 
 /** The process-wide audit log shared by every service. */

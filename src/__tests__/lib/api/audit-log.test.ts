@@ -7,7 +7,7 @@ jest.mock('@/lib/persistence/sql-client', () => ({
 }));
 
 import { PersistentAuditLog, getAuditLog, __resetAuditLogForTests } from '@/lib/api/audit-log';
-import { InMemoryDocumentStore } from '@/lib/persistence/document-store';
+import { InMemoryAuditStore } from '@/lib/persistence/audit-store';
 
 function entry(action: 'RECORD_CREATE' | 'GRANT_CREATE' | 'ROLE_ASSIGN', actor: string, resource: string, timestamp?: string) {
   return { action, actor, resource, resourceId: 'r1', success: true, timestamp } as const;
@@ -26,8 +26,8 @@ describe('PersistentAuditLog', () => {
     jest.clearAllMocks();
   });
 
-  it('persists a tamper-evident chain that verifies', async () => {
-    const log = new PersistentAuditLog(new InMemoryDocumentStore());
+  it('records a tamper-evident chain that verifies', async () => {
+    const log = new PersistentAuditLog(new InMemoryAuditStore());
     const a = await log.record(entry('RECORD_CREATE', 'aeth1a', 'record'));
     const b = await log.record(entry('GRANT_CREATE', 'aeth1b', 'access-grant'));
 
@@ -40,13 +40,13 @@ describe('PersistentAuditLog', () => {
     expect(verification.length).toBe(2);
   });
 
-  it('rehydrates the chain head from the store for a new instance', async () => {
-    const store = new InMemoryDocumentStore();
+  it('treats the store as the source of truth for the chain head', async () => {
+    // Two logs over the same store continue one chain — no per-log cached head.
+    const store = new InMemoryAuditStore();
     const first = new PersistentAuditLog(store);
     await first.record(entry('RECORD_CREATE', 'aeth1a', 'record'));
     await first.record(entry('GRANT_CREATE', 'aeth1b', 'access-grant'));
 
-    // A fresh instance over the same store must continue the existing chain.
     const second = new PersistentAuditLog(store);
     const third = await second.record(entry('ROLE_ASSIGN', 'aeth1c', 'role'));
     expect(third.seq).toBe(2);
@@ -56,7 +56,7 @@ describe('PersistentAuditLog', () => {
   });
 
   it('lists most-recent-first and applies filters', async () => {
-    const log = new PersistentAuditLog(new InMemoryDocumentStore());
+    const log = new PersistentAuditLog(new InMemoryAuditStore());
     await log.record(entry('RECORD_CREATE', 'aeth1a', 'record', '2026-01-01T00:00:00.000Z'));
     await log.record(entry('GRANT_CREATE', 'aeth1b', 'access-grant', '2026-02-01T00:00:00.000Z'));
     await log.record(entry('ROLE_ASSIGN', 'aeth1a', 'role', '2026-03-01T00:00:00.000Z'));

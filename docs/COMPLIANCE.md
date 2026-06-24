@@ -35,7 +35,7 @@
 | **C-AC-2** Automatic logoff | §164.312(a)(2)(iii) | ✅ Implemented | Session TTL (`SHIORA_SESSION_TTL_HOURS`) enforced in `verifySessionToken`. |
 | **C-AUD-1** Audit controls | §164.312(b) | 🟡 Partial | `src/lib/api/audit.ts` emits structured audit events. **Gap:** in-memory, lost on restart, not centralized. |
 | **C-AUD-2** Audit integrity | §164.312(c)(1) | ✅ Implemented | `src/lib/crypto/audit-chain.ts` — SHA-256 hash-linked, append-only chain; `verifyAuditChain` detects edits, deletions, reordering. Tested. |
-| **C-AUD-3** Audit durability + anchoring | Tamper-*proofing* | ⛔ Not started | **Gap:** mirror the chain to a WORM/object-lock sink and anchor the head hash on the Aethelred L1 so a single operator cannot rewrite history. This is the real basis for any "blockchain-verified logs" claim. |
+| **C-AUD-3** Audit durability + anchoring | Tamper-*proofing* | 🟡 Partial | Durable, concurrency-safe append implemented: the Postgres `audit_chain` store advances the chain head via a `seq` PRIMARY KEY with insert-and-retry, so concurrent multi-process appends cannot fork or overwrite the chain (`src/lib/persistence/pg-audit-store.ts`; verified against a real Postgres engine). **Gap:** mirror the chain to a WORM/object-lock sink and anchor the head hash on the Aethelred L1 so a single operator cannot rewrite history. |
 | **C-INT-1** Integrity of PHI | §164.312(c)(1) | ✅ Implemented | GCM auth tags (envelope) + audit-chain hashing both detect unauthorized alteration. |
 | **C-NET-1** Transmission security / rate limiting | §164.312(e)(1) | 🟡 Partial | `src/lib/api/middleware.ts` — CORS origin enforcement + in-memory rate limiter. **Gap:** distributed rate limiting (Redis), WAF, bot/DDoS protection at the edge. |
 
