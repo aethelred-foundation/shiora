@@ -29,7 +29,11 @@ export type AuditAction =
   | 'ROLE_REVOKE'
   | 'MFA_ENROLL'
   | 'MFA_ENABLE'
-  | 'MFA_DISABLE';
+  | 'MFA_DISABLE'
+  | 'ORG_CREATE'
+  | 'ORG_UPDATE'
+  | 'ORG_MEMBER_ADD'
+  | 'ORG_MEMBER_REMOVE';
 
 export interface AuditEntry {
   timestamp: string;
