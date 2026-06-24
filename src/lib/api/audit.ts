@@ -39,7 +39,9 @@ export type AuditAction =
   | 'VAULT_CYCLE_LOG'
   | 'VAULT_CYCLE_UPDATE'
   | 'CLINICAL_NOTE_CREATE'
-  | 'CLINICAL_NOTE_UPDATE';
+  | 'CLINICAL_NOTE_UPDATE'
+  | 'DATA_REQUEST_CREATE'
+  | 'DATA_REQUEST_DECIDE';
 
 export interface AuditEntry {
   timestamp: string;

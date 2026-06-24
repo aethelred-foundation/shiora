@@ -20,6 +20,7 @@ export const CAPABILITIES = [
   'access_research_marketplace',
   'run_secure_computation',
   'manage_roles',
+  'review_data_requests',
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -30,7 +31,7 @@ const ROLE_CAPABILITIES: Record<Role, Capability[]> = {
   provider: ['view_granted_records', 'clinical_decision_support', 'manage_clinical_notes'],
   employer_admin: ['manage_org_members', 'view_population_analytics'],
   payer_analyst: ['view_population_analytics'],
-  government: ['view_population_analytics', 'manage_population_programs', 'manage_roles'],
+  government: ['view_population_analytics', 'manage_population_programs', 'manage_roles', 'review_data_requests'],
   researcher: ['access_research_marketplace', 'run_secure_computation'],
 };
 

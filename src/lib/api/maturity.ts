@@ -135,6 +135,13 @@ export const FEATURE_MATURITY = {
     audiences: ['platform'],
     summary: 'Cross-instance fixed-window limiter backed by Postgres atomic counters.',
   },
+  data_access_requests: {
+    title: 'Consented data-access requests',
+    maturity: 'production',
+    audiences: ['researchers', 'governments'],
+    summary: 'Researchers request access to a marketplace dataset; a government data steward '
+      + 'reviews and approves or denies. Encrypted and audited end to end.',
+  },
 
   // ── Pilot: functional, integrated, not yet production-validated ─────────
   wearables: {
