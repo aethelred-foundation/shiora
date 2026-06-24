@@ -6,6 +6,7 @@
 import { NextRequest } from 'next/server';
 import { successResponse, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
+import { requireCapability } from '@/lib/api/rbac';
 import {
   seededRandom,
   seededInt,
@@ -82,8 +83,11 @@ function generateDatasets(): MPCDataset[] {
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
+
+  const auth = await requireCapability(request, 'run_secure_computation');
+  if ('status' in auth) return auth;
 
   return successResponse(generateDatasets(), HTTP.OK, {
     queriedAt: new Date().toISOString(),

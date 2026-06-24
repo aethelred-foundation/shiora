@@ -6,6 +6,7 @@
 import { NextRequest } from 'next/server';
 import { successResponse, errorResponse } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
+import { requireCapability } from '@/lib/api/rbac';
 import {
   seededRandom,
   seededInt,
@@ -130,8 +131,11 @@ const ALERT_CONDITIONS = [
 ];
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
+
+  const auth = await requireCapability(request, 'clinical_decision_support');
+  if ('status' in auth) return auth;
 
   const { searchParams } = new URL(request.url);
   const view = searchParams.get('view') ?? 'stats';

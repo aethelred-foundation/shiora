@@ -6,6 +6,7 @@
 import { NextRequest } from 'next/server';
 import { successResponse } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
+import { requireCapability } from '@/lib/api/rbac';
 import {
   seededRandom,
   seededInt,
@@ -101,8 +102,11 @@ const REVIEWERS = [
 ];
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
+
+  const auth = await requireCapability(request, 'clinical_decision_support');
+  if ('status' in auth) return auth;
 
   const entries: ClinicalDecisionAuditEntry[] = Array.from({ length: 15 }, (_, i) => {
     const decisionType = seededPick(SEED + 600 + i * 3, DECISION_TYPES);

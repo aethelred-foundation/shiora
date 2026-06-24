@@ -6,6 +6,7 @@
 import { NextRequest } from 'next/server';
 import { successResponse } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
+import { requireCapability } from '@/lib/api/rbac';
 import {
   seededRandom,
   seededInt,
@@ -173,8 +174,11 @@ const PATHWAY_DEFS: PathwayDef[] = [
 ];
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
+
+  const auth = await requireCapability(request, 'clinical_decision_support');
+  if ('status' in auth) return auth;
 
   const pathways: ClinicalPathway[] = PATHWAY_DEFS.map((def, i) => ({
     id: `pw-${seededHex(SEED + 300 + i * 7, 12)}`,

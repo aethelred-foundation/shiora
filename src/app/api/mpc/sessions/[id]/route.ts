@@ -9,6 +9,7 @@ import {
   notFoundResponse,
 } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
+import { requireCapability } from '@/lib/api/rbac';
 import {
   seededRandom,
   seededInt,
@@ -173,8 +174,11 @@ interface RouteContext {
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const blocked = runMiddleware(request);
+  const blocked = runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
+
+  const auth = await requireCapability(request, 'run_secure_computation');
+  if ('status' in auth) return auth;
 
   const { id } = await context.params;
 

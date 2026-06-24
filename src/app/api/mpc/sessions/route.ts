@@ -7,6 +7,7 @@
 import { NextRequest } from 'next/server';
 import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
+import { requireCapability } from '@/lib/api/rbac';
 import {
   seededRandom,
   seededInt,
@@ -139,8 +140,11 @@ function generateSessions(): MPCSession[] {
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
+
+  const auth = await requireCapability(request, 'run_secure_computation');
+  if ('status' in auth) return auth;
 
   return successResponse(generateSessions(), HTTP.OK, {
     queriedAt: new Date().toISOString(),
@@ -152,8 +156,11 @@ export async function GET(request: NextRequest) {
 // ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
+
+  const auth = await requireCapability(request, 'run_secure_computation');
+  if ('status' in auth) return auth;
 
   try {
     const body = await request.json();
