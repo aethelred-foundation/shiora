@@ -46,6 +46,12 @@ export function listAllAccessGrants(): Promise<MockAccessGrant[]> {
   return repo().listAll();
 }
 
+/** Grants targeting a specific provider — the patients who shared with them. */
+export async function listGrantsForProvider(providerAddress: string): Promise<MockAccessGrant[]> {
+  const all = await repo().listAll();
+  return all.filter((grant) => grant.address === providerAddress);
+}
+
 export function getAccessGrant(
   ownerAddress: string,
   id: string,
