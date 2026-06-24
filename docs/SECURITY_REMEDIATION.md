@@ -61,19 +61,36 @@ status. Legend:
 
 - **MFA (TOTP, RFC 6238)** — `f15cee1`.
 - **Versioned database migration runner** — `14774c6` (verified vs. real Postgres).
-- **Dependency-vulnerability investigation** — established the flagged CVEs are
-  dev/build tooling only and that the naive `npm audit fix` regresses the test
-  environment; defined the coordinated-upgrade path.
+- **`KeyProvider` seam + versioned key rotation** — prepares KMS cutover; the
+  envelope cipher resolves the data key by version, so historical material
+  still decrypts after rotation.
+- **Audit-chain persisted head + optimistic-concurrency append** — `PgAuditStore`
+  (seq primary key, 23505 retry), verified vs. real Postgres.
+- **Employer admin console** — organization + membership entities on the existing
+  encrypted-document pattern; owner-scoped, capability-gated routes (`b20ac46`).
+- **Distributed rate limiter + async middleware** — `bec1522`. `RateLimiter` port
+  with in-memory and Postgres adapters selected by `DATABASE_URL`; the Postgres
+  adapter increments a per-`(key, window_start)` counter with an atomic
+  `INSERT ... ON CONFLICT DO UPDATE`, so the limit holds across instances.
+  SQL verified end-to-end (incl. a 50-way concurrent burst with no collisions).
+- **Dev-toolchain CVE upgrade** — cleared all Dependabot alerts (`npm audit`:
+  0 vulnerabilities). The flagged CVEs were dev/build tooling; the naive
+  `npm audit fix` regresses the test env by skewing the jest sub-package
+  versions against `jest-environment-jsdom`. The coordinated fix aligns the
+  whole jest stack at 30.4.x and pins transitive residuals via `overrides`
+  (`next` 15.5.19, `postcss` 8.5.15, `ws` 8.21.0, `@babel/core` 7.29.7,
+  `js-yaml` 4.2.0, scoped `brace-expansion` 5.0.6). `next build` + the full
+  test suite both pass.
 
 All landed at the repository's 100% coverage gate; lint + type-check clean.
 
 ## Recommended immediate next code pass
 
-1. `KeyProvider` seam + versioned key rotation (prepares KMS cutover).
-2. Audit-chain transactional head advancement (Postgres).
-3. Coordinated dev-toolchain upgrade to clear the (non-runtime) Dependabot alerts.
-4. Distributed rate limiter + async middleware refactor.
-5. Employer admin console (org/membership entity).
+1. KMS-backed `KeyProvider` adapter (AWS KMS / GCP KMS) behind the existing seam.
+2. SANA AI assistant backend (LLM integration + safety guardrails; likely SaMD review).
+3. Real ZKP prover for `/api/zkp/*` (Groth16/PLONK) replacing mock proofs.
+4. IPFS content-addressed storage client (replace `cid` placeholders).
+5. Blockchain/L1 client for on-chain consent + audit anchoring.
 
 The consultant's overall sequencing (infra + KMS in weeks 1–4, compliance
 process in months 2+, integrations in month 5+) is endorsed; the engineering
