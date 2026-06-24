@@ -26,7 +26,10 @@ export type AuditAction =
   | 'MARKETPLACE_UPDATE'
   | 'MARKETPLACE_PURCHASE'
   | 'ROLE_ASSIGN'
-  | 'ROLE_REVOKE';
+  | 'ROLE_REVOKE'
+  | 'MFA_ENROLL'
+  | 'MFA_ENABLE'
+  | 'MFA_DISABLE';
 
 export interface AuditEntry {
   timestamp: string;
