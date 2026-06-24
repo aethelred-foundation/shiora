@@ -104,6 +104,13 @@ export const FEATURE_MATURITY = {
     audiences: ['governments', 'health_plans', 'employers'],
     summary: 'De-identified cohort analytics with k-anonymity suppression (min cohort 5).',
   },
+  care_gaps: {
+    title: 'Care gap registry',
+    maturity: 'production',
+    audiences: ['health_plans'],
+    summary: 'Encrypted, owner-scoped registry a health plan maintains of open care gaps against '
+      + 'de-identified member cohorts; tracks and closes gaps. Holds no member PHI.',
+  },
   provider_directory: {
     title: 'Provider patient directory',
     maturity: 'production',

@@ -45,7 +45,9 @@ export type AuditAction =
   | 'WELLNESS_PROGRAM_CREATE'
   | 'WELLNESS_PROGRAM_UPDATE'
   | 'WELLNESS_ENROLL'
-  | 'WELLNESS_UNENROLL';
+  | 'WELLNESS_UNENROLL'
+  | 'CARE_GAP_CREATE'
+  | 'CARE_GAP_UPDATE';
 
 export interface AuditEntry {
   timestamp: string;
