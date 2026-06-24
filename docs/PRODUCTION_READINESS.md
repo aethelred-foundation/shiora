@@ -46,6 +46,22 @@ The remaining work is concentrated in three places, none of which is core applic
 3. **Roadmap integrations (🗺️)** — real TEE, ZK prover, MPC engine, L1 chain client, IPFS, and
    LLM backend. Until each is wired, its surface is **simulated and labelled as such**.
 
+### Each audience has a real, production-grade surface
+
+Every one of the six audiences has at least one real (encrypted, audited, capability-gated,
+Postgres-ready) capability — not just a simulated demo:
+
+| Audience | Real surface(s) |
+|---|---|
+| **Individuals** | Health records, consent, GDPR rights, MFA, and the encrypted **cycle & symptom vault** with cycle-length / next-period insights derived from the user's own data. |
+| **Providers** | Patient directory (from real access grants) and **clinical notes** recorded against consented patients. |
+| **Employers** | Organization & membership admin and **wellness programs** with member enrollment. |
+| **Governments** | De-identified population analytics and **review/approval of data-access requests**. |
+| **Health plans** | Population analytics and a **care-gap registry** over de-identified cohorts. |
+| **Researchers** | Data marketplace and **consented data-access requests** against marketplace datasets. |
+
+The authoritative, machine-readable breakdown of every capability's maturity is `GET /api/system/status`.
+
 ---
 
 ## 1. Scope & deployment model
