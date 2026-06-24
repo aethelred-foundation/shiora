@@ -33,7 +33,11 @@ export type AuditAction =
   | 'ORG_CREATE'
   | 'ORG_UPDATE'
   | 'ORG_MEMBER_ADD'
-  | 'ORG_MEMBER_REMOVE';
+  | 'ORG_MEMBER_REMOVE'
+  | 'VAULT_SYMPTOM_LOG'
+  | 'VAULT_SYMPTOM_UPDATE'
+  | 'VAULT_CYCLE_LOG'
+  | 'VAULT_CYCLE_UPDATE';
 
 export interface AuditEntry {
   timestamp: string;

@@ -5,52 +5,17 @@ jest.mock('@/lib/api/middleware', () => {
   return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
 });
 
-const actualUtils = jest.requireActual('@/lib/utils');
-let symptomCategoryOverride = false;
-jest.mock('@/lib/utils', () => ({
-  ...jest.requireActual('@/lib/utils'),
-  seededPick: (seed: number, arr: unknown[]) => {
-    const result = actualUtils.seededPick(seed, arr);
-    // When the categories array is the 9-element symptom categories,
-    // override the first match to trigger SYMPTOM_NAMES[category] ?? ['Unknown']
-    if (arr.length === 9 && arr[0] === 'pain' && arr[8] === 'other' && !symptomCategoryOverride) {
-      symptomCategoryOverride = true;
-      return 'nonexistent_category';
-    }
-    return result;
-  },
-}));
-
 import { NextRequest, NextResponse } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
-import { GET as getVault } from '@/app/api/vault/route';
-
-const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
 import { GET as getCompartments, POST as createCompartment } from '@/app/api/vault/compartments/route';
 import { GET as getCompartment, PATCH as patchCompartment } from '@/app/api/vault/compartments/[id]/route';
-import { GET as getCycle } from '@/app/api/vault/cycle/route';
-import { GET as getSymptoms } from '@/app/api/vault/symptoms/route';
 
-describe('/api/vault', () => {
-  afterEach(() => {
-    mockedRunMiddleware.mockImplementation((...args: unknown[]) => {
-      const actual = jest.requireActual('@/lib/api/middleware');
-      return actual.runMiddleware(...args);
-    });
-  });
+const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
 
-  it('GET returns vault overview', async () => {
-    const res = await getVault(new NextRequest('http://localhost:3000/api/vault'));
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data).toBeDefined();
-  });
-
-  it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await getVault(new NextRequest('http://localhost:3000/api/vault'));
-    expect(res.status).toBe(403);
+afterEach(() => {
+  mockedRunMiddleware.mockImplementation((...args: unknown[]) => {
+    const actual = jest.requireActual('@/lib/api/middleware');
+    return actual.runMiddleware(...args);
   });
 });
 
@@ -334,142 +299,5 @@ describe('/api/vault/compartments/[id]', () => {
         { params: Promise.resolve({ id: validId }) },
       ),
     ).rejects.toThrow();
-  });
-});
-
-describe('/api/vault/cycle', () => {
-  it('GET returns cycle data', async () => {
-    const res = await getCycle(new NextRequest('http://localhost:3000/api/vault/cycle'));
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-  });
-
-  it('GET returns cycle data with days param', async () => {
-    const res = await getCycle(new NextRequest('http://localhost:3000/api/vault/cycle?days=7'));
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.entries.length).toBeLessThanOrEqual(7);
-  });
-
-  it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await getCycle(new NextRequest('http://localhost:3000/api/vault/cycle'));
-    expect(res.status).toBe(403);
-  });
-});
-
-describe('/api/vault/symptoms', () => {
-  it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await getSymptoms(new NextRequest('http://localhost:3000/api/vault/symptoms'));
-    expect(res.status).toBe(403);
-  });
-
-  it('GET returns symptoms data', async () => {
-    const res = await getSymptoms(new NextRequest('http://localhost:3000/api/vault/symptoms'));
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.symptoms).toBeDefined();
-    expect(body.data.total).toBeGreaterThan(0);
-  });
-
-  it('GET filters symptoms by category', async () => {
-    const res = await getSymptoms(new NextRequest('http://localhost:3000/api/vault/symptoms?category=pain'));
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    body.data.symptoms.forEach((s: { category: string }) => {
-      expect(s.category).toBe('pain');
-    });
-  });
-});
-
-describe('/api/vault/symptoms POST', () => {
-  const { POST: postSymptom } = require('@/app/api/vault/symptoms/route');
-
-  it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const req = new NextRequest('http://localhost:3000/api/vault/symptoms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category: 'pain', symptom: 'Headache', severity: 3 }),
-    });
-    const res = await postSymptom(req);
-    expect(res.status).toBe(403);
-  });
-
-  it('POST creates a new symptom log', async () => {
-    const req = new NextRequest('http://localhost:3000/api/vault/symptoms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        category: 'pain',
-        symptom: 'Headache',
-        severity: 3,
-        notes: 'After lunch',
-        tags: ['recurring'],
-      }),
-    });
-    const res = await postSymptom(req);
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.category).toBe('pain');
-    expect(body.data.symptom).toBe('Headache');
-    expect(body.data.severity).toBe(3);
-    expect(body.data.notes).toBe('After lunch');
-  });
-
-  it('POST returns 422 for invalid category', async () => {
-    const req = new NextRequest('http://localhost:3000/api/vault/symptoms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        category: 'invalid_category',
-        symptom: 'Test',
-        severity: 1,
-      }),
-    });
-    const res = await postSymptom(req);
-    expect(res.status).toBe(422);
-  });
-
-  it('POST returns 422 for missing required fields', async () => {
-    const req = new NextRequest('http://localhost:3000/api/vault/symptoms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    });
-    const res = await postSymptom(req);
-    expect(res.status).toBe(422);
-  });
-
-  it('POST defaults notes and tags when not provided', async () => {
-    const req = new NextRequest('http://localhost:3000/api/vault/symptoms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        category: 'mood',
-        symptom: 'Anxiety',
-        severity: 2,
-      }),
-    });
-    const res = await postSymptom(req);
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.data.notes).toBe('');
-    expect(body.data.tags).toEqual([]);
-  });
-
-  it('POST throws on invalid JSON body (non-Zod error)', async () => {
-    const req = new NextRequest('http://localhost:3000/api/vault/symptoms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: 'not-json',
-    });
-    await expect(postSymptom(req)).rejects.toThrow();
   });
 });

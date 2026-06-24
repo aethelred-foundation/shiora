@@ -240,11 +240,12 @@ export const FEATURE_MATURITY = {
     audiences: ['governments', 'health_plans', 'employers'],
     summary: 'Generated compliance/check/report figures are simulated, not derived from a live control plane.',
   },
-  vault: {
-    title: 'Privacy vault dashboard',
-    maturity: 'simulated',
+  cycle_vault: {
+    title: 'Cycle & symptom vault',
+    maturity: 'production',
     audiences: ['individuals'],
-    summary: 'Overview statistics and privacy scores are simulated; real PHI lives in the records path.',
+    summary: 'Encrypted, owner-scoped symptom and cycle logging with cycle-length and next-period '
+      + 'insights derived from the user\'s own data. The storage-compartment dashboard is illustrative.',
   },
 } as const satisfies Record<string, FeatureSpec>;
 
