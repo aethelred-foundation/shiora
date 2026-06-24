@@ -2,8 +2,6 @@
 
 import {
   KEK_VERSION,
-  __resetKekCacheForTests,
-  hasConfiguredDataKey,
   isSealed,
   openJson,
   openString,
@@ -11,11 +9,18 @@ import {
   sealString,
   type SealedEnvelope,
 } from '@/lib/crypto/envelope';
+import { __resetKeyProviderForTests } from '@/lib/crypto/key-provider';
+
+const KEY_ENVS = [
+  'SHIORA_DATA_ENCRYPTION_KEY',
+  'SHIORA_DATA_ENCRYPTION_KEY_VERSION',
+  'SHIORA_DATA_ENCRYPTION_KEY_V1',
+];
 
 describe('PHI envelope encryption', () => {
   afterEach(() => {
-    delete process.env.SHIORA_DATA_ENCRYPTION_KEY;
-    __resetKekCacheForTests();
+    KEY_ENVS.forEach((key) => delete process.env[key]);
+    __resetKeyProviderForTests();
   });
 
   it('round-trips a UTF-8 string', () => {
@@ -34,8 +39,7 @@ describe('PHI envelope encryption', () => {
   it('does not leak plaintext into any envelope field', () => {
     const secret = 'super-secret-diagnosis';
     const sealed = sealString(secret);
-    const serialized = JSON.stringify(sealed);
-    expect(serialized).not.toContain(secret);
+    expect(JSON.stringify(sealed)).not.toContain(secret);
   });
 
   it('uses a fresh DEK + IV per call (no deterministic ciphertext reuse)', () => {
@@ -78,35 +82,14 @@ describe('PHI envelope encryption', () => {
     expect(() => openString({ ...sealed, tag: flipped.toString('base64url') })).toThrow();
   });
 
-  it('rejects an envelope sealed under a different KEK', () => {
+  it('rejects an envelope whose version key has changed', () => {
     const sealed = sealString('encrypted under dev fallback key');
 
+    // Change the key serving version 1; the DEK can no longer be unwrapped.
     process.env.SHIORA_DATA_ENCRYPTION_KEY = Buffer.alloc(32, 7).toString('base64');
-    __resetKekCacheForTests();
+    __resetKeyProviderForTests();
 
     expect(() => openString(sealed)).toThrow();
-  });
-
-  it('accepts a 32-byte base64 KEK from the environment', () => {
-    process.env.SHIORA_DATA_ENCRYPTION_KEY = Buffer.alloc(32, 42).toString('base64');
-    __resetKekCacheForTests();
-    expect(hasConfiguredDataKey()).toBe(true);
-
-    const sealed = sealString('configured-key payload');
-    expect(openString(sealed)).toBe('configured-key payload');
-  });
-
-  it('accepts a 64-char hex KEK from the environment', () => {
-    process.env.SHIORA_DATA_ENCRYPTION_KEY = 'a'.repeat(64);
-    __resetKekCacheForTests();
-    const sealed = sealString('hex-key payload');
-    expect(openString(sealed)).toBe('hex-key payload');
-  });
-
-  it('rejects a KEK of the wrong length', () => {
-    process.env.SHIORA_DATA_ENCRYPTION_KEY = Buffer.alloc(16, 1).toString('base64');
-    __resetKekCacheForTests();
-    expect(() => sealString('x')).toThrow(/32 bytes/);
   });
 
   it('rejects an unknown algorithm on open', () => {
@@ -114,31 +97,38 @@ describe('PHI envelope encryption', () => {
     expect(() => openString({ ...sealed, alg: 'rot13' as never })).toThrow(/algorithm/);
   });
 
-  it('throws when no data-encryption key is configured in production', () => {
-    const prevNodeEnv = process.env.NODE_ENV;
-    delete process.env.SHIORA_DATA_ENCRYPTION_KEY;
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error NODE_ENV is normally read-only; overridden for this case
-    process.env.NODE_ENV = 'production';
-    __resetKekCacheForTests();
-
-    try {
-      expect(() => sealString('x')).toThrow(/must be set in production/);
-    } finally {
-      // @ts-expect-error restore
-      process.env.NODE_ENV = prevNodeEnv;
-      __resetKekCacheForTests();
-    }
-  });
-
   it('rejects a malformed wrapped DEK', () => {
     const sealed = sealString('x');
     expect(() => openString({ ...sealed, dek: 'only-one-part' })).toThrow(/Malformed wrapped DEK/);
   });
 
-  it('rejects an unknown KEK version on open', () => {
+  it('rejects an envelope whose KEK version has no available key', () => {
     const sealed = sealString('x');
-    expect(() => openString({ ...sealed, v: 999 })).toThrow(/Unknown KEK version/);
+    expect(() => openString({ ...sealed, v: 999 })).toThrow(/version 999/);
+  });
+
+  it('opens historical data after a key rotation', () => {
+    const key1 = Buffer.alloc(32, 11).toString('base64');
+    const key2 = Buffer.alloc(32, 22).toString('base64');
+
+    // Seal under version 1 with key1.
+    process.env.SHIORA_DATA_ENCRYPTION_KEY = key1;
+    __resetKeyProviderForTests();
+    const oldData = sealString('pre-rotation phi', 'owner:rec');
+    expect(oldData.v).toBe(1);
+
+    // Rotate: current is now version 2 (key2); key1 is retained as historical V1.
+    process.env.SHIORA_DATA_ENCRYPTION_KEY_VERSION = '2';
+    process.env.SHIORA_DATA_ENCRYPTION_KEY = key2;
+    process.env.SHIORA_DATA_ENCRYPTION_KEY_V1 = key1;
+    __resetKeyProviderForTests();
+
+    const newData = sealString('post-rotation phi', 'owner:rec2');
+    expect(newData.v).toBe(2);
+
+    // Old data still opens under its version-1 key; new data under version 2.
+    expect(openString(oldData, 'owner:rec')).toBe('pre-rotation phi');
+    expect(openString(newData, 'owner:rec2')).toBe('post-rotation phi');
   });
 
   it('isSealed rejects non-envelope values', () => {

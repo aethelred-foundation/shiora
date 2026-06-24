@@ -11,31 +11,31 @@
 //   • The DEK itself is encrypted ("wrapped") under a long-lived Key
 //     Encryption Key (KEK) — also AES-256-GCM. Only the wrapped DEK is
 //     persisted; the plaintext DEK never touches disk.
-//   • A version tag is stored with every record so the KEK can be rotated
-//     without rewriting historical ciphertext eagerly.
+//   • The KEK *version* is stored with every record so the key can be rotated
+//     without rewriting historical ciphertext: new data is sealed under the
+//     current version, and old data still opens under its original version's
+//     key for as long as that key remains available.
 //   • Additional Authenticated Data (AAD) cryptographically binds a record's
 //     ciphertext to its context (e.g. `owner:recordId`). A ciphertext lifted
 //     from one record and replayed under another context fails to decrypt —
 //     this defeats ciphertext-substitution attacks.
 //
-// KEY CUSTODY (read before production):
-//   In this build the KEK is read from the environment. That is acceptable
-//   for testnet/preview, but for production the KEK MUST be held in a managed
-//   KMS/HSM (AWS KMS, GCP KMS, HashiCorp Vault Transit) and this module's
-//   `wrapDek`/`unwrapDek` should delegate to it. See docs/COMPLIANCE.md →
-//   control C-ENC-2. The env-based KEK is a single point of compromise and is
-//   intentionally gated to throw in production unless explicitly configured.
+// KEY CUSTODY: the KEK is resolved through the KeyProvider seam
+// (src/lib/crypto/key-provider.ts). The default provider reads keys from the
+// environment; production replaces it with a KMS/HSM-backed provider
+// implementing the same interface. See docs/COMPLIANCE.md → control C-ENC-2.
 // ============================================================
 
 import crypto from 'node:crypto';
-import { z } from 'zod';
+
+import { getKeyProvider } from './key-provider';
 
 const ALGORITHM = 'aes-256-gcm';
 const KEY_BYTES = 32; // 256-bit keys
 const IV_BYTES = 12; // 96-bit nonce — the recommended size for GCM
 const DEK_AAD = 'shiora/dek-wrap/v1';
 
-/** Current KEK version stamped onto every sealed value (enables rotation). */
+/** Default KEK version when no rotation has occurred. */
 export const KEK_VERSION = 1 as const;
 
 /**
@@ -57,73 +57,6 @@ export interface SealedEnvelope {
   ct: string;
   /** Optional context string bound into the payload's AAD. */
   aad?: string;
-}
-
-// ---------------------------------------------------------------------------
-// KEK accessor — mirrors the lazy, production-throwing pattern in env.ts so
-// `next build` can collect pages without a configured key, while every real
-// runtime path that encrypts/decrypts fails loudly if the key is missing.
-// ---------------------------------------------------------------------------
-
-const KekSchema = z.string().optional();
-
-function decodeKek(raw: string): Buffer {
-  // Accept either base64 (44 chars for 32 bytes) or hex (64 chars).
-  const buf = /^[0-9a-fA-F]{64}$/.test(raw)
-    ? Buffer.from(raw, 'hex')
-    : Buffer.from(raw, 'base64');
-
-  if (buf.length !== KEY_BYTES) {
-    throw new Error(
-      `SHIORA_DATA_ENCRYPTION_KEY must decode to ${KEY_BYTES} bytes `
-      + `(got ${buf.length}). Generate one with: openssl rand -base64 32`,
-    );
-  }
-  return buf;
-}
-
-let _cachedKek: Buffer | null = null;
-
-/**
- * Resolve the Key Encryption Key. Throws in production when unset so PHI is
- * never silently encrypted under a known development key. In development/test
- * a deterministic, clearly-insecure fallback is derived so the suite runs
- * without configuration — identical in spirit to the session-secret fallback.
- */
-function getKek(): Buffer {
-  if (_cachedKek) return _cachedKek;
-
-  const raw = KekSchema.parse(process.env.SHIORA_DATA_ENCRYPTION_KEY);
-  const isProduction = process.env.NODE_ENV === 'production';
-
-  if (!raw) {
-    if (isProduction) {
-      throw new Error(
-        'SHIORA_DATA_ENCRYPTION_KEY must be set in production. '
-        + 'Generate one with: openssl rand -base64 32 (and store it in a KMS/HSM).',
-      );
-    }
-    // Development/test fallback — deterministic and NOT secret. Never reached
-    // in production because of the throw above.
-    _cachedKek = crypto
-      .createHash('sha256')
-      .update('shiora-dev-data-encryption-key-change-me-before-production')
-      .digest();
-    return _cachedKek;
-  }
-
-  _cachedKek = decodeKek(raw);
-  return _cachedKek;
-}
-
-/** Test-only: clear the cached KEK so env changes take effect between cases. */
-export function __resetKekCacheForTests(): void {
-  _cachedKek = null;
-}
-
-/** True when a real (non-fallback) KEK is configured. */
-export function hasConfiguredDataKey(): boolean {
-  return !!process.env.SHIORA_DATA_ENCRYPTION_KEY;
 }
 
 // ---------------------------------------------------------------------------
@@ -181,12 +114,14 @@ function unpackWrappedDek(packed: string): { iv: Buffer; tag: Buffer; ciphertext
 // ---------------------------------------------------------------------------
 
 /**
- * Seal a UTF-8 string as PHI at rest. `aad`, when provided, is authenticated
- * (not encrypted) and must be supplied identically to {@link openString};
- * use it to bind ciphertext to its owner/record context.
+ * Seal a UTF-8 string as PHI at rest under the current KEK version. `aad`, when
+ * provided, is authenticated (not encrypted) and must be supplied identically
+ * to {@link openString}; use it to bind ciphertext to its owner/record context.
  */
 export function sealString(plaintext: string, aad?: string): SealedEnvelope {
-  const kek = getKek();
+  const provider = getKeyProvider();
+  const version = provider.currentVersion();
+  const kek = provider.keyForVersion(version);
   const dek = crypto.randomBytes(KEY_BYTES);
 
   const aadBuf = aad ? Buffer.from(aad, 'utf8') : undefined;
@@ -197,7 +132,7 @@ export function sealString(plaintext: string, aad?: string): SealedEnvelope {
   dek.fill(0);
 
   return {
-    v: KEK_VERSION,
+    v: version,
     alg: ALGORITHM,
     dek: packWrappedDek(wrapped.iv, wrapped.tag, wrapped.ciphertext),
     iv: payload.iv.toString('base64url'),
@@ -208,18 +143,16 @@ export function sealString(plaintext: string, aad?: string): SealedEnvelope {
 }
 
 /**
- * Open a value sealed by {@link sealString}. Throws if the KEK is wrong, the
- * ciphertext was tampered with, or `aad` does not match the seal-time value.
+ * Open a value sealed by {@link sealString}, using the KEK for the version it
+ * was sealed under. Throws if that version's key is unavailable, the ciphertext
+ * was tampered with, or `aad` does not match the seal-time value.
  */
 export function openString(envelope: SealedEnvelope, aad?: string): string {
   if (envelope.alg !== ALGORITHM) {
     throw new Error(`Unsupported envelope algorithm: ${envelope.alg}`);
   }
-  if (envelope.v !== KEK_VERSION) {
-    throw new Error(`Unknown KEK version: ${envelope.v}`);
-  }
 
-  const kek = getKek();
+  const kek = getKeyProvider().keyForVersion(envelope.v);
   const wrapped = unpackWrappedDek(envelope.dek);
   const dek = gcmDecrypt(
     kek,
