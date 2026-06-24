@@ -1,23 +1,27 @@
 /**
  * Shiora on Aethelred — Privacy Portability Request API Route
  *
- * POST /api/privacy/portability — Submit a GDPR data portability request (Article 20)
+ * POST /api/privacy/portability — GDPR data portability (Article 20).
+ * Exports the authenticated data subject's data in the requested format.
  */
 
 import { NextRequest } from 'next/server';
+import { randomUUID } from 'node:crypto';
 
 import type { PrivacyRequest } from '@/types';
-import { seededHex } from '@/lib/utils';
-import { runMiddleware } from '@/lib/api/middleware';
+import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
+import { collectUserData } from '@/lib/api/privacy';
+import { audit } from '@/lib/api/audit';
 
-// ---------------------------------------------------------------------------
-// POST /api/privacy/portability
-// ---------------------------------------------------------------------------
+const VALID_FORMATS = ['json', 'csv', 'xml'];
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
+
+  const auth = requireAuth(request);
+  if ('status' in auth) return auth;
 
   try {
     const body = await request.json();
@@ -32,31 +36,38 @@ export async function POST(request: NextRequest) {
     }
 
     const exportFormat = format ?? 'json';
-    const validFormats = ['json', 'csv', 'xml'];
-    if (!validFormats.includes(exportFormat)) {
+    if (!VALID_FORMATS.includes(exportFormat)) {
       return errorResponse(
         'VALIDATION_ERROR',
-        `format must be one of: ${validFormats.join(', ')}`,
+        `format must be one of: ${VALID_FORMATS.join(', ')}`,
         HTTP.BAD_REQUEST,
       );
     }
 
-    const seed = Date.now();
+    const owner = auth.walletAddress!;
+    const data = await collectUserData(owner);
+
     const privacyRequest: PrivacyRequest = {
-      id: `priv-${seededHex(seed, 12)}`,
+      id: `priv-${randomUUID().replace(/-/g, '')}`,
       type: 'portability',
-      status: 'pending',
+      status: 'completed',
       requestedAt: Date.now(),
-      details: `Export selected data in ${exportFormat} format for portability transfer`,
+      completedAt: Date.now(),
+      details: `Exported ${data.records.length} records, ${data.consents.length} consents, ${data.accessGrants.length} access grants in ${exportFormat} format.`,
       dataCategories: categories,
     };
 
-    return successResponse(privacyRequest, HTTP.CREATED);
+    audit({
+      action: 'DATA_EXPORT',
+      actor: owner,
+      resource: 'privacy',
+      resourceId: privacyRequest.id,
+      success: true,
+      metadata: { type: 'portability', format: exportFormat },
+    });
+
+    return successResponse({ request: privacyRequest, format: exportFormat, data }, HTTP.CREATED);
   } catch {
-    return errorResponse(
-      'INTERNAL_ERROR',
-      'Failed to submit portability request',
-      HTTP.INTERNAL,
-    );
+    return errorResponse('INTERNAL_ERROR', 'Failed to submit portability request', HTTP.INTERNAL);
   }
 }

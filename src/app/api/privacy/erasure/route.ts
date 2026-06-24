@@ -1,23 +1,26 @@
 /**
  * Shiora on Aethelred — Privacy Erasure Request API Route
  *
- * POST /api/privacy/erasure — Submit a GDPR right-to-erasure request (Article 17)
+ * POST /api/privacy/erasure — GDPR right to erasure (Article 17).
+ * Soft-deletes the authenticated data subject's records and revokes their
+ * active consents and access grants.
  */
 
 import { NextRequest } from 'next/server';
+import { randomUUID } from 'node:crypto';
 
 import type { PrivacyRequest } from '@/types';
-import { seededHex } from '@/lib/utils';
-import { runMiddleware } from '@/lib/api/middleware';
+import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
-
-// ---------------------------------------------------------------------------
-// POST /api/privacy/erasure
-// ---------------------------------------------------------------------------
+import { eraseUserData } from '@/lib/api/privacy';
+import { audit } from '@/lib/api/audit';
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
+
+  const auth = requireAuth(request);
+  if ('status' in auth) return auth;
 
   try {
     const body = await request.json();
@@ -31,22 +34,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const seed = Date.now();
+    const owner = auth.walletAddress!;
+    const summary = await eraseUserData(owner);
+
     const privacyRequest: PrivacyRequest = {
-      id: `priv-${seededHex(seed, 12)}`,
+      id: `priv-${randomUUID().replace(/-/g, '')}`,
       type: 'erasure',
-      status: 'pending',
+      status: 'completed',
       requestedAt: Date.now(),
-      details: 'Permanent deletion of selected personal health data categories',
+      completedAt: Date.now(),
+      details: `Erased ${summary.recordsErased} records, revoked ${summary.consentsRevoked} consents and ${summary.grantsRevoked} access grants.`,
       dataCategories: categories,
     };
 
-    return successResponse(privacyRequest, HTTP.CREATED);
+    audit({
+      action: 'DATA_ERASURE',
+      actor: owner,
+      resource: 'privacy',
+      resourceId: privacyRequest.id,
+      success: true,
+      metadata: { type: 'erasure', ...summary },
+    });
+
+    return successResponse({ request: privacyRequest, summary }, HTTP.CREATED);
   } catch {
-    return errorResponse(
-      'INTERNAL_ERROR',
-      'Failed to submit erasure request',
-      HTTP.INTERNAL,
-    );
+    return errorResponse('INTERNAL_ERROR', 'Failed to submit erasure request', HTTP.INTERNAL);
   }
 }
