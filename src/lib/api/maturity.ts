@@ -110,6 +110,13 @@ export const FEATURE_MATURITY = {
     audiences: ['providers'],
     summary: 'Providers see the patients who have granted them access, from real access grants.',
   },
+  clinical_notes: {
+    title: 'Clinical notes',
+    maturity: 'production',
+    audiences: ['providers'],
+    summary: 'Providers record encrypted, audited clinical notes on patients who have granted '
+      + 'them an active access grant; the patient owns the resulting record.',
+  },
   employer_admin: {
     title: 'Employer admin console',
     maturity: 'production',

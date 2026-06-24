@@ -53,6 +53,23 @@ export async function listGrantsForProvider(providerAddress: string): Promise<Mo
   return all.filter((grant) => grant.address === providerAddress);
 }
 
+/**
+ * Whether `provider` currently holds an active, viewable grant from `patient`.
+ * Used to gate provider clinical actions on a specific patient's record.
+ */
+export async function providerHasActiveGrant(
+  providerAddress: string,
+  patientAddress: string,
+): Promise<boolean> {
+  const grants = await listGrantsForProvider(providerAddress);
+  return grants.some(
+    (grant) =>
+      grant.ownerAddress === patientAddress
+      && grant.status === 'Active'
+      && grant.canView,
+  );
+}
+
 export function getAccessGrant(
   ownerAddress: string,
   id: string,

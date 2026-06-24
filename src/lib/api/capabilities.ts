@@ -13,6 +13,7 @@ export const CAPABILITIES = [
   'manage_consent',
   'view_granted_records',
   'clinical_decision_support',
+  'manage_clinical_notes',
   'manage_org_members',
   'view_population_analytics',
   'manage_population_programs',
@@ -26,7 +27,7 @@ export type Capability = (typeof CAPABILITIES)[number];
 /** The capabilities each role grants. */
 const ROLE_CAPABILITIES: Record<Role, Capability[]> = {
   individual: ['manage_own_records', 'manage_consent'],
-  provider: ['view_granted_records', 'clinical_decision_support'],
+  provider: ['view_granted_records', 'clinical_decision_support', 'manage_clinical_notes'],
   employer_admin: ['manage_org_members', 'view_population_analytics'],
   payer_analyst: ['view_population_analytics'],
   government: ['view_population_analytics', 'manage_population_programs', 'manage_roles'],

@@ -11,11 +11,14 @@ import {
   getAccessGrant,
   listAccessGrants,
   updateAccessGrant,
+  providerHasActiveGrant,
   __resetAccessForTests,
 } from '@/lib/api/access-service';
 import type { MockAccessGrant } from '@/lib/api/mock-data';
 
 const OWNER = 'aeth1owner00000000000000000000000000000';
+const PROVIDER = 'aeth1provider';
+const OTHER_PATIENT = 'aeth1otherpatient0000000000000000000000';
 
 function grant(): MockAccessGrant {
   return {
@@ -56,5 +59,36 @@ describe('access-service', () => {
 
     expect(await listAccessGrants(OWNER)).toEqual([]);
     expect(pgQuery).toHaveBeenCalled();
+  });
+
+  describe('providerHasActiveGrant', () => {
+    beforeEach(() => {
+      delete process.env.DATABASE_URL;
+      __resetAccessForTests();
+    });
+
+    it('is true for an active, viewable grant from the patient', async () => {
+      await createAccessGrant(OWNER, { ...grant(), id: 'g-active', status: 'Active', canView: true });
+      expect(await providerHasActiveGrant(PROVIDER, OWNER)).toBe(true);
+    });
+
+    it('is false when the provider holds no grant', async () => {
+      expect(await providerHasActiveGrant(PROVIDER, OWNER)).toBe(false);
+    });
+
+    it('is false for a grant from a different patient', async () => {
+      await createAccessGrant(OWNER, { ...grant(), id: 'g-other', status: 'Active' });
+      expect(await providerHasActiveGrant(PROVIDER, OTHER_PATIENT)).toBe(false);
+    });
+
+    it('is false when the grant is not Active', async () => {
+      await createAccessGrant(OWNER, { ...grant(), id: 'g-revoked', status: 'Revoked', canView: true });
+      expect(await providerHasActiveGrant(PROVIDER, OWNER)).toBe(false);
+    });
+
+    it('is false when the grant does not permit viewing', async () => {
+      await createAccessGrant(OWNER, { ...grant(), id: 'g-noview', status: 'Active', canView: false });
+      expect(await providerHasActiveGrant(PROVIDER, OWNER)).toBe(false);
+    });
   });
 });
