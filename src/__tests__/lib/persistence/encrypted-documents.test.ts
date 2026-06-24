@@ -105,4 +105,18 @@ describe('EncryptedDocumentRepository', () => {
     await store.put({ collection: COLLECTION, ownerKey: OWNER, id: 'd1', sealed: otherSealed, deleted: false });
     await expect(repo.get(OWNER, 'd1')).rejects.toThrow();
   });
+
+  it('listAll decrypts every non-deleted document across owners', async () => {
+    const { store, repo } = newRepo();
+    await repo.create(OWNER, { id: 'd1', secret: 'one', count: 1 });
+    await repo.create('aeth1other', { id: 'd2', secret: 'two', count: 2 });
+    // A pre-deleted document is excluded.
+    await store.put({
+      collection: COLLECTION, ownerKey: OWNER, id: 'd3',
+      sealed: sealJson({ id: 'd3', secret: 'x', count: 0 }, `${COLLECTION}:${OWNER}:d3`), deleted: true,
+    });
+
+    const all = await repo.listAll();
+    expect(all.map((d) => d.secret).sort()).toEqual(['one', 'two']);
+  });
 });

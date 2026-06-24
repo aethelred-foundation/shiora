@@ -41,6 +41,11 @@ export function listAccessGrants(ownerAddress: string): Promise<MockAccessGrant[
   return repo().list(ownerAddress);
 }
 
+/** All access grants across every owner. For aggregate analytics only. */
+export function listAllAccessGrants(): Promise<MockAccessGrant[]> {
+  return repo().listAll();
+}
+
 export function getAccessGrant(
   ownerAddress: string,
   id: string,

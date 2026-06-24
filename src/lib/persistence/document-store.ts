@@ -27,6 +27,11 @@ export interface DocumentStorePort {
   put(doc: StoredDocument): Promise<void>;
   findById(collection: string, ownerKey: string, id: string): Promise<StoredDocument | undefined>;
   findByOwner(collection: string, ownerKey: string): Promise<StoredDocument[]>;
+  /**
+   * Every document in a collection across all owners. For aggregate analytics
+   * only — never expose individual documents from this to an owner.
+   */
+  listAll(collection: string): Promise<StoredDocument[]>;
 }
 
 /**
@@ -66,5 +71,16 @@ export class InMemoryDocumentStore implements DocumentStorePort {
 
   async findByOwner(collection: string, ownerKey: string): Promise<StoredDocument[]> {
     return (this.byKey.get(this.key(collection, ownerKey)) ?? []).map((entry) => ({ ...entry }));
+  }
+
+  async listAll(collection: string): Promise<StoredDocument[]> {
+    const prefix = `${collection}::`;
+    const all: StoredDocument[] = [];
+    this.byKey.forEach((docs, mapKey) => {
+      if (mapKey.startsWith(prefix)) {
+        docs.forEach((doc) => all.push({ ...doc }));
+      }
+    });
+    return all;
   }
 }

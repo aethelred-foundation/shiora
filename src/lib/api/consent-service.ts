@@ -41,6 +41,11 @@ export function listConsents(patientAddress: string): Promise<ConsentGrant[]> {
   return repo().list(patientAddress);
 }
 
+/** All consents across every patient. For aggregate analytics only. */
+export function listAllConsents(): Promise<ConsentGrant[]> {
+  return repo().listAll();
+}
+
 export function getConsent(
   patientAddress: string,
   id: string,

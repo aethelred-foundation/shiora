@@ -82,4 +82,13 @@ describe('PgDocumentStore', () => {
     expect(docs.map((d) => d.id)).toEqual(['doc-1', 'doc-2']);
     expect(client.calls[0].text).toContain('ORDER BY created_at DESC');
   });
+
+  it('listAll returns every document in a collection across owners', async () => {
+    const client = new FakeSqlClient();
+    client.enqueue([docRow(), { ...docRow(), owner_key: 'other', id: 'doc-2' }]);
+    const docs = await new PgDocumentStore(client).listAll(COLLECTION);
+    expect(docs.map((d) => d.id)).toEqual(['doc-1', 'doc-2']);
+    expect(client.calls[0].params).toEqual([COLLECTION]);
+    expect(client.calls[0].text).toContain('WHERE collection=$1');
+  });
 });

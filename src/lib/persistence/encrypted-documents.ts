@@ -47,6 +47,15 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
     return rows.filter((row) => !row.deleted).map((row) => this.open(ownerKey, row));
   }
 
+  /**
+   * List and decrypt every non-deleted document across all owners. For
+   * aggregate analytics only — callers must not return individual documents.
+   */
+  async listAll(): Promise<T[]> {
+    const rows = await this.store.listAll(this.collection);
+    return rows.filter((row) => !row.deleted).map((row) => this.open(row.ownerKey, row));
+  }
+
   /** Merge a patch into an existing document and re-seal it. */
   async update(ownerKey: string, id: string, patch: Partial<T>): Promise<T | undefined> {
     const row = await this.store.findById(this.collection, ownerKey, id);

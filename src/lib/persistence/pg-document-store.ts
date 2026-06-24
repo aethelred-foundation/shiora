@@ -72,4 +72,14 @@ export class PgDocumentStore implements DocumentStorePort {
     );
     return rows.map(rowToDocument);
   }
+
+  async listAll(collection: string): Promise<StoredDocument[]> {
+    const { rows } = await this.client.query<DocumentRow>(
+      `SELECT collection, owner_key, id, sealed, deleted FROM documents
+       WHERE collection=$1
+       ORDER BY created_at DESC`,
+      [collection],
+    );
+    return rows.map(rowToDocument);
+  }
 }
