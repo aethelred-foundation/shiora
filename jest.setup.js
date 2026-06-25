@@ -4,6 +4,13 @@
 
 import '@testing-library/jest-dom';
 
+// Give RTL's waitFor a generous ceiling. Under a large parallel coverage run a
+// worker's event loop can be starved, so React Query async settles slowly; the
+// default 1s timeout then fails spuriously. The ceiling only caps the maximum
+// wait — passing assertions return immediately, so healthy runs are unaffected.
+const { configure: configureTestingLibrary } = require('@testing-library/dom');
+configureTestingLibrary({ asyncUtilTimeout: 20000 });
+
 // ---------------------------------------------------------------------------
 // Mock next/navigation
 // ---------------------------------------------------------------------------

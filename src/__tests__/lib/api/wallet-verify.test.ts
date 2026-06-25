@@ -150,6 +150,23 @@ describe('verifyWalletSignature', () => {
     expect(result).toBe(true);
   });
 
+  it('DER-encodes raw signature integers for both high-bit cases (deterministic)', () => {
+    // Pair a real pubkey/address (so the address check passes and the raw → DER
+    // conversion actually runs) with crafted raw r||s signatures. This pins both
+    // sides of the "high bit set?" branch in rawToDer regardless of the random
+    // signatures the other tests happen to produce.
+    const msg = 'high-bit branch';
+    const { pubKeyHex, address } = generateTestWalletSignature(msg);
+
+    // r and s with the high bit SET in their first byte → 0x00 is prepended.
+    const high = '80' + 'a1'.repeat(31) + '95' + 'b2'.repeat(31);
+    expect(verifyWalletSignature(msg, `${pubKeyHex}.${high}`, address)).toBe(false);
+
+    // r and s with the high bit CLEAR in their first byte → no prepend.
+    const low = '7f' + 'c3'.repeat(31) + '10' + 'd4'.repeat(31);
+    expect(verifyWalletSignature(msg, `${pubKeyHex}.${low}`, address)).toBe(false);
+  });
+
   it('returns false for valid signature but wrong message', () => {
     const testMessage = 'Original message';
     const { signatureField, address } = generateTestWalletSignature(testMessage);
