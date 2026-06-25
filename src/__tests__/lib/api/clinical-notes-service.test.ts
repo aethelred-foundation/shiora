@@ -8,6 +8,7 @@ jest.mock('@/lib/persistence/sql-client', () => ({
 
 import {
   createClinicalNote,
+  amendClinicalNote,
   listClinicalNotesForPatient,
   listClinicalNotesByProvider,
   __resetClinicalNotesForTests,
@@ -57,6 +58,18 @@ describe('clinical-notes-service', () => {
   it('scopes notes to the patient', async () => {
     await createClinicalNote(PATIENT, PROVIDER_A, { type: 'observation', title: 'X', body: 'x' });
     expect(await listClinicalNotesForPatient(seededAddress(999))).toEqual([]);
+  });
+
+  it('amends a note append-only and rejects an unknown note', async () => {
+    const note = await createClinicalNote(PATIENT, PROVIDER_A, { type: 'observation', title: 'Visit', body: 'Initial' });
+    expect(note.amendments).toEqual([]);
+
+    const amended = await amendClinicalNote(PATIENT, note.id, PROVIDER_B, 'Addendum: labs normal');
+    expect(amended?.amendments).toHaveLength(1);
+    expect(amended?.amendments[0].providerAddress).toBe(PROVIDER_B);
+    expect(amended?.body).toBe('Initial'); // original body never mutated
+
+    expect(await amendClinicalNote(PATIENT, 'note-nope', PROVIDER_A, 'x')).toBeUndefined();
   });
 
   it('uses the Postgres store when DATABASE_URL is configured', async () => {

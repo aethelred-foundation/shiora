@@ -63,7 +63,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
   const authorized = await authorizeForPatient(request, context);
   if (authorized instanceof Response) return authorized;
 
-  const notes = await listClinicalNotesByProvider(authorized.patient, authorized.provider);
+  let notes = await listClinicalNotesByProvider(authorized.patient, authorized.provider);
+  const type = request.nextUrl.searchParams.get('type');
+  if (type) {
+    notes = notes.filter((note) => note.type === type);
+  }
   return successResponse({ patientAddress: authorized.patient, total: notes.length, notes });
 }
 

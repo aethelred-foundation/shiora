@@ -21,6 +21,14 @@ const COLLECTION = 'clinical-note';
 
 export type ClinicalNoteType = 'observation' | 'assessment' | 'plan' | 'progress';
 
+/** An append-only addendum to a note — the clinical record is never edited in place. */
+export interface NoteAmendment {
+  id: string;
+  providerAddress: string;
+  body: string;
+  createdAt: number;
+}
+
 export interface ClinicalNote {
   id: string;
   patientAddress: string;
@@ -28,7 +36,9 @@ export interface ClinicalNote {
   type: ClinicalNoteType;
   title: string;
   body: string;
+  amendments: NoteAmendment[];
   createdAt: number;
+  updatedAt: number;
 }
 
 export interface ClinicalNoteInput {
@@ -63,6 +73,7 @@ export function createClinicalNote(
   providerAddress: string,
   input: ClinicalNoteInput,
 ): Promise<ClinicalNote> {
+  const now = Date.now();
   const note: ClinicalNote = {
     id: `note-${randomUUID().replace(/-/g, '')}`,
     patientAddress,
@@ -70,9 +81,38 @@ export function createClinicalNote(
     type: input.type,
     title: input.title,
     body: input.body,
-    createdAt: Date.now(),
+    amendments: [],
+    createdAt: now,
+    updatedAt: now,
   };
   return repo().create(patientAddress, note);
+}
+
+/**
+ * Append an amendment to an existing note (clinical records are append-only —
+ * the original body is never mutated). Returns the updated note, or undefined
+ * when the note does not exist for the patient.
+ */
+export async function amendClinicalNote(
+  patientAddress: string,
+  noteId: string,
+  providerAddress: string,
+  body: string,
+): Promise<ClinicalNote | undefined> {
+  const note = await repo().get(patientAddress, noteId);
+  if (!note) {
+    return undefined;
+  }
+  const amendment: NoteAmendment = {
+    id: `amend-${randomUUID().replace(/-/g, '')}`,
+    providerAddress,
+    body,
+    createdAt: Date.now(),
+  };
+  return repo().update(patientAddress, noteId, {
+    amendments: [...note.amendments, amendment],
+    updatedAt: Date.now(),
+  });
 }
 
 /** Every clinical note about a patient, most recent first (patient's own view). */

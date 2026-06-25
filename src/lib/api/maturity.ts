@@ -120,9 +120,10 @@ export const FEATURE_MATURITY = {
   clinical_notes: {
     title: 'Clinical notes',
     maturity: 'production',
-    audiences: ['providers'],
-    summary: 'Providers record encrypted, audited clinical notes on patients who have granted '
-      + 'them an active access grant; the patient owns the resulting record.',
+    audiences: ['providers', 'individuals'],
+    summary: 'Providers record encrypted, audited clinical notes on patients who granted them an '
+      + 'active access grant, with append-only amendments (the record is never edited in place). '
+      + 'The patient owns and can view every note about them (GET /api/me/clinical-notes).',
   },
   employer_admin: {
     title: 'Employer admin console',
