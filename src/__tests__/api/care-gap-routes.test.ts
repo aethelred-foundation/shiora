@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
 import { GET, POST } from '@/app/api/health-plans/care-gaps/route';
 import { PATCH } from '@/app/api/health-plans/care-gaps/[id]/route';
+import { GET as analyticsGet } from '@/app/api/health-plans/care-gaps/analytics/route';
 import { createCareGap, __resetCareGapsForTests } from '@/lib/api/care-gap-service';
 import { assignRole, __resetRolesForTests } from '@/lib/api/roles-service';
 import { createSessionToken } from '@/lib/api/session';
@@ -133,5 +134,28 @@ describe('PATCH /api/health-plans/care-gaps/[id]', () => {
   it('throws on an invalid JSON body', async () => {
     const gap = await createCareGap(PAYER, validGap);
     await expect(PATCH(authed(`${URL}/${gap.id}`, jsonBody('not-json', 'PATCH'), payerToken), ctx(gap.id))).rejects.toThrow();
+  });
+});
+
+describe('GET /api/health-plans/care-gaps/analytics', () => {
+  const ANALYTICS = `${URL}/analytics`;
+
+  it('returns the middleware error when blocked', async () => {
+    blocked();
+    expect((await analyticsGet(authed(ANALYTICS, { method: 'GET' }, payerToken))).status).toBe(403);
+  });
+
+  it('returns 403 for a non-payer', async () => {
+    expect((await analyticsGet(authed(ANALYTICS, { method: 'GET' }, outsiderToken))).status).toBe(403);
+  });
+
+  it('summarises the payer\'s care-gap closure performance', async () => {
+    await createCareGap(PAYER, validGap);
+    const res = await analyticsGet(authed(ANALYTICS, { method: 'GET' }, payerToken));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.totalGaps).toBe(1);
+    expect(body.data.openGaps).toBe(1);
+    expect(body.data.totalOpenMembers).toBe(12);
   });
 });

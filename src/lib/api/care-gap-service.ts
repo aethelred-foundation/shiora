@@ -29,6 +29,7 @@ export interface CareGap {
   description: string;
   openCount: number;
   status: CareGapStatus;
+  closedAt: number | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -38,6 +39,17 @@ export interface CareGapInput {
   cohort: string;
   description?: string;
   openCount: number;
+}
+
+export interface CareGapAnalytics {
+  totalGaps: number;
+  openGaps: number;
+  closedGaps: number;
+  /** Sum of open-member counts across still-open gaps. */
+  totalOpenMembers: number;
+  /** Share of gaps that are closed, 0–100. */
+  closureRate: number;
+  byMeasure: Array<{ measure: string; open: number; closed: number }>;
 }
 
 export type CareGapPatch = Partial<Pick<CareGap, 'openCount' | 'status' | 'description'>>;
@@ -73,6 +85,7 @@ export function createCareGap(payerAddress: string, input: CareGapInput): Promis
     description: input.description ?? '',
     openCount: input.openCount,
     status: 'open',
+    closedAt: null,
     createdAt: now,
     updatedAt: now,
   };
@@ -95,7 +108,38 @@ export function updateCareGap(
   id: string,
   patch: CareGapPatch,
 ): Promise<CareGap | undefined> {
-  return repo().update(payerAddress, id, { ...patch, updatedAt: Date.now() });
+  const now = Date.now();
+  const closure = patch.status === 'closed' ? { closedAt: now } : {};
+  return repo().update(payerAddress, id, { ...patch, ...closure, updatedAt: now });
+}
+
+/** Aggregate care-gap counts and closure performance for a payer. */
+export async function careGapAnalytics(payerAddress: string): Promise<CareGapAnalytics> {
+  const gaps = await listCareGaps(payerAddress);
+  let openGaps = 0;
+  let closedGaps = 0;
+  let totalOpenMembers = 0;
+  const measures = new Map<string, { open: number; closed: number }>();
+
+  for (const gap of gaps) {
+    const entry = measures.get(gap.measure) ?? { open: 0, closed: 0 };
+    if (gap.status === 'open') {
+      openGaps += 1;
+      totalOpenMembers += gap.openCount;
+      entry.open += 1;
+    } else {
+      closedGaps += 1;
+      entry.closed += 1;
+    }
+    measures.set(gap.measure, entry);
+  }
+
+  const totalGaps = gaps.length;
+  const closureRate = totalGaps > 0 ? Math.round((closedGaps / totalGaps) * 100) : 0;
+  const byMeasure = Array.from(measures.entries())
+    .map(([measure, counts]) => ({ measure, open: counts.open, closed: counts.closed }));
+
+  return { totalGaps, openGaps, closedGaps, totalOpenMembers, closureRate, byMeasure };
 }
 
 /** Test-only: reset the singleton so each test starts from empty state. */

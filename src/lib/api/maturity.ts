@@ -109,7 +109,8 @@ export const FEATURE_MATURITY = {
     maturity: 'production',
     audiences: ['health_plans'],
     summary: 'Encrypted, owner-scoped registry a health plan maintains of open care gaps against '
-      + 'de-identified member cohorts; tracks and closes gaps. Holds no member PHI.',
+      + 'de-identified member cohorts; tracks open counts, closes gaps (timestamped), and reports '
+      + 'closure analytics (open/closed, open members, closure rate by measure). Holds no member PHI.',
   },
   provider_directory: {
     title: 'Provider patient directory',
