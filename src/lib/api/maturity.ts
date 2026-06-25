@@ -272,8 +272,9 @@ export const FEATURE_MATURITY = {
     title: 'Cycle & symptom vault',
     maturity: 'production',
     audiences: ['individuals'],
-    summary: 'Encrypted, owner-scoped symptom and cycle logging with cycle-length and next-period '
-      + 'insights derived from the user\'s own data. The storage-compartment dashboard is illustrative.',
+    summary: 'Encrypted, owner-scoped symptom and cycle logging with derived analytics — cycle '
+      + 'regularity/variability, fertile-window and next-period prediction, symptom severity trend, '
+      + 'and symptom-by-cycle-phase correlation — all computed from the user\'s own data.',
   },
 } as const satisfies Record<string, FeatureSpec>;
 

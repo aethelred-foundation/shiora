@@ -10,6 +10,7 @@ import { runMiddleware } from '@/lib/api/middleware';
 import { GET as getVault } from '@/app/api/vault/route';
 import { GET as getSymptoms, POST as postSymptom } from '@/app/api/vault/symptoms/route';
 import { GET as getCycle, POST as postCycle } from '@/app/api/vault/cycle/route';
+import { GET as getAnalytics } from '@/app/api/vault/analytics/route';
 import { __resetVaultForTests } from '@/lib/api/vault-service';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
@@ -189,5 +190,31 @@ describe('/api/vault/cycle', () => {
 
   it('POST throws on an invalid JSON body', async () => {
     await expect(postCycle(authed(CYC, jsonBody('not-json')))).rejects.toThrow();
+  });
+});
+
+describe('/api/vault/analytics', () => {
+  const ANALYTICS = `${VAULT}/analytics`;
+
+  it('returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    expect((await getAnalytics(authed(ANALYTICS))).status).toBe(403);
+  });
+
+  it('returns 401 when the middleware is bypassed but unauthenticated', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(null);
+    expect((await getAnalytics(new NextRequest(ANALYTICS))).status).toBe(401);
+  });
+
+  it('returns derived cycle and symptom analytics', async () => {
+    await postSymptom(authed(SYM, jsonBody({ category: 'pain', symptom: 'Cramps', severity: 3 })));
+    await postCycle(authed(CYC, jsonBody({ flow: 'heavy', isPeriodStart: true })));
+
+    const res = await getAnalytics(authed(ANALYTICS));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.symptoms.totalLogged).toBe(1);
+    expect(body.data.cycle.predictedPeriods).toHaveLength(3);
+    expect(body.data.symptoms.byCyclePhase).toBeDefined();
   });
 });
