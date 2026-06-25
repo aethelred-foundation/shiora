@@ -155,7 +155,8 @@ export const FEATURE_MATURITY = {
     maturity: 'production',
     audiences: ['researchers', 'governments'],
     summary: 'Researchers request access to a marketplace dataset; a government data steward '
-      + 'reviews and approves or denies. Encrypted and audited end to end.',
+      + 'approves (granting time-bound access), denies, or revokes. Researchers list their active '
+      + 'grants; the steward sees a status summary. Encrypted and audited end to end.',
   },
 
   // ── Pilot: functional, integrated, not yet production-validated ─────────

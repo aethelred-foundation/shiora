@@ -1,6 +1,6 @@
 // ============================================================
 // Shiora on Aethelred — Governance Data Request Decision API
-// PATCH /api/governance/data-requests/[id] — approve or deny a pending request
+// PATCH /api/governance/data-requests/[id] — approve, deny, or revoke
 //   (government audience)
 // ============================================================
 
@@ -10,10 +10,10 @@ import { z, ZodError } from 'zod';
 import { successResponse, validationError, notFoundResponse } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
 import { requireCapability } from '@/lib/api/rbac';
-import { decideDataRequest } from '@/lib/api/data-access-service';
+import { decideDataRequest, revokeDataRequest } from '@/lib/api/data-access-service';
 
 const DecisionSchema = z.object({
-  decision: z.enum(['approve', 'deny']),
+  decision: z.enum(['approve', 'deny', 'revoke']),
 });
 
 interface RouteContext {
@@ -28,11 +28,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   if ('status' in auth) return auth;
 
   const { id } = await context.params;
+  const decider = auth.walletAddress!;
 
   try {
     const { decision } = DecisionSchema.parse(await request.json());
-    const status = decision === 'approve' ? 'approved' : 'denied';
-    const updated = await decideDataRequest(id, auth.walletAddress!, status);
+    const updated = decision === 'revoke'
+      ? await revokeDataRequest(id, decider)
+      : await decideDataRequest(id, decider, decision === 'approve' ? 'approved' : 'denied');
     if (!updated) {
       return notFoundResponse('DataAccessRequest', id);
     }

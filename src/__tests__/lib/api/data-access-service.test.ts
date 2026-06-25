@@ -11,9 +11,14 @@ import {
   listRequestsByRequester,
   listAllDataRequests,
   decideDataRequest,
+  revokeDataRequest,
+  listActiveGrants,
+  dataRequestStats,
   __resetDataRequestsForTests,
 } from '@/lib/api/data-access-service';
 import { seededAddress } from '@/lib/utils';
+
+const DAY = 86_400_000;
 
 const RESEARCHER = seededAddress(900);
 const RESEARCHER_B = seededAddress(901);
@@ -55,12 +60,20 @@ describe('data-access-service', () => {
     expect(await listAllDataRequests()).toHaveLength(2);
   });
 
-  it('records an approval decision', async () => {
+  it('records an approval decision and grants time-bound access', async () => {
     const created = await createDataRequest(RESEARCHER, 'l1', 'a');
+    expect(created.expiresAt).toBe(0); // no grant while pending
     const decided = await decideDataRequest(created.id, STEWARD, 'approved');
     expect(decided?.status).toBe('approved');
     expect(decided?.decidedBy).toBe(STEWARD);
-    expect(decided?.decidedAt).not.toBeNull();
+    expect(decided?.expiresAt).toBeGreaterThan(Date.now()); // grant has a future expiry
+  });
+
+  it('records a denial without granting access', async () => {
+    const created = await createDataRequest(RESEARCHER, 'l1', 'a');
+    const decided = await decideDataRequest(created.id, STEWARD, 'denied');
+    expect(decided?.status).toBe('denied');
+    expect(decided?.expiresAt).toBe(0);
   });
 
   it('returns undefined when deciding an unknown request', async () => {
@@ -71,6 +84,46 @@ describe('data-access-service', () => {
     const created = await createDataRequest(RESEARCHER, 'l1', 'a');
     await decideDataRequest(created.id, STEWARD, 'approved');
     expect(await decideDataRequest(created.id, STEWARD, 'denied')).toBeUndefined();
+  });
+
+  it('revokes an approved request and rejects revoking a non-approved one', async () => {
+    const created = await createDataRequest(RESEARCHER, 'l1', 'a');
+    expect(await revokeDataRequest(created.id, STEWARD)).toBeUndefined(); // still pending
+    expect(await revokeDataRequest('dar-nope', STEWARD)).toBeUndefined(); // unknown
+
+    await decideDataRequest(created.id, STEWARD, 'approved');
+    const revoked = await revokeDataRequest(created.id, STEWARD);
+    expect(revoked?.status).toBe('revoked');
+    expect(revoked?.expiresAt).toBe(0);
+  });
+
+  it('lists only active (approved, unexpired) grants for a requester', async () => {
+    const approved = await createDataRequest(RESEARCHER, 'l1', 'a');
+    const pending = await createDataRequest(RESEARCHER, 'l2', 'b');
+    await decideDataRequest(approved.id, STEWARD, 'approved');
+
+    const now = Date.now();
+    expect(await listActiveGrants(RESEARCHER, now)).toHaveLength(1); // approved + unexpired
+    expect(await listActiveGrants(RESEARCHER, now + 365 * DAY)).toHaveLength(0); // grant lapsed
+    expect(pending.status).toBe('pending'); // pending never counts as a grant
+  });
+
+  it('summarises request counts including expired grants', async () => {
+    const approved = await createDataRequest(RESEARCHER, 'l1', 'a');
+    const denied = await createDataRequest(RESEARCHER, 'l2', 'b');
+    const revoked = await createDataRequest(RESEARCHER, 'l3', 'c');
+    await createDataRequest(RESEARCHER, 'l4', 'd'); // stays pending
+    await decideDataRequest(approved.id, STEWARD, 'approved');
+    await decideDataRequest(denied.id, STEWARD, 'denied');
+    await decideDataRequest(revoked.id, STEWARD, 'approved');
+    await revokeDataRequest(revoked.id, STEWARD);
+
+    const now = Date.now();
+    expect(await dataRequestStats(now)).toEqual({ pending: 1, approved: 1, denied: 1, revoked: 1, expired: 0 });
+    // far in the future, the live grant reads as expired
+    const future = await dataRequestStats(now + 365 * DAY);
+    expect(future.expired).toBe(1);
+    expect(future.approved).toBe(0);
   });
 
   it('uses the Postgres store when DATABASE_URL is configured', async () => {

@@ -10,7 +10,7 @@ import { NextRequest } from 'next/server';
 import { successResponse } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
 import { requireCapability } from '@/lib/api/rbac';
-import { listAllDataRequests } from '@/lib/api/data-access-service';
+import { listAllDataRequests, dataRequestStats } from '@/lib/api/data-access-service';
 
 export async function GET(request: NextRequest) {
   const blocked = await runMiddleware(request, { requireAuth: true });
@@ -25,5 +25,6 @@ export async function GET(request: NextRequest) {
     requests = requests.filter((req) => req.status === status);
   }
 
-  return successResponse({ total: requests.length, requests });
+  const summary = await dataRequestStats();
+  return successResponse({ total: requests.length, summary, requests });
 }

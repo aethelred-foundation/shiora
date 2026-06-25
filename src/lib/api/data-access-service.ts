@@ -20,8 +20,11 @@ import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
 
 const COLLECTION = 'data-access-request';
 
-export type RequestStatus = 'pending' | 'approved' | 'denied';
+export type RequestStatus = 'pending' | 'approved' | 'denied' | 'revoked';
 export type RequestDecision = 'approved' | 'denied';
+
+const DAY_MS = 86_400_000;
+const GRANT_DURATION_DAYS = 90; // an approved request grants time-bound access
 
 export interface DataAccessRequest {
   id: string;
@@ -31,7 +34,17 @@ export interface DataAccessRequest {
   status: RequestStatus;
   decidedBy: string | null;
   decidedAt: number | null;
+  /** Epoch ms when the granted access lapses; 0 when there is no active grant. */
+  expiresAt: number;
   createdAt: number;
+}
+
+export interface DataRequestStats {
+  pending: number;
+  approved: number;
+  denied: number;
+  revoked: number;
+  expired: number;
 }
 
 let repository: EncryptedDocumentRepository<DataAccessRequest> | null = null;
@@ -70,6 +83,7 @@ export function createDataRequest(
     status: 'pending',
     decidedBy: null,
     decidedAt: null,
+    expiresAt: 0,
     createdAt: Date.now(),
   };
   return repo().create(requesterAddress, request);
@@ -105,7 +119,52 @@ export async function decideDataRequest(
     status: decision,
     decidedBy: deciderAddress,
     decidedAt: Date.now(),
+    expiresAt: decision === 'approved' ? Date.now() + GRANT_DURATION_DAYS * DAY_MS : 0,
   });
+}
+
+/**
+ * Revoke an approved request, ending the access grant. Returns the updated
+ * request, or undefined when it does not exist or is not currently approved.
+ */
+export async function revokeDataRequest(
+  id: string,
+  deciderAddress: string,
+): Promise<DataAccessRequest | undefined> {
+  const all = await repo().listAll();
+  const existing = all.find((request) => request.id === id);
+  if (!existing || existing.status !== 'approved') {
+    return undefined;
+  }
+  return repo().update(existing.requesterAddress, id, {
+    status: 'revoked',
+    decidedBy: deciderAddress,
+    decidedAt: Date.now(),
+    expiresAt: 0,
+  });
+}
+
+/** A requester's currently-active grants (approved and not yet expired). */
+export async function listActiveGrants(
+  requesterAddress: string,
+  now: number = Date.now(),
+): Promise<DataAccessRequest[]> {
+  const requests = await listRequestsByRequester(requesterAddress);
+  return requests.filter((request) => request.status === 'approved' && now <= request.expiresAt);
+}
+
+/** Aggregate counts by status for the governance dashboard. */
+export async function dataRequestStats(now: number = Date.now()): Promise<DataRequestStats> {
+  const all = await listAllDataRequests();
+  const stats: DataRequestStats = { pending: 0, approved: 0, denied: 0, revoked: 0, expired: 0 };
+  for (const request of all) {
+    if (request.status === 'approved' && now > request.expiresAt) {
+      stats.expired += 1;
+    } else {
+      stats[request.status] += 1;
+    }
+  }
+  return stats;
 }
 
 /** Test-only: reset the singleton so each test starts from empty state. */
