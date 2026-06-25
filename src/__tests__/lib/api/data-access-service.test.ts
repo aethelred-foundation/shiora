@@ -16,6 +16,7 @@ import {
   dataRequestStats,
   __resetDataRequestsForTests,
 } from '@/lib/api/data-access-service';
+import { listNotifications, __resetNotificationsForTests } from '@/lib/api/notification-service';
 import { seededAddress } from '@/lib/utils';
 
 const DAY = 86_400_000;
@@ -28,12 +29,14 @@ const original = process.env.DATABASE_URL;
 beforeEach(() => {
   delete process.env.DATABASE_URL;
   __resetDataRequestsForTests();
+  __resetNotificationsForTests();
 });
 
 afterEach(() => {
   if (original === undefined) delete process.env.DATABASE_URL;
   else process.env.DATABASE_URL = original;
   __resetDataRequestsForTests();
+  __resetNotificationsForTests();
   jest.restoreAllMocks();
 });
 
@@ -74,6 +77,16 @@ describe('data-access-service', () => {
     const decided = await decideDataRequest(created.id, STEWARD, 'denied');
     expect(decided?.status).toBe('denied');
     expect(decided?.expiresAt).toBe(0);
+  });
+
+  it('notifies the requester when a decision is made', async () => {
+    const created = await createDataRequest(RESEARCHER, 'cohort-7', 'study');
+    await decideDataRequest(created.id, STEWARD, 'approved');
+
+    const inbox = await listNotifications(RESEARCHER);
+    expect(inbox).toHaveLength(1);
+    expect(inbox[0].type).toBe('data_request_decision');
+    expect(inbox[0].title).toBe('Data access approved');
   });
 
   it('returns undefined when deciding an unknown request', async () => {

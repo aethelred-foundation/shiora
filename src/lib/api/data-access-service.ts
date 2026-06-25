@@ -12,6 +12,7 @@
 import { randomUUID } from 'crypto';
 
 import { getAuditLog } from '@/lib/api/audit-log';
+import { notify } from '@/lib/api/notification-service';
 import { EncryptedDocumentRepository } from '@/lib/persistence/encrypted-documents';
 import { InMemoryDocumentStore, type DocumentStorePort } from '@/lib/persistence/document-store';
 import { PgDocumentStore } from '@/lib/persistence/pg-document-store';
@@ -115,12 +116,18 @@ export async function decideDataRequest(
   if (!existing || existing.status !== 'pending') {
     return undefined;
   }
-  return repo().update(existing.requesterAddress, id, {
+  const updated = await repo().update(existing.requesterAddress, id, {
     status: decision,
     decidedBy: deciderAddress,
     decidedAt: Date.now(),
     expiresAt: decision === 'approved' ? Date.now() + GRANT_DURATION_DAYS * DAY_MS : 0,
   });
+  await notify(existing.requesterAddress, {
+    type: 'data_request_decision',
+    title: `Data access ${decision}`,
+    body: `Your request for dataset ${existing.listingId} was ${decision}.`,
+  });
+  return updated;
 }
 
 /**
@@ -136,12 +143,18 @@ export async function revokeDataRequest(
   if (!existing || existing.status !== 'approved') {
     return undefined;
   }
-  return repo().update(existing.requesterAddress, id, {
+  const updated = await repo().update(existing.requesterAddress, id, {
     status: 'revoked',
     decidedBy: deciderAddress,
     decidedAt: Date.now(),
     expiresAt: 0,
   });
+  await notify(existing.requesterAddress, {
+    type: 'data_request_decision',
+    title: 'Data access revoked',
+    body: `Your access to dataset ${existing.listingId} was revoked.`,
+  });
+  return updated;
 }
 
 /** A requester's currently-active grants (approved and not yet expired). */

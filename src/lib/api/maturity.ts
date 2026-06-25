@@ -152,6 +152,13 @@ export const FEATURE_MATURITY = {
     audiences: ['platform'],
     summary: 'Cross-instance fixed-window limiter backed by Postgres atomic counters.',
   },
+  notifications: {
+    title: 'Notifications inbox',
+    maturity: 'production',
+    audiences: ['platform'],
+    summary: 'Encrypted, owner-scoped notification inbox that platform flows emit to (e.g., a '
+      + 'data-access decision notifies the requester); read/mark-read with unread counts.',
+  },
   data_access_requests: {
     title: 'Consented data-access requests',
     maturity: 'production',
