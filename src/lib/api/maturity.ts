@@ -135,8 +135,9 @@ export const FEATURE_MATURITY = {
     title: 'Employer wellness programs',
     maturity: 'production',
     audiences: ['employers'],
-    summary: 'Encrypted, owner-scoped wellness programs and member enrollment with a '
-      + 'participation summary, built on the organization-ownership model.',
+    summary: 'Encrypted, owner-scoped wellness programs and member enrollment with progress and '
+      + 'completion tracking, withdrawal, per-program participation, and cross-program org analytics '
+      + '(completion rate, average progress), on the organization-ownership model.',
   },
   mfa: {
     title: 'Multi-factor authentication',

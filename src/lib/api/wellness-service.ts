@@ -43,7 +43,11 @@ export interface ProgramEnrollment {
   programId: string;
   memberAddress: string;
   status: EnrollmentStatus;
+  /** Self-reported progress through the program, 0–100. */
+  progress: number;
+  completed: boolean;
   enrolledAt: number;
+  updatedAt: number;
 }
 
 export interface ProgramInput {
@@ -55,6 +59,17 @@ export interface ProgramInput {
 export interface ParticipationSummary {
   programId: string;
   activeEnrollments: number;
+  completedCount: number;
+  averageProgress: number;
+}
+
+export interface OrgWellnessAnalytics {
+  programCount: number;
+  totalActiveEnrollments: number;
+  totalCompleted: number;
+  /** Share of active enrollments marked complete, 0–100. */
+  completionRate: number;
+  averageProgress: number;
 }
 
 let programRepo: EncryptedDocumentRepository<WellnessProgram> | null = null;
@@ -118,14 +133,53 @@ export function getProgram(orgId: string, programId: string): Promise<WellnessPr
 // ── Enrollment (scoped to a program) ─────────────────────────────────────────
 
 export function enrollMember(programId: string, memberAddress: string): Promise<ProgramEnrollment> {
+  const now = Date.now();
   const enrollment: ProgramEnrollment = {
     id: memberAddress,
     programId,
     memberAddress,
     status: 'active',
-    enrolledAt: Date.now(),
+    progress: 0,
+    completed: false,
+    enrolledAt: now,
+    updatedAt: now,
   };
   return enrollments().create(programId, enrollment);
+}
+
+/**
+ * Record a member's progress (0–100); reaching 100 marks the program complete.
+ * Returns undefined when the member is not actively enrolled.
+ */
+export async function updateProgress(
+  programId: string,
+  memberAddress: string,
+  progress: number,
+): Promise<ProgramEnrollment | undefined> {
+  const existing = await enrollments().get(programId, memberAddress);
+  if (!existing || existing.status !== 'active') {
+    return undefined;
+  }
+  return enrollments().update(programId, memberAddress, {
+    progress,
+    completed: progress >= 100,
+    updatedAt: Date.now(),
+  });
+}
+
+/** Withdraw an active member. Returns undefined when not actively enrolled. */
+export async function withdrawMember(
+  programId: string,
+  memberAddress: string,
+): Promise<ProgramEnrollment | undefined> {
+  const existing = await enrollments().get(programId, memberAddress);
+  if (!existing || existing.status !== 'active') {
+    return undefined;
+  }
+  return enrollments().update(programId, memberAddress, {
+    status: 'withdrawn',
+    updatedAt: Date.now(),
+  });
 }
 
 /** Active enrollments for a program. */
@@ -136,7 +190,42 @@ export async function listEnrollments(programId: string): Promise<ProgramEnrollm
 
 export async function participationSummary(programId: string): Promise<ParticipationSummary> {
   const active = await listEnrollments(programId);
-  return { programId, activeEnrollments: active.length };
+  const completedCount = active.filter((enrollment) => enrollment.completed).length;
+  const averageProgress = active.length > 0
+    ? Math.round(active.reduce((sum, enrollment) => sum + enrollment.progress, 0) / active.length)
+    : 0;
+  return { programId, activeEnrollments: active.length, completedCount, averageProgress };
+}
+
+/** Aggregate wellness participation across all of an organization's programs. */
+export async function orgWellnessAnalytics(orgId: string): Promise<OrgWellnessAnalytics> {
+  const programs = await listPrograms(orgId);
+  let totalActiveEnrollments = 0;
+  let totalCompleted = 0;
+  let progressSum = 0;
+  for (const program of programs) {
+    const active = await listEnrollments(program.id);
+    totalActiveEnrollments += active.length;
+    for (const enrollment of active) {
+      if (enrollment.completed) {
+        totalCompleted += 1;
+      }
+      progressSum += enrollment.progress;
+    }
+  }
+  const completionRate = totalActiveEnrollments > 0
+    ? Math.round((totalCompleted / totalActiveEnrollments) * 100)
+    : 0;
+  const averageProgress = totalActiveEnrollments > 0
+    ? Math.round(progressSum / totalActiveEnrollments)
+    : 0;
+  return {
+    programCount: programs.length,
+    totalActiveEnrollments,
+    totalCompleted,
+    completionRate,
+    averageProgress,
+  };
 }
 
 /** Test-only: reset the singletons so each test starts from empty state. */

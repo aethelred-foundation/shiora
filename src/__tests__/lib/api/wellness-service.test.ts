@@ -11,8 +11,11 @@ import {
   listPrograms,
   getProgram,
   enrollMember,
+  updateProgress,
+  withdrawMember,
   listEnrollments,
   participationSummary,
+  orgWellnessAnalytics,
   __resetWellnessForTests,
 } from '@/lib/api/wellness-service';
 import { seededAddress } from '@/lib/utils';
@@ -64,7 +67,7 @@ describe('wellness enrollment', () => {
     expect(enrolled.every((e) => e.status === 'active')).toBe(true);
 
     const summary = await participationSummary(program.id);
-    expect(summary).toEqual({ programId: program.id, activeEnrollments: 2 });
+    expect(summary).toEqual({ programId: program.id, activeEnrollments: 2, completedCount: 0, averageProgress: 0 });
   });
 
   it('treats re-enrolment as idempotent', async () => {
@@ -72,6 +75,70 @@ describe('wellness enrollment', () => {
     await enrollMember(program.id, MEMBER_A);
     await enrollMember(program.id, MEMBER_A);
     expect(await listEnrollments(program.id)).toHaveLength(1);
+  });
+
+  it('summarises an empty program as zero participation', async () => {
+    const program = await createProgram(ORG, { name: 'Steps', category: 'fitness' });
+    expect(await participationSummary(program.id)).toEqual({
+      programId: program.id, activeEnrollments: 0, completedCount: 0, averageProgress: 0,
+    });
+  });
+
+  it('records progress, marks completion, and reflects it in the summary', async () => {
+    const program = await createProgram(ORG, { name: 'Steps', category: 'fitness' });
+    await enrollMember(program.id, MEMBER_A);
+    await enrollMember(program.id, MEMBER_B);
+
+    const partial = await updateProgress(program.id, MEMBER_A, 60);
+    expect(partial?.progress).toBe(60);
+    expect(partial?.completed).toBe(false);
+
+    const done = await updateProgress(program.id, MEMBER_B, 100);
+    expect(done?.completed).toBe(true);
+
+    const summary = await participationSummary(program.id);
+    expect(summary.completedCount).toBe(1);
+    expect(summary.averageProgress).toBe(80); // (60 + 100) / 2
+  });
+
+  it('withdraws a member and stops counting them', async () => {
+    const program = await createProgram(ORG, { name: 'Steps', category: 'fitness' });
+    await enrollMember(program.id, MEMBER_A);
+
+    const withdrawn = await withdrawMember(program.id, MEMBER_A);
+    expect(withdrawn?.status).toBe('withdrawn');
+    expect(await listEnrollments(program.id)).toHaveLength(0);
+
+    // progress/withdraw on a non-active enrollment is a no-op
+    expect(await updateProgress(program.id, MEMBER_A, 50)).toBeUndefined();
+    expect(await withdrawMember(program.id, MEMBER_A)).toBeUndefined();
+    expect(await updateProgress(program.id, seededAddress(999), 50)).toBeUndefined();
+  });
+});
+
+describe('orgWellnessAnalytics', () => {
+  it('aggregates participation and completion across an org\'s programs', async () => {
+    const a = await createProgram(ORG, { name: 'Steps', category: 'fitness' });
+    const b = await createProgram(ORG, { name: 'Mind', category: 'mental_health' });
+    await enrollMember(a.id, MEMBER_A);
+    await enrollMember(a.id, MEMBER_B);
+    await enrollMember(b.id, MEMBER_A);
+    await updateProgress(a.id, MEMBER_A, 100); // complete
+    await updateProgress(a.id, MEMBER_B, 50);
+
+    const analytics = await orgWellnessAnalytics(ORG);
+    expect(analytics.programCount).toBe(2);
+    expect(analytics.totalActiveEnrollments).toBe(3);
+    expect(analytics.totalCompleted).toBe(1);
+    expect(analytics.completionRate).toBe(33); // 1 / 3
+    expect(analytics.averageProgress).toBe(50); // (100 + 50 + 0) / 3
+  });
+
+  it('reports zeros for an org with no programs', async () => {
+    const analytics = await orgWellnessAnalytics(OTHER_ORG);
+    expect(analytics).toEqual({
+      programCount: 0, totalActiveEnrollments: 0, totalCompleted: 0, completionRate: 0, averageProgress: 0,
+    });
   });
 });
 
