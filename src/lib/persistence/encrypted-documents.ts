@@ -70,6 +70,20 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
     return next;
   }
 
+  /**
+   * Soft-delete a document so it no longer appears in get/list. Returns false
+   * when it does not exist or is already deleted. Used for right-to-erasure.
+   */
+  async softDelete(ownerKey: string, id: string): Promise<boolean> {
+    const row = await this.store.findById(this.collection, ownerKey, id);
+    if (!row || row.deleted) {
+      return false;
+    }
+    await this.store.put({ ...row, deleted: true });
+    await this.record(this.actions.update, ownerKey, id);
+    return true;
+  }
+
   // -- internals -----------------------------------------------------------
 
   private aad(ownerKey: string, id: string): string {

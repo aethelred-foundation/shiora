@@ -423,6 +423,19 @@ export async function vaultAnalytics(owner: string): Promise<VaultAnalytics> {
   };
 }
 
+/** Soft-delete all of an owner's symptom and cycle entries (right to erasure). */
+export async function eraseVaultEntries(owner: string): Promise<number> {
+  const [symptomList, cycleList] = await Promise.all([
+    listSymptoms(owner),
+    listCycleEntries(owner),
+  ]);
+  await Promise.all([
+    ...symptomList.map((entry) => symptoms().softDelete(owner, entry.id)),
+    ...cycleList.map((entry) => cycles().softDelete(owner, entry.id)),
+  ]);
+  return symptomList.length + cycleList.length;
+}
+
 /** Test-only: reset the singletons so each test starts from empty state. */
 export function __resetVaultForTests(): void {
   symptomRepo = null;

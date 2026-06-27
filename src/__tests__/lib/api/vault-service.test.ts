@@ -17,6 +17,7 @@ import {
   cycleInsights,
   vaultOverview,
   vaultAnalytics,
+  eraseVaultEntries,
   __resetVaultForTests,
   type CycleEntry,
   type SymptomEntry,
@@ -84,6 +85,16 @@ describe('vault cycle entries', () => {
   it('dates an undated cycle entry to now', async () => {
     const entry = await logCycleEntry(USER, { flow: 'light', isPeriodStart: true });
     expect(entry.date).toBeGreaterThan(0);
+  });
+
+  it('erases all of an owner\'s vault entries', async () => {
+    await logSymptom(USER, { category: 'pain', symptom: 'Cramps', severity: 3 });
+    await logCycleEntry(USER, { flow: 'heavy', isPeriodStart: true });
+    await logCycleEntry(USER, { flow: 'light', isPeriodStart: false });
+
+    expect(await eraseVaultEntries(USER)).toBe(3); // 1 symptom + 2 cycle entries
+    expect(await listSymptoms(USER)).toEqual([]);
+    expect(await listCycleEntries(USER)).toEqual([]);
   });
 });
 

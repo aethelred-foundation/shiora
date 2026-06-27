@@ -88,6 +88,18 @@ describe('EncryptedDocumentRepository', () => {
     expect(await repo.update(OWNER, 'dead', { count: 2 })).toBeUndefined();
   });
 
+  it('soft-deletes a document so it no longer appears, and is idempotent', async () => {
+    const { repo } = newRepo();
+    await repo.create(OWNER, { id: 'd1', secret: 's', count: 1 });
+
+    expect(await repo.softDelete(OWNER, 'd1')).toBe(true);
+    expect(await repo.get(OWNER, 'd1')).toBeUndefined();
+    expect(await repo.list(OWNER)).toEqual([]);
+
+    expect(await repo.softDelete(OWNER, 'd1')).toBe(false); // already deleted
+    expect(await repo.softDelete(OWNER, 'nope')).toBe(false); // never existed
+  });
+
   it('writes a tamper-evident audit entry per mutation', async () => {
     const { audit, repo } = newRepo();
     await repo.create(OWNER, { id: 'd1', secret: 's', count: 1 });

@@ -143,6 +143,13 @@ export async function listClinicalNotesByProvider(
   return notes.filter((note) => note.providerAddress === providerAddress);
 }
 
+/** Soft-delete every clinical note about a patient (right to erasure). */
+export async function eraseClinicalNotes(patientAddress: string): Promise<number> {
+  const notes = await listClinicalNotesForPatient(patientAddress);
+  await Promise.all(notes.map((note) => repo().softDelete(patientAddress, note.id)));
+  return notes.length;
+}
+
 /** Test-only: reset the singleton so each test starts from empty state. */
 export function __resetClinicalNotesForTests(): void {
   repository = null;

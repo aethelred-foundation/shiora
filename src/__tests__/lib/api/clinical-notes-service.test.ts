@@ -11,6 +11,7 @@ import {
   amendClinicalNote,
   listClinicalNotesForPatient,
   listClinicalNotesByProvider,
+  eraseClinicalNotes,
   __resetClinicalNotesForTests,
 } from '@/lib/api/clinical-notes-service';
 import { listNotifications, __resetNotificationsForTests } from '@/lib/api/notification-service';
@@ -86,6 +87,14 @@ describe('clinical-notes-service', () => {
     inbox = await listNotifications(PATIENT);
     expect(inbox).toHaveLength(2); // create + amend
     expect(inbox.map((n) => n.title).sort()).toEqual(['Clinical note amended', 'New clinical note']);
+  });
+
+  it('erases every clinical note about a patient', async () => {
+    await createClinicalNote(PATIENT, PROVIDER_A, { type: 'observation', title: 'A', body: 'a' });
+    await createClinicalNote(PATIENT, PROVIDER_B, { type: 'plan', title: 'B', body: 'b' });
+
+    expect(await eraseClinicalNotes(PATIENT)).toBe(2);
+    expect(await listClinicalNotesForPatient(PATIENT)).toEqual([]);
   });
 
   it('uses the Postgres store when DATABASE_URL is configured', async () => {

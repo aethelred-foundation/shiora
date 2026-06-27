@@ -12,6 +12,7 @@ import {
   unreadCount,
   markRead,
   markAllRead,
+  eraseNotifications,
   __resetNotificationsForTests,
 } from '@/lib/api/notification-service';
 import { seededAddress } from '@/lib/utils';
@@ -69,6 +70,14 @@ describe('notification-service', () => {
     expect(await markAllRead(USER)).toBe(2);
     expect(await unreadCount(USER)).toBe(0);
     expect(await markAllRead(USER)).toBe(0); // nothing left to mark
+  });
+
+  it('erases all of an owner\'s notifications', async () => {
+    await notify(USER, sample('A'));
+    await notify(USER, sample('B'));
+
+    expect(await eraseNotifications(USER)).toBe(2);
+    expect(await listNotifications(USER)).toEqual([]);
   });
 
   it('uses the Postgres store when DATABASE_URL is configured', async () => {
