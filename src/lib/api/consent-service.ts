@@ -14,6 +14,7 @@ import { PgDocumentStore } from '@/lib/persistence/pg-document-store';
 import { getPgClient } from '@/lib/persistence/sql-client';
 import type { ConsentGrant } from '@/types';
 import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
+import { notify } from '@/lib/api/notification-service';
 
 const COLLECTION = 'consent';
 
@@ -99,9 +100,19 @@ export async function processConsentExpiry(
         next += term;
       }
       await repo().update(patientAddress, consent.id, { expiresAt: next });
+      await notify(patientAddress, {
+        type: 'consent',
+        title: 'A consent was auto-renewed',
+        body: `Your data-sharing consent for ${consent.providerName} was automatically renewed.`,
+      });
       renewed += 1;
     } else {
       await repo().update(patientAddress, consent.id, { status: 'expired' });
+      await notify(patientAddress, {
+        type: 'consent',
+        title: 'A consent expired',
+        body: `Your data-sharing consent for ${consent.providerName} has expired.`,
+      });
       expired += 1;
     }
   }

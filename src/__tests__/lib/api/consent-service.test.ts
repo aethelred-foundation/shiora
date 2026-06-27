@@ -14,6 +14,7 @@ import {
   processConsentExpiry,
   __resetConsentForTests,
 } from '@/lib/api/consent-service';
+import { listNotifications, __resetNotificationsForTests } from '@/lib/api/notification-service';
 import type { ConsentGrant } from '@/types';
 
 const PATIENT = 'aeth1patient0000000000000000000000000000';
@@ -67,19 +68,26 @@ describe('consent-service', () => {
     beforeEach(() => {
       delete process.env.DATABASE_URL;
       __resetConsentForTests();
+      __resetNotificationsForTests();
     });
+
+    afterEach(() => __resetNotificationsForTests());
 
     it('is a no-op when there is nothing to reconcile (default now)', async () => {
       expect(await processConsentExpiry(PATIENT)).toEqual({ renewed: 0, expired: 0 });
     });
 
-    it('expires an active consent past its expiry when auto-renew is off', async () => {
+    it('expires an active consent past its expiry when auto-renew is off, and notifies', async () => {
       await createConsent(PATIENT, mk({ id: 'c1', grantedAt: NOW - 1000, expiresAt: NOW - 10 }));
       expect(await processConsentExpiry(PATIENT, NOW)).toEqual({ renewed: 0, expired: 1 });
       expect((await getConsent(PATIENT, 'c1'))?.status).toBe('expired');
+
+      const inbox = await listNotifications(PATIENT);
+      expect(inbox).toHaveLength(1);
+      expect(inbox[0].title).toBe('A consent expired');
     });
 
-    it('auto-renews a lapsed consent by rolling its term past now (multiple periods)', async () => {
+    it('auto-renews a lapsed consent by rolling its term past now (multiple periods), and notifies', async () => {
       // term = 100; expired by 250 → rolls -150, -50, +50 → first boundary after now
       await createConsent(PATIENT, mk({
         id: 'c2', grantedAt: NOW - 350, expiresAt: NOW - 250, autoRenew: true,
@@ -88,6 +96,10 @@ describe('consent-service', () => {
       const c = await getConsent(PATIENT, 'c2');
       expect(c?.status).toBe('active');
       expect(c?.expiresAt).toBe(NOW + 50);
+
+      const inbox = await listNotifications(PATIENT);
+      expect(inbox).toHaveLength(1);
+      expect(inbox[0].title).toBe('A consent was auto-renewed');
     });
 
     it('leaves a still-valid active consent untouched', async () => {
