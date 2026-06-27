@@ -10,6 +10,7 @@ import { successResponse } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
 import { requireCapability } from '@/lib/api/rbac';
 import { listGrantsForProvider } from '@/lib/api/access-service';
+import { getProfile } from '@/lib/api/profile-service';
 
 export async function GET(request: NextRequest) {
   const blocked = await runMiddleware(request, { requireAuth: true });
@@ -21,15 +22,18 @@ export async function GET(request: NextRequest) {
   const provider = auth.walletAddress!;
   const grants = await listGrantsForProvider(provider);
 
-  const patients = grants.map((grant) => ({
+  // Enrich each patient with their chosen display name (empty when unset), so a
+  // provider sees a human identity rather than only a wallet address.
+  const patients = await Promise.all(grants.map(async (grant) => ({
     patientAddress: grant.ownerAddress,
+    patientName: (await getProfile(grant.ownerAddress)).displayName,
     grantId: grant.id,
     scope: grant.scope,
     status: grant.status,
     grantedAt: grant.grantedAt,
     expiresAt: grant.expiresAt,
     permissions: { view: grant.canView, download: grant.canDownload, share: grant.canShare },
-  }));
+  })));
 
   return successResponse({ provider, patientCount: patients.length, patients });
 }

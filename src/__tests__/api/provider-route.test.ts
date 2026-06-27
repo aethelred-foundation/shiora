@@ -10,6 +10,7 @@ import { runMiddleware } from '@/lib/api/middleware';
 import { GET as getPatients } from '@/app/api/provider/patients/route';
 import { createAccessGrant, __resetAccessForTests } from '@/lib/api/access-service';
 import { assignRole, __resetRolesForTests } from '@/lib/api/roles-service';
+import { updateProfile, __resetProfileForTests } from '@/lib/api/profile-service';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
 import type { MockAccessGrant } from '@/lib/api/mock-data';
@@ -35,6 +36,7 @@ function grant(owner: string, providerAddress: string): MockAccessGrant {
 beforeEach(async () => {
   __resetRolesForTests();
   __resetAccessForTests();
+  __resetProfileForTests();
   await assignRole(PROVIDER, 'provider');
 });
 
@@ -68,15 +70,17 @@ describe('GET /api/provider/patients', () => {
     expect((await getPatients(req(individualToken))).status).toBe(403);
   });
 
-  it('lists only the patients who granted this provider access', async () => {
+  it('lists only the patients who granted this provider access, with their display name', async () => {
     await createAccessGrant(PATIENT, grant(PATIENT, PROVIDER)); // targets this provider
     await createAccessGrant(PATIENT, grant(PATIENT, OTHER_PROVIDER)); // targets another provider
+    await updateProfile(PATIENT, { displayName: 'Patient Zero' });
 
     const res = await getPatients(req(providerToken));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.patientCount).toBe(1);
     expect(body.data.patients[0].patientAddress).toBe(PATIENT);
+    expect(body.data.patients[0].patientName).toBe('Patient Zero');
     expect(body.data.patients[0].permissions.view).toBe(true);
   });
 });
