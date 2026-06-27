@@ -21,6 +21,7 @@ import { PgRecordStore } from '@/lib/persistence/pg-record-store';
 import { getPgClient } from '@/lib/persistence/sql-client';
 import type { MockHealthRecord } from '@/lib/api/mock-data';
 import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
+import { providerHasActiveGrant } from '@/lib/api/access-service';
 
 let repository: EncryptedRecordRepository | null = null;
 
@@ -40,6 +41,31 @@ function repo(): EncryptedRecordRepository {
 
 export function listRecords(ownerAddress: string): Promise<MockHealthRecord[]> {
   return repo().list(ownerAddress);
+}
+
+/**
+ * The records a patient has shared with a provider via an active access grant.
+ *
+ * Returns null when no active grant exists (the caller maps this to 403), so the
+ * grant decision and the data read are made in one place. A successful read is
+ * appended to the audit chain as a RECORD_READ by the provider against the
+ * patient — the durable record of who accessed which patient's data.
+ */
+export async function listRecordsForProvider(
+  providerAddress: string,
+  patientAddress: string,
+): Promise<MockHealthRecord[] | null> {
+  if (!(await providerHasActiveGrant(providerAddress, patientAddress))) {
+    return null;
+  }
+  await getAuditLog().record({
+    action: 'RECORD_READ',
+    actor: providerAddress,
+    resource: 'health_records',
+    resourceId: patientAddress,
+    success: true,
+  });
+  return repo().list(patientAddress);
 }
 
 export function getRecord(

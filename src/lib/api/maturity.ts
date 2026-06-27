@@ -133,6 +133,14 @@ export const FEATURE_MATURITY = {
       + 'active access grant, with append-only amendments (the record is never edited in place). '
       + 'The patient owns and can view every note about them (GET /api/me/clinical-notes).',
   },
+  granted_record_access: {
+    title: 'Granted record access',
+    maturity: 'production',
+    audiences: ['providers', 'individuals'],
+    summary: 'Providers read exactly the records a patient shared with them via an active, unexpired '
+      + 'access grant (GET /api/provider/patients/[address]/records), gated by the view_granted_records '
+      + 'capability. Every access is written to the tamper-evident audit chain as a record read.',
+  },
   employer_admin: {
     title: 'Employer admin console',
     maturity: 'production',
