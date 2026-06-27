@@ -21,8 +21,10 @@ import { listConsents as svcList, updateConsent as svcUpdate } from '@/lib/api/c
 import { GET as listConsents, POST as createConsent } from '@/app/api/consent/route';
 import { GET as getConsent, PATCH as patchConsent, DELETE as deleteConsent } from '@/app/api/consent/[id]/route';
 import { GET as listPolicies } from '@/app/api/consent/policies/route';
+import { createConsent as svcCreateConsent, __resetConsentForTests } from '@/lib/api/consent-service';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
+import type { ConsentGrant } from '@/types';
 
 const mockedList = svcList as jest.MockedFunction<typeof svcList>;
 const mockedUpdate = svcUpdate as jest.MockedFunction<typeof svcUpdate>;
@@ -304,5 +306,60 @@ describe('/api/consent/policies', () => {
     expect(body.success).toBe(true);
     expect(body.data.length).toBeGreaterThanOrEqual(5);
     expect(body.data[0]).toHaveProperty('maxDurationDays');
+  });
+});
+
+describe('/api/consent expiry reconciliation', () => {
+  const owner = seededAddress(777);
+  const { token } = createSessionToken(owner);
+
+  beforeEach(() => __resetConsentForTests());
+  afterEach(() => __resetConsentForTests());
+
+  function seedLapsed(id: string, overrides: Partial<ConsentGrant> = {}): Promise<ConsentGrant> {
+    return svcCreateConsent(owner, {
+      id, patientAddress: owner, providerAddress: seededAddress(778), providerName: 'Lapsed Clinic',
+      scopes: ['cycle_data'], status: 'active', grantedAt: Date.now() - 100_000,
+      expiresAt: Date.now() - 1000, txHash: '0x', attestation: 'att', policyId: 'policy-0',
+      autoRenew: false, ...overrides,
+    });
+  }
+
+  it('list GET reflects expiry: a lapsed active consent shows as expired', async () => {
+    await seedLapsed('exp-1');
+    const res = await listConsents(authed('http://localhost:3001/api/consent', { method: 'GET' }, token));
+    expect(res.status).toBe(200);
+    const items = (await res.json()).data.items as ConsentGrant[];
+    expect(items.find((c) => c.id === 'exp-1')?.status).toBe('expired');
+  });
+
+  it('detail GET reflects expiry', async () => {
+    await seedLapsed('exp-2');
+    const res = await getConsent(
+      authed('http://localhost:3001/api/consent/exp-2', { method: 'GET' }, token),
+      { params: Promise.resolve({ id: 'exp-2' }) },
+    );
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.status).toBe('expired');
+  });
+
+  it('PATCH rejects a time-expired consent as non-modifiable', async () => {
+    await seedLapsed('exp-3');
+    const res = await patchConsent(
+      authed('http://localhost:3001/api/consent/exp-3', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ durationDays: 30 }),
+      }, token),
+      { params: Promise.resolve({ id: 'exp-3' }) },
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('list GET auto-renews a lapsed consent when autoRenew is set', async () => {
+    await seedLapsed('exp-4', { autoRenew: true });
+    const res = await listConsents(authed('http://localhost:3001/api/consent', { method: 'GET' }, token));
+    const item = ((await res.json()).data.items as ConsentGrant[]).find((c) => c.id === 'exp-4');
+    expect(item?.status).toBe('active');
+    expect(item?.expiresAt).toBeGreaterThan(Date.now());
   });
 });

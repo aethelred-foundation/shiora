@@ -15,7 +15,7 @@ import type {
 } from '@/types';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import { ConsentUpdateSchema } from '@/lib/api/validation';
-import { getConsent, updateConsent } from '@/lib/api/consent-service';
+import { getConsent, updateConsent, processConsentExpiry } from '@/lib/api/consent-service';
 
 // ---------------------------------------------------------------------------
 // GET /api/consent/[id]
@@ -32,6 +32,7 @@ export async function GET(
   if ('status' in auth) return auth;
 
   const { id } = await params;
+  await processConsentExpiry(auth.walletAddress!);
   const consent = await getConsent(auth.walletAddress!, id);
 
   if (!consent) {
@@ -69,6 +70,7 @@ export async function PATCH(
   if ('status' in auth) return auth;
 
   const { id } = await params;
+  await processConsentExpiry(auth.walletAddress!);
   const consent = await getConsent(auth.walletAddress!, id);
 
   if (!consent) {

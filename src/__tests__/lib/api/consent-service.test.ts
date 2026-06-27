@@ -11,11 +11,13 @@ import {
   getConsent,
   listConsents,
   updateConsent,
+  processConsentExpiry,
   __resetConsentForTests,
 } from '@/lib/api/consent-service';
 import type { ConsentGrant } from '@/types';
 
 const PATIENT = 'aeth1patient0000000000000000000000000000';
+const NOW = 1_000_000_000_000;
 
 function consent(): ConsentGrant {
   return {
@@ -24,6 +26,10 @@ function consent(): ConsentGrant {
     grantedAt: 1, expiresAt: 2, txHash: '0x', attestation: 'att', policyId: 'policy-0',
     autoRenew: false,
   };
+}
+
+function mk(overrides: Partial<ConsentGrant>): ConsentGrant {
+  return { ...consent(), ...overrides };
 }
 
 describe('consent-service', () => {
@@ -55,5 +61,55 @@ describe('consent-service', () => {
 
     expect(await listConsents(PATIENT)).toEqual([]);
     expect(pgQuery).toHaveBeenCalled();
+  });
+
+  describe('processConsentExpiry', () => {
+    beforeEach(() => {
+      delete process.env.DATABASE_URL;
+      __resetConsentForTests();
+    });
+
+    it('is a no-op when there is nothing to reconcile (default now)', async () => {
+      expect(await processConsentExpiry(PATIENT)).toEqual({ renewed: 0, expired: 0 });
+    });
+
+    it('expires an active consent past its expiry when auto-renew is off', async () => {
+      await createConsent(PATIENT, mk({ id: 'c1', grantedAt: NOW - 1000, expiresAt: NOW - 10 }));
+      expect(await processConsentExpiry(PATIENT, NOW)).toEqual({ renewed: 0, expired: 1 });
+      expect((await getConsent(PATIENT, 'c1'))?.status).toBe('expired');
+    });
+
+    it('auto-renews a lapsed consent by rolling its term past now (multiple periods)', async () => {
+      // term = 100; expired by 250 → rolls -150, -50, +50 → first boundary after now
+      await createConsent(PATIENT, mk({
+        id: 'c2', grantedAt: NOW - 350, expiresAt: NOW - 250, autoRenew: true,
+      }));
+      expect(await processConsentExpiry(PATIENT, NOW)).toEqual({ renewed: 1, expired: 0 });
+      const c = await getConsent(PATIENT, 'c2');
+      expect(c?.status).toBe('active');
+      expect(c?.expiresAt).toBe(NOW + 50);
+    });
+
+    it('leaves a still-valid active consent untouched', async () => {
+      await createConsent(PATIENT, mk({ id: 'c3', grantedAt: NOW - 100, expiresAt: NOW + 1000 }));
+      expect(await processConsentExpiry(PATIENT, NOW)).toEqual({ renewed: 0, expired: 0 });
+      expect((await getConsent(PATIENT, 'c3'))?.status).toBe('active');
+    });
+
+    it('ignores non-active consents', async () => {
+      await createConsent(PATIENT, mk({
+        id: 'c4', grantedAt: NOW - 100, expiresAt: NOW - 10, status: 'revoked',
+      }));
+      expect(await processConsentExpiry(PATIENT, NOW)).toEqual({ renewed: 0, expired: 0 });
+      expect((await getConsent(PATIENT, 'c4'))?.status).toBe('revoked');
+    });
+
+    it('expires (cannot renew) an auto-renew consent with a non-positive term', async () => {
+      await createConsent(PATIENT, mk({
+        id: 'c5', grantedAt: NOW - 10, expiresAt: NOW - 10, autoRenew: true,
+      }));
+      expect(await processConsentExpiry(PATIENT, NOW)).toEqual({ renewed: 0, expired: 1 });
+      expect((await getConsent(PATIENT, 'c5'))?.status).toBe('expired');
+    });
   });
 });

@@ -69,6 +69,46 @@ export function updateConsent(
   return repo().update(patientAddress, id, patch);
 }
 
+/**
+ * Reconcile a patient's consents with the wall clock: any active consent whose
+ * `expiresAt` has passed is either auto-renewed (when `autoRenew` is set — its
+ * term is rolled forward past `now`) or transitioned to `expired`. Persists the
+ * change and audits it via the repository. Returns how many of each happened.
+ *
+ * This is the engine behind consent expiry: without it, a consent created
+ * `active` keeps reporting `active` forever and `autoRenew` is a dead flag. Call
+ * it at the consent read/modify boundary so users always see the true status.
+ */
+export async function processConsentExpiry(
+  patientAddress: string,
+  now: number = Date.now(),
+): Promise<{ renewed: number; expired: number }> {
+  const consents = await repo().list(patientAddress);
+  let renewed = 0;
+  let expired = 0;
+
+  for (const consent of consents) {
+    if (consent.status !== 'active' || now <= consent.expiresAt) {
+      continue;
+    }
+
+    const term = consent.expiresAt - consent.grantedAt;
+    if (consent.autoRenew && term > 0) {
+      let next = consent.expiresAt;
+      while (next <= now) {
+        next += term;
+      }
+      await repo().update(patientAddress, consent.id, { expiresAt: next });
+      renewed += 1;
+    } else {
+      await repo().update(patientAddress, consent.id, { status: 'expired' });
+      expired += 1;
+    }
+  }
+
+  return { renewed, expired };
+}
+
 /** Test-only: reset the singleton so each test starts from empty state. */
 export function __resetConsentForTests(): void {
   repository = null;

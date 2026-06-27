@@ -25,7 +25,7 @@ import {
   parseSearchParams,
 } from '@/lib/api/validation';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
-import { createConsent, listConsents } from '@/lib/api/consent-service';
+import { createConsent, listConsents, processConsentExpiry } from '@/lib/api/consent-service';
 
 // ---------------------------------------------------------------------------
 // GET /api/consent
@@ -43,6 +43,9 @@ export async function GET(request: NextRequest) {
       ConsentListQuerySchema,
       request.nextUrl.searchParams,
     );
+
+    // Reconcile expiry/auto-renewal before listing so the caller sees true status.
+    await processConsentExpiry(auth.walletAddress!);
 
     let filtered = await listConsents(auth.walletAddress!);
 

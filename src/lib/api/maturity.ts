@@ -66,7 +66,9 @@ export const FEATURE_MATURITY = {
     title: 'Consent management',
     maturity: 'production',
     audiences: ['individuals', 'providers', 'researchers'],
-    summary: 'Encrypted, audited consent records on the production datastore.',
+    summary: 'Encrypted, audited consent records on the production datastore, with wall-clock '
+      + 'expiry reconciliation: lapsed consents auto-renew (when set) or transition to expired, '
+      + 'so status is always truthful and expired consents become non-modifiable.',
   },
   access_grants: {
     title: 'Access grants',
