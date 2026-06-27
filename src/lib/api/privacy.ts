@@ -14,10 +14,12 @@ import { listAccessGrants, updateAccessGrant } from './access-service';
 import { listSymptoms, listCycleEntries, eraseVaultEntries, type SymptomEntry, type CycleEntry } from './vault-service';
 import { listClinicalNotesForPatient, eraseClinicalNotes, type ClinicalNote } from './clinical-notes-service';
 import { listNotifications, eraseNotifications, type Notification } from './notification-service';
+import { getProfile, eraseProfile, type Profile } from './profile-service';
 import type { MockHealthRecord, MockAccessGrant } from './mock-data';
 import type { ConsentGrant } from '@/types';
 
 export interface UserDataBundle {
+  profile: Profile;
   records: MockHealthRecord[];
   consents: ConsentGrant[];
   accessGrants: MockAccessGrant[];
@@ -29,8 +31,9 @@ export interface UserDataBundle {
 
 /** Assemble a data subject's complete data across every owner-scoped store. */
 export async function collectUserData(owner: string): Promise<UserDataBundle> {
-  const [records, consents, accessGrants, symptoms, cycleEntries, clinicalNotes, notifications] =
+  const [profile, records, consents, accessGrants, symptoms, cycleEntries, clinicalNotes, notifications] =
     await Promise.all([
+      getProfile(owner),
       listRecords(owner),
       listConsents(owner),
       listAccessGrants(owner),
@@ -39,7 +42,7 @@ export async function collectUserData(owner: string): Promise<UserDataBundle> {
       listClinicalNotesForPatient(owner),
       listNotifications(owner),
     ]);
-  return { records, consents, accessGrants, symptoms, cycleEntries, clinicalNotes, notifications };
+  return { profile, records, consents, accessGrants, symptoms, cycleEntries, clinicalNotes, notifications };
 }
 
 export interface ErasureSummary {
@@ -49,6 +52,7 @@ export interface ErasureSummary {
   vaultEntriesErased: number;
   clinicalNotesErased: number;
   notificationsErased: number;
+  profileErased: number;
 }
 
 /**
@@ -76,11 +80,13 @@ export async function eraseUserData(owner: string): Promise<ErasureSummary> {
     activeGrants.map((grant) => updateAccessGrant(owner, grant.id, { status: 'Revoked' })),
   );
 
-  const [vaultEntriesErased, clinicalNotesErased, notificationsErased] = await Promise.all([
-    eraseVaultEntries(owner),
-    eraseClinicalNotes(owner),
-    eraseNotifications(owner),
-  ]);
+  const [vaultEntriesErased, clinicalNotesErased, notificationsErased, profileErased] =
+    await Promise.all([
+      eraseVaultEntries(owner),
+      eraseClinicalNotes(owner),
+      eraseNotifications(owner),
+      eraseProfile(owner),
+    ]);
 
   return {
     recordsErased: records.length,
@@ -89,5 +95,6 @@ export async function eraseUserData(owner: string): Promise<ErasureSummary> {
     vaultEntriesErased,
     clinicalNotesErased,
     notificationsErased,
+    profileErased,
   };
 }

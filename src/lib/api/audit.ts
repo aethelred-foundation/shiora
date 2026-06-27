@@ -50,7 +50,8 @@ export type AuditAction =
   | 'CARE_GAP_UPDATE'
   | 'NOTIFICATION_CREATE'
   | 'NOTIFICATION_UPDATE'
-  | 'NOTIFICATION_PREFS_UPDATE';
+  | 'NOTIFICATION_PREFS_UPDATE'
+  | 'PROFILE_UPDATE';
 
 export interface AuditEntry {
   timestamp: string;

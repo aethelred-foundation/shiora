@@ -7,6 +7,7 @@ import { createAccessGrant, listAccessGrants, __resetAccessForTests } from '@/li
 import { logSymptom, logCycleEntry, __resetVaultForTests } from '@/lib/api/vault-service';
 import { createClinicalNote, __resetClinicalNotesForTests } from '@/lib/api/clinical-notes-service';
 import { __resetNotificationsForTests } from '@/lib/api/notification-service';
+import { updateProfile, __resetProfileForTests } from '@/lib/api/profile-service';
 import { seededAddress } from '@/lib/utils';
 import type { MockHealthRecord, MockAccessGrant } from '@/lib/api/mock-data';
 import type { ConsentGrant, ConsentStatus } from '@/types';
@@ -44,6 +45,7 @@ beforeEach(() => {
   __resetVaultForTests();
   __resetClinicalNotesForTests();
   __resetNotificationsForTests();
+  __resetProfileForTests();
 });
 
 describe('privacy data-subject operations', () => {
@@ -54,6 +56,7 @@ describe('privacy data-subject operations', () => {
     await logSymptom(OWNER, { category: 'pain', symptom: 'Cramps', severity: 3 });
     await logCycleEntry(OWNER, { flow: 'heavy', isPeriodStart: true });
     await createClinicalNote(OWNER, 'aeth1prov', { type: 'observation', title: 'X', body: 'b' }); // also notifies OWNER
+    await updateProfile(OWNER, { displayName: 'Ada' });
 
     const bundle = await collectUserData(OWNER);
     expect(bundle.records).toHaveLength(1);
@@ -63,6 +66,7 @@ describe('privacy data-subject operations', () => {
     expect(bundle.cycleEntries).toHaveLength(1);
     expect(bundle.clinicalNotes).toHaveLength(1);
     expect(bundle.notifications).toHaveLength(1); // emitted by the clinical note
+    expect(bundle.profile.displayName).toBe('Ada');
   });
 
   it('erases records and revokes only active consents and grants', async () => {
@@ -76,6 +80,7 @@ describe('privacy data-subject operations', () => {
     await logSymptom(OWNER, { category: 'pain', symptom: 'Cramps', severity: 3 });
     await logCycleEntry(OWNER, { flow: 'heavy', isPeriodStart: true });
     await createClinicalNote(OWNER, 'aeth1prov', { type: 'observation', title: 'X', body: 'b' }); // note + notification
+    await updateProfile(OWNER, { displayName: 'Ada' });
 
     const summary = await eraseUserData(OWNER);
     expect(summary.recordsErased).toBe(1);
@@ -84,6 +89,7 @@ describe('privacy data-subject operations', () => {
     expect(summary.vaultEntriesErased).toBe(2); // 1 symptom + 1 cycle entry
     expect(summary.clinicalNotesErased).toBe(1);
     expect(summary.notificationsErased).toBe(1);
+    expect(summary.profileErased).toBe(1);
 
     expect(await listRecords(OWNER)).toHaveLength(0); // soft-deleted excluded from reads
     expect((await listConsents(OWNER)).every((c) => c.status === 'revoked')).toBe(true);
@@ -95,5 +101,6 @@ describe('privacy data-subject operations', () => {
     expect(after.cycleEntries).toEqual([]);
     expect(after.clinicalNotes).toEqual([]);
     expect(after.notifications).toEqual([]);
+    expect(after.profile.displayName).toBe(''); // profile erased → empty defaults
   });
 });

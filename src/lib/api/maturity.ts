@@ -109,6 +109,14 @@ export const FEATURE_MATURITY = {
       + 'sees who accessed their records and when (e.g. providers reading records they were granted), '
       + 'the disclosure view that complements the activity feed (GDPR Art. 15).',
   },
+  account_profile: {
+    title: 'Account profile',
+    maturity: 'production',
+    audiences: ['individuals', 'platform'],
+    summary: 'Encrypted, owner-scoped account profile (GET/PUT /api/me/profile) — display name, '
+      + 'contact email, timezone, locale — giving a user a human identity beyond a wallet address. '
+      + 'Personal data, so it is included in the GDPR export and erasure lifecycle.',
+  },
   marketplace: {
     title: 'Research data marketplace',
     maturity: 'production',
