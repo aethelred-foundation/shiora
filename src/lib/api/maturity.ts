@@ -92,6 +92,13 @@ export const FEATURE_MATURITY = {
     audiences: ['individuals'],
     summary: 'Access (Art.15), portability (Art.20), and erasure (Art.17) over real stored data.',
   },
+  activity_transparency: {
+    title: 'Personal activity transparency',
+    maturity: 'production',
+    audiences: ['individuals', 'platform'],
+    summary: 'Self-scoped, tamper-evident activity feed (GET /api/me/activity) over the audit chain '
+      + 'so a user can see the recorded activity on their own account and data.',
+  },
   marketplace: {
     title: 'Research data marketplace',
     maturity: 'production',
