@@ -99,6 +99,14 @@ export const FEATURE_MATURITY = {
     summary: 'Self-scoped, tamper-evident activity feed (GET /api/me/activity) over the audit chain '
       + 'so a user can see the recorded activity on their own account and data.',
   },
+  data_access_transparency: {
+    title: 'Data-access transparency',
+    maturity: 'production',
+    audiences: ['individuals', 'platform'],
+    summary: 'Subject-scoped data-access log (GET /api/me/access-log) over the audit chain: a user '
+      + 'sees who accessed their records and when (e.g. providers reading records they were granted), '
+      + 'the disclosure view that complements the activity feed (GDPR Art. 15).',
+  },
   marketplace: {
     title: 'Research data marketplace',
     maturity: 'production',

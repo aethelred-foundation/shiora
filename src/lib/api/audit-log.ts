@@ -27,6 +27,7 @@ export interface AuditFilter {
   actor?: string;
   action?: AuditAction;
   resource?: string;
+  resourceId?: string; // the subject/target of the action (e.g. the patient whose record was read)
   since?: string;
   limit?: number;
 }
@@ -54,6 +55,9 @@ export class PersistentAuditLog implements AuditRecorder {
     }
     if (filter.resource) {
       entries = entries.filter((entry) => entry.resource === filter.resource);
+    }
+    if (filter.resourceId) {
+      entries = entries.filter((entry) => entry.resourceId === filter.resourceId);
     }
     if (filter.since) {
       const since = new Date(filter.since).getTime();
