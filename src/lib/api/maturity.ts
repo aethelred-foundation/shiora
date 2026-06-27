@@ -180,8 +180,8 @@ export const FEATURE_MATURITY = {
     maturity: 'production',
     audiences: ['platform'],
     summary: 'Encrypted, owner-scoped notification inbox that platform flows emit to (data-access '
-      + 'decisions, clinical-note and wellness activity); read/mark-read with unread counts, and '
-      + 'per-recipient preferences to mute notification types.',
+      + 'decisions, access-grant grant/revoke, clinical-note and wellness activity); read/mark-read '
+      + 'with unread counts, and per-recipient preferences to mute notification types.',
   },
   data_access_requests: {
     title: 'Consented data-access requests',

@@ -21,6 +21,7 @@ import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import { randomUUID } from 'node:crypto';
 import type { MockAccessGrant } from '@/lib/api/mock-data';
 import { createAccessGrant, listAccessGrants } from '@/lib/api/access-service';
+import { notify } from '@/lib/api/notification-service';
 import { generateTxHash, generateAttestation } from '@/lib/utils';
 
 // ────────────────────────────────────────────────────────────
@@ -115,6 +116,14 @@ export async function POST(request: NextRequest) {
     };
 
     const persistedGrant = await createAccessGrant(auth.walletAddress!, newGrant);
+
+    // Tell the provider they've been granted access (push counterpart to the
+    // grants they can already query).
+    await notify(persistedGrant.address, {
+      type: 'consent',
+      title: 'You were granted record access',
+      body: 'A patient granted you access to their health records.',
+    });
 
     return successResponse(persistedGrant, HTTP.CREATED, {
       message: 'Access grant created. Pending blockchain confirmation.',

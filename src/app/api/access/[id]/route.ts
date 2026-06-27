@@ -17,6 +17,7 @@ import {
 } from '@/lib/api/responses';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import { getAccessGrant, updateAccessGrant } from '@/lib/api/access-service';
+import { notify } from '@/lib/api/notification-service';
 import { generateTxHash } from '@/lib/utils';
 
 interface RouteContext {
@@ -150,6 +151,13 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   if (!revokedGrant) {
     return notFoundResponse('AccessGrant', id);
   }
+
+  // Tell the provider their access has ended.
+  await notify(revokedGrant.address, {
+    type: 'consent',
+    title: 'Record access revoked',
+    body: 'A patient revoked your access to their health records.',
+  });
 
   return successResponse(
     {

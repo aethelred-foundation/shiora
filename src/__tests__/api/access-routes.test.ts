@@ -33,6 +33,7 @@ import { GET as listAudit } from '@/app/api/access/audit/route';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
 import { generateMockAuditLog } from '@/lib/api/mock-data';
+import { listNotifications, __resetNotificationsForTests } from '@/lib/api/notification-service';
 import type { MockAccessGrant } from '@/lib/api/mock-data';
 
 const mockedList = svcList as jest.MockedFunction<typeof svcList>;
@@ -377,5 +378,37 @@ describe('/api/access/audit log view', () => {
   it('re-throws a non-Zod error from the audit source', async () => {
     mockedAuditLog.mockImplementationOnce(() => { throw new Error('audit source down'); });
     await expect(listAudit(authed('http://localhost:3001/api/access/audit', { method: 'GET' }, token))).rejects.toThrow('audit source down');
+  });
+});
+
+describe('/api/access grant lifecycle notifications', () => {
+  const owner = seededAddress(666);
+  const { token } = createSessionToken(owner);
+  const provider = seededAddress(940);
+
+  beforeEach(() => __resetNotificationsForTests());
+  afterEach(() => __resetNotificationsForTests());
+
+  it('notifies the provider when access is granted and again when it is revoked', async () => {
+    const g = await postGrant(token, {
+      provider: 'Notify Clinic', specialty: 'OB-GYN', address: provider,
+      scope: 'Full Records', durationDays: 90,
+    });
+
+    const afterGrant = await listNotifications(provider);
+    expect(afterGrant).toHaveLength(1);
+    expect(afterGrant[0].title).toBe('You were granted record access');
+
+    const revoke = await deleteGrant(
+      authed(`http://localhost:3001/api/access/${g.id}`, { method: 'DELETE' }, token),
+      { params: Promise.resolve({ id: g.id }) },
+    );
+    expect(revoke.status).toBe(200);
+
+    const afterRevoke = await listNotifications(provider);
+    expect(afterRevoke.map((n) => n.title).sort()).toEqual([
+      'Record access revoked',
+      'You were granted record access',
+    ]);
   });
 });
