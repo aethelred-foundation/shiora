@@ -25,10 +25,16 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
     private readonly actions: DocumentAuditActions,
   ) {}
 
-  /** Encrypt and persist a new document, returning it unchanged. */
-  async create(ownerKey: string, document: T): Promise<T> {
+  /**
+   * Encrypt and persist a new document, returning it unchanged. `actor` records
+   * who performed the write in the audit chain — defaults to the collection
+   * owner, but a write made on the owner's record by another party (e.g. a
+   * provider authoring a clinical note about a patient) should pass the acting
+   * party so the audit trail attributes it truthfully.
+   */
+  async create(ownerKey: string, document: T, actor: string = ownerKey): Promise<T> {
     await this.persist(ownerKey, document);
-    await this.record(this.actions.create, ownerKey, document.id);
+    await this.record(this.actions.create, actor, document.id);
     return document;
   }
 
@@ -56,8 +62,17 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
     return rows.filter((row) => !row.deleted).map((row) => this.open(row.ownerKey, row));
   }
 
-  /** Merge a patch into an existing document and re-seal it. */
-  async update(ownerKey: string, id: string, patch: Partial<T>): Promise<T | undefined> {
+  /**
+   * Merge a patch into an existing document and re-seal it. `actor` records who
+   * performed the write (defaults to the owner; pass the acting party for a
+   * write made on the owner's record by someone else).
+   */
+  async update(
+    ownerKey: string,
+    id: string,
+    patch: Partial<T>,
+    actor: string = ownerKey,
+  ): Promise<T | undefined> {
     const row = await this.store.findById(this.collection, ownerKey, id);
     if (!row || row.deleted) {
       return undefined;
@@ -66,7 +81,7 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
     const current = this.open(ownerKey, row);
     const next = { ...current, ...patch, id: current.id } as T;
     await this.persist(ownerKey, next);
-    await this.record(this.actions.update, ownerKey, id);
+    await this.record(this.actions.update, actor, id);
     return next;
   }
 

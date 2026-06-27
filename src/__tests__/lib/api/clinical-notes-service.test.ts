@@ -15,6 +15,7 @@ import {
   __resetClinicalNotesForTests,
 } from '@/lib/api/clinical-notes-service';
 import { listNotifications, __resetNotificationsForTests } from '@/lib/api/notification-service';
+import { getAuditLog, __resetAuditLogForTests } from '@/lib/api/audit-log';
 import { seededAddress } from '@/lib/utils';
 
 const PATIENT = seededAddress(801);
@@ -48,6 +49,19 @@ describe('clinical-notes-service', () => {
     expect(notes).toHaveLength(2);
     expect(notes[0].title).toBe('Visit 2'); // most recent first
     expect(notes[0].id.startsWith('note-')).toBe(true);
+  });
+
+  it('attributes note writes to the authoring provider in the audit chain', async () => {
+    __resetAuditLogForTests();
+    const note = await createClinicalNote(PATIENT, PROVIDER_A, { type: 'observation', title: 'V', body: 'b' });
+    await amendClinicalNote(PATIENT, note.id, PROVIDER_B, 'addendum');
+
+    const [create] = await getAuditLog().list({ action: 'CLINICAL_NOTE_CREATE' });
+    expect(create.actor).toBe(PROVIDER_A); // the provider, not the patient
+    expect(create.actor).not.toBe(PATIENT);
+
+    const [update] = await getAuditLog().list({ action: 'CLINICAL_NOTE_UPDATE' });
+    expect(update.actor).toBe(PROVIDER_B); // the amending provider
   });
 
   it('scopes the provider view to their own notes', async () => {

@@ -86,7 +86,8 @@ export async function createClinicalNote(
     createdAt: now,
     updatedAt: now,
   };
-  const created = await repo().create(patientAddress, note);
+  // The provider, not the patient, is the actor on a note they authored.
+  const created = await repo().create(patientAddress, note, providerAddress);
   await notify(patientAddress, {
     type: 'clinical_note',
     title: 'New clinical note',
@@ -116,10 +117,11 @@ export async function amendClinicalNote(
     body,
     createdAt: Date.now(),
   };
+  // The amending provider is the actor on their amendment.
   const updated = await repo().update(patientAddress, noteId, {
     amendments: [...note.amendments, amendment],
     updatedAt: Date.now(),
-  });
+  }, providerAddress);
   await notify(patientAddress, {
     type: 'clinical_note',
     title: 'Clinical note amended',
