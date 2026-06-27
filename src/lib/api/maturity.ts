@@ -92,7 +92,8 @@ export const FEATURE_MATURITY = {
     title: 'GDPR data-subject rights',
     maturity: 'production',
     audiences: ['individuals'],
-    summary: 'Access (Art.15), portability (Art.20), and erasure (Art.17) over real stored data.',
+    summary: 'Access (Art.15), portability (Art.20) with real JSON/CSV/XML serialization, and '
+      + 'erasure (Art.17) over real stored data.',
   },
   activity_transparency: {
     title: 'Personal activity transparency',

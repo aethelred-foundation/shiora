@@ -12,9 +12,10 @@ import type { PrivacyRequest } from '@/types';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
 import { collectUserData } from '@/lib/api/privacy';
+import { serializeUserData, type ExportFormat } from '@/lib/api/data-export';
 import { audit } from '@/lib/api/audit';
 
-const VALID_FORMATS = ['json', 'csv', 'xml'];
+const VALID_FORMATS: ExportFormat[] = ['json', 'csv', 'xml'];
 
 export async function POST(request: NextRequest) {
   const blocked = await runMiddleware(request, { requireAuth: true });
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const exportFormat = format ?? 'json';
+    const exportFormat = (format ?? 'json') as ExportFormat;
     if (!VALID_FORMATS.includes(exportFormat)) {
       return errorResponse(
         'VALIDATION_ERROR',
@@ -46,6 +47,7 @@ export async function POST(request: NextRequest) {
 
     const owner = auth.walletAddress!;
     const data = await collectUserData(owner);
+    const exported = serializeUserData(data, exportFormat);
 
     const privacyRequest: PrivacyRequest = {
       id: `priv-${randomUUID().replace(/-/g, '')}`,
@@ -66,7 +68,10 @@ export async function POST(request: NextRequest) {
       metadata: { type: 'portability', format: exportFormat },
     });
 
-    return successResponse({ request: privacyRequest, format: exportFormat, data }, HTTP.CREATED);
+    return successResponse(
+      { request: privacyRequest, format: exportFormat, export: exported, data },
+      HTTP.CREATED,
+    );
   } catch {
     return errorResponse('INTERNAL_ERROR', 'Failed to submit portability request', HTTP.INTERNAL);
   }

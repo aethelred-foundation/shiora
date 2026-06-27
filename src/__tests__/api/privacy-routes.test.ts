@@ -80,11 +80,34 @@ describe('/api/privacy/portability format validation', () => {
     expect(res.status).toBe(400);
   });
 
-  it('accepts a supported export format', async () => {
+  it('actually serializes the export as CSV when requested', async () => {
     const res = await portability(
       post('http://localhost:3000/api/privacy/portability', { categories: ['records'], format: 'csv' }, token),
     );
     expect(res.status).toBe(201);
-    expect((await res.json()).data.format).toBe('csv');
+    const data = (await res.json()).data;
+    expect(data.format).toBe('csv');
+    expect(typeof data.export).toBe('string');
+    expect(data.export).toContain('# records'); // real CSV, not the JSON bundle
+  });
+
+  it('actually serializes the export as XML when requested', async () => {
+    const res = await portability(
+      post('http://localhost:3000/api/privacy/portability', { categories: ['records'], format: 'xml' }, token),
+    );
+    expect(res.status).toBe(201);
+    const data = (await res.json()).data;
+    expect(data.format).toBe('xml');
+    expect(data.export).toContain('<userData>');
+  });
+
+  it('defaults to a JSON export string', async () => {
+    const res = await portability(
+      post('http://localhost:3000/api/privacy/portability', { categories: ['records'] }, token),
+    );
+    expect(res.status).toBe(201);
+    const data = (await res.json()).data;
+    expect(data.format).toBe('json');
+    expect(data.export).toContain('"records"');
   });
 });
