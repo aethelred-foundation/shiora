@@ -24,6 +24,7 @@ export type NotificationType =
   | 'care_gap'
   | 'consent'
   | 'clinical_note'
+  | 'wellness'
   | 'system';
 
 export interface Notification {

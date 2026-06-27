@@ -18,6 +18,7 @@ import {
   orgWellnessAnalytics,
   __resetWellnessForTests,
 } from '@/lib/api/wellness-service';
+import { listNotifications, __resetNotificationsForTests } from '@/lib/api/notification-service';
 import { seededAddress } from '@/lib/utils';
 
 const ORG = 'org-abc';
@@ -29,12 +30,14 @@ const original = process.env.DATABASE_URL;
 beforeEach(() => {
   delete process.env.DATABASE_URL;
   __resetWellnessForTests();
+  __resetNotificationsForTests();
 });
 
 afterEach(() => {
   if (original === undefined) delete process.env.DATABASE_URL;
   else process.env.DATABASE_URL = original;
   __resetWellnessForTests();
+  __resetNotificationsForTests();
   jest.restoreAllMocks();
 });
 
@@ -68,6 +71,11 @@ describe('wellness enrollment', () => {
 
     const summary = await participationSummary(program.id);
     expect(summary).toEqual({ programId: program.id, activeEnrollments: 2, completedCount: 0, averageProgress: 0 });
+
+    // each enrolled member is notified
+    const memberInbox = await listNotifications(MEMBER_A);
+    expect(memberInbox).toHaveLength(1);
+    expect(memberInbox[0].type).toBe('wellness');
   });
 
   it('treats re-enrolment as idempotent', async () => {

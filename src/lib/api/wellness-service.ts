@@ -11,6 +11,7 @@
 import { randomUUID } from 'crypto';
 
 import { getAuditLog } from '@/lib/api/audit-log';
+import { notify } from '@/lib/api/notification-service';
 import { EncryptedDocumentRepository } from '@/lib/persistence/encrypted-documents';
 import { InMemoryDocumentStore, type DocumentStorePort } from '@/lib/persistence/document-store';
 import { PgDocumentStore } from '@/lib/persistence/pg-document-store';
@@ -132,7 +133,7 @@ export function getProgram(orgId: string, programId: string): Promise<WellnessPr
 
 // ── Enrollment (scoped to a program) ─────────────────────────────────────────
 
-export function enrollMember(programId: string, memberAddress: string): Promise<ProgramEnrollment> {
+export async function enrollMember(programId: string, memberAddress: string): Promise<ProgramEnrollment> {
   const now = Date.now();
   const enrollment: ProgramEnrollment = {
     id: memberAddress,
@@ -144,7 +145,13 @@ export function enrollMember(programId: string, memberAddress: string): Promise<
     enrolledAt: now,
     updatedAt: now,
   };
-  return enrollments().create(programId, enrollment);
+  const created = await enrollments().create(programId, enrollment);
+  await notify(memberAddress, {
+    type: 'wellness',
+    title: 'Enrolled in a wellness program',
+    body: 'Your employer has enrolled you in a wellness program.',
+  });
+  return created;
 }
 
 /**
