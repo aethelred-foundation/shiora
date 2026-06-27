@@ -10,6 +10,7 @@ import { runMiddleware } from '@/lib/api/middleware';
 import { GET } from '@/app/api/notifications/route';
 import { PATCH } from '@/app/api/notifications/[id]/route';
 import { POST as readAll } from '@/app/api/notifications/read-all/route';
+import { GET as getPrefs, PUT as putPrefs } from '@/app/api/notifications/preferences/route';
 import { notify, __resetNotificationsForTests } from '@/lib/api/notification-service';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
@@ -112,5 +113,56 @@ describe('POST /api/notifications/read-all', () => {
     const res = await readAll(authed(`${URL}/read-all`, { method: 'POST' }));
     expect(res.status).toBe(200);
     expect((await res.json()).data.markedRead).toBe(2);
+  });
+});
+
+describe('/api/notifications/preferences', () => {
+  const PREFS = `${URL}/preferences`;
+  const putBody = (body: unknown): RequestInit => ({
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: typeof body === 'string' ? body : JSON.stringify(body),
+  });
+
+  it('GET returns the middleware error when blocked', async () => {
+    blocked();
+    expect((await getPrefs(authed(PREFS))).status).toBe(403);
+  });
+
+  it('GET returns 401 when the middleware is bypassed but unauthenticated', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(null);
+    expect((await getPrefs(new NextRequest(PREFS))).status).toBe(401);
+  });
+
+  it('GET defaults to nothing muted', async () => {
+    const body = await (await getPrefs(authed(PREFS))).json();
+    expect(body.data.mutedTypes).toEqual([]);
+  });
+
+  it('PUT returns the middleware error when blocked', async () => {
+    blocked();
+    expect((await putPrefs(authed(PREFS, putBody({ mutedTypes: [] })))).status).toBe(403);
+  });
+
+  it('PUT returns 401 when the middleware is bypassed but unauthenticated', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(null);
+    expect((await putPrefs(new NextRequest(PREFS, putBody({ mutedTypes: [] })))).status).toBe(401);
+  });
+
+  it('PUT sets muted types and GET reflects them', async () => {
+    const res = await putPrefs(authed(PREFS, putBody({ mutedTypes: ['wellness', 'care_gap'] })));
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.mutedTypes).toEqual(['wellness', 'care_gap']);
+
+    const after = await (await getPrefs(authed(PREFS))).json();
+    expect(after.data.mutedTypes).toEqual(['wellness', 'care_gap']);
+  });
+
+  it('PUT returns 422 for an invalid notification type', async () => {
+    expect((await putPrefs(authed(PREFS, putBody({ mutedTypes: ['nope'] })))).status).toBe(422);
+  });
+
+  it('PUT throws on an invalid JSON body', async () => {
+    await expect(putPrefs(authed(PREFS, putBody('not-json')))).rejects.toThrow();
   });
 });

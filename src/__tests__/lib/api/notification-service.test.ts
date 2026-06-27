@@ -13,6 +13,8 @@ import {
   markRead,
   markAllRead,
   eraseNotifications,
+  getNotificationPreferences,
+  setMutedNotificationTypes,
   __resetNotificationsForTests,
 } from '@/lib/api/notification-service';
 import { seededAddress } from '@/lib/utils';
@@ -85,5 +87,22 @@ describe('notification-service', () => {
     __resetNotificationsForTests();
     expect(await listNotifications(USER)).toEqual([]);
     expect(pgQuery).toHaveBeenCalled();
+  });
+});
+
+describe('notification preferences', () => {
+  it('defaults to nothing muted', async () => {
+    expect(await getNotificationPreferences(USER)).toEqual({ mutedTypes: [] });
+  });
+
+  it('mutes a type so notify is suppressed while others still deliver', async () => {
+    expect(await setMutedNotificationTypes(USER, ['wellness'])).toEqual({ mutedTypes: ['wellness'] });
+    expect(await getNotificationPreferences(USER)).toEqual({ mutedTypes: ['wellness'] });
+
+    expect(await notify(USER, { type: 'wellness', title: 'X', body: 'b' })).toBeNull(); // muted
+    expect(await listNotifications(USER)).toEqual([]);
+
+    expect(await notify(USER, { type: 'system', title: 'Y', body: 'b' })).not.toBeNull(); // unmuted
+    expect(await listNotifications(USER)).toHaveLength(1);
   });
 });

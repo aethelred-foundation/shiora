@@ -43,7 +43,21 @@ export interface NotificationInput {
   body: string;
 }
 
+const PREFS_COLLECTION = 'notification-prefs';
+
+interface StoredPreferences {
+  id: string; // the owner address
+  ownerAddress: string;
+  mutedTypes: NotificationType[];
+  updatedAt: number;
+}
+
+export interface NotificationPreferences {
+  mutedTypes: NotificationType[];
+}
+
 let repository: EncryptedDocumentRepository<Notification> | null = null;
+let prefsRepository: EncryptedDocumentRepository<StoredPreferences> | null = null;
 
 function createStore(): DocumentStorePort {
   if (shouldUsePostgres()) {
@@ -64,8 +78,47 @@ function repo(): EncryptedDocumentRepository<Notification> {
   return repository;
 }
 
-/** Emit a notification to a recipient's inbox. */
-export function notify(ownerAddress: string, input: NotificationInput): Promise<Notification> {
+function prefsRepo(): EncryptedDocumentRepository<StoredPreferences> {
+  if (!prefsRepository) {
+    prefsRepository = new EncryptedDocumentRepository<StoredPreferences>(
+      createStore(),
+      getAuditLog(),
+      PREFS_COLLECTION,
+      { create: 'NOTIFICATION_PREFS_UPDATE', update: 'NOTIFICATION_PREFS_UPDATE' },
+    );
+  }
+  return prefsRepository;
+}
+
+/** A recipient's notification preferences; nothing muted by default. */
+export async function getNotificationPreferences(ownerAddress: string): Promise<NotificationPreferences> {
+  const stored = await prefsRepo().get(ownerAddress, ownerAddress);
+  return { mutedTypes: stored ? stored.mutedTypes : [] };
+}
+
+/** Set the notification types a recipient has muted. */
+export async function setMutedNotificationTypes(
+  ownerAddress: string,
+  mutedTypes: NotificationType[],
+): Promise<NotificationPreferences> {
+  await prefsRepo().create(ownerAddress, {
+    id: ownerAddress,
+    ownerAddress,
+    mutedTypes,
+    updatedAt: Date.now(),
+  });
+  return { mutedTypes };
+}
+
+/** Emit a notification, unless the recipient has muted its type. */
+export async function notify(
+  ownerAddress: string,
+  input: NotificationInput,
+): Promise<Notification | null> {
+  const { mutedTypes } = await getNotificationPreferences(ownerAddress);
+  if (mutedTypes.includes(input.type)) {
+    return null;
+  }
   const notification: Notification = {
     id: `ntf-${randomUUID().replace(/-/g, '')}`,
     ownerAddress,
@@ -122,7 +175,8 @@ export async function eraseNotifications(ownerAddress: string): Promise<number> 
   return list.length;
 }
 
-/** Test-only: reset the singleton so each test starts from empty state. */
+/** Test-only: reset the singletons so each test starts from empty state. */
 export function __resetNotificationsForTests(): void {
   repository = null;
+  prefsRepository = null;
 }
