@@ -11,6 +11,7 @@
 import { randomUUID } from 'crypto';
 
 import { getAuditLog } from '@/lib/api/audit-log';
+import { notify } from '@/lib/api/notification-service';
 import { EncryptedDocumentRepository } from '@/lib/persistence/encrypted-documents';
 import { InMemoryDocumentStore, type DocumentStorePort } from '@/lib/persistence/document-store';
 import { PgDocumentStore } from '@/lib/persistence/pg-document-store';
@@ -68,7 +69,7 @@ function repo(): EncryptedDocumentRepository<ClinicalNote> {
   return repository;
 }
 
-export function createClinicalNote(
+export async function createClinicalNote(
   patientAddress: string,
   providerAddress: string,
   input: ClinicalNoteInput,
@@ -85,7 +86,13 @@ export function createClinicalNote(
     createdAt: now,
     updatedAt: now,
   };
-  return repo().create(patientAddress, note);
+  const created = await repo().create(patientAddress, note);
+  await notify(patientAddress, {
+    type: 'clinical_note',
+    title: 'New clinical note',
+    body: `A provider added a ${input.type} note to your record.`,
+  });
+  return created;
 }
 
 /**
@@ -109,10 +116,16 @@ export async function amendClinicalNote(
     body,
     createdAt: Date.now(),
   };
-  return repo().update(patientAddress, noteId, {
+  const updated = await repo().update(patientAddress, noteId, {
     amendments: [...note.amendments, amendment],
     updatedAt: Date.now(),
   });
+  await notify(patientAddress, {
+    type: 'clinical_note',
+    title: 'Clinical note amended',
+    body: 'A provider amended a note on your record.',
+  });
+  return updated;
 }
 
 /** Every clinical note about a patient, most recent first (patient's own view). */

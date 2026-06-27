@@ -13,6 +13,7 @@ import {
   listClinicalNotesByProvider,
   __resetClinicalNotesForTests,
 } from '@/lib/api/clinical-notes-service';
+import { listNotifications, __resetNotificationsForTests } from '@/lib/api/notification-service';
 import { seededAddress } from '@/lib/utils';
 
 const PATIENT = seededAddress(801);
@@ -23,12 +24,14 @@ const original = process.env.DATABASE_URL;
 beforeEach(() => {
   delete process.env.DATABASE_URL;
   __resetClinicalNotesForTests();
+  __resetNotificationsForTests();
 });
 
 afterEach(() => {
   if (original === undefined) delete process.env.DATABASE_URL;
   else process.env.DATABASE_URL = original;
   __resetClinicalNotesForTests();
+  __resetNotificationsForTests();
   jest.restoreAllMocks();
 });
 
@@ -70,6 +73,19 @@ describe('clinical-notes-service', () => {
     expect(amended?.body).toBe('Initial'); // original body never mutated
 
     expect(await amendClinicalNote(PATIENT, 'note-nope', PROVIDER_A, 'x')).toBeUndefined();
+  });
+
+  it('notifies the patient when a provider creates or amends a note about them', async () => {
+    const note = await createClinicalNote(PATIENT, PROVIDER_A, { type: 'plan', title: 'Plan', body: 'b' });
+    let inbox = await listNotifications(PATIENT);
+    expect(inbox).toHaveLength(1);
+    expect(inbox[0].type).toBe('clinical_note');
+    expect(inbox[0].title).toBe('New clinical note');
+
+    await amendClinicalNote(PATIENT, note.id, PROVIDER_B, 'Addendum');
+    inbox = await listNotifications(PATIENT);
+    expect(inbox).toHaveLength(2); // create + amend
+    expect(inbox.map((n) => n.title).sort()).toEqual(['Clinical note amended', 'New clinical note']);
   });
 
   it('uses the Postgres store when DATABASE_URL is configured', async () => {
