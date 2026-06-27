@@ -10,9 +10,10 @@ import { runMiddleware } from '@/lib/api/middleware';
 import { GET, POST } from '@/app/api/provider/patients/[address]/notes/route';
 import { POST as amendNote } from '@/app/api/provider/patients/[address]/notes/[noteId]/amendments/route';
 import { GET as getMyNotes } from '@/app/api/me/clinical-notes/route';
-import { createClinicalNote, __resetClinicalNotesForTests } from '@/lib/api/clinical-notes-service';
+import { createClinicalNote, amendClinicalNote, __resetClinicalNotesForTests } from '@/lib/api/clinical-notes-service';
 import { createAccessGrant, __resetAccessForTests } from '@/lib/api/access-service';
 import { assignRole, __resetRolesForTests } from '@/lib/api/roles-service';
+import { updateProfile, __resetProfileForTests } from '@/lib/api/profile-service';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
 import type { MockAccessGrant } from '@/lib/api/mock-data';
@@ -40,6 +41,7 @@ beforeEach(async () => {
   __resetClinicalNotesForTests();
   __resetAccessForTests();
   __resetRolesForTests();
+  __resetProfileForTests();
   await assignRole(PROVIDER, 'provider');
 });
 
@@ -242,5 +244,17 @@ describe('GET /api/me/clinical-notes', () => {
     const res = await getMyNotes(authed(ME, { method: 'GET' }, patientToken));
     expect(res.status).toBe(200);
     expect((await res.json()).data.total).toBe(2);
+  });
+
+  it('shows the authoring provider\'s display name on each note and amendment', async () => {
+    await updateProfile(PROVIDER, { displayName: 'Dr. Rivera' });
+    await updateProfile(PROVIDER_B, { displayName: 'Dr. Chen' });
+
+    const note = await createClinicalNote(PATIENT, PROVIDER, { type: 'observation', title: 'A', body: 'a' });
+    await amendClinicalNote(PATIENT, note.id, PROVIDER_B, 'addendum'); // amended by a second provider
+
+    const body = await (await getMyNotes(authed(ME, { method: 'GET' }, patientToken))).json();
+    expect(body.data.notes[0].providerName).toBe('Dr. Rivera');
+    expect(body.data.notes[0].amendments[0].providerName).toBe('Dr. Chen');
   });
 });
