@@ -60,13 +60,15 @@ export async function listGrantsForProvider(providerAddress: string): Promise<Mo
 export async function providerHasActiveGrant(
   providerAddress: string,
   patientAddress: string,
+  now: number = Date.now(),
 ): Promise<boolean> {
   const grants = await listGrantsForProvider(providerAddress);
   return grants.some(
     (grant) =>
       grant.ownerAddress === patientAddress
       && grant.status === 'Active'
-      && grant.canView,
+      && grant.canView
+      && now <= grant.expiresAt, // an expired grant no longer permits access
   );
 }
 

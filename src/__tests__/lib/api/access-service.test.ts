@@ -67,9 +67,14 @@ describe('access-service', () => {
       __resetAccessForTests();
     });
 
-    it('is true for an active, viewable grant from the patient', async () => {
-      await createAccessGrant(OWNER, { ...grant(), id: 'g-active', status: 'Active', canView: true });
+    it('is true for an active, viewable, unexpired grant from the patient', async () => {
+      await createAccessGrant(OWNER, { ...grant(), id: 'g-active', status: 'Active', canView: true, expiresAt: Date.now() + 60_000 });
       expect(await providerHasActiveGrant(PROVIDER, OWNER)).toBe(true);
+    });
+
+    it('is false when the grant has expired', async () => {
+      await createAccessGrant(OWNER, { ...grant(), id: 'g-expired', status: 'Active', canView: true, expiresAt: Date.now() - 1_000 });
+      expect(await providerHasActiveGrant(PROVIDER, OWNER)).toBe(false);
     });
 
     it('is false when the provider holds no grant', async () => {
