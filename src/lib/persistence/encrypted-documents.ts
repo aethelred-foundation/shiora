@@ -34,7 +34,7 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
    */
   async create(ownerKey: string, document: T, actor: string = ownerKey): Promise<T> {
     await this.persist(ownerKey, document);
-    await this.record(this.actions.create, actor, document.id);
+    await this.record(this.actions.create, actor, document.id, ownerKey);
     return document;
   }
 
@@ -81,7 +81,7 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
     const current = this.open(ownerKey, row);
     const next = { ...current, ...patch, id: current.id } as T;
     await this.persist(ownerKey, next);
-    await this.record(this.actions.update, actor, id);
+    await this.record(this.actions.update, actor, id, ownerKey);
     return next;
   }
 
@@ -95,7 +95,7 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
       return false;
     }
     await this.store.put({ ...row, deleted: true });
-    await this.record(this.actions.update, ownerKey, id);
+    await this.record(this.actions.update, ownerKey, id, ownerKey);
     return true;
   }
 
@@ -120,10 +120,16 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
     return openJson<T>(row.sealed, this.aad(ownerKey, row.id));
   }
 
-  private async record(action: AuditAction, actor: string, resourceId: string): Promise<void> {
+  private async record(
+    action: AuditAction,
+    actor: string,
+    resourceId: string,
+    subject: string,
+  ): Promise<void> {
     await this.audit.record({
       action,
       actor,
+      subject,
       resource: this.collection,
       resourceId,
       success: true,

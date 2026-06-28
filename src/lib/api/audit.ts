@@ -56,7 +56,8 @@ export type AuditAction =
 export interface AuditEntry {
   timestamp: string;
   action: AuditAction;
-  actor: string; // wallet address or 'system'
+  actor: string; // who performed the action (wallet address or 'system')
+  subject?: string; // whose data the action concerns (the data subject)
   resource?: string; // resource type
   resourceId?: string; // resource identifier
   ip?: string;

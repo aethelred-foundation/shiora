@@ -102,6 +102,7 @@ describe('records-service', () => {
       const reads = await getAuditLog().list({ action: 'RECORD_READ', actor: PROVIDER });
       expect(reads).toHaveLength(1);
       expect(reads[0].resourceId).toBe(OWNER);
+      expect(reads[0].subject).toBe(OWNER); // the patient is the data subject of the read
     });
 
     it('returns null for an expired grant even if it was viewable', async () => {

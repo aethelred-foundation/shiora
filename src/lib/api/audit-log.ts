@@ -25,9 +25,9 @@ import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
 
 export interface AuditFilter {
   actor?: string;
+  subject?: string; // the data subject the action concerns (e.g. the patient)
   action?: AuditAction;
   resource?: string;
-  resourceId?: string; // the subject/target of the action (e.g. the patient whose record was read)
   since?: string;
   limit?: number;
 }
@@ -50,14 +50,14 @@ export class PersistentAuditLog implements AuditRecorder {
     if (filter.actor) {
       entries = entries.filter((entry) => entry.actor === filter.actor);
     }
+    if (filter.subject) {
+      entries = entries.filter((entry) => entry.subject === filter.subject);
+    }
     if (filter.action) {
       entries = entries.filter((entry) => entry.action === filter.action);
     }
     if (filter.resource) {
       entries = entries.filter((entry) => entry.resource === filter.resource);
-    }
-    if (filter.resourceId) {
-      entries = entries.filter((entry) => entry.resourceId === filter.resourceId);
     }
     if (filter.since) {
       const since = new Date(filter.since).getTime();

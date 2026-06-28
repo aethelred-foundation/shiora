@@ -61,6 +61,7 @@ export async function listRecordsForProvider(
   await getAuditLog().record({
     action: 'RECORD_READ',
     actor: providerAddress,
+    subject: patientAddress, // the data subject is the patient whose records were read
     resource: 'health_records',
     resourceId: patientAddress,
     success: true,

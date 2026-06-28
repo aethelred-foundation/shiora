@@ -35,7 +35,13 @@ function authed(url: string): NextRequest {
 
 async function read(actor: string, subject: string) {
   await getAuditLog().record({
-    action: 'RECORD_READ', actor, resource: 'health_records', resourceId: subject, success: true,
+    action: 'RECORD_READ', actor, subject, resource: 'health_records', resourceId: subject, success: true,
+  });
+}
+
+async function noteWrite(actor: string, subject: string) {
+  await getAuditLog().record({
+    action: 'CLINICAL_NOTE_CREATE', actor, subject, resource: 'clinical-note', resourceId: 'note-1', success: true,
   });
 }
 
@@ -56,16 +62,19 @@ describe('GET /api/me/access-log', () => {
     expect((await res.json()).data.total).toBe(0);
   });
 
-  it('shows third-party accesses to the caller\'s records, scoped to the subject', async () => {
-    await read(PROVIDER, USER); // a provider read MY record — shown
-    await read(PROVIDER, OTHER_PATIENT); // a provider read someone else's — excluded (subject scope)
-    await read(USER, USER); // my own read of my record — excluded (not a third party)
+  it('shows third-party actions on the caller\'s data — reads and note writes — subject-scoped', async () => {
+    await read(PROVIDER, USER); // a provider read MY records — shown
+    await noteWrite(PROVIDER, USER); // a provider wrote a note ABOUT me — shown
+    await read(PROVIDER, OTHER_PATIENT); // someone else's data — excluded (subject scope)
+    await read(USER, USER); // my own action — excluded (not a third party)
 
     const body = await (await GET(authed(URL))).json();
-    expect(body.data.total).toBe(1);
-    expect(body.data.accesses[0].by).toBe(PROVIDER);
+    expect(body.data.total).toBe(2);
+    expect(body.data.accesses.map((a: { action: string }) => a.action).sort())
+      .toEqual(['CLINICAL_NOTE_CREATE', 'RECORD_READ']);
+    expect(body.data.accesses.every((a: { by: string }) => a.by === PROVIDER)).toBe(true);
+    expect(body.data.accesses[0]).toHaveProperty('resource');
     expect(body.data.accesses[0]).toHaveProperty('timestamp');
-    expect(body.data.accesses[0]).toHaveProperty('action', 'RECORD_READ');
     expect(body.data.accesses[0]).toHaveProperty('success', true);
   });
 

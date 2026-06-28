@@ -59,9 +59,11 @@ describe('clinical-notes-service', () => {
     const [create] = await getAuditLog().list({ action: 'CLINICAL_NOTE_CREATE' });
     expect(create.actor).toBe(PROVIDER_A); // the provider, not the patient
     expect(create.actor).not.toBe(PATIENT);
+    expect(create.subject).toBe(PATIENT); // the data subject is the patient
 
     const [update] = await getAuditLog().list({ action: 'CLINICAL_NOTE_UPDATE' });
     expect(update.actor).toBe(PROVIDER_B); // the amending provider
+    expect(update.subject).toBe(PATIENT);
   });
 
   it('scopes the provider view to their own notes', async () => {
