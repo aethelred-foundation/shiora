@@ -7,210 +7,117 @@ jest.mock('@/lib/api/middleware', () => {
 
 import { NextRequest, NextResponse } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
-import { GET as getClaims, POST as createClaim } from '@/app/api/zkp/claims/route';
 import { POST as prove } from '@/app/api/zkp/prove/route';
 import { POST as verify } from '@/app/api/zkp/verify/route';
+import { GET as getClaims } from '@/app/api/zkp/claims/route';
+import { __resetZkpForTests } from '@/lib/api/zkp-service';
+import { createSessionToken } from '@/lib/api/session';
+import { seededAddress } from '@/lib/utils';
 
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
+const USER = seededAddress(400);
+const token = createSessionToken(USER).token;
+
+beforeEach(() => __resetZkpForTests());
 
 afterEach(() => {
   mockedRunMiddleware.mockImplementation((...args: unknown[]) => {
     const actual = jest.requireActual('@/lib/api/middleware');
     return actual.runMiddleware(...args);
   });
+  __resetZkpForTests();
 });
 
-describe('/api/zkp/claims', () => {
-  it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await getClaims(new NextRequest('http://localhost:3000/api/zkp/claims'));
-    expect(res.status).toBe(403);
+const PROVE = 'http://localhost:3000/api/zkp/prove';
+const VERIFY = 'http://localhost:3000/api/zkp/verify';
+const CLAIMS = 'http://localhost:3000/api/zkp/claims';
+const blocked = () => mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+
+function post(url: string, body: unknown, authed = true): NextRequest {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (authed) headers.authorization = `Bearer ${token}`;
+  return new NextRequest(url, { method: 'POST', headers, body: typeof body === 'string' ? body : JSON.stringify(body) });
+}
+
+function authedGet(url: string): NextRequest {
+  return new NextRequest(url, { headers: { authorization: `Bearer ${token}` } });
+}
+
+describe('POST /api/zkp/prove', () => {
+  it('returns the middleware error when blocked', async () => {
+    blocked();
+    expect((await prove(post(PROVE, { claimType: 'age_range', value: 30, set: [18, 30] }))).status).toBe(403);
   });
 
-  it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await createClaim(
-      new NextRequest('http://localhost:3000/api/zkp/claims', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ claimType: 'age_range' }),
-      }),
-    );
-    expect(res.status).toBe(403);
+  it('returns 401 when bypassed but unauthenticated', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(null);
+    expect((await prove(post(PROVE, { claimType: 'age_range', value: 30, set: [18, 30] }, false))).status).toBe(401);
   });
 
-  it('GET returns ZKP claims', async () => {
-    const res = await getClaims(new NextRequest('http://localhost:3000/api/zkp/claims'));
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(Array.isArray(body.data)).toBe(true);
-    expect(body.data.length).toBeGreaterThan(0);
-    expect(body.data[0].id).toMatch(/^claim-/);
-    expect(body.data[0].claimType).toBeDefined();
-    expect(body.meta.total).toBeDefined();
-  });
-
-  it('POST creates a new claim', async () => {
-    const res = await createClaim(
-      new NextRequest('http://localhost:3000/api/zkp/claims', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ claimType: 'age_range' }),
-      }),
-    );
+  it('generates a real proof the verify endpoint accepts', async () => {
+    const res = await prove(post(PROVE, { claimType: 'age_range', value: 30, set: [18, 30, 65] }));
     expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.claimType).toBe('age_range');
-    expect(body.data.status).toBe('unproven');
+    const data = (await res.json()).data;
+    expect(data.proofId).toMatch(/^zkp-/);
+
+    const verifyRes = await verify(post(VERIFY, { proof: data.proof, context: data.context }, false));
+    expect((await verifyRes.json()).data.valid).toBe(true);
   });
 
-  it('POST returns 400 for missing claimType', async () => {
-    const res = await createClaim(
-      new NextRequest('http://localhost:3000/api/zkp/claims', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      }),
-    );
+  it('returns 400 when the value is not in the set', async () => {
+    const res = await prove(post(PROVE, { claimType: 'data_quality', value: 99, set: [80, 90] }));
     expect(res.status).toBe(400);
   });
 
-  it('POST returns 400 for invalid claimType', async () => {
-    const res = await createClaim(
-      new NextRequest('http://localhost:3000/api/zkp/claims', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ claimType: 'invalid_type' }),
-      }),
-    );
-    expect(res.status).toBe(400);
-  });
-
-  it('POST returns 400 for invalid JSON body', async () => {
-    const res = await createClaim(
-      new NextRequest('http://localhost:3000/api/zkp/claims', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: 'not-json',
-      }),
-    );
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body.error.code).toBe('INVALID_BODY');
+  it('returns 422 for an invalid claim type', async () => {
+    expect((await prove(post(PROVE, { claimType: 'nope', value: 1, set: [1] }))).status).toBe(422);
   });
 });
 
-describe('/api/zkp/prove', () => {
-  it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const req = new NextRequest('http://localhost:3000/api/zkp/prove', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ claimId: 'test' }),
-    });
-    const res = await prove(req);
-    expect(res.status).toBe(403);
+describe('POST /api/zkp/verify', () => {
+  it('rejects a tampered proof', async () => {
+    const proveRes = await prove(post(PROVE, { claimType: 'age_range', value: 18, set: [18, 30] }));
+    const data = (await proveRes.json()).data;
+    const tampered = { ...data.proof, z: [data.proof.z[0], 'deadbeef'] };
+
+    const res = await verify(post(VERIFY, { proof: tampered, context: data.context }, false));
+    expect((await res.json()).data.valid).toBe(false);
   });
 
-  it('POST generates a proof', async () => {
-    const req = new NextRequest('http://localhost:3000/api/zkp/prove', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ claimId: 'claim-0000', claimType: 'age_range', data: { age: 25 } }),
-    });
-    const res = await prove(req);
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.claimType).toBe('age_range');
+  it('returns the middleware error when blocked', async () => {
+    blocked();
+    expect((await verify(post(VERIFY, { proof: {}, context: 'x' }, false))).status).toBe(403);
   });
 
-  it('POST generates a proof without claimType (defaults to age_range)', async () => {
-    const req = new NextRequest('http://localhost:3000/api/zkp/prove', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ claimId: 'claim-0001', data: { age: 30 } }),
-    });
-    const res = await prove(req);
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.claimType).toBe('age_range');
+  it('returns 422 for a malformed verify body', async () => {
+    expect((await verify(post(VERIFY, { context: 'x' }, false))).status).toBe(422);
   });
 
-  it('POST returns 400 for missing claimId', async () => {
-    const req = new NextRequest('http://localhost:3000/api/zkp/prove', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ claimType: 'age_range' }),
-    });
-    const res = await prove(req);
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body.error.code).toBe('VALIDATION_ERROR');
-  });
-
-  it('POST returns 400 for invalid JSON', async () => {
-    const req = new NextRequest('http://localhost:3000/api/zkp/prove', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: 'not-json',
-    });
-    const res = await prove(req);
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body.error.code).toBe('INVALID_BODY');
+  it('returns 400 for an invalid JSON body', async () => {
+    expect((await verify(post(VERIFY, 'not-json', false))).status).toBe(400);
   });
 });
 
-describe('/api/zkp/verify', () => {
-  it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const req = new NextRequest('http://localhost:3000/api/zkp/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ proofId: 'test' }),
-    });
-    const res = await verify(req);
-    expect(res.status).toBe(403);
+describe('GET /api/zkp/claims', () => {
+  it('returns the middleware error when blocked', async () => {
+    blocked();
+    expect((await getClaims(authedGet(CLAIMS))).status).toBe(403);
   });
 
-  it('POST verifies a proof', async () => {
-    const req = new NextRequest('http://localhost:3000/api/zkp/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ proofId: 'proof-123', verifierKey: 'vk-456' }),
-    });
-    const res = await verify(req);
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.valid).toBe(true);
+  it('returns 401 when bypassed but unauthenticated', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(null);
+    expect((await getClaims(new NextRequest(CLAIMS))).status).toBe(401);
   });
 
-  it('POST returns 400 for missing proofId', async () => {
-    const req = new NextRequest('http://localhost:3000/api/zkp/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    });
-    const res = await verify(req);
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body.error.code).toBe('VALIDATION_ERROR');
-  });
+  it('returns the claim-type catalog and the caller\'s proofs, newest first', async () => {
+    await prove(post(PROVE, { claimType: 'age_range', value: 30, set: [18, 30] }));
+    await prove(post(PROVE, { claimType: 'data_quality', value: 90, set: [80, 90] }));
 
-  it('POST returns 400 for invalid JSON', async () => {
-    const req = new NextRequest('http://localhost:3000/api/zkp/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: 'not-json',
-    });
-    const res = await verify(req);
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body.error.code).toBe('INVALID_BODY');
+    const body = await (await getClaims(authedGet(CLAIMS))).json();
+    expect(body.data.claimTypes.length).toBeGreaterThanOrEqual(6);
+    expect(body.data.proofs).toHaveLength(2);
+    // newest-first ordering (exercises the sort comparator)
+    const [a, b] = body.data.proofs;
+    expect(a.createdAt).toBeGreaterThanOrEqual(b.createdAt);
   });
 });

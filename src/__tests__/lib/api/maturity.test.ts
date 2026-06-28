@@ -79,7 +79,6 @@ describe('feature maturity registry', () => {
   it('keeps unbacked external subsystems in the simulated tier', () => {
     for (const key of [
       'tee_attestation',
-      'zk_proofs',
       'secure_mpc',
       'blockchain_anchoring',
       'ipfs_storage',

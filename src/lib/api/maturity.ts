@@ -255,9 +255,15 @@ export const FEATURE_MATURITY = {
   },
   zk_proofs: {
     title: 'Zero-knowledge proofs',
-    maturity: 'simulated',
+    maturity: 'production',
     audiences: ['individuals', 'researchers'],
-    summary: 'No real prover (Groth16/PLONK) is wired. Proof verification results are simulated.',
+    summary: 'Real, transparent-setup (no trusted setup, no ceremony) non-interactive ZK '
+      + 'set-membership proofs: a Cramer–Damgård–Schoenmakers OR-proof over the order-q subgroup '
+      + 'of the RFC 3526 3072-bit MODP prime, made non-interactive with domain-separated '
+      + 'Fiat–Shamir (POST /api/zkp/prove, publicly verifiable at /api/zkp/verify). Proves a '
+      + 'committed private value is in a public set without revealing it; the value/blinding are '
+      + 'never stored. SCOPE: binding the commitment to an issuer-attested attribute (anonymous '
+      + 'credentials) is the trust layer above this primitive.',
   },
   secure_mpc: {
     title: 'Secure multi-party computation',
