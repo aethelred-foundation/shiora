@@ -5,13 +5,6 @@ jest.mock('@/lib/api/middleware', () => {
   return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
 });
 
-const actualUtils = jest.requireActual('@/lib/utils');
-const mockSeededInt = jest.fn(actualUtils.seededInt);
-jest.mock('@/lib/utils', () => ({
-  ...jest.requireActual('@/lib/utils'),
-  seededInt: (...args: unknown[]) => mockSeededInt(...args),
-}));
-
 import { NextRequest, NextResponse } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
 import { GET as getSessions, POST as createSession } from '@/app/api/mpc/sessions/route';
@@ -19,6 +12,7 @@ import { GET as getSession } from '@/app/api/mpc/sessions/[id]/route';
 import { GET as getDatasets } from '@/app/api/mpc/datasets/route';
 import { GET as getResults } from '@/app/api/mpc/results/route';
 import { assignRole, __resetRolesForTests } from '@/lib/api/roles-service';
+import { __resetMpcForTests } from '@/lib/api/mpc-service';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
 
@@ -31,6 +25,7 @@ const outsiderToken = createSessionToken(OUTSIDER).token;
 
 beforeEach(async () => {
   __resetRolesForTests();
+  __resetMpcForTests();
   await assignRole(RESEARCHER, 'researcher');
 });
 
@@ -39,8 +34,11 @@ afterEach(() => {
     const actual = jest.requireActual('@/lib/api/middleware');
     return actual.runMiddleware(...args);
   });
-  mockSeededInt.mockImplementation(actualUtils.seededInt);
+  __resetMpcForTests();
 });
+
+const SESSIONS = 'http://localhost:3000/api/mpc/sessions';
+const blocked = () => mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
 
 function authed(url: string, init: RequestInit = {}, token: string = researcherToken): NextRequest {
   return new NextRequest(url, { ...init, headers: { ...(init.headers ?? {}), authorization: `Bearer ${token}` } });
@@ -50,159 +48,117 @@ function jsonPost(body: unknown): RequestInit {
   return { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: typeof body === 'string' ? body : JSON.stringify(body) };
 }
 
-const SESSIONS = 'http://localhost:3000/api/mpc/sessions';
+const sumBody = { name: 'Vitals pooling', protocol: 'secure_sum', threshold: 2, contributions: [3, 5, 7] };
 
-describe('/api/mpc/sessions (researcher-gated)', () => {
-  it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+async function runOne(): Promise<string> {
+  const res = await createSession(authed(SESSIONS, jsonPost(sumBody)));
+  return (await res.json()).data.id;
+}
+
+describe('POST /api/mpc/sessions (researcher-gated)', () => {
+  it('returns the middleware error when blocked', async () => {
+    blocked();
+    expect((await createSession(authed(SESSIONS, jsonPost(sumBody)))).status).toBe(403);
+  });
+
+  it('returns 403 for a non-researcher', async () => {
+    expect((await createSession(authed(SESSIONS, jsonPost(sumBody), outsiderToken))).status).toBe(403);
+  });
+
+  it('runs a real secure aggregation and returns only the result', async () => {
+    const res = await createSession(authed(SESSIONS, jsonPost(sumBody)));
+    expect(res.status).toBe(201);
+    const data = (await res.json()).data;
+    expect(data.result).toBe(15); // exact secure sum
+    expect(data.participantCount).toBe(3);
+  });
+
+  it('returns 422 when the threshold exceeds the number of contributions', async () => {
+    const bad = { ...sumBody, threshold: 9 };
+    expect((await createSession(authed(SESSIONS, jsonPost(bad)))).status).toBe(422);
+  });
+
+  it('rethrows a non-Zod error (invalid JSON body)', async () => {
+    await expect(createSession(authed(SESSIONS, jsonPost('not-json')))).rejects.toThrow();
+  });
+});
+
+describe('GET /api/mpc/sessions', () => {
+  it('returns the middleware error when blocked', async () => {
+    blocked();
     expect((await getSessions(authed(SESSIONS))).status).toBe(403);
   });
 
-  it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    expect((await createSession(authed(SESSIONS, jsonPost({ name: 'Test', protocol: 'secure_sum' })))).status).toBe(403);
-  });
-
-  it('GET returns 403 for a non-researcher', async () => {
+  it('returns 403 for a non-researcher', async () => {
     expect((await getSessions(authed(SESSIONS, {}, outsiderToken))).status).toBe(403);
   });
 
-  it('POST returns 403 for a non-researcher', async () => {
-    expect((await createSession(authed(SESSIONS, jsonPost({ name: 'Test', protocol: 'secure_sum' }), outsiderToken))).status).toBe(403);
-  });
-
-  it('GET returns MPC sessions for a researcher', async () => {
-    const res = await getSessions(authed(SESSIONS));
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(Array.isArray(body.data)).toBe(true);
-    expect(body.data[0].id).toMatch(/^mpc-/);
-    expect(body.data[0].protocol).toBeDefined();
-  });
-
-  it('POST creates a new MPC session', async () => {
-    const res = await createSession(authed(SESSIONS, jsonPost({ name: 'Test MPC Session', protocol: 'secure_sum', description: 'A test session.' })));
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.data.name).toBe('Test MPC Session');
-    expect(body.data.status).toBe('setup');
-    expect(body.data.participants).toEqual([]);
-  });
-
-  it('POST creates a session without optional fields (defaults applied)', async () => {
-    const res = await createSession(authed(SESSIONS, jsonPost({ name: 'Minimal Session', protocol: 'federated_learning' })));
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.data.description).toBe('');
-    expect(body.data.minParticipants).toBe(3);
-    expect(body.data.maxParticipants).toBe(10);
-    expect(body.data.privacyBudgetTotal).toBe(5.0);
-  });
-
-  it('POST creates a session with custom optional fields', async () => {
-    const res = await createSession(authed(SESSIONS, jsonPost({ name: 'Custom Session', protocol: 'secure_sum', description: 'Custom description', minParticipants: 5, maxParticipants: 20, privacyBudget: 10.0 })));
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.data.description).toBe('Custom description');
-    expect(body.data.minParticipants).toBe(5);
-    expect(body.data.privacyBudgetTotal).toBe(10.0);
-  });
-
-  it('POST returns 400 for missing name', async () => {
-    expect((await createSession(authed(SESSIONS, jsonPost({ protocol: 'secure_sum' })))).status).toBe(400);
-  });
-
-  it('POST returns 400 for missing protocol', async () => {
-    expect((await createSession(authed(SESSIONS, jsonPost({ name: 'Test' })))).status).toBe(400);
-  });
-
-  it('POST returns 400 for invalid JSON body', async () => {
-    expect((await createSession(authed(SESSIONS, jsonPost('not-json')))).status).toBe(400);
+  it('lists the researcher\'s sessions, newest first', async () => {
+    await runOne();
+    await runOne(); // two so the sort comparator runs
+    const body = await (await getSessions(authed(SESSIONS))).json();
+    expect(body.data.total).toBe(2);
+    expect(body.data.sessions[0].result).toBe(15);
   });
 });
 
-describe('/api/mpc/sessions/[id] (researcher-gated)', () => {
-  it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await getSession(authed(`${SESSIONS}/any-id`), { params: Promise.resolve({ id: 'any-id' }) });
-    expect(res.status).toBe(403);
+describe('GET /api/mpc/sessions/[id]', () => {
+  const ctx = (id: string) => ({ params: Promise.resolve({ id }) });
+
+  it('returns the middleware error when blocked', async () => {
+    blocked();
+    expect((await getSession(authed(`${SESSIONS}/x`), ctx('x'))).status).toBe(403);
   });
 
-  it('GET returns 403 for a non-researcher', async () => {
-    const res = await getSession(authed(`${SESSIONS}/any-id`, {}, outsiderToken), { params: Promise.resolve({ id: 'any-id' }) });
-    expect(res.status).toBe(403);
+  it('returns 403 for a non-researcher', async () => {
+    expect((await getSession(authed(`${SESSIONS}/x`, {}, outsiderToken), ctx('x'))).status).toBe(403);
   });
 
-  it('GET returns session detail with convergence data', async () => {
-    const listBody = await (await getSessions(authed(SESSIONS))).json();
-    const sessionId = listBody.data[0]?.id;
-    expect(sessionId).toBeDefined();
-
-    const res = await getSession(authed(`${SESSIONS}/${sessionId}`), { params: Promise.resolve({ id: sessionId }) });
+  it('returns an owned session', async () => {
+    const id = await runOne();
+    const res = await getSession(authed(`${SESSIONS}/${id}`), ctx(id));
     expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.data.id).toBe(sessionId);
-    expect(body.data.convergence).toBeDefined();
+    expect((await res.json()).data.result).toBe(15);
   });
 
-  it('GET returns convergence data for all sessions (covers currentRound branches)', async () => {
-    const listBody = await (await getSessions(authed(SESSIONS))).json();
-    for (const session of listBody.data) {
-      const res = await getSession(authed(`${SESSIONS}/${session.id}`), { params: Promise.resolve({ id: session.id }) });
-      expect(res.status).toBe(200);
-      expect((await res.json()).data.convergence).toBeDefined();
-    }
-  });
-
-  it('GET uses totalRounds when currentRound is 0 (|| fallback)', async () => {
-    mockSeededInt.mockImplementation((seed: number, min: number, max: number) => {
-      if (min === 0 && max > 2) return 0;
-      return actualUtils.seededInt(seed, min, max);
-    });
-    const listBody = await (await getSessions(authed(SESSIONS))).json();
-    const setupSession = listBody.data.find((s: { currentRound: number }) => s.currentRound === 0);
-    expect(setupSession).toBeDefined();
-    const res = await getSession(authed(`${SESSIONS}/${setupSession.id}`), { params: Promise.resolve({ id: setupSession.id }) });
-    expect(res.status).toBe(200);
-    expect((await res.json()).data.convergence.length).toBeGreaterThan(0);
-  });
-
-  it('GET returns 404 for a nonexistent session', async () => {
-    const res = await getSession(authed(`${SESSIONS}/mpc-nonexistent`), { params: Promise.resolve({ id: 'mpc-nonexistent' }) });
-    expect(res.status).toBe(404);
+  it('returns 404 for an unknown session', async () => {
+    expect((await getSession(authed(`${SESSIONS}/nope`), ctx('nope'))).status).toBe(404);
   });
 });
 
-describe('/api/mpc/datasets (researcher-gated)', () => {
-  it('GET returns MPC datasets for a researcher', async () => {
-    const res = await getDatasets(authed('http://localhost:3000/api/mpc/datasets'));
-    expect(res.status).toBe(200);
-    expect((await res.json()).success).toBe(true);
+describe('GET /api/mpc/datasets and /results', () => {
+  const DATASETS = 'http://localhost:3000/api/mpc/datasets';
+  const RESULTS = 'http://localhost:3000/api/mpc/results';
+
+  it('datasets returns the supported protocol catalog', async () => {
+    const body = await (await getDatasets(authed(DATASETS))).json();
+    expect(body.data.protocols.map((p: { protocol: string }) => p.protocol))
+      .toEqual(expect.arrayContaining(['secure_sum', 'federated_averaging', 'secure_count']));
   });
 
-  it('GET returns 403 for a non-researcher', async () => {
-    expect((await getDatasets(authed('http://localhost:3000/api/mpc/datasets', {}, outsiderToken))).status).toBe(403);
+  it('datasets returns the middleware error when blocked', async () => {
+    blocked();
+    expect((await getDatasets(authed(DATASETS))).status).toBe(403);
   });
 
-  it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    expect((await getDatasets(authed('http://localhost:3000/api/mpc/datasets'))).status).toBe(403);
-  });
-});
-
-describe('/api/mpc/results (researcher-gated)', () => {
-  it('GET returns MPC results for a researcher', async () => {
-    const res = await getResults(authed('http://localhost:3000/api/mpc/results'));
-    expect(res.status).toBe(200);
-    expect((await res.json()).success).toBe(true);
+  it('datasets returns 403 for a non-researcher', async () => {
+    expect((await getDatasets(authed(DATASETS, {}, outsiderToken))).status).toBe(403);
   });
 
-  it('GET returns 403 for a non-researcher', async () => {
-    expect((await getResults(authed('http://localhost:3000/api/mpc/results', {}, outsiderToken))).status).toBe(403);
+  it('results returns the caller\'s aggregate results, newest first', async () => {
+    await runOne();
+    await runOne(); // two so the sort comparator runs
+    const body = await (await getResults(authed(RESULTS))).json();
+    expect(body.data.total).toBe(2);
+    expect(body.data.results[0].result).toBe(15);
   });
 
-  it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    expect((await getResults(authed('http://localhost:3000/api/mpc/results'))).status).toBe(403);
+  it('results returns the middleware error when blocked', async () => {
+    blocked();
+    expect((await getResults(authed(RESULTS))).status).toBe(403);
+  });
+
+  it('results returns 403 for a non-researcher', async () => {
+    expect((await getResults(authed(RESULTS, {}, outsiderToken))).status).toBe(403);
   });
 });

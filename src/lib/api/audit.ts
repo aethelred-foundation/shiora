@@ -53,7 +53,8 @@ export type AuditAction =
   | 'NOTIFICATION_PREFS_UPDATE'
   | 'PROFILE_UPDATE'
   | 'SANA_MESSAGE'
-  | 'IPFS_STORE';
+  | 'IPFS_STORE'
+  | 'MPC_COMPUTE';
 
 export interface AuditEntry {
   timestamp: string;

@@ -267,9 +267,14 @@ export const FEATURE_MATURITY = {
   },
   secure_mpc: {
     title: 'Secure multi-party computation',
-    maturity: 'simulated',
+    maturity: 'production',
     audiences: ['researchers'],
-    summary: 'No real MPC engine is wired. Session and result data are simulated.',
+    summary: 'Real secure aggregation over a (t, n) Shamir secret-sharing scheme (GF(2^127-1)): '
+      + 'POST /api/mpc/sessions secret-shares each contribution, sums the shares (additive '
+      + 'homomorphism), and reconstructs only the aggregate (sum/mean/count) — individual '
+      + 'contributions are used transiently and never stored. SCOPE: the protocol is sound and the '
+      + 'platform retains only the result; true input privacy additionally requires the shares to '
+      + 'be held by non-colluding parties (multi-party deployment is the trust model above).',
   },
   blockchain_anchoring: {
     title: 'Blockchain anchoring & on-chain state',
