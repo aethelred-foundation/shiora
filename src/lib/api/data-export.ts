@@ -56,6 +56,7 @@ function toCsv(bundle: UserDataBundle): string {
     ['clinicalNotes', bundle.clinicalNotes],
     ['notifications', bundle.notifications],
     ['sanaConversations', bundle.sanaConversations],
+    ['ipfsObjects', bundle.ipfsObjects],
   ];
   return sections.map(([name, rows]) => `# ${name}\n${rowsToCsv(rows)}`).join('\n\n');
 }
@@ -89,6 +90,7 @@ function toXml(bundle: UserDataBundle): string {
     + arrayToXml('clinicalNotes', 'clinicalNote', bundle.clinicalNotes)
     + arrayToXml('notifications', 'notification', bundle.notifications)
     + arrayToXml('sanaConversations', 'sanaConversation', bundle.sanaConversations)
+    + arrayToXml('ipfsObjects', 'ipfsObject', bundle.ipfsObjects)
     + '</userData>';
 }
 

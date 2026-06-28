@@ -23,11 +23,11 @@ export const AethelredAddressSchema = z
   .string()
   .regex(/^aeth1[a-z0-9]{38}$/, 'Invalid Aethelred address');
 
-/** IPFS CID (mock format Qm...) */
+/** IPFS CID: CIDv0 (Qm…, base58) or CIDv1 multibase base32 (b…, e.g. bafkrei…). */
 export const CIDSchema = z
   .string()
   .regex(
-    /^(Qm[1-9A-HJ-NP-Za-km-z]{44}|bafy[1-9A-HJ-NP-Za-km-z]{20,})$/,
+    /^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$/,
     'Invalid IPFS CID',
   );
 

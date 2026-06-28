@@ -9,6 +9,7 @@ import { createClinicalNote, __resetClinicalNotesForTests } from '@/lib/api/clin
 import { __resetNotificationsForTests } from '@/lib/api/notification-service';
 import { updateProfile, __resetProfileForTests } from '@/lib/api/profile-service';
 import { sendMessage, __resetSanaForTests } from '@/lib/api/sana/sana-service';
+import { storeObject, __resetIpfsForTests } from '@/lib/api/ipfs/ipfs-service';
 import { seededAddress } from '@/lib/utils';
 import type { MockHealthRecord, MockAccessGrant } from '@/lib/api/mock-data';
 import type { ConsentGrant, ConsentStatus } from '@/types';
@@ -48,6 +49,7 @@ beforeEach(() => {
   __resetNotificationsForTests();
   __resetProfileForTests();
   __resetSanaForTests();
+  __resetIpfsForTests();
 });
 
 describe('privacy data-subject operations', () => {
@@ -60,6 +62,7 @@ describe('privacy data-subject operations', () => {
     await createClinicalNote(OWNER, 'aeth1prov', { type: 'observation', title: 'X', body: 'b' }); // also notifies OWNER
     await updateProfile(OWNER, { displayName: 'Ada' });
     await sendMessage(OWNER, null, 'what is an A1C?');
+    await storeObject(OWNER, new TextEncoder().encode('attachment'), 'a.pdf', 'application/pdf');
 
     const bundle = await collectUserData(OWNER);
     expect(bundle.records).toHaveLength(1);
@@ -71,6 +74,7 @@ describe('privacy data-subject operations', () => {
     expect(bundle.notifications).toHaveLength(1); // emitted by the clinical note
     expect(bundle.profile.displayName).toBe('Ada');
     expect(bundle.sanaConversations).toHaveLength(1);
+    expect(bundle.ipfsObjects).toHaveLength(1);
   });
 
   it('erases records and revokes only active consents and grants', async () => {
@@ -86,6 +90,7 @@ describe('privacy data-subject operations', () => {
     await createClinicalNote(OWNER, 'aeth1prov', { type: 'observation', title: 'X', body: 'b' }); // note + notification
     await updateProfile(OWNER, { displayName: 'Ada' });
     await sendMessage(OWNER, null, 'what is an A1C?');
+    await storeObject(OWNER, new TextEncoder().encode('attachment'), 'a.pdf', 'application/pdf');
 
     const summary = await eraseUserData(OWNER);
     expect(summary.recordsErased).toBe(1);
@@ -96,6 +101,7 @@ describe('privacy data-subject operations', () => {
     expect(summary.notificationsErased).toBe(1);
     expect(summary.profileErased).toBe(1);
     expect(summary.sanaConversationsErased).toBe(1);
+    expect(summary.ipfsObjectsErased).toBe(1);
 
     expect(await listRecords(OWNER)).toHaveLength(0); // soft-deleted excluded from reads
     expect((await listConsents(OWNER)).every((c) => c.status === 'revoked')).toBe(true);
@@ -109,5 +115,6 @@ describe('privacy data-subject operations', () => {
     expect(after.notifications).toEqual([]);
     expect(after.profile.displayName).toBe(''); // profile erased → empty defaults
     expect(after.sanaConversations).toEqual([]);
+    expect(after.ipfsObjects).toEqual([]);
   });
 });

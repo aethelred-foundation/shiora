@@ -16,6 +16,7 @@ import { listClinicalNotesForPatient, eraseClinicalNotes, type ClinicalNote } fr
 import { listNotifications, eraseNotifications, type Notification } from './notification-service';
 import { getProfile, eraseProfile, type Profile } from './profile-service';
 import { listConversations, eraseSanaConversations, type SanaConversation } from './sana/sana-service';
+import { listObjects, eraseObjects, type IpfsObject } from './ipfs/ipfs-service';
 import type { MockHealthRecord, MockAccessGrant } from './mock-data';
 import type { ConsentGrant } from '@/types';
 
@@ -29,13 +30,14 @@ export interface UserDataBundle {
   clinicalNotes: ClinicalNote[];
   notifications: Notification[];
   sanaConversations: SanaConversation[];
+  ipfsObjects: IpfsObject[];
 }
 
 /** Assemble a data subject's complete data across every owner-scoped store. */
 export async function collectUserData(owner: string): Promise<UserDataBundle> {
   const [
     profile, records, consents, accessGrants, symptoms, cycleEntries,
-    clinicalNotes, notifications, sanaConversations,
+    clinicalNotes, notifications, sanaConversations, ipfsObjects,
   ] = await Promise.all([
     getProfile(owner),
     listRecords(owner),
@@ -46,10 +48,11 @@ export async function collectUserData(owner: string): Promise<UserDataBundle> {
     listClinicalNotesForPatient(owner),
     listNotifications(owner),
     listConversations(owner),
+    listObjects(owner),
   ]);
   return {
     profile, records, consents, accessGrants, symptoms, cycleEntries,
-    clinicalNotes, notifications, sanaConversations,
+    clinicalNotes, notifications, sanaConversations, ipfsObjects,
   };
 }
 
@@ -62,6 +65,7 @@ export interface ErasureSummary {
   notificationsErased: number;
   profileErased: number;
   sanaConversationsErased: number;
+  ipfsObjectsErased: number;
 }
 
 /**
@@ -89,14 +93,17 @@ export async function eraseUserData(owner: string): Promise<ErasureSummary> {
     activeGrants.map((grant) => updateAccessGrant(owner, grant.id, { status: 'Revoked' })),
   );
 
-  const [vaultEntriesErased, clinicalNotesErased, notificationsErased, profileErased, sanaConversationsErased] =
-    await Promise.all([
-      eraseVaultEntries(owner),
-      eraseClinicalNotes(owner),
-      eraseNotifications(owner),
-      eraseProfile(owner),
-      eraseSanaConversations(owner),
-    ]);
+  const [
+    vaultEntriesErased, clinicalNotesErased, notificationsErased,
+    profileErased, sanaConversationsErased, ipfsObjectsErased,
+  ] = await Promise.all([
+    eraseVaultEntries(owner),
+    eraseClinicalNotes(owner),
+    eraseNotifications(owner),
+    eraseProfile(owner),
+    eraseSanaConversations(owner),
+    eraseObjects(owner),
+  ]);
 
   return {
     recordsErased: records.length,
@@ -107,5 +114,6 @@ export async function eraseUserData(owner: string): Promise<ErasureSummary> {
     notificationsErased,
     profileErased,
     sanaConversationsErased,
+    ipfsObjectsErased,
   };
 }

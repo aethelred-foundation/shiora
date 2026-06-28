@@ -17,6 +17,7 @@ const bundle = {
   clinicalNotes: [],
   notifications: [],
   sanaConversations: [],
+  ipfsObjects: [],
 } as unknown as UserDataBundle;
 
 describe('serializeUserData', () => {

@@ -81,7 +81,6 @@ describe('feature maturity registry', () => {
       'tee_attestation',
       'secure_mpc',
       'blockchain_anchoring',
-      'ipfs_storage',
       'ai_assistant',
     ] as const) {
       expect(maturityOf(key)).toBe('simulated');

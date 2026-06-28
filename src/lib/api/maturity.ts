@@ -278,10 +278,16 @@ export const FEATURE_MATURITY = {
     summary: 'No live L1 client. Network status, transaction hashes, governance, staking, and rewards are simulated.',
   },
   ipfs_storage: {
-    title: 'IPFS / decentralized storage',
-    maturity: 'simulated',
+    title: 'IPFS / content-addressed storage',
+    maturity: 'production',
     audiences: ['individuals'],
-    summary: 'No content-addressed storage node is wired. CIDs are placeholders, not resolvable content.',
+    summary: 'Real, spec-compliant CIDv1 content addressing (raw codec, sha2-256, verified against '
+      + 'the canonical IPFS CID vector). Upload encrypts then addresses (the CID addresses '
+      + 'ciphertext, never plaintext PHI); resolution re-derives the CID from the stored bytes '
+      + '(tamper-evident) before decrypting. The store is a pluggable port — a local content-'
+      + 'addressed node by default, any Kubo-compatible HTTP node/pinning gateway when IPFS_API_URL '
+      + 'is set. SCOPE: single-block raw addressing (UnixFS chunking for very large files is the '
+      + 'next layer); a content-addressed blob can be unpinned but not force-deleted.',
   },
   ai_assistant: {
     title: 'SANA AI assistant',

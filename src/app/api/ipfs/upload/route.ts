@@ -1,83 +1,48 @@
 // ============================================================
 // Shiora on Aethelred — IPFS Upload API
-// POST /api/ipfs/upload — Upload file to IPFS (mock)
+// POST /api/ipfs/upload — encrypt a file and store it content-addressed,
+//   returning its REAL content-derived CID (all audiences; owner-scoped)
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  errorResponse,
-  HTTP,
-} from '@/lib/api/responses';
-import { simulatedResponse } from '@/lib/api/maturity';
-import { runMiddleware } from '@/lib/api/middleware';
-import { generateCID, seededHex, seededInt } from '@/lib/utils';
 
-// ────────────────────────────────────────────────────────────
-// POST /api/ipfs/upload
-// ────────────────────────────────────────────────────────────
+import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
+import { runMiddleware, requireAuth } from '@/lib/api/middleware';
+import { storeObject } from '@/lib/api/ipfs/ipfs-service';
+
+const MAX_BYTES = 100 * 1024 * 1024; // 100 MB
 
 export async function POST(request: NextRequest) {
   const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
+  const auth = requireAuth(request);
+  if ('status' in auth) return auth;
+
   try {
-    // Accept multipart form data
     const formData = await request.formData();
     const file = formData.get('file');
 
     if (!file || !(file instanceof File)) {
-      return errorResponse(
-        'NO_FILE',
-        'No file provided. Send a multipart form with a "file" field.',
-        HTTP.BAD_REQUEST,
-      );
+      return errorResponse('NO_FILE', 'No file provided. Send a multipart form with a "file" field.', HTTP.BAD_REQUEST);
+    }
+    if (file.size > MAX_BYTES) {
+      return errorResponse('FILE_TOO_LARGE', 'File exceeds the 100MB size limit.', HTTP.BAD_REQUEST);
     }
 
-    // Validate file size (100MB max)
-    if (file.size > 100 * 1024 * 1024) {
-      return errorResponse(
-        'FILE_TOO_LARGE',
-        'File exceeds the 100MB size limit.',
-        HTTP.BAD_REQUEST,
-      );
-    }
+    const content = new Uint8Array(await file.arrayBuffer());
+    // A multipart part always carries a content type (defaults to octet-stream).
+    const object = await storeObject(auth.walletAddress!, content, file.name, file.type);
 
-    const seed = Date.now();
-    const cid = generateCID(seed);
-
-    return simulatedResponse(
-      {
-        cid,
-        filename: file.name,
-        contentType: file.type || 'application/octet-stream',
-        size: file.size,
-        pinStatus: 'queued',
-        encryption: {
-          algorithm: 'AES-256-GCM',
-          keyId: `key-${seededHex(seed, 16)}`,
-          encrypted: true,
-        },
-        ipfs: {
-          cid,
-          dagSize: file.size,
-          nodeId: `peer-${seededHex(seed + 1, 12)}`,
-          estimatedPinTime: `${seededInt(seed, 5, 30)}s`,
-          replicationTarget: 3,
-        },
-        tee: {
-          willProcess: true,
-          estimatedProcessTime: `${seededInt(seed + 2, 10, 60)}s`,
-          platform: 'Intel SGX',
-        },
-      },
-      'ipfs_storage',
-      HTTP.CREATED,
-    );
+    return successResponse({
+      cid: object.cid, // real, content-derived (encrypt-then-address)
+      filename: object.filename,
+      contentType: object.contentType,
+      size: object.size,
+      createdAt: object.createdAt,
+      pinStatus: 'stored',
+    }, HTTP.CREATED);
   } catch {
-    return errorResponse(
-      'UPLOAD_FAILED',
-      'Failed to process the upload. Ensure the request is multipart/form-data.',
-      HTTP.BAD_REQUEST,
-    );
+    return errorResponse('UPLOAD_FAILED', 'Failed to process the upload. Ensure the request is multipart/form-data.', HTTP.BAD_REQUEST);
   }
 }
