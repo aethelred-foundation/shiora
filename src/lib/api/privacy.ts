@@ -15,6 +15,7 @@ import { listSymptoms, listCycleEntries, eraseVaultEntries, type SymptomEntry, t
 import { listClinicalNotesForPatient, eraseClinicalNotes, type ClinicalNote } from './clinical-notes-service';
 import { listNotifications, eraseNotifications, type Notification } from './notification-service';
 import { getProfile, eraseProfile, type Profile } from './profile-service';
+import { listConversations, eraseSanaConversations, type SanaConversation } from './sana/sana-service';
 import type { MockHealthRecord, MockAccessGrant } from './mock-data';
 import type { ConsentGrant } from '@/types';
 
@@ -27,22 +28,29 @@ export interface UserDataBundle {
   cycleEntries: CycleEntry[];
   clinicalNotes: ClinicalNote[];
   notifications: Notification[];
+  sanaConversations: SanaConversation[];
 }
 
 /** Assemble a data subject's complete data across every owner-scoped store. */
 export async function collectUserData(owner: string): Promise<UserDataBundle> {
-  const [profile, records, consents, accessGrants, symptoms, cycleEntries, clinicalNotes, notifications] =
-    await Promise.all([
-      getProfile(owner),
-      listRecords(owner),
-      listConsents(owner),
-      listAccessGrants(owner),
-      listSymptoms(owner),
-      listCycleEntries(owner),
-      listClinicalNotesForPatient(owner),
-      listNotifications(owner),
-    ]);
-  return { profile, records, consents, accessGrants, symptoms, cycleEntries, clinicalNotes, notifications };
+  const [
+    profile, records, consents, accessGrants, symptoms, cycleEntries,
+    clinicalNotes, notifications, sanaConversations,
+  ] = await Promise.all([
+    getProfile(owner),
+    listRecords(owner),
+    listConsents(owner),
+    listAccessGrants(owner),
+    listSymptoms(owner),
+    listCycleEntries(owner),
+    listClinicalNotesForPatient(owner),
+    listNotifications(owner),
+    listConversations(owner),
+  ]);
+  return {
+    profile, records, consents, accessGrants, symptoms, cycleEntries,
+    clinicalNotes, notifications, sanaConversations,
+  };
 }
 
 export interface ErasureSummary {
@@ -53,6 +61,7 @@ export interface ErasureSummary {
   clinicalNotesErased: number;
   notificationsErased: number;
   profileErased: number;
+  sanaConversationsErased: number;
 }
 
 /**
@@ -80,12 +89,13 @@ export async function eraseUserData(owner: string): Promise<ErasureSummary> {
     activeGrants.map((grant) => updateAccessGrant(owner, grant.id, { status: 'Revoked' })),
   );
 
-  const [vaultEntriesErased, clinicalNotesErased, notificationsErased, profileErased] =
+  const [vaultEntriesErased, clinicalNotesErased, notificationsErased, profileErased, sanaConversationsErased] =
     await Promise.all([
       eraseVaultEntries(owner),
       eraseClinicalNotes(owner),
       eraseNotifications(owner),
       eraseProfile(owner),
+      eraseSanaConversations(owner),
     ]);
 
   return {
@@ -96,5 +106,6 @@ export async function eraseUserData(owner: string): Promise<ErasureSummary> {
     clinicalNotesErased,
     notificationsErased,
     profileErased,
+    sanaConversationsErased,
   };
 }

@@ -51,7 +51,8 @@ export type AuditAction =
   | 'NOTIFICATION_CREATE'
   | 'NOTIFICATION_UPDATE'
   | 'NOTIFICATION_PREFS_UPDATE'
-  | 'PROFILE_UPDATE';
+  | 'PROFILE_UPDATE'
+  | 'SANA_MESSAGE';
 
 export interface AuditEntry {
   timestamp: string;

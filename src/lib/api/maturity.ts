@@ -118,6 +118,17 @@ export const FEATURE_MATURITY = {
       + 'contact email, timezone, locale — giving a user a human identity beyond a wallet address. '
       + 'Personal data, so it is included in the GDPR export and erasure lifecycle.',
   },
+  sana_assistant: {
+    title: 'SANA health assistant',
+    maturity: 'pilot',
+    audiences: ['individuals', 'platform'],
+    summary: 'Non-diagnostic informational/navigational assistant (POST /api/sana/messages) over '
+      + 'encrypted, owner-scoped conversations. Guardrails are enforced in code: self-harm/emergency '
+      + 'input is intercepted with a fixed safety response without calling the model, the model is '
+      + 'held to a hard non-diagnostic system prompt, and every reply is screened and disclaimed. '
+      + 'NOT a medical device. The LLM seam uses the Claude API when ANTHROPIC_API_KEY is set, else a '
+      + 'deterministic offline stub. Conversations are in the GDPR export/erasure lifecycle.',
+  },
   marketplace: {
     title: 'Research data marketplace',
     maturity: 'production',
