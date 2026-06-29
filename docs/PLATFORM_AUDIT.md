@@ -174,3 +174,27 @@ ones, on the SaMD determination.
 [`docs/COMPLIANCE.md`](COMPLIANCE.md) (per-control matrix),
 [`docs/compliance/`](compliance/README.md) (HIPAA RA, BAAs, pen-test scope, SOC 2
 readiness, SaMD analysis).*
+
+
+---
+
+## 6. Remediation log (post-audit, against the consultant roadmap)
+
+Work completed after the audit above, on `feat/backbone-phi-encryption-audit`.
+Every commit held the quality gate (100% coverage, tsc + lint clean) and was pushed.
+
+| Finding | Status | What shipped | Commit |
+|---|---|---|---|
+| **F6** transport hardening | resolved (app-layer) | `securityHeaders()` applied to every API response — X-Frame-Options: DENY, Referrer-Policy: no-referrer, COOP/CORP same-origin, X-Permitted-Cross-Domain-Policies: none, locked Permissions-Policy; HSTS (2y, includeSubDomains, preload) emitted when `SHIORA_ENABLE_HSTS=true`. | `ab9c57b` |
+| **F1** simulated labelling | resolved | All simulated-feature endpoints (clinical, xai, genomics, twin, insights, emergency, compliance) now return the simulation label in the response body, not only the registry — 27 route files. | `f5da7bb` |
+| **F3** no over-claiming | resolved | `maturity-invariants.test.ts` statically fails CI if any production/pilot feature is ever labelled simulated, or if a wired simulated feature loses its label. | `f5da7bb` |
+| **F6** transport as a *production gate* | resolved | Preflight raises `TRANSPORT_NOT_HARDENED`; `assertProductionReadiness()` hard-fails a production boot without TLS/HSTS, surfaced via `/api/health/ready` and `/api/system/status`. | `9ed6e67` |
+| **F2** duplicate/legacy SANA | resolved | `ai_assistant` retitled "(legacy, deprecated)" pointing clients to the real `sana_assistant` (`/api/sana`); legacy `/api/chat*` endpoints now self-declare as simulated. Chat-UI -> SANA-backend rewire is the follow-on "make it real" step. | `e8d928f` |
+| **F4** key custody (KMS) | next — needs a decision | Production preflight already *requires* a configured non-default KEK (plus durable DB, session secret, TLS/HSTS). Remaining work: a KMS-backed `KeyProvider` so the KEK is unwrapped from a KMS/HSM at boot rather than read from a plaintext env value. Blocked on the KMS target choice (AWS KMS / GCP KMS / HashiCorp Vault) — the adapter differs materially per provider. | — |
+| **F5** L1 + WORM anchoring | blocked | Awaiting the Aethelred L1 chain/RPC target before the anchoring client can be built. | — |
+| **F7** external assurance | ops/external | Pen test, BAAs, SOC 2 window, SaMD counsel — execution of the work products already in `docs/compliance/`. | — |
+
+**Net:** every code-resolvable honesty/transport finding from the audit (F1, F2,
+F3, F6) is closed and on the working branch. The two remaining technical P0s
+(F4 key custody, F5 anchoring) are gated on external decisions, not missing
+engineering capacity.
