@@ -4,7 +4,8 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
+import { errorResponse, HTTP } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededHex, seededAddress, generateAttestation } from '@/lib/utils';
 
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
   if (blocked) return blocked;
 
   try {
-    return successResponse(generateEmergencyCard());
+    return simulatedResponse(generateEmergencyCard(), 'emergency');
   } catch {
     return errorResponse('INTERNAL_ERROR', 'Failed to fetch emergency card', HTTP.INTERNAL);
   }

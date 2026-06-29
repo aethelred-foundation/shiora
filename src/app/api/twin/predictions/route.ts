@@ -4,7 +4,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
   seededRandom,
@@ -145,5 +145,5 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  return successResponse(predictions);
+  return simulatedResponse(predictions, 'digital_twin');
 }

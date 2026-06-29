@@ -4,7 +4,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { generateInsightsOverview } from '@/lib/api/mock-data';
 
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   const overview = generateInsightsOverview();
 
-  return successResponse(overview, 200, {
+  return simulatedResponse(overview, 'insights', 200, {
     computedAt: new Date().toISOString(),
     teeVerified: true,
     platform: 'Intel SGX',

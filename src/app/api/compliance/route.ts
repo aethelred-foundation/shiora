@@ -4,7 +4,8 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
+import { errorResponse, HTTP } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
   seededRandom, seededInt, seededHex, seededPick,
@@ -101,11 +102,11 @@ export async function GET(request: NextRequest) {
   try {
     switch (view) {
       case 'overview':
-        return successResponse(generateOverview());
+        return simulatedResponse(generateOverview(), 'compliance_reports');
       case 'frameworks':
-        return successResponse(generateOverview().frameworks);
+        return simulatedResponse(generateOverview().frameworks, 'compliance_reports');
       case 'violations':
-        return successResponse(generateViolations());
+        return simulatedResponse(generateViolations(), 'compliance_reports');
       default:
         return errorResponse('INVALID_VIEW', `Unknown view: ${view}`, HTTP.BAD_REQUEST);
     }

@@ -5,7 +5,8 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
+import { errorResponse, HTTP } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededInt, seededHex, seededPick } from '@/lib/utils';
 
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
   if (blocked) return blocked;
 
   try {
-    return successResponse(generateReports());
+    return simulatedResponse(generateReports(), 'compliance_reports');
   } catch {
     return errorResponse('INTERNAL_ERROR', 'Failed to fetch reports', HTTP.INTERNAL);
   }
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
       status: 'draft' as const,
     };
 
-    return successResponse(report, HTTP.CREATED);
+    return simulatedResponse(report, 'compliance_reports', HTTP.CREATED);
   } catch {
     return errorResponse('INVALID_REQUEST', 'Invalid request body', HTTP.BAD_REQUEST);
   }

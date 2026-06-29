@@ -5,6 +5,7 @@
 
 import { NextRequest } from 'next/server';
 import { paginatedResponse, errorResponse, HTTP } from '@/lib/api/responses';
+import { simulationMeta } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
   seededInt, seededHex, seededPick, seededAddress,
@@ -80,7 +81,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return paginatedResponse(entries, total, page, limit);
+    return paginatedResponse(entries, total, page, limit, { ...simulationMeta('compliance_reports') });
   } catch {
     return errorResponse('INTERNAL_ERROR', 'Failed to fetch audit log', HTTP.INTERNAL);
   }

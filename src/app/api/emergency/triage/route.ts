@@ -5,7 +5,8 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
+import { errorResponse, HTTP } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededHex, seededInt, seededPick, generateAttestation } from '@/lib/utils';
 
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
       assessedAt: Date.now() - seededInt(SEED + i * 62, 1, 60) * 86400000,
     }));
 
-    return successResponse(assessments);
+    return simulatedResponse(assessments, 'emergency');
   } catch {
     return errorResponse('INTERNAL_ERROR', 'Failed to fetch triage history', HTTP.INTERNAL);
   }
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
       modelId: 'triage-transformer-v2.1',
     };
 
-    return successResponse(assessment, HTTP.CREATED);
+    return simulatedResponse(assessment, 'emergency', HTTP.CREATED);
   } catch {
     return errorResponse('INVALID_REQUEST', 'Invalid request body', HTTP.BAD_REQUEST);
   }

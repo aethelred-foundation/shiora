@@ -4,7 +4,8 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse } from '@/lib/api/responses';
+import { errorResponse } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
   seededRandom,
@@ -58,5 +59,5 @@ export async function GET(request: NextRequest) {
     txHash: generateTxHash(SEED + 4),
   };
 
-  return successResponse(twin);
+  return simulatedResponse(twin, 'digital_twin');
 }

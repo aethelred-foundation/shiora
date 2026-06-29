@@ -4,7 +4,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededRandom, seededInt } from '@/lib/utils';
 import { AI_MODELS } from '@/lib/constants';
@@ -41,5 +41,5 @@ export async function GET(request: NextRequest) {
     lastUpdated: Date.now() - seededInt(SEED + i * 14, 5, 60) * 86400000,
   }));
 
-  return successResponse(modelCards);
+  return simulatedResponse(modelCards, 'explainable_ai');
 }

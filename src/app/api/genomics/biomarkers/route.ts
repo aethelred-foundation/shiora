@@ -5,7 +5,8 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse } from '@/lib/api/responses';
+import { errorResponse } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededRandom, seededInt, seededHex } from '@/lib/utils';
 import type { Biomarker } from '@/types';
@@ -99,10 +100,10 @@ export async function GET(request: NextRequest) {
     if (!def) {
       return errorResponse('INVALID_MARKER', `Unknown biomarker: ${markerId}`, 400);
     }
-    return successResponse(buildBiomarker(def));
+    return simulatedResponse(buildBiomarker(def), 'genomics');
   }
 
   // Otherwise return all 10 biomarkers as Biomarker[]
   const biomarkers: Biomarker[] = BIOMARKER_DEFS.map(buildBiomarker);
-  return successResponse(biomarkers);
+  return simulatedResponse(biomarkers, 'genomics');
 }

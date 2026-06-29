@@ -4,7 +4,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededRandom, seededHex } from '@/lib/utils';
 import type { TwinParameter } from '@/types';
@@ -70,5 +70,5 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  return successResponse(parameters);
+  return simulatedResponse(parameters, 'digital_twin');
 }

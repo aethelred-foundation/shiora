@@ -7,6 +7,7 @@ import { NextRequest } from 'next/server';
 import { ZodError } from 'zod';
 import { InferenceListQuerySchema, parseSearchParams } from '@/lib/api/validation';
 import { paginatedResponse, validationError } from '@/lib/api/responses';
+import { simulationMeta } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { generateMockInferences } from '@/lib/api/mock-data';
 
@@ -39,6 +40,7 @@ export async function GET(request: NextRequest) {
     const paged = inferences.slice(start, start + query.limit);
 
     return paginatedResponse(paged, total, query.page, query.limit, {
+      ...simulationMeta('insights'),
       modelBreakdown: {
         lstm: generateMockInferences().filter((i) => i.model.id === 'lstm').length,
         anomaly: generateMockInferences().filter((i) => i.model.id === 'anomaly').length,

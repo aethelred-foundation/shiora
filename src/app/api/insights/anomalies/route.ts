@@ -7,6 +7,7 @@ import { NextRequest } from 'next/server';
 import { ZodError } from 'zod';
 import { AnomalyListQuerySchema, parseSearchParams } from '@/lib/api/validation';
 import { paginatedResponse, validationError } from '@/lib/api/responses';
+import { simulationMeta } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { generateMockAnomalies } from '@/lib/api/mock-data';
 
@@ -44,6 +45,7 @@ export async function GET(request: NextRequest) {
     const paged = anomalies.slice(start, start + query.limit);
 
     return paginatedResponse(paged, total, query.page, query.limit, {
+      ...simulationMeta('insights'),
       summary: {
         total: generateMockAnomalies().length,
         active: generateMockAnomalies().filter((a) => !a.resolved).length,

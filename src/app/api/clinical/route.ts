@@ -4,7 +4,8 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse } from '@/lib/api/responses';
+import { errorResponse } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { requireCapability } from '@/lib/api/rbac';
 import {
@@ -151,7 +152,7 @@ export async function GET(request: NextRequest) {
       teeVerifiedDecisions: seededInt(SEED + 3, 1100, 1700),
     };
 
-    return successResponse(stats);
+    return simulatedResponse(stats, 'clinical_decision_support');
   }
 
   // ---- Alerts view ----
@@ -176,7 +177,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return successResponse(alerts);
+    return simulatedResponse(alerts, 'clinical_decision_support');
   }
 
   return errorResponse('INVALID_VIEW', `Unknown view: ${view}`, 400);

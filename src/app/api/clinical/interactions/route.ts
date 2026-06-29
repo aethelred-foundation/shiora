@@ -4,7 +4,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { requireCapability } from '@/lib/api/rbac';
 import { seededHex, generateAttestation } from '@/lib/utils';
@@ -119,5 +119,5 @@ export async function GET(request: NextRequest) {
     attestation: generateAttestation(SEED + 400 + i * 13),
   }));
 
-  return successResponse(interactions);
+  return simulatedResponse(interactions, 'clinical_decision_support');
 }

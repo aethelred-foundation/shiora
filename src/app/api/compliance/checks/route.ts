@@ -4,7 +4,8 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
+import { errorResponse, HTTP } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededInt, seededHex, seededPick, generateAttestation } from '@/lib/utils';
 
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
       attestation: seededInt(SEED + i * 76, 0, 10) > 3 ? generateAttestation(SEED + i * 77) : undefined,
     }));
 
-    return successResponse(checks);
+    return simulatedResponse(checks, 'compliance_reports');
   } catch {
     return errorResponse('INTERNAL_ERROR', 'Failed to fetch compliance checks', HTTP.INTERNAL);
   }
