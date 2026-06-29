@@ -246,6 +246,18 @@ export const FEATURE_MATURITY = {
     summary: 'Peer-support circles and posts surface; moderation tooling is not yet production-grade.',
   },
 
+  audit_anchoring: {
+    title: 'Audit anchoring',
+    maturity: 'pilot',
+    audiences: ['platform'],
+    summary: 'The tamper-evident audit head is hash-chained into a WORM anchor series and '
+      + 'submitted through a pluggable AnchorClient (POST /api/anchors, admin): broadcast to an '
+      + 'EVM-compatible L1 via JSON-RPC eth_sendTransaction when SHIORA_L1_RPC_URL is configured, '
+      + 'otherwise recorded locally (receipt status: local). Anchors are independently '
+      + 're-verifiable (GET /api/anchors). SCOPE: the off-chain pipeline + WORM mirror are real; '
+      + 'live on-chain broadcast activates on configuration (the Aethelred chain/RPC target).',
+  },
+
   // ── Simulated: real-shaped, NOT backed by the named external system ─────
   tee_attestation: {
     title: 'TEE attestation',

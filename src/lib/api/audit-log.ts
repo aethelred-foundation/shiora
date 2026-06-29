@@ -12,6 +12,7 @@
 // ============================================================
 
 import {
+  GENESIS_HASH,
   verifyAuditChain,
   type AuditRecorder,
   type ChainVerification,
@@ -70,6 +71,19 @@ export class PersistentAuditLog implements AuditRecorder {
   /** Verify the persisted chain has not been tampered with. */
   async verify(): Promise<ChainVerification> {
     return verifyAuditChain(await this.store.list());
+  }
+
+  /**
+   * The current chain head hash and length — the value committed to an external
+   * anchor (WORM mirror and/or L1) so the whole log becomes verifiable against a
+   * record outside the operator's control.
+   */
+  async head(): Promise<{ hash: string; length: number }> {
+    const entries = await this.store.list();
+    return {
+      hash: entries.length === 0 ? GENESIS_HASH : entries[entries.length - 1].hash,
+      length: entries.length,
+    };
   }
 }
 
