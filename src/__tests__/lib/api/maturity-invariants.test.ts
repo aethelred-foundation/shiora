@@ -62,7 +62,6 @@ describe('maturity honesty invariant (F3)', () => {
     'insights',
     'emergency',
     'compliance_reports',
-    'ai_assistant',
     'tee_attestation',
     'blockchain_anchoring',
   ] as const)('keeps simulated feature %s labelled at the route layer', (key) => {

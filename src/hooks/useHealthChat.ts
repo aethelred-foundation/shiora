@@ -23,18 +23,17 @@ const MESSAGES_KEY = 'chat-messages';
 // ---------------------------------------------------------------------------
 
 const ACTIVE_MODEL: ChatModelConfig = {
-  id: 'health-transformer',
-  name: 'Health Transformer',
-  version: 'v3.0',
+  id: 'sana',
+  name: 'SANA',
+  version: '',
   maxTokens: 4096,
+  // Required by ChatModelConfig; SANA is not TEE-attested and this is not
+  // surfaced as a claim in the UI.
   teePlatform: 'Intel SGX',
   capabilities: [
-    'cycle-analysis',
-    'lab-interpretation',
-    'medication-review',
-    'wellness-summary',
-    'fertility-prediction',
-    'anomaly-explanation',
+    'records-navigation',
+    'concept-explanation',
+    'question-preparation',
   ],
 };
 

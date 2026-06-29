@@ -103,7 +103,7 @@ describe('ChatPage', () => {
     );
     await waitFor(() => {
       expect(
-        screen.getByText(/Ask me anything about your health data/),
+        screen.getByText(/non-diagnostic assistant/i),
       ).toBeInTheDocument();
     });
   });
@@ -158,18 +158,18 @@ describe('ChatPage', () => {
     });
   });
 
-  it('renders the E2E Encrypted badge', async () => {
+  it('renders the encrypted-at-rest badge', async () => {
     render(
       <TestWrapper>
         <ChatPage />
       </TestWrapper>,
     );
     await waitFor(() => {
-      expect(screen.getByText('E2E Encrypted')).toBeInTheDocument();
+      expect(screen.getAllByText('Encrypted at rest').length).toBeGreaterThanOrEqual(1);
     });
   });
 
-  it('renders TEE attestation footer text', async () => {
+  it('renders the non-diagnostic footer disclaimer', async () => {
     render(
       <TestWrapper>
         <ChatPage />
@@ -177,7 +177,7 @@ describe('ChatPage', () => {
     );
     await waitFor(() => {
       expect(
-        screen.getByText(/Responses verified via TEE attestation/),
+        screen.getByText(/non-diagnostic — not medical advice/i),
       ).toBeInTheDocument();
     });
   });
@@ -237,14 +237,14 @@ describe('ChatPage', () => {
     });
   });
 
-  it('renders TEE Verified badge in empty state', async () => {
+  it('renders the non-diagnostic badge in empty state', async () => {
     render(
       <TestWrapper>
         <ChatPage />
       </TestWrapper>,
     );
     await waitFor(() => {
-      expect(screen.getByText('TEE Verified')).toBeInTheDocument();
+      expect(screen.getAllByText('Non-diagnostic').length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -402,14 +402,14 @@ describe('ChatPage', () => {
     expect(screen.getAllByText('Cycle Analysis Discussion').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renders the attestation count in header', async () => {
+  it('renders the non-diagnostic badge in the header', async () => {
     render(
       <TestWrapper>
         <ChatPage />
       </TestWrapper>,
     );
     await waitFor(() => {
-      expect(screen.getByText(/\d+ attestations/)).toBeInTheDocument();
+      expect(screen.getAllByText('Non-diagnostic').length).toBeGreaterThanOrEqual(1);
     }, { timeout: 3000 });
   });
 
@@ -433,14 +433,14 @@ describe('ChatPage', () => {
     }
   });
 
-  it('renders the TEE platform badge in empty state', async () => {
+  it('renders the not-a-medical-device disclaimer in empty state', async () => {
     render(
       <TestWrapper>
         <ChatPage />
       </TestWrapper>,
     );
     await waitFor(() => {
-      expect(screen.getByText('Intel SGX')).toBeInTheDocument();
+      expect(screen.getByText(/not a medical device/i)).toBeInTheDocument();
     });
   });
 });

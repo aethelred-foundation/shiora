@@ -26,8 +26,8 @@ describe('useHealthChat', () => {
   it('exposes active model config', async () => {
     const { result } = renderHook(() => useHealthChat(), { wrapper: createWrapper() });
     expect(result.current.activeModel).toBeDefined();
-    expect(result.current.activeModel.id).toBe('health-transformer');
-    expect(result.current.activeModel.name).toBe('Health Transformer');
+    expect(result.current.activeModel.id).toBe('sana');
+    expect(result.current.activeModel.name).toBe('SANA');
   });
 
   it('exposes suggestedPrompts', async () => {

@@ -149,6 +149,28 @@ export function getConversation(
   return repo().get(ownerAddress, id);
 }
 
+/** Create a new empty conversation for the owner (the chat UI's "new chat"). */
+export async function createEmptyConversation(
+  ownerAddress: string,
+  now: number = Date.now(),
+): Promise<SanaConversation> {
+  const conversation: SanaConversation = {
+    id: `sana-${randomUUID().replace(/-/g, '')}`,
+    ownerAddress,
+    title: 'New conversation',
+    messages: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+  await repo().create(ownerAddress, conversation);
+  return conversation;
+}
+
+/** Soft-delete a single conversation; false when it does not exist. */
+export function deleteConversation(ownerAddress: string, id: string): Promise<boolean> {
+  return repo().softDelete(ownerAddress, id);
+}
+
 /** Soft-delete all of an owner's SANA conversations (right to erasure). */
 export async function eraseSanaConversations(ownerAddress: string): Promise<number> {
   const conversations = await repo().list(ownerAddress);

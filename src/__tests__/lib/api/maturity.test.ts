@@ -80,7 +80,6 @@ describe('feature maturity registry', () => {
     for (const key of [
       'tee_attestation',
       'blockchain_anchoring',
-      'ai_assistant',
     ] as const) {
       expect(maturityOf(key)).toBe('simulated');
     }

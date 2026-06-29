@@ -17,7 +17,6 @@ import {
   ChevronRight,
   Sparkles,
   Lock,
-  Cpu,
 } from 'lucide-react';
 
 import { TopNav, Footer, ToastContainer, SearchOverlay } from '@/components/ui/SharedComponents';
@@ -49,7 +48,6 @@ export default function ChatPage() {
     sendMessage,
     createConversation,
     deleteConversation,
-    totalAttestations,
   } = useHealthChat();
 
   // Panel visibility toggles.
@@ -170,7 +168,7 @@ export default function ChatPage() {
                     </span>
                     <span className="inline-flex items-center gap-1 text-xs text-slate-500">
                       <Shield className="w-3 h-3 text-emerald-500" />
-                      {totalAttestations} attestations
+                      Non-diagnostic
                     </span>
                   </div>
                 </div>
@@ -179,7 +177,7 @@ export default function ChatPage() {
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">
                   <Lock className="w-3 h-3" />
-                  E2E Encrypted
+                  Encrypted at rest
                 </span>
                 <button
                   onClick={() => setShowAttestation(!showAttestation)}
@@ -214,21 +212,22 @@ export default function ChatPage() {
                   Shiora on Aethelred
                 </h2>
                 <p className="text-sm text-slate-500 mb-6 text-center max-w-md">
-                  Ask me anything about your health data. All responses are
-                  verified through TEE attestation for tamper-proof analysis.
+                  SANA is a non-diagnostic assistant. It can help you understand
+                  your own health data and prepare questions for your clinician —
+                  it is not a medical device or a substitute for professional care.
                 </p>
                 <div className="flex items-center gap-4 mb-8">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200">
-                    <Cpu className="w-3 h-3" />
-                    {activeModel.teePlatform}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">
-                    <Shield className="w-3 h-3" />
-                    TEE Verified
-                  </span>
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-200">
                     <Sparkles className="w-3 h-3" />
                     {activeModel.name}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                    <Shield className="w-3 h-3" />
+                    Non-diagnostic
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200">
+                    <Lock className="w-3 h-3" />
+                    Encrypted at rest
                   </span>
                 </div>
                 <SuggestedPrompts
@@ -263,7 +262,7 @@ export default function ChatPage() {
               <div className="flex items-center justify-center gap-3 mt-2">
                 <span className="text-xs text-slate-400 flex items-center gap-1">
                   <Shield className="w-3 h-3" />
-                  Responses verified via TEE attestation
+                  SANA is non-diagnostic — not medical advice
                 </span>
               </div>
             </div>
