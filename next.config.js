@@ -41,7 +41,22 @@ const nextConfig = {
   },
 
   // Webpack configuration
-  webpack: (config, { isServer }) => {
+  webpack: (config, { webpack, nextRuntime }) => {
+    // key-provider.ts imports `node:crypto`. Next compiles instrumentation.ts for
+    // the edge runtime too, where the `node:` URI scheme is unhandled and 500s the
+    // whole app. Rewrite `node:*` -> bare specifier so every bundle builds; the
+    // node-only key-custody path is guarded by NEXT_RUNTIME and never runs on edge.
+    config.plugins.push(
+      new webpack.NormalModuleReplacementPlugin(/^node:/, (resource) => {
+        resource.request = resource.request.replace(/^node:/, '');
+      }),
+    );
+    // The edge runtime bundles instrumentation.ts but never executes its node-only
+    // key-custody path (NEXT_RUNTIME-guarded). Stub node builtins so the edge build
+    // resolves instead of failing to find `crypto`.
+    if (nextRuntime === 'edge') {
+      config.resolve.fallback = { ...config.resolve.fallback, crypto: false };
+    }
     return config;
   },
 
