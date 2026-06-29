@@ -3,9 +3,11 @@
 import {
   EnvKeyProvider,
   getKeyProvider,
+  preloadKeyProvider,
   hasConfiguredDataKey,
   __resetKeyProviderForTests,
 } from '@/lib/crypto/key-provider';
+import { VaultKeyProvider } from '@/lib/crypto/vault-key-provider';
 
 const KEY_ENVS = [
   'SHIORA_DATA_ENCRYPTION_KEY',
@@ -100,5 +102,56 @@ describe('EnvKeyProvider', () => {
     expect(getKeyProvider()).toBe(provider);
     __resetKeyProviderForTests();
     expect(getKeyProvider()).not.toBe(provider);
+  });
+});
+
+describe('provider selection and preload', () => {
+  const VAULT_ENVS = ['SHIORA_VAULT_ADDR', 'SHIORA_VAULT_TOKEN', 'SHIORA_VAULT_KEK_PATH'];
+  const realFetch = global.fetch;
+
+  function configureVault(): void {
+    process.env.SHIORA_VAULT_ADDR = 'https://vault.example:8200';
+    process.env.SHIORA_VAULT_TOKEN = 's.token';
+    process.env.SHIORA_VAULT_KEK_PATH = 'secret/data/shiora/kek';
+  }
+
+  afterEach(() => {
+    VAULT_ENVS.forEach((key) => delete process.env[key]);
+    delete process.env.SHIORA_DATA_ENCRYPTION_KEY;
+    global.fetch = realFetch;
+    __resetKeyProviderForTests();
+    jest.clearAllMocks();
+  });
+
+  it('selects the Vault provider when Vault is configured', () => {
+    configureVault();
+    expect(getKeyProvider()).toBeInstanceOf(VaultKeyProvider);
+  });
+
+  it('selects the env provider when Vault is not configured', () => {
+    expect(getKeyProvider()).toBeInstanceOf(EnvKeyProvider);
+  });
+
+  it('hasConfiguredDataKey is true when Vault is configured without an env key', () => {
+    configureVault();
+    expect(hasConfiguredDataKey()).toBe(true);
+  });
+
+  it('preloadKeyProvider warms the Vault provider once', async () => {
+    configureVault();
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({
+        data: { data: { current_version: '1', v1: Buffer.alloc(32, 5).toString('base64') } },
+      }),
+    });
+    await preloadKeyProvider();
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(getKeyProvider().currentVersion()).toBe(1);
+  });
+
+  it('preloadKeyProvider is a no-op for the env provider', async () => {
+    await expect(preloadKeyProvider()).resolves.toBeUndefined();
   });
 });

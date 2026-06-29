@@ -16,8 +16,9 @@
 // ============================================================
 
 import crypto from 'node:crypto';
+import { decodeKey } from './key-codec';
+import { VaultKeyProvider, isVaultConfigured } from './vault-key-provider';
 
-const KEY_BYTES = 32; // 256-bit keys
 const DEV_FALLBACK_SEED = 'shiora-dev-data-encryption-key-change-me-before-production';
 
 export interface KeyProvider {
@@ -25,21 +26,12 @@ export interface KeyProvider {
   currentVersion(): number;
   /** The 32-byte KEK for a given version. Throws if it is unavailable. */
   keyForVersion(version: number): Buffer;
-}
-
-function decodeKey(raw: string): Buffer {
-  // Accept either base64 (44 chars for 32 bytes) or hex (64 chars).
-  const buf = /^[0-9a-fA-F]{64}$/.test(raw)
-    ? Buffer.from(raw, 'hex')
-    : Buffer.from(raw, 'base64');
-
-  if (buf.length !== KEY_BYTES) {
-    throw new Error(
-      `SHIORA_DATA_ENCRYPTION_KEY must decode to ${KEY_BYTES} bytes `
-      + `(got ${buf.length}). Generate one with: openssl rand -base64 32`,
-    );
-  }
-  return buf;
+  /**
+   * Optional async warm-up for providers whose key custody is a network call
+   * (e.g. Vault). Invoked once at startup (instrumentation.ts) before any PHI is
+   * served, so keyForVersion() can remain synchronous.
+   */
+  preload?(): Promise<void>;
 }
 
 /**
@@ -99,17 +91,35 @@ export class EnvKeyProvider implements KeyProvider {
 
 let provider: KeyProvider | null = null;
 
-/** The process-wide key provider. */
+/**
+ * The process-wide key provider. Vault-backed when Vault is configured (the
+ * production posture — KEK custody outside application config), otherwise
+ * env-backed for local development and tests.
+ */
 export function getKeyProvider(): KeyProvider {
   if (!provider) {
-    provider = new EnvKeyProvider();
+    provider = isVaultConfigured() ? new VaultKeyProvider() : new EnvKeyProvider();
   }
   return provider;
 }
 
-/** True when a real (non-fallback) current key is configured. */
+/**
+ * Warm up the key provider before serving PHI. A no-op for providers without a
+ * preload step (env-backed); for Vault it fetches and caches the KEK once.
+ */
+export async function preloadKeyProvider(): Promise<void> {
+  const active = getKeyProvider();
+  if (active.preload) {
+    await active.preload();
+  }
+}
+
+/**
+ * True when real KEK custody is configured — either an explicit env key
+ * (dev/test) or a Vault-backed KEK (production).
+ */
 export function hasConfiguredDataKey(): boolean {
-  return !!process.env.SHIORA_DATA_ENCRYPTION_KEY;
+  return !!process.env.SHIORA_DATA_ENCRYPTION_KEY || isVaultConfigured();
 }
 
 /** Test-only: drop the cached provider so env changes take effect. */
