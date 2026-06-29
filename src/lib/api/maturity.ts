@@ -345,9 +345,13 @@ export const FEATURE_MATURITY = {
   },
   insights: {
     title: 'Health insights',
-    maturity: 'simulated',
+    maturity: 'pilot',
     audiences: ['individuals'],
-    summary: 'No inference engine is wired. Anomalies and inferences are simulated.',
+    summary: 'Real, non-diagnostic statistical insights over the user\'s own encrypted wearable '
+      + 'telemetry: per-metric baseline (mean +/- 2 sigma), z-score anomaly detection vs the '
+      + 'user\'s own baseline, and recent-vs-older trend (GET /api/insights, /anomalies, '
+      + '/inferences). INFORMATIONAL only — surfaces deviations from the user\'s own data; it does '
+      + 'not diagnose or predict disease. Advanced ML inference is the bounded layer above this.',
   },
   emergency: {
     title: 'Emergency response',

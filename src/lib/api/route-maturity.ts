@@ -25,7 +25,6 @@ const RULES: ReadonlyArray<readonly [string, Maturity]> = [
   ['/api/compliance', 'simulated'],
   ['/api/emergency', 'simulated'],
   ['/api/genomics', 'simulated'],
-  ['/api/insights', 'simulated'],
   ['/api/network', 'simulated'],
   ['/api/rewards', 'simulated'],
   ['/api/staking', 'simulated'],
@@ -35,6 +34,7 @@ const RULES: ReadonlyArray<readonly [string, Maturity]> = [
 
   // Pilot feature areas (real but bounded / config-gated).
   ['/api/alerts', 'pilot'],
+  ['/api/insights', 'pilot'],
   ['/api/anchors', 'pilot'],
   ['/api/chat', 'pilot'],
   ['/api/community', 'pilot'],

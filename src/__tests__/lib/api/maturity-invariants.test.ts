@@ -59,7 +59,6 @@ describe('maturity honesty invariant (F3)', () => {
     'explainable_ai',
     'genomics',
     'digital_twin',
-    'insights',
     'emergency',
     'compliance_reports',
     'tee_attestation',
