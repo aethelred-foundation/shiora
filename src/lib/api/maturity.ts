@@ -225,7 +225,11 @@ export const FEATURE_MATURITY = {
     title: 'FHIR interoperability',
     maturity: 'pilot',
     audiences: ['providers', 'health_plans'],
-    summary: 'FHIR export/import/mapping surface; not yet validated against a production FHIR server.',
+    summary: 'Real HL7 FHIR R4 import (POST /api/fhir/import): parses + structurally validates a '
+      + 'Bundle and maps Observation/Condition/MedicationStatement/AllergyIntolerance/'
+      + 'DiagnosticReport resources into the encrypted, audited record store; export emits records '
+      + 'back as an R4 Bundle (GET /api/fhir/export). SCOPE: structural R4 mapping is real; '
+      + 'conformance against a specific production EHR sandbox (Epic/Cerner) is the remaining step.',
   },
   research_studies: {
     title: 'Research studies',
