@@ -190,11 +190,13 @@ Every commit held the quality gate (100% coverage, tsc + lint clean) and was pus
 | **F3** no over-claiming | resolved | `maturity-invariants.test.ts` statically fails CI if any production/pilot feature is ever labelled simulated, or if a wired simulated feature loses its label. | `f5da7bb` |
 | **F6** transport as a *production gate* | resolved | Preflight raises `TRANSPORT_NOT_HARDENED`; `assertProductionReadiness()` hard-fails a production boot without TLS/HSTS, surfaced via `/api/health/ready` and `/api/system/status`. | `9ed6e67` |
 | **F2** duplicate/legacy SANA | resolved | `ai_assistant` retitled "(legacy, deprecated)" pointing clients to the real `sana_assistant` (`/api/sana`); legacy `/api/chat*` endpoints now self-declare as simulated. Chat-UI -> SANA-backend rewire is the follow-on "make it real" step. | `e8d928f` |
-| **F4** key custody (KMS) | next — needs a decision | Production preflight already *requires* a configured non-default KEK (plus durable DB, session secret, TLS/HSTS). Remaining work: a KMS-backed `KeyProvider` so the KEK is unwrapped from a KMS/HSM at boot rather than read from a plaintext env value. Blocked on the KMS target choice (AWS KMS / GCP KMS / HashiCorp Vault) — the adapter differs materially per provider. | — |
+| **F4** key custody | resolved (Vault) | KEK now lives in HashiCorp Vault (KV v2), fetched once at boot via `instrumentation.ts` over an authenticated, audited channel — no plaintext KEK in app config. `VaultKeyProvider` is rotation-aware; the boot guard `assertProductionReadiness()` hard-fails a production start without durable DB + key custody + session secret + TLS/HSTS. GCP/AWS KMS are drop-in behind the same `KeyProvider`+preload seam. | `0147d40` |
 | **F5** L1 + WORM anchoring | blocked | Awaiting the Aethelred L1 chain/RPC target before the anchoring client can be built. | — |
 | **F7** external assurance | ops/external | Pen test, BAAs, SOC 2 window, SaMD counsel — execution of the work products already in `docs/compliance/`. | — |
 
-**Net:** every code-resolvable honesty/transport finding from the audit (F1, F2,
-F3, F6) is closed and on the working branch. The two remaining technical P0s
-(F4 key custody, F5 anchoring) are gated on external decisions, not missing
-engineering capacity.
+**Net:** every code-resolvable P0 from the audit — honesty (F1, F2, F3),
+transport hardening (F6), and key custody (F4, now Vault-backed) — is closed and
+on the working branch. The remaining technical item, **F5** (L1 + WORM
+anchoring), is gated on the Aethelred chain/RPC target; **F7** (external
+assurance) is execution of the work products already authored in
+`docs/compliance/`.
