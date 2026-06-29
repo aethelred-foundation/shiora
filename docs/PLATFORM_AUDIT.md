@@ -189,14 +189,16 @@ Every commit held the quality gate (100% coverage, tsc + lint clean) and was pus
 | **F1** simulated labelling | resolved | All simulated-feature endpoints (clinical, xai, genomics, twin, insights, emergency, compliance) now return the simulation label in the response body, not only the registry — 27 route files. | `f5da7bb` |
 | **F3** no over-claiming | resolved | `maturity-invariants.test.ts` statically fails CI if any production/pilot feature is ever labelled simulated, or if a wired simulated feature loses its label. | `f5da7bb` |
 | **F6** transport as a *production gate* | resolved | Preflight raises `TRANSPORT_NOT_HARDENED`; `assertProductionReadiness()` hard-fails a production boot without TLS/HSTS, surfaced via `/api/health/ready` and `/api/system/status`. | `9ed6e67` |
-| **F2** duplicate/legacy SANA | resolved | `ai_assistant` retitled "(legacy, deprecated)" pointing clients to the real `sana_assistant` (`/api/sana`); legacy `/api/chat*` endpoints now self-declare as simulated. Chat-UI -> SANA-backend rewire is the follow-on "make it real" step. | `e8d928f` |
+| **F2** duplicate/legacy SANA | resolved | `ai_assistant` first deprecated, then **made real**: `/api/chat*` is now a thin adapter over the real, non-diagnostic SANA engine (owner-scoped, no fabricated attestation data) and the chat page's false TEE/attestation claims were removed. ai_assistant reclassified to pilot. | `e8d928f`, `9363ddb` |
 | **F4** key custody | resolved (Vault) | KEK now lives in HashiCorp Vault (KV v2), fetched once at boot via `instrumentation.ts` over an authenticated, audited channel — no plaintext KEK in app config. `VaultKeyProvider` is rotation-aware; the boot guard `assertProductionReadiness()` hard-fails a production start without durable DB + key custody + session secret + TLS/HSTS. GCP/AWS KMS are drop-in behind the same `KeyProvider`+preload seam. | `0147d40` |
-| **F5** L1 + WORM anchoring | blocked | Awaiting the Aethelred L1 chain/RPC target before the anchoring client can be built. | — |
+| **F5** L1 + WORM anchoring | built (broadcast on config) | Real anchoring pipeline: the audit head is hash-chained into a WORM anchor series, submitted through a pluggable AnchorClient (GET/POST /api/anchors, admin). Local by default; real EVM JSON-RPC `eth_sendTransaction` broadcast activates when SHIORA_L1_RPC_URL is set. Only the live chain target remains to be plugged in. | `78ba6f0` |
 | **F7** external assurance | ops/external | Pen test, BAAs, SOC 2 window, SaMD counsel — execution of the work products already in `docs/compliance/`. | — |
 
-**Net:** every code-resolvable P0 from the audit — honesty (F1, F2, F3),
-transport hardening (F6), and key custody (F4, now Vault-backed) — is closed and
-on the working branch. The remaining technical item, **F5** (L1 + WORM
-anchoring), is gated on the Aethelred chain/RPC target; **F7** (external
-assurance) is execution of the work products already authored in
+**Net:** every code-resolvable finding from the audit is now addressed — honesty
+(F1, F2, F3), transport hardening (F6), key custody (F4, Vault-backed), and audit
+anchoring (F5, pipeline + WORM + pluggable L1 client built). The chat surface was
+also promoted from simulated mock to the real SANA engine. What remains is purely
+external: plugging in the Aethelred chain/RPC target to switch F5 anchoring from
+local to live on-chain, and **F7** external assurance (pen test, BAAs, SOC 2,
+SaMD counsel) — execution of the work products already authored in
 `docs/compliance/`.
