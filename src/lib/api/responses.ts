@@ -5,6 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
+import { serverEnv } from './env';
 
 // ────────────────────────────────────────────────────────────
 // HTTP Status Constants
@@ -58,11 +59,38 @@ export interface APIErrorResponse {
   };
 }
 
+/**
+ * Hardened security headers applied to every API response.
+ *
+ * These are the application-layer half of transport hardening (the TLS floor,
+ * WAF, and edge DDoS protection are enforced at the reverse proxy / API gateway).
+ * `Strict-Transport-Security` is only emitted when SHIORA_ENABLE_HSTS=true — i.e.
+ * when the deployment actually sits behind TLS — so development and test traffic
+ * over http never advertises an unenforceable (and browser-pinned) policy.
+ */
+export function securityHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'no-referrer',
+    'Cross-Origin-Opener-Policy': 'same-origin',
+    'Cross-Origin-Resource-Policy': 'same-origin',
+    'X-Permitted-Cross-Domain-Policies': 'none',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), browsing-topics=()',
+  };
+
+  if (serverEnv.enableHsts) {
+    headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload';
+  }
+
+  return headers;
+}
+
 function buildHeaders(headers?: HeadersInit): Headers {
   const merged = new Headers({
     'Cache-Control': 'no-store, max-age=0',
     Pragma: 'no-cache',
-    'X-Content-Type-Options': 'nosniff',
+    ...securityHeaders(),
   });
 
   if (!headers) {

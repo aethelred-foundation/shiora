@@ -8,6 +8,7 @@ import {
   errorResponse,
   validationError,
   notFoundResponse,
+  securityHeaders,
 } from '@/lib/api/responses';
 
 describe('HTTP constants', () => {
@@ -51,10 +52,44 @@ describe('successResponse', () => {
     expect(body.meta).toBeUndefined();
   });
 
-  it('includes security headers', () => {
+  it('includes the hardened security header set', () => {
     const res = successResponse({ id: 1 });
     expect(res.headers.get('Cache-Control')).toBe('no-store, max-age=0');
+    expect(res.headers.get('Pragma')).toBe('no-cache');
     expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
+    expect(res.headers.get('X-Frame-Options')).toBe('DENY');
+    expect(res.headers.get('Referrer-Policy')).toBe('no-referrer');
+    expect(res.headers.get('Cross-Origin-Opener-Policy')).toBe('same-origin');
+    expect(res.headers.get('Cross-Origin-Resource-Policy')).toBe('same-origin');
+    expect(res.headers.get('X-Permitted-Cross-Domain-Policies')).toBe('none');
+    expect(res.headers.get('Permissions-Policy')).toContain('camera=()');
+  });
+
+  it('allows callers to override a default header', () => {
+    const res = successResponse({ id: 1 }, 200, undefined, { 'X-Frame-Options': 'SAMEORIGIN' });
+    expect(res.headers.get('X-Frame-Options')).toBe('SAMEORIGIN');
+  });
+});
+
+describe('securityHeaders', () => {
+  it('omits HSTS when SHIORA_ENABLE_HSTS is not enabled (default test env)', () => {
+    // The default test environment runs over http with HSTS disabled.
+    expect(securityHeaders()['Strict-Transport-Security']).toBeUndefined();
+  });
+
+  it('emits a preload-eligible HSTS policy when SHIORA_ENABLE_HSTS=true', () => {
+    jest.resetModules();
+    const originalEnv = { ...process.env };
+    process.env.SHIORA_ENABLE_HSTS = 'true';
+
+    try {
+      const { securityHeaders: withHsts } = require('@/lib/api/responses');
+      const hsts = withHsts()['Strict-Transport-Security'];
+      expect(hsts).toBe('max-age=63072000; includeSubDomains; preload');
+    } finally {
+      process.env = originalEnv;
+      jest.resetModules();
+    }
   });
 });
 
