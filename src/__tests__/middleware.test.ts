@@ -123,6 +123,17 @@ describe('middleware — GET /api route (createApiResponse)', () => {
     expect(res.headers.get('x-request-id')).toBe('test-id-42');
   });
 
+  it('stamps X-Shiora-Maturity from the route registry', () => {
+    const prod = middleware(makeRequest('/api/records', 'GET', { origin: ALLOWED_ORIGIN }));
+    expect(prod.headers.get('X-Shiora-Maturity')).toBe('production');
+
+    const sim = middleware(makeRequest('/api/genomics', 'GET', { origin: ALLOWED_ORIGIN }));
+    expect(sim.headers.get('X-Shiora-Maturity')).toBe('simulated');
+
+    const pilot = middleware(makeRequest('/api/sana/messages', 'GET', { origin: ALLOWED_ORIGIN }));
+    expect(pilot.headers.get('X-Shiora-Maturity')).toBe('pilot');
+  });
+
   it('generates a x-request-id when none is provided', () => {
     const req = makeRequest('/api/health', 'GET', { origin: ALLOWED_ORIGIN });
     const res = middleware(req);

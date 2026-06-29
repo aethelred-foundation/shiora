@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getCorsHeaders, hasDisallowedOrigin, isMutatingMethod } from '@/lib/api/origin';
+import { maturityForPath } from '@/lib/api/route-maturity';
 
 function createApiResponse(request: NextRequest): NextResponse {
   const requestHeaders = new Headers(request.headers);
@@ -18,6 +19,9 @@ function createApiResponse(request: NextRequest): NextResponse {
   response.headers.set('Pragma', 'no-cache');
   response.headers.set('Cross-Origin-Resource-Policy', 'same-site');
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+  // Machine-readable feature maturity on every API response (audit Finding F1),
+  // so consumers see production vs pilot vs simulated without reading the registry.
+  response.headers.set('X-Shiora-Maturity', maturityForPath(request.nextUrl.pathname));
 
   const corsHeaders = getCorsHeaders(request);
   Object.entries(corsHeaders).forEach(([key, value]) => {
