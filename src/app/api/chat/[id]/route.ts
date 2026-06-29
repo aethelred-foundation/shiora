@@ -7,10 +7,10 @@
 import { NextRequest } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
-  successResponse,
   notFoundResponse,
   HTTP,
 } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import {
   seededHex,
   seededInt,
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return notFoundResponse('Conversation', id);
   }
 
-  return successResponse(messages);
+  return simulatedResponse(messages, 'ai_assistant');
 }
 
 // ────────────────────────────────────────────────────────────
@@ -117,13 +117,14 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     return notFoundResponse('Conversation', id);
   }
 
-  return successResponse(
+  return simulatedResponse(
     {
       id,
       deleted: true,
       deletedAt: Date.now(),
       message: 'Conversation deleted. Associated attestations remain on-chain.',
     },
+    'ai_assistant',
     HTTP.OK,
   );
 }

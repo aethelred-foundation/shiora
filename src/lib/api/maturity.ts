@@ -295,10 +295,13 @@ export const FEATURE_MATURITY = {
       + 'next layer); a content-addressed blob can be unpinned but not force-deleted.',
   },
   ai_assistant: {
-    title: 'SANA AI assistant',
+    title: 'SANA AI assistant (legacy, deprecated)',
     maturity: 'simulated',
     audiences: ['individuals'],
-    summary: 'No LLM backend is wired. Assistant responses are simulated; no autonomous diagnosis.',
+    summary: 'DEPRECATED — superseded by the real, non-diagnostic sana_assistant (SANA health '
+      + 'assistant). The legacy /api/chat endpoints remain only for backward compatibility and are '
+      + 'simulated (every response carries simulationMeta); new clients must use /api/sana. '
+      + 'Scheduled for removal once the chat UI is migrated to the SANA backend.',
   },
   clinical_decision_support: {
     title: 'Clinical decision support',

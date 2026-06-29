@@ -7,10 +7,10 @@
 import { NextRequest } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
-  successResponse,
   errorResponse,
   HTTP,
 } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import {
   seededHex,
   seededInt,
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
   if (blocked) return blocked;
 
   const conversations = generateMockConversations();
-  return successResponse(conversations);
+  return simulatedResponse(conversations, 'ai_assistant');
 }
 
 // ────────────────────────────────────────────────────────────
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       tokens: seededInt(seed + 400, 150, 450),
     };
 
-    return successResponse(response, HTTP.CREATED, {
+    return simulatedResponse(response, 'ai_assistant', HTTP.CREATED, {
       message: 'Message processed. TEE attestation generated.',
     });
   } catch {

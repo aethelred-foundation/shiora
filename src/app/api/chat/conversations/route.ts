@@ -7,9 +7,9 @@
 import { NextRequest } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
-  successResponse,
   HTTP,
 } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import {
   seededHex,
   seededInt,
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
   if (blocked) return blocked;
 
   const conversations = generateMockConversations();
-  return successResponse(conversations);
+  return simulatedResponse(conversations, 'ai_assistant');
 }
 
 // ────────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     attestationCount: 0,
   };
 
-  return successResponse(conversation, HTTP.CREATED, {
+  return simulatedResponse(conversation, 'ai_assistant', HTTP.CREATED, {
     message: 'Conversation created.',
   });
 }
