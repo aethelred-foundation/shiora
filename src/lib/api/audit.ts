@@ -53,6 +53,7 @@ export type AuditAction =
   | 'NOTIFICATION_PREFS_UPDATE'
   | 'PROFILE_UPDATE'
   | 'ANCHOR_CREATE'
+  | 'WEARABLE_INGEST'
   | 'SANA_MESSAGE'
   | 'IPFS_STORE'
   | 'MPC_COMPUTE';

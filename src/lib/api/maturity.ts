@@ -219,7 +219,7 @@ export const FEATURE_MATURITY = {
     title: 'Wearables integration',
     maturity: 'pilot',
     audiences: ['individuals'],
-    summary: 'Sync surface is implemented; live device-vendor connections are not yet wired.',
+    summary: 'Real encrypted, owner-scoped telemetry ingest (POST /api/wearables/samples), derived per-owner analytics, and cohort aggregation through the real secure-MPC primitive (POST /api/wearables/cohort-aggregate, researcher-gated; reveals only the cohort total/mean). Live device-vendor sync (Fitbit/Apple Health/Garmin OAuth) is the remaining integration.',
   },
   fhir_interop: {
     title: 'FHIR interoperability',
