@@ -5,6 +5,7 @@ jest.mock('@/lib/api/env', () => ({
     isProduction: true,
     hasConfiguredSessionSecret: true,
     allowInsecureWalletHeader: false,
+    enableHsts: true,
   },
 }));
 jest.mock('@/lib/crypto/key-provider', () => ({ hasConfiguredDataKey: jest.fn(() => true) }));
@@ -21,6 +22,7 @@ const mockServerEnv = serverEnv as unknown as {
   isProduction: boolean;
   hasConfiguredSessionSecret: boolean;
   allowInsecureWalletHeader: boolean;
+  enableHsts: boolean;
 };
 const mockHasKey = hasConfiguredDataKey as jest.Mock;
 const originalDatabaseUrl = process.env.DATABASE_URL;
@@ -35,6 +37,7 @@ beforeEach(() => {
   mockServerEnv.isProduction = true;
   mockServerEnv.hasConfiguredSessionSecret = true;
   mockServerEnv.allowInsecureWalletHeader = false;
+  mockServerEnv.enableHsts = true;
   mockHasKey.mockReturnValue(true);
 });
 
@@ -78,6 +81,12 @@ describe('checkProductionReadiness', () => {
   it('flags the insecure wallet-header bypass', () => {
     mockServerEnv.allowInsecureWalletHeader = true;
     expect(codes()).toContain('INSECURE_WALLET_HEADER_ENABLED');
+  });
+
+  it('flags transport that is not hardened (HSTS disabled)', () => {
+    mockServerEnv.enableHsts = false;
+    expect(codes()).toContain('TRANSPORT_NOT_HARDENED');
+    expect(checkProductionReadiness().ok).toBe(false);
   });
 
   it('reports problems but stays ok outside production', () => {

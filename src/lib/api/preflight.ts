@@ -8,6 +8,7 @@
 //   - a durable datastore is configured (no in-memory PHI fallback),
 //   - the PHI data-encryption key is set to a real (non-default) value,
 //   - the session-signing secret is set,
+//   - transport is hardened (HSTS enabled behind TLS),
 //   - the insecure wallet-address header bypass is disabled.
 //
 // `checkProductionReadiness()` is pure and side-effect free, so it backs the
@@ -69,6 +70,16 @@ export function checkProductionReadiness(): ReadinessReport {
       message:
         'SHIORA_SESSION_SECRET is not set. Sessions would be signed with the '
         + 'insecure development secret. Generate one with: openssl rand -base64 48',
+    });
+  }
+
+  if (!serverEnv.enableHsts) {
+    problems.push({
+      code: 'TRANSPORT_NOT_HARDENED',
+      message:
+        'SHIORA_ENABLE_HSTS is not enabled. Production must serve PHI only behind '
+        + 'TLS with HTTP Strict Transport Security (HSTS + preload), terminated at '
+        + 'the edge/reverse proxy, so clients never negotiate plaintext.',
     });
   }
 
