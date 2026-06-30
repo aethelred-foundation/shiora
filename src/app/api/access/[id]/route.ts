@@ -18,7 +18,6 @@ import {
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import { getAccessGrant, updateAccessGrant } from '@/lib/api/access-service';
 import { notify } from '@/lib/api/notification-service';
-import { generateTxHash } from '@/lib/utils';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -55,12 +54,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
       view: grant.canView,
       download: grant.canDownload,
       share: grant.canShare,
-    },
-    blockchain: {
-      txHash: grant.txHash,
-      attestation: grant.attestation,
-      providerAddress: grant.address,
-      ownerAddress: grant.ownerAddress,
     },
   });
 }
@@ -110,7 +103,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     return successResponse(updated, HTTP.OK, {
-      message: 'Access grant modified. Transaction submitted to blockchain.',
+      message: 'Access grant modified.',
     });
   } catch (err) {
     if (err instanceof ZodError) return validationError(err);
@@ -164,7 +157,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       id: revokedGrant.id,
       status: revokedGrant.status,
       revokedAt: Date.now(),
-      revokeTxHash: generateTxHash(Date.now()),
       message: 'Access revoked. Provider can no longer access your data.',
     },
     HTTP.OK,

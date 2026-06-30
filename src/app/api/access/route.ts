@@ -22,7 +22,6 @@ import { randomUUID } from 'node:crypto';
 import type { MockAccessGrant } from '@/lib/api/mock-data';
 import { createAccessGrant, listAccessGrants } from '@/lib/api/access-service';
 import { notify } from '@/lib/api/notification-service';
-import { generateTxHash, generateAttestation } from '@/lib/utils';
 
 // ────────────────────────────────────────────────────────────
 // GET /api/access
@@ -93,7 +92,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = GrantCreateSchema.parse(body);
 
-    const seed = Date.now();
     const expiresAt = Date.now() + validated.durationDays * 86400000;
 
     const newGrant: MockAccessGrant = {
@@ -101,14 +99,17 @@ export async function POST(request: NextRequest) {
       provider: validated.provider,
       specialty: validated.specialty,
       address: validated.address,
-      status: 'Pending',
+      // Grants take effect immediately and are enforced by the platform's
+      // RBAC + tamper-evident audit trail — there is no on-chain confirmation
+      // step to be "Pending" on, and no txHash/attestation to fabricate.
+      status: 'Active',
       scope: validated.scope,
       grantedAt: Date.now(),
       expiresAt,
       lastAccess: null,
       accessCount: 0,
-      txHash: generateTxHash(seed),
-      attestation: generateAttestation(seed),
+      txHash: '',
+      attestation: '',
       canView: validated.canView,
       canDownload: validated.canDownload,
       canShare: validated.canShare,
@@ -126,8 +127,7 @@ export async function POST(request: NextRequest) {
     });
 
     return successResponse(persistedGrant, HTTP.CREATED, {
-      message: 'Access grant created. Pending blockchain confirmation.',
-      estimatedConfirmation: '~6 seconds (2 blocks)',
+      message: 'Access grant created.',
     });
   } catch (err) {
     if (err instanceof ZodError) return validationError(err);

@@ -151,13 +151,14 @@ describe('/api/access list, filter, search', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.length).toBeGreaterThanOrEqual(2);
-    expect(body.meta.summary.pending).toBeGreaterThanOrEqual(2);
+    expect(body.meta.summary.active).toBeGreaterThanOrEqual(2);
   });
 
   it('filters by status', async () => {
-    const res = await listGrants(authed('http://localhost:3001/api/access?status=Pending&limit=100', { method: 'GET' }, token));
+    const res = await listGrants(authed('http://localhost:3001/api/access?status=Active&limit=100', { method: 'GET' }, token));
     const body = await res.json();
-    body.data.forEach((g: { status: string }) => expect(g.status).toBe('Pending'));
+    expect(body.data.length).toBeGreaterThanOrEqual(2);
+    body.data.forEach((g: { status: string }) => expect(g.status).toBe('Active'));
   });
 
   it('searches by provider', async () => {
@@ -200,7 +201,7 @@ describe('/api/access create', () => {
   const owner = seededAddress(333);
   const { token } = createSessionToken(owner);
 
-  it('creates a grant (201, Pending)', async () => {
+  it('creates a grant (201, Active, no fabricated txHash)', async () => {
     const res = await createGrant(
       authed('http://localhost:3001/api/access', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -209,7 +210,8 @@ describe('/api/access create', () => {
     );
     expect(res.status).toBe(201);
     const body = await res.json();
-    expect(body.data.status).toBe('Pending');
+    expect(body.data.status).toBe('Active');
+    expect(body.data.txHash).toBe('');
     expect(body.data.canDownload).toBe(true);
   });
 
@@ -262,7 +264,8 @@ describe('/api/access/[id] detail, modify, revoke', () => {
     const body = await res.json();
     expect(body.data.permissions.view).toBe(true);
     expect(body.data.isExpiringSoon).toBe(false);
-    expect(body.data.blockchain.providerAddress).toBe(seededAddress(920));
+    // The fabricated `blockchain` block (txHash/attestation) was removed.
+    expect(body.data.blockchain).toBeUndefined();
   });
 
   it('GET flags a grant expiring within 7 days', async () => {
