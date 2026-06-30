@@ -41,121 +41,19 @@ import {
   EXTENDED_STATUS_STYLES,
 } from '@/lib/constants';
 import {
-  seededRandom, seededInt, seededHex, seededPick,
+  seededRandom, seededInt,
   formatNumber, formatBytes, formatDate, formatDateTime,
-  timeAgo, generateCID, generateAttestation,
+  timeAgo,
 } from '@/lib/utils';
-import type {
-  VaultCompartment, VaultCompartmentCategory, VaultLockStatus,
-  CycleEntry, CyclePhase, FertilityMarker, VaultPrivacyScore,
-} from '@/types';
 
 // ============================================================
-// Page-level mock data (SEED = 710)
+// Illustrative-chart seed — used only for the sample hormone-curve and
+// cycle-length charts below. The encrypted vault data itself (compartments,
+// cycle, symptoms, fertility, privacy score) comes from the real /api/vault/*
+// APIs via useReproductiveVault.
 // ============================================================
 
 const SEED = 710;
-
-function generatePageCompartments(): VaultCompartment[] {
-  return VAULT_CATEGORIES.map((cat, i) => {
-    const lockStatuses: VaultLockStatus[] = ['locked', 'unlocked', 'partial'];
-    const accessCount = seededInt(SEED + i * 11, 0, 5);
-    const providers = [
-      'Dr. Sarah Chen, OB-GYN', 'Metro Women\'s Health',
-      'Dr. James Liu, Endocrinology', 'Fertility Clinic of Boston',
-      'Stanford Women\'s Care',
-    ];
-    return {
-      id: `vault-${seededHex(SEED + i * 100, 12)}`,
-      category: cat.id as VaultCompartmentCategory,
-      label: cat.label,
-      description: `Encrypted ${cat.label.toLowerCase()} compartment with TEE-verified access controls`,
-      lockStatus: i < 3 ? 'locked' : seededPick(SEED + i * 3, lockStatuses),
-      recordCount: seededInt(SEED + i * 7, 5, 120),
-      storageUsed: seededInt(SEED + i * 13, 50, 5000) * 1024,
-      lastAccessed: Date.now() - seededInt(SEED + i * 17, 1, 30) * 86400000,
-      encryptionKey: `0x${seededHex(SEED + i * 50, 64)}`,
-      accessList: Array.from({ length: accessCount }, (_, j) =>
-        seededPick(SEED + i * 20 + j, providers)
-      ),
-      jurisdictionFlags: ['us-ca', 'eu-gdpr'].slice(0, seededInt(SEED + i * 9, 1, 2)),
-      createdAt: Date.now() - seededInt(SEED + i * 23, 60, 365) * 86400000,
-    };
-  });
-}
-
-function generatePageCycleEntries(): CycleEntry[] {
-  const entries: CycleEntry[] = [];
-  const totalDays = 84;
-  const cycleLength = 28;
-
-  for (let i = 0; i < totalDays; i++) {
-    const dayInCycle = (i % cycleLength) + 1;
-    let phase: CyclePhase;
-    let flow: 'none' | 'light' | 'medium' | 'heavy' = 'none';
-
-    if (dayInCycle <= 5) {
-      phase = 'menstrual';
-      flow = dayInCycle <= 2 ? 'heavy' : dayInCycle <= 4 ? 'medium' : 'light';
-    } else if (dayInCycle <= 13) {
-      phase = 'follicular';
-    } else if (dayInCycle <= 16) {
-      phase = 'ovulation';
-    } else {
-      phase = 'luteal';
-    }
-
-    const baseTemp = dayInCycle <= 14 ? 97.2 : 97.8;
-    const tempVariation = seededRandom(SEED + i * 31) * 0.6;
-    const temperature = parseFloat((baseTemp + tempVariation).toFixed(1));
-
-    let fertilityScore: number;
-    if (dayInCycle >= 10 && dayInCycle <= 16) {
-      fertilityScore = Math.min(98, 60 + seededInt(SEED + i * 41, 15, 38));
-    } else if (dayInCycle >= 8 && dayInCycle <= 18) {
-      fertilityScore = 30 + seededInt(SEED + i * 41, 10, 25);
-    } else {
-      fertilityScore = seededInt(SEED + i * 41, 5, 25);
-    }
-
-    entries.push({
-      id: `cycle-${seededHex(SEED + i * 200, 12)}`,
-      date: Date.now() - (totalDays - i) * 86400000,
-      day: dayInCycle,
-      phase,
-      temperature,
-      flow,
-      symptoms: [],
-      fertilityScore,
-      notes: '',
-    });
-  }
-
-  return entries;
-}
-
-function generatePageFertilityMarkers(): FertilityMarker[] {
-  const types: FertilityMarker['type'][] = ['lh_surge', 'bbt_shift', 'cervical_mucus', 'ovulation_confirmed'];
-  const sources: FertilityMarker['source'][] = ['manual', 'ai_predicted', 'wearable'];
-
-  return Array.from({ length: 12 }, (_, i) => ({
-    id: `fm-${seededHex(SEED + i * 400, 12)}`,
-    date: Date.now() - seededInt(SEED + i * 87, 0, 84) * 86400000,
-    type: seededPick(SEED + i * 89, types),
-    value: parseFloat((seededRandom(SEED + i * 91) * 100).toFixed(1)),
-    confidence: parseFloat((70 + seededRandom(SEED + i * 93) * 28).toFixed(1)),
-    source: seededPick(SEED + i * 95, sources),
-    attestation: generateAttestation(SEED + i * 97),
-  }));
-}
-
-const PRIVACY_SCORE: VaultPrivacyScore = {
-  overall: 87,
-  encryptionScore: 95,
-  accessControlScore: 82,
-  jurisdictionScore: 85,
-  dataMinimizationScore: 78,
-};
 
 // ============================================================
 // Tab definitions
@@ -194,16 +92,28 @@ const SOURCE_LABELS: Record<string, string> = {
 export default function VaultPage() {
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Real, encrypted-at-rest symptom data from the vault API
-  // (GET/POST /api/vault/symptoms — envelope-encrypted server-side).
-  const { symptoms, logSymptom } = useReproductiveVault();
+  // Real, encrypted-at-rest reproductive vault data — compartments, cycle
+  // entries, symptoms, and fertility markers all come from the authenticated
+  // vault API (GET/POST /api/vault/*, envelope-encrypted server-side). The
+  // cycle phase/window predictions are derived server-side by the hook.
+  const {
+    compartments,
+    cycleEntries,
+    symptoms,
+    fertilityMarkers,
+    privacyScore,
+    logSymptom,
+    lockCompartment,
+    unlockCompartment,
+    currentCycleDay,
+    currentPhase,
+    nextPeriodDate,
+    fertileWindowStart,
+    fertileWindowEnd,
+    averageCycleLength,
+  } = useReproductiveVault();
 
-  // Generate all mock data at component level using useMemo for stability
-  const compartments = useMemo(() => generatePageCompartments(), []);
-  const cycleEntries = useMemo(() => generatePageCycleEntries(), []);
-  const fertilityMarkers = useMemo(() => generatePageFertilityMarkers(), []);
-
-  // Derived stats
+  // Derived stats over the real compartment set
   const totalRecords = useMemo(
     () => compartments.reduce((sum, c) => sum + c.recordCount, 0),
     [compartments],
@@ -213,12 +123,10 @@ export default function VaultPage() {
     [compartments],
   );
   const lockedCount = compartments.filter((c) => c.lockStatus === 'locked').length;
-  const currentCycleDay = cycleEntries.length > 0 ? cycleEntries[cycleEntries.length - 1].day : /* istanbul ignore next */ 1;
-  const currentPhase = cycleEntries.length > 0 ? cycleEntries[cycleEntries.length - 1].phase : /* istanbul ignore next */ 'follicular';
-  const averageCycleLength = 28;
-  const nextPeriodDays = averageCycleLength - currentCycleDay;
-  const fertileWindowStart = Date.now() + (14 - currentCycleDay - 5) * 86400000;
-  const fertileWindowEnd = Date.now() + (14 - currentCycleDay + 1) * 86400000;
+  const nextPeriodDays = Math.max(
+    0,
+    Math.round((nextPeriodDate - Date.now()) / 86400000),
+  );
 
   // Symptom frequency data
   const symptomFrequency = useMemo(() => {
@@ -315,16 +223,6 @@ export default function VaultPage() {
     { icon: <Database className="w-4 h-4" />, text: 'New records encrypted and stored', time: Date.now() - 86400000, color: 'text-brand-500' },
   ], []);
 
-  // Handler stubs
-  /* istanbul ignore next -- stub: production would call the mutation */
-  const handleLock = (id: string) => {
-    // In production, this would call the mutation
-  };
-  /* istanbul ignore next -- stub: production would call the mutation */
-  const handleUnlock = (id: string) => {
-    // In production, this would call the mutation
-  };
-
   return (
     <>
       <TopNav />
@@ -354,7 +252,7 @@ export default function VaultPage() {
                 {lockedCount}/{compartments.length} Locked
               </Badge>
               <Badge variant="info" dot>
-                Privacy Score: {PRIVACY_SCORE.overall}
+                Privacy Score: {privacyScore.overall}
               </Badge>
             </div>
           </div>
@@ -408,8 +306,8 @@ export default function VaultPage() {
                     <CompartmentCard
                       key={compartment.id}
                       compartment={compartment}
-                      onLock={() => handleLock(compartment.id)}
-                      onUnlock={() => handleUnlock(compartment.id)}
+                      onLock={() => lockCompartment.mutate(compartment.id)}
+                      onUnlock={() => unlockCompartment.mutate(compartment.id)}
                     />
                   ))}
                 </div>
@@ -668,8 +566,8 @@ export default function VaultPage() {
                   <CompartmentCard
                     key={compartment.id}
                     compartment={compartment}
-                    onLock={() => handleLock(compartment.id)}
-                    onUnlock={() => handleUnlock(compartment.id)}
+                    onLock={() => lockCompartment.mutate(compartment.id)}
+                    onUnlock={() => unlockCompartment.mutate(compartment.id)}
                   />
                 ))}
               </div>
@@ -744,7 +642,7 @@ export default function VaultPage() {
               {/* Privacy Meter */}
               <MedicalCard className="max-w-md mx-auto">
                 <SectionHeader title="Privacy Score" subtitle="Overall data protection assessment" size="sm" />
-                <PrivacyMeter score={PRIVACY_SCORE} />
+                <PrivacyMeter score={privacyScore} />
               </MedicalCard>
 
               {/* Jurisdiction Status */}
