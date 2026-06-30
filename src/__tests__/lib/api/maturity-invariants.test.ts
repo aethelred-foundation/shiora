@@ -60,7 +60,6 @@ describe('maturity honesty invariant (F3)', () => {
     'genomics',
     'digital_twin',
     'emergency',
-    'compliance_reports',
     'tee_attestation',
     'blockchain_anchoring',
   ] as const)('keeps simulated feature %s labelled at the route layer', (key) => {

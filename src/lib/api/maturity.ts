@@ -361,9 +361,14 @@ export const FEATURE_MATURITY = {
   },
   compliance_reports: {
     title: 'Compliance reports',
-    maturity: 'simulated',
+    maturity: 'pilot',
     audiences: ['governments', 'health_plans', 'employers'],
-    summary: 'Generated compliance/check/report figures are simulated, not derived from a live control plane.',
+    summary: 'Real compliance posture derived from LIVE system state — the production-readiness '
+      + 'controls (key custody, durable storage, TLS/HSTS, authentication), the tamper-evident '
+      + 'audit chain\'s own verification, and the maturity registry — mapped to HIPAA technical '
+      + 'safeguards / SOC 2 criteria (GET /api/compliance, /checks, /reports, /audit; gated by '
+      + 'view_compliance). It is the platform\'s self-reported control posture, NOT an external '
+      + 'SOC 2 Type II / HIPAA attestation (assessor-gated; see docs/compliance/).',
   },
   cycle_vault: {
     title: 'Cycle & symptom vault',

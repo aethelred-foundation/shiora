@@ -22,7 +22,6 @@ const RULES: ReadonlyArray<readonly [string, Maturity]> = [
 
   // Simulated feature areas (not backed by the named external system).
   ['/api/clinical', 'simulated'],
-  ['/api/compliance', 'simulated'],
   ['/api/emergency', 'simulated'],
   ['/api/genomics', 'simulated'],
   ['/api/network', 'simulated'],
@@ -35,6 +34,7 @@ const RULES: ReadonlyArray<readonly [string, Maturity]> = [
   // Pilot feature areas (real but bounded / config-gated).
   ['/api/alerts', 'pilot'],
   ['/api/insights', 'pilot'],
+  ['/api/compliance', 'pilot'],
   ['/api/anchors', 'pilot'],
   ['/api/chat', 'pilot'],
   ['/api/community', 'pilot'],
