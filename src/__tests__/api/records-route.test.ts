@@ -348,7 +348,7 @@ describe('/api/records filters, search, and sorting', () => {
     );
     expect(res.status).toBe(201);
     const body = await res.json();
-    expect(body.data.description).toContain('Encrypted health record uploaded at');
+    expect(body.data.description).toContain('Health record created at');
   });
 
   it('returns 422 for an invalid create body', async () => {
@@ -397,7 +397,7 @@ describe('/api/records/[id] GET, PATCH, DELETE', () => {
     recordId = created.id;
   });
 
-  it('GET returns the full record with cryptography, ipfs, and tee details', async () => {
+  it('GET returns honest cryptography metadata with no IPFS/TEE/chain theater', async () => {
     const res = await getRecord(
       createAuthedRequest(`http://localhost:3001/api/records/${recordId}`, { method: 'GET' }, token),
       { params: Promise.resolve({ id: recordId }) },
@@ -405,9 +405,16 @@ describe('/api/records/[id] GET, PATCH, DELETE', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.id).toBe(recordId);
-    expect(body.data.cryptography).toBeDefined();
-    expect(body.data.ipfs).toBeDefined();
-    expect(body.data.tee).toBeDefined();
+    expect(body.data.cryptography).toEqual({
+      encryption: 'AES-256-GCM',
+      ivLength: 12,
+      tagLength: 128,
+    });
+    // No fabricated IPFS pinning, TEE attestation, or on-chain anchoring.
+    expect(body.data.ipfs).toBeUndefined();
+    expect(body.data.tee).toBeUndefined();
+    expect(body.data.cryptography.cid).toBeUndefined();
+    expect(body.data.cryptography.attestation).toBeUndefined();
   });
 
   it('GET returns 404 for a nonexistent record', async () => {
@@ -444,38 +451,6 @@ describe('/api/records/[id] GET, PATCH, DELETE', () => {
     const body = await res.json();
     expect(body.data.description).toBe('Updated desc');
     expect(body.data.status).toBe('Verified');
-  });
-
-  it('GET reports pinned + verified for a Verified record', async () => {
-    await patchStatus(token, recordId, 'Verified');
-    const res = await getRecord(
-      createAuthedRequest(`http://localhost:3001/api/records/${recordId}`, { method: 'GET' }, token),
-      { params: Promise.resolve({ id: recordId }) },
-    );
-    const body = await res.json();
-    expect(body.data.ipfs.pinStatus).toBe('pinned');
-    expect(body.data.tee.verified).toBe(true);
-  });
-
-  it('GET reports pinned for a Pinned record', async () => {
-    await patchStatus(token, recordId, 'Pinned');
-    const res = await getRecord(
-      createAuthedRequest(`http://localhost:3001/api/records/${recordId}`, { method: 'GET' }, token),
-      { params: Promise.resolve({ id: recordId }) },
-    );
-    const body = await res.json();
-    expect(body.data.ipfs.pinStatus).toBe('pinned');
-  });
-
-  it('GET reports pinning + unverified for a Pinning record', async () => {
-    await patchStatus(token, recordId, 'Pinning');
-    const res = await getRecord(
-      createAuthedRequest(`http://localhost:3001/api/records/${recordId}`, { method: 'GET' }, token),
-      { params: Promise.resolve({ id: recordId }) },
-    );
-    const body = await res.json();
-    expect(body.data.ipfs.pinStatus).toBe('pinning');
-    expect(body.data.tee.verified).toBe(false);
   });
 
   it('PATCH updates the label only', async () => {

@@ -39,28 +39,16 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return notFoundResponse('Record', id);
   }
 
+  // Honest crypto metadata only: the record payload is sealed at rest with
+  // AES-256-GCM (96-bit IV, 128-bit auth tag). Records are NOT IPFS-pinned,
+  // on-chain-anchored, or TEE-attested, so no ipfs/tee/cid/txHash/attestation
+  // facts are fabricated here.
   return successResponse({
     ...record,
     cryptography: {
       encryption: record.encryption,
-      keyDerivation: 'HKDF-SHA256',
       ivLength: 12,
       tagLength: 128,
-      cid: record.cid,
-      txHash: record.txHash,
-      attestation: record.attestation,
-    },
-    ipfs: {
-      cid: record.cid,
-      nodeCount: record.ipfsNodes,
-      pinStatus: record.status === 'Pinned' || record.status === 'Verified' ? 'pinned' : 'pinning',
-      replicationFactor: 3,
-    },
-    tee: {
-      attestation: record.attestation,
-      platform: 'Intel SGX',
-      verified: record.status === 'Verified',
-      enclaveId: `enclave-${record.id.replace('rec-', '')}`,
     },
   });
 }
@@ -136,7 +124,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       id: deletedRecord.id,
       deleted: true,
       deletedAt: Date.now(),
-      message: 'Record marked for deletion. IPFS content will be unpinned after the retention period.',
+      message: 'Record marked for deletion.',
     },
     HTTP.OK,
   );

@@ -21,7 +21,6 @@ import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import type { MockHealthRecord } from '@/lib/api/mock-data';
 import { randomUUID } from 'node:crypto';
 import { createRecord, listRecords } from '@/lib/api/records-service';
-import { generateCID, generateTxHash, generateAttestation, seededInt } from '@/lib/utils';
 
 // ────────────────────────────────────────────────────────────
 // GET /api/records
@@ -102,33 +101,43 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = RecordCreateSchema.parse(body);
 
-    const seed = Date.now();
+    const description =
+      validated.description ?? `Health record created at ${new Date().toISOString()}`;
+    // A record stores only its encrypted metadata — no file blob — so "size"
+    // reflects that metadata payload rather than a fabricated file size.
+    const contentBytes = Buffer.byteLength(
+      JSON.stringify({ label: validated.label, description, tags: validated.tags }),
+      'utf8',
+    );
     const newRecord: MockHealthRecord = {
       id: `rec-${randomUUID().replace(/-/g, '')}`,
       type: validated.type,
       label: validated.label,
-      description: validated.description ?? `Encrypted health record uploaded at ${new Date().toISOString()}`,
+      description,
       date: Date.now(),
       uploadDate: Date.now(),
       encrypted: true,
       encryption: validated.encryption,
-      cid: generateCID(seed),
-      txHash: generateTxHash(seed),
-      attestation: generateAttestation(seed),
-      size: seededInt(seed, 50, 2000) * 1024,
+      // Records are encrypted at rest and integrity-tracked via the tamper-
+      // evident audit chain. They are NOT IPFS-pinned, on-chain-anchored, or
+      // TEE-attested, so these fields are left empty rather than fabricated.
+      cid: '',
+      txHash: '',
+      attestation: '',
+      size: contentBytes,
       provider: validated.provider,
-      status: 'Processing',
+      status: 'Verified',
       ipfsNodes: 0,
       tags: validated.tags,
       deleted: false,
       ownerAddress: auth.walletAddress!,
-      blockHeight: 2847391 + seededInt(seed + 1, 1, 100),
+      blockHeight: 0,
     };
 
     const persistedRecord = await createRecord(auth.walletAddress!, newRecord);
 
     return successResponse(persistedRecord, HTTP.CREATED, {
-      message: 'Record created. IPFS pinning and TEE verification in progress.',
+      message: 'Record created and encrypted at rest.',
     });
   } catch (err) {
     if (err instanceof ZodError) return validationError(err);
