@@ -11,7 +11,7 @@ import { Home, Search, FolderLock, Brain, KeyRound, Settings, ArrowRight } from 
 const SUGGESTED_LINKS = [
   { href: '/', label: 'Dashboard', description: 'Health overview and metrics', icon: Home },
   { href: '/records', label: 'Health Records', description: 'Encrypted health data', icon: FolderLock },
-  { href: '/insights', label: 'AI Insights', description: 'TEE-verified analysis', icon: Brain },
+  { href: '/insights', label: 'AI Insights', description: 'Statistical health analysis', icon: Brain },
   { href: '/access', label: 'Access Control', description: 'Provider permissions', icon: KeyRound },
   { href: '/settings', label: 'Settings', description: 'Account preferences', icon: Settings },
 ];

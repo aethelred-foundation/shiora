@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     template: '%s | Shiora',
   },
   description:
-    "Women's Health AI Platform on the Aethelred Blockchain — TEE-verified privacy for sensitive health data.",
+    "Women's Health AI Platform on the Aethelred Blockchain — encrypted, owner-controlled, and access-audited privacy for sensitive health data.",
   metadataBase: new URL('https://shiora.health'),
   icons: {
     icon: '/favicon.svg',
