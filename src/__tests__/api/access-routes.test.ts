@@ -14,11 +14,6 @@ jest.mock('@/lib/api/access-service', () => {
   };
 });
 
-jest.mock('@/lib/api/mock-data', () => {
-  const actual = jest.requireActual('@/lib/api/mock-data');
-  return { ...actual, generateMockAuditLog: jest.fn((...args: unknown[]) => actual.generateMockAuditLog(...args)) };
-});
-
 import { NextRequest, NextResponse } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
@@ -32,15 +27,13 @@ import { GET as getGrant, PATCH as patchGrant, DELETE as deleteGrant } from '@/a
 import { GET as listAudit } from '@/app/api/access/audit/route';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
-import { generateMockAuditLog } from '@/lib/api/mock-data';
+import { getAuditLog } from '@/lib/api/audit-log';
 import { listNotifications, __resetNotificationsForTests } from '@/lib/api/notification-service';
 import type { MockAccessGrant } from '@/lib/api/mock-data';
 
 const mockedList = svcList as jest.MockedFunction<typeof svcList>;
 const mockedUpdate = svcUpdate as jest.MockedFunction<typeof svcUpdate>;
-const mockedAuditLog = generateMockAuditLog as jest.MockedFunction<typeof generateMockAuditLog>;
 const actualService = jest.requireActual('@/lib/api/access-service');
-const actualMockData = jest.requireActual('@/lib/api/mock-data');
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
 
 afterEach(() => {
@@ -50,7 +43,6 @@ afterEach(() => {
   });
   mockedList.mockImplementation((...args: unknown[]) => actualService.listAccessGrants(...args));
   mockedUpdate.mockImplementation((...args: unknown[]) => actualService.updateAccessGrant(...args));
-  mockedAuditLog.mockImplementation((...args: unknown[]) => actualMockData.generateMockAuditLog(...args));
 });
 
 function authed(url: string, init: RequestInit, token: string): NextRequest {
@@ -347,31 +339,60 @@ describe('/api/access/[id] detail, modify, revoke', () => {
 });
 
 describe('/api/access/audit log view', () => {
-  const { token } = createSessionToken(seededAddress(555));
+  const owner = seededAddress(555);
+  const provider = seededAddress(556);
+  const { token } = createSessionToken(owner);
+
+  beforeAll(async () => {
+    // Seed the REAL tamper-evident chain with entries the owner is the subject
+    // of: a provider read (access, mapped, has resourceId), a grant create
+    // (grant, mapped, has resourceId), and an unmapped action (default 'access'
+    // bucket, no resourceId) — covers both map branches and the details ternary.
+    const log = getAuditLog();
+    await log.record({ action: 'RECORD_READ', actor: provider, subject: owner, resource: 'health_records', resourceId: 'rec-aud-1', success: true });
+    await log.record({ action: 'GRANT_CREATE', actor: owner, subject: owner, resource: 'access-grant', resourceId: 'grant-aud-1', success: true });
+    await log.record({ action: 'SESSION_CREATE', actor: owner, subject: owner, resource: 'session', success: true });
+    // Unmapped action with no resource at all → exercises the resource ?? '' path.
+    await log.record({ action: 'WALLET_CONNECT', actor: owner, subject: owner, success: true });
+  });
 
   it('returns the middleware error when blocked', async () => {
     mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await listAudit(authed('http://localhost:3001/api/access/audit', { method: 'GET' }, token))).status).toBe(403);
   });
 
-  it('lists audit entries with type counts', async () => {
+  it('returns the auth error when no session is present', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(null as unknown as Response);
+    const res = await listAudit(new NextRequest('http://localhost:3001/api/access/audit', { method: 'GET' }));
+    expect(res.status).toBe(401);
+  });
+
+  it('lists the owner\'s real audit entries with type counts and no fabricated txHash', async () => {
     const res = await listAudit(authed('http://localhost:3001/api/access/audit?limit=100', { method: 'GET' }, token));
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(Array.isArray(body.data)).toBe(true);
-    expect(body.meta.typeCounts).toBeDefined();
+    expect(body.data.length).toBeGreaterThanOrEqual(3);
+    body.data.forEach((e: { txHash: string }) => expect(e.txHash).toBe(''));
+    expect(body.meta.typeCounts.access).toBeGreaterThanOrEqual(2);
+    expect(body.meta.typeCounts.grant).toBeGreaterThanOrEqual(1);
+    // Mapped fields come from the real chain entry, not a fabricated provider.
+    const granted = body.data.find((e: { action: string }) => e.action === 'Access granted');
+    expect(granted.type).toBe('grant');
+    expect(granted.provider).toBe(owner);
+    expect(granted.details).toContain('access-grant');
   });
 
   it('filters by type', async () => {
     const res = await listAudit(authed('http://localhost:3001/api/access/audit?type=access&limit=100', { method: 'GET' }, token));
     const body = await res.json();
+    expect(body.data.length).toBeGreaterThanOrEqual(2);
     body.data.forEach((e: { type: string }) => expect(e.type).toBe('access'));
   });
 
   it('filters by start and end date', async () => {
     const res = await listAudit(authed('http://localhost:3001/api/access/audit?startDate=2000-01-01&endDate=2100-01-01&limit=100', { method: 'GET' }, token));
     expect(res.status).toBe(200);
-    expect((await res.json()).data.length).toBeGreaterThanOrEqual(0);
+    expect((await res.json()).data.length).toBeGreaterThanOrEqual(3);
   });
 
   it('returns 422 for invalid query params', async () => {
@@ -379,8 +400,9 @@ describe('/api/access/audit log view', () => {
   });
 
   it('re-throws a non-Zod error from the audit source', async () => {
-    mockedAuditLog.mockImplementationOnce(() => { throw new Error('audit source down'); });
+    const spy = jest.spyOn(getAuditLog(), 'list').mockRejectedValueOnce(new Error('audit source down'));
     await expect(listAudit(authed('http://localhost:3001/api/access/audit', { method: 'GET' }, token))).rejects.toThrow('audit source down');
+    spy.mockRestore();
   });
 });
 
