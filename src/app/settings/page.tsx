@@ -21,7 +21,7 @@ import {
 import { useApp } from '@/contexts/AppContext';
 import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, Tabs, Modal, ConfirmDialog } from '@/components/ui/SharedComponents';
 import { MedicalCard, SectionHeader, TruncatedHash, CopyButton } from '@/components/ui/PagePrimitives';
-import { PROVIDER_NAMES, TEE_PLATFORMS } from '@/lib/constants';
+import { PROVIDER_NAMES } from '@/lib/constants';
 import { truncateAddress } from '@/lib/utils';
 
 // ============================================================
@@ -35,7 +35,6 @@ const SETTINGS_TABS = [
   { id: 'notifications', label: 'Notifications' },
   { id: 'connected', label: 'Connected Apps' },
   { id: 'export', label: 'Data Export' },
-  { id: 'network', label: 'Network' },
 ];
 
 // ============================================================
@@ -419,13 +418,13 @@ function PrivacyTab() {
             enabled={shareWithProviders}
             onChange={setShareWithProviders}
             label="Share with Healthcare Providers"
-            description="Allow authorized providers to access your health records within TEE enclaves"
+            description="Allow authorized providers to access your health records, scoped to the grants you approve"
           />
           <Toggle
             enabled={shareWithResearch}
             onChange={setShareWithResearch}
             label="Anonymous Research Contribution"
-            description="Contribute anonymized health data to medical research (fully de-identified within TEE)"
+            description="Contribute anonymized health data to medical research (de-identified, k-anonymity enforced)"
           />
         </div>
       </MedicalCard>
@@ -489,8 +488,9 @@ function PrivacyTab() {
           <div>
             <p className="text-sm font-medium text-brand-900">Your Privacy Matters</p>
             <p className="text-xs text-brand-700 mt-1">
-              All health data is encrypted end-to-end with AES-256-GCM. AI inference happens exclusively inside TEE enclaves.
-              Your data never leaves the enclave unencrypted. We are fully HIPAA compliant.
+              Your health data is encrypted at rest with AES-256-GCM (per-record keys), access is owner-scoped,
+              and every access is recorded in a tamper-evident audit trail. HIPAA-aligned controls; formal
+              certification is in progress.
             </p>
           </div>
         </div>
@@ -571,7 +571,7 @@ function NotificationsTab() {
             enabled={insightReady}
             onChange={setInsightReady}
             label="AI Insight Ready"
-            description="When a new AI insight is available from TEE analysis"
+            description="When a new statistical insight is available from your wearable data"
           />
           <Toggle
             enabled={weeklyDigest}
@@ -666,8 +666,8 @@ function ConnectedAppsTab() {
           <div>
             <p className="text-sm font-medium text-emerald-900">Secure Connections</p>
             <p className="text-xs text-emerald-700 mt-1">
-              All app connections use end-to-end encryption. Provider access is controlled through
-              blockchain-verified smart contracts and enforced by TEE enclaves.
+              App connections use TLS in transit and your data is encrypted at rest. Provider access is
+              owner-scoped, time-limited, and recorded in a tamper-evident audit trail.
             </p>
           </div>
         </div>
@@ -800,117 +800,6 @@ function DataExportTab() {
   );
 }
 
-function NetworkTab() {
-  const [rpcEndpoint, setRpcEndpoint] = useState('https://rpc.aethelred.network');
-  const [wsEndpoint, setWsEndpoint] = useState('wss://ws.aethelred.network');
-  const [teePlatform, setTeePlatform] = useState('Intel SGX');
-  const [autoSwitch, setAutoSwitch] = useState(true);
-  const [gasPrice, setGasPrice] = useState('auto');
-
-  return (
-    <div className="space-y-8">
-      {/* RPC Configuration */}
-      <MedicalCard>
-        <h4 className="text-base font-semibold text-slate-900 mb-1">RPC Endpoint Configuration</h4>
-        <p className="text-xs text-slate-500 mb-5">Configure your blockchain node connection</p>
-        <div className="space-y-4">
-          <FormField label="RPC Endpoint" description="HTTP endpoint for blockchain queries" htmlFor="rpc">
-            <TextInput id="rpc" value={rpcEndpoint} onChange={setRpcEndpoint} placeholder="https://rpc.aethelred.network" />
-          </FormField>
-          <FormField label="WebSocket Endpoint" description="WebSocket endpoint for real-time updates" htmlFor="ws">
-            <TextInput id="ws" value={wsEndpoint} onChange={setWsEndpoint} placeholder="wss://ws.aethelred.network" />
-          </FormField>
-          <FormField label="Gas Price Strategy" htmlFor="gas">
-            <SelectInput
-              id="gas"
-              value={gasPrice}
-              onChange={setGasPrice}
-              options={[
-                { value: 'auto', label: 'Automatic (recommended)' },
-                { value: 'low', label: 'Low (slower, cheaper)' },
-                { value: 'medium', label: 'Medium (balanced)' },
-                { value: 'high', label: 'High (faster, more expensive)' },
-              ]}
-            />
-          </FormField>
-        </div>
-      </MedicalCard>
-
-      {/* TEE Enclave Preferences */}
-      <MedicalCard>
-        <h4 className="text-base font-semibold text-slate-900 mb-1">TEE Enclave Preferences</h4>
-        <p className="text-xs text-slate-500 mb-5">Choose your preferred Trusted Execution Environment</p>
-
-        <div className="space-y-3 mb-5">
-          {TEE_PLATFORMS.map((platform) => (
-            <button
-              key={platform}
-              onClick={() => setTeePlatform(platform)}
-              className={`w-full p-4 rounded-xl border-2 text-left transition-colors flex items-center justify-between ${
-                teePlatform === platform
-                  ? 'border-brand-500 bg-brand-50'
-                  : 'border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Cpu className={`w-5 h-5 ${teePlatform === platform ? 'text-brand-600' : 'text-slate-400'}`} />
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{platform}</p>
-                  <p className="text-xs text-slate-500">
-                    {platform === 'Intel SGX' && 'Industry-standard enclave technology with hardware-level isolation'}
-                    {platform === 'AWS Nitro' && 'Cloud-native enclaves with AWS integration and scalability'}
-                    {platform === 'AMD SEV' && 'Memory encryption technology for virtual machine isolation'}
-                  </p>
-                </div>
-              </div>
-              {teePlatform === platform && (
-                <CheckCircle className="w-5 h-5 text-brand-500 shrink-0" />
-              )}
-            </button>
-          ))}
-        </div>
-
-        <Toggle
-          enabled={autoSwitch}
-          onChange={setAutoSwitch}
-          label="Auto-switch TEE Platform"
-          description="Automatically switch to a different TEE platform if the preferred one is unavailable"
-        />
-      </MedicalCard>
-
-      {/* Network Status */}
-      <MedicalCard>
-        <h4 className="text-base font-semibold text-slate-900 mb-4">Network Status</h4>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between py-2 border-b border-slate-100">
-            <span className="text-sm text-slate-500">Connection</span>
-            <Badge variant="success" dot>Connected</Badge>
-          </div>
-          <div className="flex items-center justify-between py-2 border-b border-slate-100">
-            <span className="text-sm text-slate-500">Chain ID</span>
-            <span className="text-sm font-mono font-medium text-slate-900">aethelred-1</span>
-          </div>
-          <div className="flex items-center justify-between py-2 border-b border-slate-100">
-            <span className="text-sm text-slate-500">Latency</span>
-            <span className="text-sm font-medium text-emerald-600">32ms</span>
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <span className="text-sm text-slate-500">TEE Enclave</span>
-            <Badge variant="success" dot>{teePlatform} Active</Badge>
-          </div>
-        </div>
-      </MedicalCard>
-
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <button className="px-6 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-medium transition-colors shadow-sm">
-          Save Network Settings
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ============================================================
 // Main Settings Page
 // ============================================================
@@ -963,7 +852,6 @@ export default function SettingsPage() {
                     {tab.id === 'notifications' && <Bell className="w-4 h-4" />}
                     {tab.id === 'connected' && <Link2 className="w-4 h-4" />}
                     {tab.id === 'export' && <Download className="w-4 h-4" />}
-                    {tab.id === 'network' && <Wifi className="w-4 h-4" />}
                     {tab.label}
                   </button>
                 ))}
@@ -978,7 +866,6 @@ export default function SettingsPage() {
               {activeTab === 'notifications' && <NotificationsTab />}
               {activeTab === 'connected' && <ConnectedAppsTab />}
               {activeTab === 'export' && <DataExportTab />}
-              {activeTab === 'network' && <NetworkTab />}
             </div>
           </div>
         </div>

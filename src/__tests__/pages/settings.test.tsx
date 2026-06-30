@@ -71,7 +71,6 @@ describe('SettingsPage', () => {
     expect(screen.getAllByText('Notifications').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Connected Apps').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Data Export').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Network').length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders Profile tab by default with Personal Information', () => {
@@ -174,20 +173,6 @@ describe('SettingsPage', () => {
     expect(screen.getByText('Data Summary')).toBeInTheDocument();
     expect(screen.getByText('Danger Zone')).toBeInTheDocument();
     expect(screen.getAllByText('Delete Account').length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('switches to Network tab and shows RPC configuration', () => {
-    render(
-      <TestWrapper>
-        <SettingsPage />
-      </TestWrapper>
-    );
-    const networkButtons = screen.getAllByText('Network');
-    fireEvent.click(networkButtons[networkButtons.length - 1]);
-    expect(screen.getByText('RPC Endpoint Configuration')).toBeInTheDocument();
-    expect(screen.getByText('TEE Enclave Preferences')).toBeInTheDocument();
-    expect(screen.getByText('Network Status')).toBeInTheDocument();
-    expect(screen.getByText('Save Network Settings')).toBeInTheDocument();
   });
 
   // ---- Profile tab: form input interactions ----
@@ -461,49 +446,6 @@ describe('SettingsPage', () => {
     expect(screen.queryByText('Delete Account?')).not.toBeInTheDocument();
   });
 
-  // ---- Network tab: input interactions and TEE platform selection ----
-
-  it('updates RPC, WebSocket, and gas price fields on Network tab', () => {
-    render(
-      <TestWrapper>
-        <SettingsPage />
-      </TestWrapper>
-    );
-    const networkButtons = screen.getAllByText('Network');
-    fireEvent.click(networkButtons[networkButtons.length - 1]);
-
-    const rpcInput = screen.getByLabelText('RPC Endpoint') as HTMLInputElement;
-    fireEvent.change(rpcInput, { target: { value: 'https://custom-rpc.example.com' } });
-    expect(rpcInput.value).toBe('https://custom-rpc.example.com');
-
-    const wsInput = screen.getByLabelText('WebSocket Endpoint') as HTMLInputElement;
-    fireEvent.change(wsInput, { target: { value: 'wss://custom-ws.example.com' } });
-    expect(wsInput.value).toBe('wss://custom-ws.example.com');
-
-    const gasSelect = screen.getByLabelText('Gas Price Strategy') as HTMLSelectElement;
-    fireEvent.change(gasSelect, { target: { value: 'high' } });
-    expect(gasSelect.value).toBe('high');
-  });
-
-  it('selects a different TEE platform on Network tab', () => {
-    render(
-      <TestWrapper>
-        <SettingsPage />
-      </TestWrapper>
-    );
-    const networkButtons = screen.getAllByText('Network');
-    fireEvent.click(networkButtons[networkButtons.length - 1]);
-
-    // Click on "AWS Nitro" platform button
-    fireEvent.click(screen.getByText('AWS Nitro'));
-
-    // The active badge should now show "AWS Nitro Active"
-    expect(screen.getByText('AWS Nitro Active')).toBeInTheDocument();
-
-    // Click on "AMD SEV" platform button
-    fireEvent.click(screen.getByText('AMD SEV'));
-    expect(screen.getByText('AMD SEV Active')).toBeInTheDocument();
-  });
 
   it('renders wallet connected state on Profile tab when wallet is connected', () => {
     // Set localStorage to simulate a connected wallet
@@ -565,19 +507,4 @@ describe('SettingsPage', () => {
     expect(codeInput).toBeInTheDocument();
   });
 
-  it('toggles auto-switch TEE platform on Network tab', () => {
-    render(
-      <TestWrapper>
-        <SettingsPage />
-      </TestWrapper>
-    );
-    const networkButtons = screen.getAllByText('Network');
-    fireEvent.click(networkButtons[networkButtons.length - 1]);
-
-    const autoSwitch = screen.getByRole('switch', { name: 'Auto-switch TEE Platform' });
-    // Initially enabled
-    expect(autoSwitch).toHaveAttribute('aria-checked', 'true');
-    fireEvent.click(autoSwitch);
-    expect(autoSwitch).toHaveAttribute('aria-checked', 'false');
-  });
 });
