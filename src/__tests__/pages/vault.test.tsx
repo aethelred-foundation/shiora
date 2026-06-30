@@ -2,6 +2,21 @@
 // Tests for src/app/vault/page.tsx
 // ============================================================
 
+// The vault page reads symptoms from the real /api/vault/symptoms via
+// useReproductiveVault (envelope-encrypted at rest). Mock the hook here so the
+// page renders deterministic symptom data and exercises the frequency/trend
+// derivations — the live fetch + mutation are covered by the hook's own test
+// against MSW.
+const mockLogSymptom = { mutate: jest.fn(), isLoading: false };
+const mockVaultSymptoms = [
+  { id: 's1', date: Date.now() - 2 * 86400000, category: 'pain', symptom: 'Cramps', severity: 3, notes: '', tags: [] },
+  { id: 's2', date: Date.now() - 5 * 86400000, category: 'mood', symptom: 'Anxiety', severity: 2, notes: '', tags: [] },
+  { id: 's3', date: Date.now() - 100 * 86400000, category: 'pain', symptom: 'Headache', severity: 1, notes: '', tags: [] },
+];
+jest.mock('@/hooks/useReproductiveVault', () => ({
+  useReproductiveVault: () => ({ symptoms: mockVaultSymptoms, logSymptom: mockLogSymptom }),
+}));
+
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AppProvider } from '@/contexts/AppContext';

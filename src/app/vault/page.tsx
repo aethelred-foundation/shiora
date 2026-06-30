@@ -34,6 +34,7 @@ import {
   JurisdictionBadge,
   PrivacyMeter,
 } from '@/components/vault/VaultComponents';
+import { useReproductiveVault } from '@/hooks/useReproductiveVault';
 import {
   BRAND, VAULT_CATEGORIES, SYMPTOM_CATEGORIES,
   CYCLE_PHASE_COLORS, CHART_COLORS, REPRODUCTIVE_JURISDICTIONS,
@@ -46,8 +47,7 @@ import {
 } from '@/lib/utils';
 import type {
   VaultCompartment, VaultCompartmentCategory, VaultLockStatus,
-  CycleEntry, CyclePhase, SymptomLog, SymptomCategory,
-  SymptomSeverity, FertilityMarker, VaultPrivacyScore,
+  CycleEntry, CyclePhase, FertilityMarker, VaultPrivacyScore,
 } from '@/types';
 
 // ============================================================
@@ -134,38 +134,6 @@ function generatePageCycleEntries(): CycleEntry[] {
   return entries;
 }
 
-function generatePageSymptoms(): SymptomLog[] {
-  const symptomNames: Record<string, string[]> = {
-    pain: ['Cramps', 'Headache', 'Lower back pain', 'Breast tenderness', 'Pelvic pain'],
-    mood: ['Anxiety', 'Irritability', 'Mood swings', 'Sadness', 'Emotional sensitivity'],
-    energy: ['Fatigue', 'Low energy', 'Exhaustion', 'Difficulty concentrating', 'Brain fog'],
-    digestive: ['Bloating', 'Nausea', 'Appetite changes', 'Constipation', 'Gas'],
-    skin: ['Acne breakout', 'Dry skin', 'Oily skin', 'Rash', 'Sensitivity'],
-    sleep: ['Insomnia', 'Night sweats', 'Restless sleep', 'Oversleeping', 'Vivid dreams'],
-    discharge: ['Clear', 'White', 'Yellow', 'Brown', 'Spotting'],
-    temperature: ['Hot flashes', 'Chills', 'Fever', 'Night sweats', 'Cold sensitivity'],
-    other: ['Dizziness', 'Leg cramps', 'Hair loss', 'Weight changes', 'Swelling'],
-  };
-
-  const categories: SymptomCategory[] = ['pain', 'mood', 'energy', 'digestive', 'skin', 'sleep', 'discharge', 'temperature', 'other'];
-
-  return Array.from({ length: 60 }, (_, i) => {
-    const category = seededPick(SEED + i * 73, categories);
-    const names = symptomNames[category] ??
-      /* istanbul ignore next */
-      ['Unknown'];
-    return {
-      id: `sym-${seededHex(SEED + i * 300, 12)}`,
-      date: Date.now() - seededInt(SEED + i * 77, 0, 60) * 86400000,
-      category,
-      symptom: seededPick(SEED + i * 79, names),
-      severity: seededInt(SEED + i * 81, 1, 5) as SymptomSeverity,
-      notes: seededPick(SEED + i * 83, ['', '', '', 'Took ibuprofen', 'After exercise', 'Morning onset']),
-      tags: [seededPick(SEED + i * 85, ['tracked', 'recurring', 'new', 'improving', 'worsening'])],
-    };
-  });
-}
-
 function generatePageFertilityMarkers(): FertilityMarker[] {
   const types: FertilityMarker['type'][] = ['lh_surge', 'bbt_shift', 'cervical_mucus', 'ovulation_confirmed'];
   const sources: FertilityMarker['source'][] = ['manual', 'ai_predicted', 'wearable'];
@@ -226,10 +194,13 @@ const SOURCE_LABELS: Record<string, string> = {
 export default function VaultPage() {
   const [activeTab, setActiveTab] = useState('overview');
 
+  // Real, encrypted-at-rest symptom data from the vault API
+  // (GET/POST /api/vault/symptoms — envelope-encrypted server-side).
+  const { symptoms, logSymptom } = useReproductiveVault();
+
   // Generate all mock data at component level using useMemo for stability
   const compartments = useMemo(() => generatePageCompartments(), []);
   const cycleEntries = useMemo(() => generatePageCycleEntries(), []);
-  const symptoms = useMemo(() => generatePageSymptoms(), []);
   const fertilityMarkers = useMemo(() => generatePageFertilityMarkers(), []);
 
   // Derived stats
@@ -351,10 +322,6 @@ export default function VaultPage() {
   };
   /* istanbul ignore next -- stub: production would call the mutation */
   const handleUnlock = (id: string) => {
-    // In production, this would call the mutation
-  };
-  /* istanbul ignore next -- stub: production would call the mutation */
-  const handleLogSymptom = (symptom: Omit<SymptomLog, 'id'>) => {
     // In production, this would call the mutation
   };
 
@@ -551,7 +518,7 @@ export default function VaultPage() {
                 <SectionHeader title="Log Symptoms" subtitle="Track your daily symptoms" size="sm" />
                 <SymptomLogger
                   categories={SYMPTOM_CATEGORIES}
-                  onLog={handleLogSymptom}
+                  onLog={logSymptom.mutate}
                   recentLogs={symptoms}
                 />
               </MedicalCard>
