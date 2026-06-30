@@ -2,6 +2,27 @@
 // Tests for src/app/access/page.tsx
 // ============================================================
 
+// The access page reads real grants + the real audit trail via useAccessControl
+// (GET /api/access and /api/access/audit). Mock the hook with deterministic,
+// varied grants (every status; canShare/canDownload variations; a null-lastAccess
+// grant) and audit entries so the client-side filter/search and the detail modal
+// render at full coverage; the live fetch is covered by the hook's own test.
+const mockNow = Date.now();
+const mockGrants = [
+  { id: 'g1', provider: 'Dr. Sarah Chen, OB-GYN', specialty: 'OB-GYN', address: '0xaaaa000000000000000000000000000000000001', status: 'Active', scope: 'Full Records', grantedAt: mockNow - 30 * 86400000, expiresAt: mockNow + 60 * 86400000, lastAccess: mockNow - 2 * 3600000, accessCount: 12, txHash: '', attestation: '', canView: true, canDownload: true, canShare: true },
+  { id: 'g2', provider: 'Dr. James Liu, Endocrinology', specialty: 'Endocrinology', address: '0xbbbb000000000000000000000000000000000002', status: 'Active', scope: 'Lab Results Only', grantedAt: mockNow - 20 * 86400000, expiresAt: mockNow + 40 * 86400000, lastAccess: mockNow - 5 * 3600000, accessCount: 5, txHash: '', attestation: '', canView: true, canDownload: true, canShare: false },
+  { id: 'g3', provider: 'Metro Imaging Center', specialty: 'Radiology', address: '0xcccc000000000000000000000000000000000003', status: 'Active', scope: 'Imaging', grantedAt: mockNow - 10 * 86400000, expiresAt: mockNow + 20 * 86400000, lastAccess: mockNow - 26 * 3600000, accessCount: 3, txHash: '', attestation: '', canView: true, canDownload: false, canShare: false },
+  { id: 'g4', provider: 'Old Family Clinic', specialty: 'General Practice', address: '0xdddd000000000000000000000000000000000004', status: 'Expired', scope: 'Full Records', grantedAt: mockNow - 120 * 86400000, expiresAt: mockNow - 5 * 86400000, lastAccess: null, accessCount: 0, txHash: '', attestation: '', canView: true, canDownload: false, canShare: false },
+  { id: 'g5', provider: 'North Vitals Lab', specialty: 'Pathology', address: '0xeeee000000000000000000000000000000000005', status: 'Active', scope: 'Vitals', grantedAt: mockNow - 4 * 86400000, expiresAt: mockNow + 50 * 86400000, lastAccess: mockNow - 9 * 3600000, accessCount: 2, txHash: '', attestation: '', canView: true, canDownload: false, canShare: false },
+];
+const mockAuditLog = [
+  { id: 'a1', provider: '0xaaaa000000000000000000000000000000000001', action: 'Record accessed', timestamp: mockNow - 2 * 3600000, details: 'health_records · rec-1', txHash: '', type: 'access' },
+  { id: 'a2', provider: '0xowner00000000000000000000000000000000000', action: 'Access granted', timestamp: mockNow - 5 * 3600000, details: 'access-grant · grant-1', txHash: '', type: 'grant' },
+];
+jest.mock('@/hooks/useAccessControl', () => ({
+  useAccessControl: () => ({ grants: mockGrants, auditLog: mockAuditLog }),
+}));
+
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -159,7 +180,8 @@ describe('AccessPage', () => {
     expect(screen.getAllByText('Provider').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Details')).toBeInTheDocument();
     expect(screen.getByText('Time')).toBeInTheDocument();
-    expect(screen.getByText('Transaction')).toBeInTheDocument();
+    // The fabricated on-chain "Transaction" column was removed.
+    expect(screen.queryByText('Transaction')).not.toBeInTheDocument();
   });
 
   it('displays audit log entries', () => {
@@ -171,7 +193,7 @@ describe('AccessPage', () => {
 
     fireEvent.click(screen.getByText('Audit Log'));
 
-    expect(screen.getByText('Viewed lab results')).toBeInTheDocument();
+    expect(screen.getByText('Record accessed')).toBeInTheDocument();
     expect(screen.getByText('Access granted')).toBeInTheDocument();
   });
 
@@ -188,7 +210,10 @@ describe('AccessPage', () => {
     // Modal should open with grant details
     expect(screen.getByText('Access Grant Details')).toBeInTheDocument();
     expect(screen.getAllByText('Permissions').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Blockchain Verification')).toBeInTheDocument();
+    // De-theatered: a "Provider" block replaces the fabricated "Blockchain Verification".
+    expect(screen.getByText('Provider')).toBeInTheDocument();
+    expect(screen.queryByText('Blockchain Verification')).not.toBeInTheDocument();
+    expect(screen.queryByText('TEE Attestation')).not.toBeInTheDocument();
   });
 
   it('renders security notice', () => {
@@ -197,7 +222,7 @@ describe('AccessPage', () => {
         <AccessPage />
       </TestWrapper>
     );
-    expect(screen.getByText('End-to-End Encrypted Access')).toBeInTheDocument();
+    expect(screen.getByText('Encrypted, owner-controlled access')).toBeInTheDocument();
   });
 
   it('renders grant permissions icons', () => {
