@@ -1,8 +1,8 @@
 /**
  * Shiora on Aethelred — Dashboard (Home Page)
  *
- * Overview of health data, TEE status, AI inference stats,
- * recent records, and platform activity on the Aethelred blockchain.
+ * Overview of the user's health data, recent records, and access activity.
+ * Encrypted at rest with a tamper-evident audit trail; on the Aethelred ecosystem.
  */
 
 'use client';
@@ -28,9 +28,9 @@ import {
 
 import { useApp } from '@/contexts/AppContext';
 import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, AnimatedNumber } from '@/components/ui/SharedComponents';
-import { MedicalCard, HealthMetricCard, SectionHeader, ChartTooltip, TEEBadge, EncryptionBadge, StatusBadge } from '@/components/ui/PagePrimitives';
+import { MedicalCard, HealthMetricCard, SectionHeader, ChartTooltip, EncryptionBadge, StatusBadge } from '@/components/ui/PagePrimitives';
 import { RewardsSummary } from '@/components/rewards/RewardsComponents';
-import { BRAND, CHART_COLORS, CYCLE_PHASE_COLORS, AI_MODELS, RECORD_TYPES, PROVIDER_NAMES } from '@/lib/constants';
+import { BRAND, CHART_COLORS, CYCLE_PHASE_COLORS, RECORD_TYPES, PROVIDER_NAMES } from '@/lib/constants';
 import {
   seededRandom, seededInt, seededHex, seededPick, seededAddress,
   formatNumber, formatBytes, formatDate, formatDateTime,
@@ -42,14 +42,6 @@ import {
 // ============================================================
 
 const SEED = 100;
-
-function generateTpsHistory() {
-  return Array.from({ length: 30 }, (_, i) => ({
-    day: generateDayLabel(29 - i),
-    tps: Math.round(1500 + seededRandom(SEED + i * 3) * 1200),
-    inferences: Math.round(300 + seededRandom(SEED + i * 5 + 1) * 500),
-  }));
-}
 
 function generateCycleData() {
   const phases = ['menstrual', 'follicular', 'ovulation', 'luteal'] as const;
@@ -189,9 +181,8 @@ function QuickActionCard({
 // ============================================================
 
 export default function DashboardPage() {
-  const { wallet, healthData, teeState, realTime } = useApp();
+  const { wallet, healthData } = useApp();
 
-  const tpsHistory = useMemo(() => generateTpsHistory(), []);
   const cycleData = useMemo(() => generateCycleData(), []);
   const recentRecords = useMemo(() => generateRecentRecords(), []);
   const accessActivity = useMemo(() => generateAccessActivity(), []);
@@ -227,8 +218,8 @@ export default function DashboardPage() {
                     Welcome back{welcomeSuffix}
                   </h1>
                   <p className="text-brand-100 max-w-xl">
-                    Your health data is protected by TEE-verified encryption on the Aethelred blockchain.
-                    All AI inferences run inside secure enclaves — your data never leaves the enclave unencrypted.
+                    Your health data is encrypted at rest with AES-256-GCM (per-record keys), owner-scoped,
+                    and every access is written to a tamper-evident audit trail.
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -265,20 +256,20 @@ export default function DashboardPage() {
             />
             <HealthMetricCard
               icon={<Brain className="w-5 h-5" />}
-              label="AI Inferences"
-              value={formatNumber(teeState.inferencesCompleted)}
-              trend={12.7}
-              trendLabel="this week"
-              sparklineData={[100, 120, 110, 135, 150, 140, 165, 170]}
+              label="Encrypted at Rest"
+              value={healthData.encryptedRecords.toString()}
+              unit="records"
+              trend={4.2}
+              trendLabel="this month"
+              sparklineData={[120, 125, 130, 128, 135, 140, 142, 147]}
               sparklineColor="#a78bfa"
             />
             <HealthMetricCard
               icon={<ShieldCheck className="w-5 h-5" />}
-              label="TEE Attestations"
-              value={teeState.attestationsToday.toString()}
-              unit="today"
-              trend={8.3}
-              trendLabel="vs yesterday"
+              label="Storage Used"
+              value={formatBytes(healthData.storageUsed)}
+              trend={3.1}
+              trendLabel="this month"
               sparklineData={[200, 220, 250, 230, 270, 280, 260, 290]}
               sparklineColor="#10b981"
             />
@@ -358,14 +349,14 @@ export default function DashboardPage() {
             <QuickActionCard
               icon={<FolderLock className="w-5 h-5 text-brand-600" />}
               title="Upload Health Data"
-              description="AES-256 encrypted, IPFS-pinned"
+              description="AES-256-GCM encrypted at rest"
               href="/records"
               color="bg-brand-50"
             />
             <QuickActionCard
               icon={<Brain className="w-5 h-5 text-violet-600" />}
               title="Cycle Predictions"
-              description="TEE-verified AI analysis"
+              description="Statistical analysis of your data"
               href="/insights"
               color="bg-violet-50"
             />
@@ -378,8 +369,8 @@ export default function DashboardPage() {
             />
             <QuickActionCard
               icon={<ShieldCheck className="w-5 h-5 text-emerald-600" />}
-              title="TEE Explorer"
-              description="Explore enclave attestations"
+              title="Attestation Tooling"
+              description="Verifier tooling (simulated)"
               href="/tee-explorer"
               color="bg-emerald-50"
             />
@@ -502,83 +493,6 @@ export default function DashboardPage() {
             </MedicalCard>
           </div>
 
-          {/* ─── Network + TEE Stats ─── */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-            {/* Network Activity */}
-            <MedicalCard className="lg:col-span-2" padding={false}>
-              <div className="p-5 pb-0">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-base font-semibold text-slate-900">Network Activity</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">TPS and AI inferences over 30 days</p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: BRAND.sky }} />
-                      <span className="text-2xs text-slate-500">TPS</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#a78bfa' }} />
-                      <span className="text-2xs text-slate-500">Inferences</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="px-2 pb-4 pt-2">
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={tpsHistory} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="day" tick={{ fontSize: 9, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} interval={6} />
-                    <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Bar dataKey="tps" fill={BRAND.sky} radius={[3, 3, 0, 0]} barSize={8} name="TPS" />
-                    <Bar dataKey="inferences" fill="#a78bfa" radius={[3, 3, 0, 0]} barSize={8} name="Inferences" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </MedicalCard>
-
-            {/* TEE Status Card */}
-            <MedicalCard>
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="text-base font-semibold text-slate-900">TEE Status</h3>
-                <StatusBadge status={teeState.status === 'operational' ? 'Operational' : /* istanbul ignore next */ teeState.status === 'degraded' ? 'Degraded' : 'Offline'} />
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between py-2 border-b border-slate-100">
-                  <span className="text-sm text-slate-500">Platform</span>
-                  <TEEBadge platform={teeState.platform} verified />
-                </div>
-                <div className="flex items-center justify-between py-2 border-b border-slate-100">
-                  <span className="text-sm text-slate-500">Enclave Uptime</span>
-                  <span className="text-sm font-medium text-emerald-600">{teeState.enclaveUptime}%</span>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b border-slate-100">
-                  <span className="text-sm text-slate-500">Last Attestation</span>
-                  <span className="text-sm font-medium text-slate-700">{timeAgo(teeState.lastAttestation)}</span>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b border-slate-100">
-                  <span className="text-sm text-slate-500">Attestations Today</span>
-                  <span className="text-sm font-bold text-slate-900">{teeState.attestationsToday}</span>
-                </div>
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm text-slate-500">Inferences</span>
-                  <span className="text-sm font-bold text-slate-900">{formatNumber(teeState.inferencesCompleted)}</span>
-                </div>
-              </div>
-
-              <div className="mt-5 p-3 bg-emerald-50 rounded-xl">
-                <div className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
-                  <p className="text-xs text-emerald-700">
-                    All TEE enclaves are verified and operational. Health data is processed exclusively inside secure enclaves.
-                  </p>
-                </div>
-              </div>
-            </MedicalCard>
-          </div>
-
           {/* ─── Recent Records + Access Activity ─── */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
             {/* Recent Records */}
@@ -637,74 +551,6 @@ export default function DashboardPage() {
               </div>
             </MedicalCard>
           </div>
-
-          {/* ─── AI Models Overview ─── */}
-          <SectionHeader title="AI Models" subtitle="TEE-verified machine learning models running inside secure enclaves" size="sm" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-            {AI_MODELS.map((model) => (
-              <MedicalCard key={model.id}>
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
-                    <Brain className="w-5 h-5 text-violet-600" />
-                  </div>
-                  <Badge variant="medical">{model.version}</Badge>
-                </div>
-                <h4 className="text-sm font-semibold text-slate-900 mb-1">{model.name}</h4>
-                <p className="text-xs text-slate-500 mb-3 line-clamp-2">{model.description}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-400">{model.type}</span>
-                  <div className="flex items-center gap-1">
-                    <BarChart3 className="w-3 h-3 text-emerald-500" />
-                    <span className="text-xs font-semibold text-emerald-600">{model.accuracy}%</span>
-                  </div>
-                </div>
-              </MedicalCard>
-            ))}
-          </div>
-
-          {/* ─── TEE Health Status ─── */}
-          <MedicalCard className="mb-10">
-            <SectionHeader title="TEE Health Status" icon={Server} />
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
-              <div className="bg-emerald-50 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Cpu className="w-4 h-4 text-emerald-600" />
-                  <p className="text-xs text-emerald-600 font-medium">Active Enclaves</p>
-                </div>
-                <p className="text-2xl font-bold text-emerald-700"><AnimatedNumber value={8} /></p>
-                <p className="text-xs text-emerald-500 mt-1">SGX + Nitro + SEV</p>
-              </div>
-              <div className="bg-brand-50 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <ShieldCheck className="w-4 h-4 text-brand-600" />
-                  <p className="text-xs text-brand-600 font-medium">Attestation Rate</p>
-                </div>
-                <p className="text-2xl font-bold text-brand-700">99.7%</p>
-                <p className="text-xs text-brand-500 mt-1">Last 24 hours</p>
-              </div>
-              <div className="bg-violet-50 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Zap className="w-4 h-4 text-violet-600" />
-                  <p className="text-xs text-violet-600 font-medium">Compute TPS</p>
-                </div>
-                <p className="text-2xl font-bold text-violet-700"><AnimatedNumber value={342} /></p>
-                <p className="text-xs text-violet-500 mt-1">Secure operations/sec</p>
-              </div>
-              <div className="bg-amber-50 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="w-4 h-4 text-amber-600" />
-                  <p className="text-xs text-amber-600 font-medium">Avg Latency</p>
-                </div>
-                <p className="text-2xl font-bold text-amber-700">127ms</p>
-                <p className="text-xs text-amber-500 mt-1">Enclave execution time</p>
-              </div>
-            </div>
-            <div className="mt-3 flex justify-end">
-              <Link href="/tee-explorer" className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1">
-                Explore TEE Details <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </MedicalCard>
 
           {/* ─── Twin Prediction + Compliance Score ─── */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
@@ -897,82 +743,6 @@ export default function DashboardPage() {
               </div>
             </div>
           </MedicalCard>
-
-          <div className="mb-10" />
-
-          {/* ─── Platform Stats ─── */}
-          <MedicalCard>
-            <SectionHeader title="Platform Stats" icon={Globe} />
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mt-4">
-              <div className="text-center p-3">
-                <p className="text-2xl font-bold text-slate-900"><AnimatedNumber value={12847} /></p>
-                <p className="text-xs text-slate-500 mt-1">Total Users</p>
-              </div>
-              <div className="text-center p-3">
-                <p className="text-2xl font-bold text-slate-900"><AnimatedNumber value={847} suffix="K" /></p>
-                <p className="text-xs text-slate-500 mt-1">Health Records</p>
-              </div>
-              <div className="text-center p-3">
-                <p className="text-2xl font-bold text-slate-900"><AnimatedNumber value={2.1} decimals={1} suffix="M" /></p>
-                <p className="text-xs text-slate-500 mt-1">TEE Attestations</p>
-              </div>
-              <div className="text-center p-3">
-                <p className="text-2xl font-bold text-slate-900"><AnimatedNumber value={45.2} decimals={1} suffix="K AETHEL" /></p>
-                <p className="text-xs text-slate-500 mt-1">Marketplace Volume</p>
-              </div>
-              <div className="text-center p-3">
-                <p className="text-2xl font-bold text-slate-900"><AnimatedNumber value={67} /></p>
-                <p className="text-xs text-slate-500 mt-1">Governance Proposals</p>
-              </div>
-              <div className="text-center p-3">
-                <p className="text-2xl font-bold text-slate-900"><AnimatedNumber value={12} /></p>
-                <p className="text-xs text-slate-500 mt-1">Research Studies</p>
-              </div>
-            </div>
-          </MedicalCard>
-
-          <div className="mb-10" />
-
-          {/* ─── Bottom Network Bar ─── */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-emerald-500" />
-                  <span className="text-sm text-slate-500">Block</span>
-                  <span className="text-sm font-mono font-bold text-slate-900">
-                    <AnimatedNumber value={realTime.blockHeight} />
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-amber-500" />
-                  <span className="text-sm text-slate-500">TPS</span>
-                  <span className="text-sm font-bold text-slate-900">{formatNumber(realTime.tps)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-brand-500" />
-                  <span className="text-sm text-slate-500">Epoch</span>
-                  <span className="text-sm font-bold text-slate-900">{realTime.epoch}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-500">Network Load</span>
-                  <div className="w-24 bg-slate-100 rounded-full h-2">
-                    <div
-                      className="bg-brand-500 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${realTime.networkLoad}%` }}
-                    />
-                  </div>
-                  <span className="text-sm font-medium text-slate-700">{realTime.networkLoad}%</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-500">$AETHEL</span>
-                  <span className="text-sm font-bold text-slate-900">${realTime.aethelPrice}</span>
-                </div>
-              </div>
-            </div>
-          </div>
 
         </div>
       </main>

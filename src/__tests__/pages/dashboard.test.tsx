@@ -39,8 +39,8 @@ describe('DashboardPage', () => {
     );
     // These labels may appear in multiple places (metric cards + nav links)
     expect(screen.getAllByText('Health Records').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('AI Inferences').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('TEE Attestations').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Encrypted at Rest').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Storage Used').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Provider Access').length).toBeGreaterThanOrEqual(1);
   });
 
@@ -50,8 +50,8 @@ describe('DashboardPage', () => {
         <DashboardPage />
       </TestWrapper>
     );
-    // Health records count is 147
-    expect(screen.getByText('147')).toBeInTheDocument();
+    // Health records count is 147 (appears on Total + Encrypted-at-Rest cards)
+    expect(screen.getAllByText('147').length).toBeGreaterThanOrEqual(1);
     // Provider access count is 3 — may appear in multiple places
     expect(screen.getAllByText('3').length).toBeGreaterThanOrEqual(1);
   });
@@ -73,10 +73,10 @@ describe('DashboardPage', () => {
         <DashboardPage />
       </TestWrapper>
     );
-    expect(screen.getByText('AES-256 encrypted, IPFS-pinned')).toBeInTheDocument();
-    expect(screen.getByText('TEE-verified AI analysis')).toBeInTheDocument();
+    expect(screen.getByText('AES-256-GCM encrypted at rest')).toBeInTheDocument();
+    expect(screen.getByText('Statistical analysis of your data')).toBeInTheDocument();
     expect(screen.getByText('Granular provider permissions')).toBeInTheDocument();
-    expect(screen.getByText('Explore enclave attestations')).toBeInTheDocument();
+    expect(screen.getByText('Verifier tooling (simulated)')).toBeInTheDocument();
   });
 
   it('renders chart sections (mocked)', () => {
@@ -87,19 +87,6 @@ describe('DashboardPage', () => {
     );
     expect(screen.getByText('Cycle Temperature Tracking')).toBeInTheDocument();
     expect(screen.getByText('Storage Breakdown')).toBeInTheDocument();
-    expect(screen.getByText('Network Activity')).toBeInTheDocument();
-  });
-
-  it('renders TEE status card', () => {
-    render(
-      <TestWrapper>
-        <DashboardPage />
-      </TestWrapper>
-    );
-    expect(screen.getByText('TEE Status')).toBeInTheDocument();
-    // "Platform" may appear multiple times (TEE status card + quick actions area)
-    expect(screen.getAllByText('Platform').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Enclave Uptime').length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders recent records section', () => {
@@ -121,32 +108,6 @@ describe('DashboardPage', () => {
     );
     expect(screen.getByText('Access Activity')).toBeInTheDocument();
     expect(screen.getByText('Manage')).toBeInTheDocument();
-  });
-
-  it('renders AI Models section', () => {
-    render(
-      <TestWrapper>
-        <DashboardPage />
-      </TestWrapper>
-    );
-    expect(screen.getAllByText('AI Models').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Cycle LSTM')).toBeInTheDocument();
-    expect(screen.getByText('Anomaly Detector')).toBeInTheDocument();
-    expect(screen.getByText('Fertility XGBoost')).toBeInTheDocument();
-    expect(screen.getByText('Health Transformer')).toBeInTheDocument();
-  });
-
-  it('renders the bottom network bar with real-time data', () => {
-    render(
-      <TestWrapper>
-        <DashboardPage />
-      </TestWrapper>
-    );
-    // "Block", "TPS", etc. may appear in multiple places
-    expect(screen.getAllByText('Block').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('TPS').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Epoch').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('$AETHEL').length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders View Records and AI Insights action buttons', () => {
