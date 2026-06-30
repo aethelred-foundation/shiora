@@ -1,8 +1,9 @@
 /**
  * Shiora on Aethelred — Health Records Page
  *
- * Encrypted health record management with IPFS storage,
- * AES-256 encryption, and TEE-verified integrity proofs.
+ * Encrypted health-record management. Records are sealed at rest with
+ * AES-256-GCM (per-record DEK) and every access is written to a tamper-evident
+ * audit chain. Records are not IPFS-pinned, on-chain-anchored, or TEE-attested.
  */
 
 'use client';
@@ -16,87 +17,13 @@ import {
   Hash, ExternalLink, Grid3X3, List,
 } from 'lucide-react';
 
-import { useApp } from '@/contexts/AppContext';
 import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, Tabs, Modal } from '@/components/ui/SharedComponents';
 import {
-  MedicalCard, HealthMetricCard, SectionHeader, StatusBadge,
-  EncryptionBadge, TEEBadge, TruncatedHash, CopyButton,
+  MedicalCard, StatusBadge, EncryptionBadge,
 } from '@/components/ui/PagePrimitives';
-import { BRAND, RECORD_TYPES, PROVIDER_NAMES } from '@/lib/constants';
-import {
-  seededRandom, seededInt, seededHex, seededPick, seededAddress,
-  formatNumber, formatBytes, formatDate, formatDateTime,
-  timeAgo, generateCID, generateTxHash, generateAttestation,
-} from '@/lib/utils';
-
-// ============================================================
-// Types
-// ============================================================
-
-interface HealthRecord {
-  id: string;
-  type: string;
-  label: string;
-  description: string;
-  date: number;
-  uploadDate: number;
-  encrypted: boolean;
-  encryption: string;
-  cid: string;
-  txHash: string;
-  attestation: string;
-  size: number;
-  provider: string;
-  status: 'Verified' | 'Pinning' | 'Pinned' | 'Processing';
-  ipfsNodes: number;
-  tags: string[];
-}
-
-// ============================================================
-// Mock Data
-// ============================================================
-
-const SEED = 200;
-
-const TYPE_DESCRIPTIONS: Record<string, string[]> = {
-  lab_result: ['Complete Blood Count', 'Thyroid Panel (TSH, T3, T4)', 'Lipid Panel', 'Hemoglobin A1C', 'Hormone Panel (Estradiol, Progesterone)', 'Comprehensive Metabolic Panel', 'Iron Studies', 'Vitamin D Level'],
-  imaging: ['Pelvic Ultrasound', 'Mammogram Bilateral', 'Transvaginal Sonogram', 'Bone Density Scan', 'MRI Pelvis', 'HSG Report'],
-  prescription: ['Estradiol 2mg Oral', 'Progesterone 200mg', 'Levothyroxine 50mcg', 'Prenatal Vitamins', 'Metformin 500mg'],
-  vitals: ['Blood Pressure Reading', 'Weight & BMI Check', 'Heart Rate Monitoring', 'Oxygen Saturation', 'Temperature Log'],
-  notes: ['Annual Exam Notes', 'Follow-up Visit Summary', 'Pre-conception Consultation', 'Specialist Referral', 'Treatment Plan Update'],
-};
-
-const TAGS_POOL = ['routine', 'urgent', 'follow-up', 'annual', 'specialist', 'lab', 'imaging', 'medication', 'monitoring', 'fertility', 'prenatal', 'postpartum'];
-
-function generateRecords(): HealthRecord[] {
-  const types = ['lab_result', 'imaging', 'prescription', 'vitals', 'notes'] as const;
-  const statuses: HealthRecord['status'][] = ['Verified', 'Pinned', 'Pinning', 'Processing'];
-
-  return Array.from({ length: 24 }, (_, i) => {
-    const type = seededPick(SEED + i * 7, types);
-    const descriptions = TYPE_DESCRIPTIONS[type] ||
-      /* istanbul ignore next -- type always found in TYPE_DESCRIPTIONS for seeded data */
-      ['Record'];
-    return {
-      id: `rec-${seededHex(SEED + i * 100, 12)}`,
-      type,
-      label: seededPick(SEED + i * 3, descriptions),
-      description: `Encrypted health record processed via TEE enclave at block ${2847000 + seededInt(SEED + i * 5, 0, 500)}`,
-      date: Date.now() - i * 86400000 * (1 + seededRandom(SEED + i) * 3),
-      uploadDate: Date.now() - i * 86400000 * (1 + seededRandom(SEED + i) * 3) + 3600000,
-      encrypted: true,
-      encryption: 'AES-256-GCM',
-      cid: generateCID(SEED + i * 50),
-      txHash: generateTxHash(SEED + i * 30),
-      attestation: generateAttestation(SEED + i * 40),
-      size: seededInt(SEED + i * 11, 20, 2000) * 1024,
-      provider: seededPick(SEED + i * 13, PROVIDER_NAMES),
-      status: i < 2 ? 'Processing' : i < 4 ? 'Pinning' : seededPick(SEED + i * 9, ['Verified', 'Pinned'] as const),
-      ipfsNodes: seededInt(SEED + i * 17, 12, 64),
-      tags: [TAGS_POOL[i % TAGS_POOL.length], TAGS_POOL[(i + 3) % TAGS_POOL.length]],
-    };
-  });
-}
+import { formatBytes, formatDate, formatDateTime } from '@/lib/utils';
+import { useHealthRecords } from '@/hooks/useHealthRecords';
+import type { HealthRecord } from '@/types';
 
 // ============================================================
 // Sub-components
@@ -143,7 +70,6 @@ function RecordDetailModal({ record, open, onClose }: { record: HealthRecord | n
             <div className="flex items-center gap-2 mt-2">
               <StatusBadge status={record.status} />
               <EncryptionBadge type={record.encryption} />
-              <TEEBadge verified />
             </div>
           </div>
         </div>
@@ -163,27 +89,8 @@ function RecordDetailModal({ record, open, onClose }: { record: HealthRecord | n
             <p className="text-sm font-medium text-slate-900">{formatBytes(record.size)}</p>
           </div>
           <div className="bg-slate-50 rounded-xl p-3">
-            <p className="text-xs text-slate-400 mb-1">IPFS Nodes</p>
-            <p className="text-sm font-medium text-slate-900">{record.ipfsNodes} nodes</p>
-          </div>
-        </div>
-
-        {/* Cryptographic Details */}
-        <div className="space-y-3">
-          <h5 className="text-sm font-semibold text-slate-900">Cryptographic Details</h5>
-          <div className="bg-slate-50 rounded-xl p-4 space-y-3">
-            <div>
-              <p className="text-xs text-slate-400 mb-1">IPFS CID</p>
-              <TruncatedHash hash={record.cid} startLen={12} endLen={8} />
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 mb-1">Transaction Hash</p>
-              <TruncatedHash hash={record.txHash} startLen={12} endLen={8} />
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 mb-1">TEE Attestation</p>
-              <TruncatedHash hash={record.attestation} startLen={12} endLen={8} />
-            </div>
+            <p className="text-xs text-slate-400 mb-1">Record Type</p>
+            <p className="text-sm font-medium text-slate-900">{TYPE_LABELS[record.type]}</p>
           </div>
         </div>
 
@@ -201,8 +108,8 @@ function RecordDetailModal({ record, open, onClose }: { record: HealthRecord | n
         <div className="p-3 bg-emerald-50 rounded-xl flex items-start gap-2">
           <ShieldCheck className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
           <p className="text-xs text-emerald-700">
-            This record is encrypted with {record.encryption} and stored on IPFS across {record.ipfsNodes} nodes.
-            The TEE attestation proves this record was processed inside an Intel SGX enclave.
+            This record is sealed at rest with {record.encryption} and is owner-scoped.
+            Every read and change is written to a tamper-evident audit trail.
           </p>
         </div>
       </div>
@@ -215,9 +122,19 @@ function RecordDetailModal({ record, open, onClose }: { record: HealthRecord | n
 // ============================================================
 
 export default function RecordsPage() {
-  const { healthData } = useApp();
+  // Real, encrypted-at-rest records from the records API (GET /api/records).
+  // Fetch a generous page so the client-side type counts / search / sort below
+  // operate over the full set; degrades to an empty list with no wallet session.
+  const { records } = useHealthRecords({ pageSize: 100 });
 
-  const records = useMemo(() => generateRecords(), []);
+  const totalSize = useMemo(
+    () => records.reduce((sum, r) => sum + r.size, 0),
+    [records],
+  );
+  const encryptedCount = useMemo(
+    () => records.filter((r) => r.encrypted).length,
+    [records],
+  );
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeType, setActiveType] = useState('all');
@@ -283,7 +200,7 @@ export default function RecordsPage() {
                 <h1 className="text-2xl font-bold text-slate-900">Health Records</h1>
               </div>
               <p className="text-sm text-slate-500">
-                AES-256 encrypted, IPFS-pinned, and TEE-verified on the Aethelred blockchain
+                AES-256-GCM encrypted at rest, owner-scoped, with a tamper-evident audit trail
               </p>
             </div>
             <button className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-500 text-white rounded-xl font-medium text-sm hover:bg-brand-600 transition-colors shadow-sm shrink-0">
@@ -293,7 +210,7 @@ export default function RecordsPage() {
           </div>
 
           {/* ─── Stats Bar ─── */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <MedicalCard>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center">
@@ -301,7 +218,7 @@ export default function RecordsPage() {
                 </div>
                 <div>
                   <p className="text-xs text-slate-500">Total Records</p>
-                  <p className="text-xl font-bold text-slate-900">{healthData.totalRecords}</p>
+                  <p className="text-xl font-bold text-slate-900">{records.length}</p>
                 </div>
               </div>
             </MedicalCard>
@@ -311,8 +228,8 @@ export default function RecordsPage() {
                   <Lock className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500">Encrypted</p>
-                  <p className="text-xl font-bold text-slate-900">{healthData.encryptedRecords}</p>
+                  <p className="text-xs text-slate-500">Encrypted at Rest</p>
+                  <p className="text-xl font-bold text-slate-900">{encryptedCount}</p>
                 </div>
               </div>
             </MedicalCard>
@@ -322,19 +239,8 @@ export default function RecordsPage() {
                   <HardDrive className="w-5 h-5 text-violet-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500">Storage Used</p>
-                  <p className="text-xl font-bold text-slate-900">{formatBytes(healthData.storageUsed)}</p>
-                </div>
-              </div>
-            </MedicalCard>
-            <MedicalCard>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
-                  <Hash className="w-5 h-5 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500">IPFS Nodes</p>
-                  <p className="text-xl font-bold text-slate-900">{healthData.ipfsNodes}</p>
+                  <p className="text-xs text-slate-500">Metadata Size</p>
+                  <p className="text-xl font-bold text-slate-900">{formatBytes(totalSize)}</p>
                 </div>
               </div>
             </MedicalCard>
@@ -471,7 +377,6 @@ export default function RecordsPage() {
                   </div>
                   <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2">
                     <EncryptionBadge type="AES-256" />
-                    <TEEBadge verified />
                   </div>
                 </MedicalCard>
               ))}
