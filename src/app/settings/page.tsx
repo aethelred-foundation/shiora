@@ -21,6 +21,9 @@ import {
 import { useApp } from '@/contexts/AppContext';
 import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, Tabs, Modal, ConfirmDialog } from '@/components/ui/SharedComponents';
 import { MedicalCard, SectionHeader, TruncatedHash, CopyButton } from '@/components/ui/PagePrimitives';
+import { LocaleSwitcher } from '@/components/i18n/LocaleSwitcher';
+import { useTranslation } from '@/contexts/I18nContext';
+import { LOCALE_LABELS } from '@/lib/i18n/config';
 import { PROVIDER_NAMES } from '@/lib/constants';
 import { truncateAddress } from '@/lib/utils';
 
@@ -191,6 +194,7 @@ function ProfileTab({ wallet }: { wallet: { connected: boolean; address: string 
   const [name, setName] = useState('Patient User');
   const [email, setEmail] = useState('patient@shiora.health');
   const [bio, setBio] = useState('Health data sovereign. Privacy advocate.');
+  const { t, locale } = useTranslation();
 
   return (
     <div className="space-y-8">
@@ -256,6 +260,19 @@ function ProfileTab({ wallet }: { wallet: { connected: boolean; address: string 
             No wallet connected. Connect your wallet to enable blockchain features.
           </div>
         )}
+      </MedicalCard>
+
+      {/* Language & Region */}
+      <MedicalCard>
+        <div className="flex items-center gap-2 mb-1">
+          <Globe className="w-4 h-4 text-slate-500" />
+          <h4 className="text-base font-semibold text-slate-900">{t('language.title')}</h4>
+        </div>
+        <p className="text-xs text-slate-500 mb-4">{t('language.description')}</p>
+        <LocaleSwitcher className="max-w-xs" />
+        <p className="text-xs text-slate-400 mt-3">
+          {t('language.current', { name: LOCALE_LABELS[locale] })}
+        </p>
       </MedicalCard>
 
       {/* Save Button */}

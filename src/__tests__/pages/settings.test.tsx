@@ -5,10 +5,15 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AppProvider } from '@/contexts/AppContext';
+import { I18nProvider } from '@/contexts/I18nContext';
 import SettingsPage from '@/app/settings/page';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
-  return <AppProvider>{children}</AppProvider>;
+  return (
+    <I18nProvider>
+      <AppProvider>{children}</AppProvider>
+    </I18nProvider>
+  );
 }
 
 describe('SettingsPage', () => {

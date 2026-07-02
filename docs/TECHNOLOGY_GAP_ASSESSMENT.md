@@ -4,12 +4,12 @@ Date: 2026-07-02. Scope: everything between the current platform (post
 Tier-1-audit remediation, 239 suites / 4,005 tests / 100% coverage) and what a
 top-tier digital-health incumbent (Maven Clinic, Sword, Hinge Health) ships.
 Each gap states what exists today, what is missing, and the closure. Items are
-> **Progress (2026-07-02):** Phases 1–5 nearly complete — **25 of 28 gaps closed**,
+> **Progress (2026-07-02):** Phase 5 nearly complete — **26 of 28 gaps closed**,
 > each an independent commit at 100% coverage with the production build green.
 > Phase 1–2: GAP-01/02/03/04/07/08/10/11/23; Phase 3: GAP-13/14/17/18/20;
-> Phase 4: GAP-05/09/19/22/24/27; Phase 5: GAP-12/15/16/21/28. Suite grew
-> 4,005 → 4,432 tests. Remaining: **GAP-06** (load/perf baseline),
-> **GAP-25** (i18n + RTL), **GAP-26** (Playwright E2E).
+> Phase 4: GAP-05/09/19/22/24/27; Phase 5: GAP-12/15/16/21/25/28. Suite grew
+> 4,005 → 4,459 tests. Remaining: **GAP-06** (load/perf baseline),
+> **GAP-26** (Playwright E2E).
 
 Items are prioritized: **P0** (correctness/operability defects), **P1** (enterprise
 capability gaps), **P2** (competitive differentiation), **EXT** (externally
@@ -155,9 +155,20 @@ Closure: branded global error boundary with reset affordance.
 equivalent); WCAG 2.2 AA / Section 508 matter in healthcare procurement.
 Closure: axe-based tests over key pages + fixes.
 
-**GAP-25 (P2) — No i18n.** English-only, LTR-only — a direct gap for the UAE/
-MBZUAI market (Arabic, RTL). Closure: locale framework + RTL layout audit +
-translated core flows.
+**GAP-25 (P2) — No i18n.** ✅ CLOSED English-only, LTR-only — a direct gap for the
+UAE/MBZUAI market (Arabic, RTL). Closure: a dependency-free locale framework
+(`lib/i18n/*`) with a typed message catalog (English is the source of truth; the
+`Messages` type forces Arabic to supply every key), dot-path lookup with
+default-locale fallback, `{param}` interpolation, and `Intl.PluralRules`-correct
+pluralization (Arabic's six categories, not naive `n===1`). An `I18nProvider`
+holds the active locale, exposes a translator plus `Intl`-based number/date
+formatters, persists the choice (cookie + localStorage), and reflects it onto
+`<html lang/dir>` so selecting Arabic mirrors the ENTIRE interface right-to-left —
+app-wide RTL, not a per-page fix. A `LocaleSwitcher` (English / العربية) is wired
+into Settings → Profile. English catalog values match current copy, so adopting
+`t(...)` is behavior-preserving. Honest scope: the engine + shell/common strings
+are translated and RTL is global; per-page body-copy extraction is incremental
+against the same catalog.
 
 **GAP-26 (P2) — No E2E suite in-repo.** Playwright was used ad hoc during
 development but no committed E2E tests exist. Closure: Playwright suite (auth
