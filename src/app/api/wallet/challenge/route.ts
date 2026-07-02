@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { serverEnv } from '@/lib/api/env';
+import { challengeSigningKey } from '@/lib/crypto/derived-secrets';
 import { runMiddleware } from '@/lib/api/middleware';
 
 // ---------------------------------------------------------------------------
@@ -40,7 +40,7 @@ function createChallenge(address: string): {
   // HMAC binds the challenge to our server secret so it cannot be forged
   const payload = `${address}:${nonce}:${issuedAt}:${expiresAt}`;
   const hmac = crypto
-    .createHmac('sha256', serverEnv.sessionSecret)
+    .createHmac('sha256', challengeSigningKey())
     .update(payload)
     .digest('hex');
 

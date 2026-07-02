@@ -16,6 +16,7 @@ import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
 import { GET as getChallenge } from '@/app/api/wallet/challenge/route';
+import { challengeSigningKey } from '@/lib/crypto/derived-secrets';
 import {
   GET as getConnect,
   POST as postConnect,
@@ -37,7 +38,6 @@ afterEach(() => {
 const TEST_ADDRESS = seededAddress(12345);
 const { token: TEST_TOKEN } = createSessionToken(TEST_ADDRESS);
 
-const SESSION_SECRET = 'shiora-dev-session-secret-change-me-before-production';
 
 function authedReq(url: string, init?: RequestInit): NextRequest {
   return new NextRequest(url, {
@@ -53,7 +53,7 @@ function createTestChallenge(address: string) {
   const expiresAt = issuedAt + 5 * 60 * 1000;
   const payload = `${address}:${nonce}:${issuedAt}:${expiresAt}`;
   const hmac = crypto
-    .createHmac('sha256', SESSION_SECRET)
+    .createHmac('sha256', challengeSigningKey())
     .update(payload)
     .digest('hex');
   return { nonce, issuedAt, expiresAt, hmac };

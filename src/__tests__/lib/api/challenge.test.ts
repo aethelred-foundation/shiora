@@ -2,7 +2,7 @@
 
 import crypto from 'node:crypto';
 import { verifyChallenge } from '@/lib/api/challenge';
-import { serverEnv } from '@/lib/api/env';
+import { challengeSigningKey } from '@/lib/crypto/derived-secrets';
 
 function createValidChallenge(address: string) {
   const nonce = crypto.randomBytes(32).toString('hex');
@@ -10,7 +10,7 @@ function createValidChallenge(address: string) {
   const expiresAt = issuedAt + 5 * 60 * 1000;
   const payload = `${address}:${nonce}:${issuedAt}:${expiresAt}`;
   const hmac = crypto
-    .createHmac('sha256', serverEnv.sessionSecret)
+    .createHmac('sha256', challengeSigningKey())
     .update(payload)
     .digest('hex');
   return { nonce, issuedAt, expiresAt, hmac };
@@ -32,7 +32,7 @@ describe('verifyChallenge', () => {
     const expiresAt = issuedAt + 5 * 60 * 1000; // Already expired
     const payload = `${address}:${nonce}:${issuedAt}:${expiresAt}`;
     const hmac = crypto
-      .createHmac('sha256', serverEnv.sessionSecret)
+      .createHmac('sha256', challengeSigningKey())
       .update(payload)
       .digest('hex');
 

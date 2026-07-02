@@ -1,6 +1,7 @@
 /** @jest-environment node */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { sessionSigningKey } from '@/lib/crypto/derived-secrets';
 
 import {
   SESSION_COOKIE_NAME,
@@ -104,7 +105,7 @@ describe('session utilities', () => {
     const invalidPayload = Buffer.from('not-valid-json!!!').toString('base64url');
     // Sign with the real session secret
     const signature = crypto
-      .createHmac('sha256', serverEnv.sessionSecret)
+      .createHmac('sha256', sessionSigningKey())
       .update(invalidPayload)
       .digest('base64url');
 
@@ -124,7 +125,7 @@ describe('session utilities', () => {
     };
     const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
     const signature = crypto
-      .createHmac('sha256', serverEnv.sessionSecret)
+      .createHmac('sha256', sessionSigningKey())
       .update(payload)
       .digest('base64url');
 
@@ -142,7 +143,7 @@ describe('session utilities', () => {
     };
     const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
     const signature = crypto
-      .createHmac('sha256', serverEnv.sessionSecret)
+      .createHmac('sha256', sessionSigningKey())
       .update(payload)
       .digest('base64url');
 
@@ -161,7 +162,7 @@ describe('session utilities', () => {
     };
     const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
     const signature = crypto
-      .createHmac('sha256', serverEnv.sessionSecret)
+      .createHmac('sha256', sessionSigningKey())
       .update(payload)
       .digest('base64url');
 
@@ -180,7 +181,7 @@ describe('session utilities', () => {
     };
     const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
     const signature = crypto
-      .createHmac('sha256', serverEnv.sessionSecret)
+      .createHmac('sha256', sessionSigningKey())
       .update(payload)
       .digest('base64url');
 

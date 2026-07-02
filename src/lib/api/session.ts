@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import { type NextRequest, type NextResponse } from 'next/server';
 
 import { serverEnv } from './env';
+import { sessionSigningKey } from '@/lib/crypto/derived-secrets';
 
 interface SessionClaims {
   sub: string;
@@ -26,8 +27,9 @@ function decodeBase64Url(value: string): string {
 }
 
 function sign(payload: string): string {
+  // Domain-separated subkey, not the raw root secret (see derived-secrets).
   return crypto
-    .createHmac('sha256', serverEnv.sessionSecret)
+    .createHmac('sha256', sessionSigningKey())
     .update(payload)
     .digest('base64url');
 }
