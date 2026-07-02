@@ -53,6 +53,7 @@ describe('POST /api/system/maintenance', () => {
       prunedRateLimitWindows: 0,
       prunedSessions: 0,
       prunedIdempotencyKeys: 0,
+      prunedLoginAttempts: 0,
     });
     expect(typeof body.data.ranAt).toBe('number');
   });

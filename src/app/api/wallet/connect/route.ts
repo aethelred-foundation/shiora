@@ -26,6 +26,7 @@ import { recordIssuedSession } from '@/lib/api/session-inventory';
 import { serverEnv } from '@/lib/api/env';
 import { verifyChallenge } from '@/lib/api/challenge';
 import { getNonceStore } from '@/lib/persistence/nonce-store';
+import { getLoginAttemptStore } from '@/lib/persistence/login-attempt-store';
 import { audit } from '@/lib/api/audit';
 import { verifyWalletSignature } from '@/lib/api/wallet-verify';
 
@@ -63,6 +64,26 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const validated = WalletConnectSchema.parse(body);
+
+    // ── Step 0: Reject if the address is locked out (audit GAP-09) ──
+    // A run of failed signature verifications locks the address with
+    // exponential backoff, so a targeted brute-force is throttled to a crawl.
+    const lockedUntil = await getLoginAttemptStore().lockedUntil(validated.address);
+    if (lockedUntil !== null) {
+      audit({
+        action: 'WALLET_CONNECT',
+        actor: validated.address,
+        success: false,
+        metadata: { reason: 'locked_out', lockedUntil },
+      });
+      return errorResponse(
+        'ACCOUNT_LOCKED',
+        'Too many failed authentication attempts. Try again later.',
+        HTTP.TOO_MANY_REQUESTS,
+        undefined,
+        { 'Retry-After': String(Math.max(1, Math.ceil((lockedUntil - Date.now()) / 1000))) },
+      );
+    }
 
     // ── Step 1: Verify the HMAC-signed challenge ──────────────
     const challengeResult = verifyChallenge(
@@ -133,11 +154,16 @@ export async function POST(request: NextRequest) {
     );
 
     if (!signatureValid) {
+      const outcome = await getLoginAttemptStore().recordFailure(validated.address);
       audit({
         action: 'WALLET_CONNECT',
         actor: validated.address,
         success: false,
-        metadata: { reason: 'invalid_signature' },
+        metadata: {
+          reason: 'invalid_signature',
+          failures: outcome.failures,
+          ...(outcome.lockedUntil !== null ? { lockedUntil: outcome.lockedUntil } : {}),
+        },
       });
       return errorResponse(
         'INVALID_SIGNATURE',
@@ -145,6 +171,9 @@ export async function POST(request: NextRequest) {
         HTTP.BAD_REQUEST,
       );
     }
+
+    // A genuine login clears the failure counter for the address.
+    await getLoginAttemptStore().clear(validated.address);
 
     // ── Step 4: Create session ────────────────────────────────
     const { token, expiresAt, claims } = createSessionToken(validated.address);

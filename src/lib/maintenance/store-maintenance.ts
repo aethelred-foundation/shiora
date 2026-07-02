@@ -14,6 +14,7 @@ import { getRevocationStore } from '@/lib/persistence/revocation-store';
 import { getRateLimiter } from '@/lib/api/rate-limiter';
 import { getSessionIndexStore } from '@/lib/persistence/session-index-store';
 import { getIdempotencyStore } from '@/lib/persistence/idempotency-store';
+import { getLoginAttemptStore } from '@/lib/persistence/login-attempt-store';
 import { hasDurableDatastore } from '@/lib/api/preflight';
 import { createLogger } from '@/lib/observability/logger';
 import { counter } from '@/lib/observability/metrics';
@@ -48,6 +49,7 @@ export interface MaintenanceReport {
   prunedRateLimitWindows: number;
   prunedSessions: number;
   prunedIdempotencyKeys: number;
+  prunedLoginAttempts: number;
   ranAt: number;
 }
 
@@ -63,6 +65,7 @@ export async function runStoreMaintenance(now: number = Date.now()): Promise<Mai
     prunedRateLimitWindows: 0,
     prunedSessions: 0,
     prunedIdempotencyKeys: 0,
+    prunedLoginAttempts: 0,
     ranAt: now,
   };
 
@@ -94,6 +97,12 @@ export async function runStoreMaintenance(now: number = Date.now()): Promise<Mai
   if (typeof idempotency.prune === 'function') {
     report.prunedIdempotencyKeys = await idempotency.prune(now);
     prunedTotal.inc({ store: 'idempotency' }, report.prunedIdempotencyKeys);
+  }
+
+  const loginAttempts = getLoginAttemptStore() as Prunable;
+  if (typeof loginAttempts.prune === 'function') {
+    report.prunedLoginAttempts = await loginAttempts.prune(now);
+    prunedTotal.inc({ store: 'login_attempts' }, report.prunedLoginAttempts);
   }
 
   runsTotal.inc({ outcome: 'ok' });

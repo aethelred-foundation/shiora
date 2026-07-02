@@ -27,6 +27,7 @@ import { isSessionRevoked } from '@/lib/api/session-revocation';
 import { __resetNonceStoreForTests } from '@/lib/persistence/nonce-store';
 import { __resetRateLimiterForTests } from '@/lib/api/rate-limiter';
 import { __resetRevocationStoreForTests } from '@/lib/persistence/revocation-store';
+import { __resetLoginAttemptStoreForTests } from '@/lib/persistence/login-attempt-store';
 import { seededAddress } from '@/lib/utils';
 
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
@@ -40,6 +41,7 @@ afterEach(() => {
   __resetNonceStoreForTests();
   __resetRevocationStoreForTests();
   __resetRateLimiterForTests();
+  __resetLoginAttemptStoreForTests();
 });
 
 const TEST_ADDRESS = seededAddress(12345);
@@ -65,6 +67,32 @@ function createTestChallenge(address: string) {
     .digest('hex');
   return { nonce, issuedAt, expiresAt, hmac };
 }
+
+describe('failed-auth lockout (GAP-09)', () => {
+  it('locks the address after repeated invalid signatures, then 429s further attempts', async () => {
+    const victim = seededAddress(90909);
+    function badAttempt() {
+      const challenge = createTestChallenge(victim);
+      return postConnect(new NextRequest('http://localhost:3000/api/wallet/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: victim, signature: 'fakesig', ...challenge }),
+      }));
+    }
+
+    // The first five bad signatures fail verification (not yet locked).
+    for (let i = 0; i < 5; i++) {
+      const res = await badAttempt();
+      expect((await res.json()).error.code).toBe('INVALID_SIGNATURE');
+    }
+
+    // The sixth is refused outright: the address is now locked.
+    const locked = await badAttempt();
+    expect(locked.status).toBe(429);
+    expect((await locked.json()).error.code).toBe('ACCOUNT_LOCKED');
+    expect(Number(locked.headers.get('Retry-After'))).toBeGreaterThanOrEqual(1);
+  });
+});
 
 describe('auth rate-limit class (GAP-04)', () => {
   it('challenge issuance and connect verification run under the stricter budget', async () => {

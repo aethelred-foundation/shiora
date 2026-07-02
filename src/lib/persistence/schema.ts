@@ -172,6 +172,19 @@ export const HEALTH_RECORDS_VERSION_DDL =
 export const DOCUMENTS_VERSION_DDL =
   `ALTER TABLE documents ADD COLUMN IF NOT EXISTS version integer NOT NULL DEFAULT 1`;
 
+// Failed-auth lockout (GAP-09): per-address failure counter + lockout window,
+// so a targeted signature brute-force is throttled with exponential backoff.
+export const LOGIN_ATTEMPTS_DDL = `
+CREATE TABLE IF NOT EXISTS login_attempts (
+  address      TEXT PRIMARY KEY,
+  failures     INTEGER NOT NULL,
+  last_failure BIGINT NOT NULL,
+  locked_until BIGINT NOT NULL
+)`.trim();
+
+export const LOGIN_ATTEMPTS_INDEX_DDL = `
+CREATE INDEX IF NOT EXISTS login_attempts_last_failure_idx ON login_attempts (last_failure)`.trim();
+
 export const MIGRATIONS: readonly string[] = [
   HEALTH_RECORDS_DDL,
   HEALTH_RECORDS_OWNER_INDEX_DDL,
@@ -191,4 +204,6 @@ export const MIGRATIONS: readonly string[] = [
   IDEMPOTENCY_EXPIRY_INDEX_DDL,
   HEALTH_RECORDS_VERSION_DDL,
   DOCUMENTS_VERSION_DDL,
+  LOGIN_ATTEMPTS_DDL,
+  LOGIN_ATTEMPTS_INDEX_DDL,
 ];
