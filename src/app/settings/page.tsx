@@ -204,7 +204,10 @@ function ProfileTab({ wallet }: { wallet: { connected: boolean; address: string 
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-2xl font-bold shadow-md">
             {name.charAt(0).toUpperCase()}
           </div>
-          <button className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm hover:bg-slate-50 transition-colors">
+          <button
+            aria-label="Change profile photo"
+            className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm hover:bg-slate-50 transition-colors"
+          >
             <Camera className="w-3.5 h-3.5 text-slate-600" />
           </button>
         </div>

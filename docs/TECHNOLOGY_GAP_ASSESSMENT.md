@@ -4,12 +4,12 @@ Date: 2026-07-02. Scope: everything between the current platform (post
 Tier-1-audit remediation, 239 suites / 4,005 tests / 100% coverage) and what a
 top-tier digital-health incumbent (Maven Clinic, Sword, Hinge Health) ships.
 Each gap states what exists today, what is missing, and the closure. Items are
-> **Progress (2026-07-02):** Phase 5 nearly complete — **26 of 28 gaps closed**,
-> each an independent commit at 100% coverage with the production build green.
+> **Progress (2026-07-02):** Phase 5 all but done — **27 of 28 gaps closed**,
+> each an independent commit at 100% unit coverage with the production build green.
 > Phase 1–2: GAP-01/02/03/04/07/08/10/11/23; Phase 3: GAP-13/14/17/18/20;
-> Phase 4: GAP-05/09/19/22/24/27; Phase 5: GAP-12/15/16/21/25/28. Suite grew
-> 4,005 → 4,459 tests. Remaining: **GAP-06** (load/perf baseline),
-> **GAP-26** (Playwright E2E).
+> Phase 4: GAP-05/09/19/22/24/27; Phase 5: GAP-12/15/16/21/25/26/28. Jest suite
+> grew 4,005 → 4,459 tests, plus a new Playwright E2E suite (7 specs). Remaining:
+> **GAP-06** (load/perf baseline).
 
 Items are prioritized: **P0** (correctness/operability defects), **P1** (enterprise
 capability gaps), **P2** (competitive differentiation), **EXT** (externally
@@ -170,9 +170,16 @@ into Settings → Profile. English catalog values match current copy, so adoptin
 are translated and RTL is global; per-page body-copy extraction is incremental
 against the same catalog.
 
-**GAP-26 (P2) — No E2E suite in-repo.** Playwright was used ad hoc during
-development but no committed E2E tests exist. Closure: Playwright suite (auth
-with wallet mock, record CRUD, grant flow) runnable locally and in CI.
+**GAP-26 (P2) — No E2E suite in-repo.** ✅ CLOSED Playwright was used ad hoc during
+development but no committed E2E tests existed. Closure: a committed Playwright
+suite under `e2e/` (isolated from Jest's `src` roots, so the unit-coverage gate is
+untouched) with its own tsconfig and a `playwright.config.ts` that boots the dev
+server (in-memory datastore, no wallet needed → hermetic). Specs cover the
+dashboard shell, the Arabic/RTL locale switch with reload-persistence (GAP-25), the
+liveness/readiness/OpenAPI operational endpoints, and a page-level axe scan of the
+dashboard and settings in both reading directions — which caught and fixed a real
+`button-name` violation (an icon-only avatar button). Runnable via `npm run test:e2e`
+locally and gated in CI (dedicated `e2e` job installing the pinned browser).
 
 ## F. Data layer
 

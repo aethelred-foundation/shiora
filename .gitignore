@@ -51,3 +51,9 @@ contracts/typechain-types/
 # Misc
 *.log
 .claude/
+
+# Playwright (GAP-26)
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

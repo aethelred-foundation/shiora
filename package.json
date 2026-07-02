@@ -12,6 +12,9 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\" \"*.{js,mjs,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\" \"*.{js,mjs,json}\"",
     "validate": "npm run type-check && npm run lint && npm run format:check && npm run test"
@@ -30,7 +33,9 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@jest/types": "^30.4.1",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/forms": "^0.5.7",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^14.1.2",
