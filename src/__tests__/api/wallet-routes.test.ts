@@ -25,6 +25,7 @@ import {
 import { createSessionToken, verifySessionToken } from '@/lib/api/session';
 import { isSessionRevoked } from '@/lib/api/session-revocation';
 import { __resetNonceStoreForTests } from '@/lib/persistence/nonce-store';
+import { __resetRateLimiterForTests } from '@/lib/api/rate-limiter';
 import { __resetRevocationStoreForTests } from '@/lib/persistence/revocation-store';
 import { seededAddress } from '@/lib/utils';
 
@@ -38,6 +39,7 @@ afterEach(() => {
   mockVerifyChallenge.mockImplementation(actualChallenge.verifyChallenge);
   __resetNonceStoreForTests();
   __resetRevocationStoreForTests();
+  __resetRateLimiterForTests();
 });
 
 const TEST_ADDRESS = seededAddress(12345);
@@ -63,6 +65,23 @@ function createTestChallenge(address: string) {
     .digest('hex');
   return { nonce, issuedAt, expiresAt, hmac };
 }
+
+describe('auth rate-limit class (GAP-04)', () => {
+  it('challenge issuance and connect verification run under the stricter budget', async () => {
+    const { AUTH_RATE_LIMIT } = jest.requireActual('@/lib/api/middleware');
+    expect(AUTH_RATE_LIMIT).toEqual({ maxRequests: 20, windowMs: 60_000 });
+
+    await getChallenge(new NextRequest(`http://localhost:3000/api/wallet/challenge?address=${TEST_ADDRESS}`));
+    expect(mockedRunMiddleware).toHaveBeenLastCalledWith(expect.anything(), AUTH_RATE_LIMIT);
+
+    await postConnect(new NextRequest('http://localhost:3000/api/wallet/connect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    }));
+    expect(mockedRunMiddleware).toHaveBeenLastCalledWith(expect.anything(), AUTH_RATE_LIMIT);
+  });
+});
 
 describe('/api/wallet/challenge', () => {
   it('returns middleware error when blocked', async () => {

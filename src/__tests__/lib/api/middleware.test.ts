@@ -45,6 +45,15 @@ describe('checkRateLimit', () => {
     const result = await checkRateLimit(makeReq('http://localhost:3000/api/test', { ip }), 5);
     expect(result).not.toBeNull();
     expect(result!.status).toBe(429);
+
+    // Standard backoff headers so well-behaved clients can wait it out (GAP-04).
+    expect(result!.headers.get('X-RateLimit-Limit')).toBe('5');
+    expect(result!.headers.get('X-RateLimit-Remaining')).toBe('0');
+    const retryAfter = Number(result!.headers.get('Retry-After'));
+    expect(retryAfter).toBeGreaterThanOrEqual(1);
+    expect(retryAfter).toBeLessThanOrEqual(60);
+    const reset = Number(result!.headers.get('X-RateLimit-Reset'));
+    expect(reset * 1000).toBeGreaterThan(Date.now() - 1000);
   });
 });
 

@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { challengeSigningKey } from '@/lib/crypto/derived-secrets';
-import { runMiddleware } from '@/lib/api/middleware';
+import { AUTH_RATE_LIMIT, runMiddleware } from '@/lib/api/middleware';
 
 // ---------------------------------------------------------------------------
 // GET /api/wallet/challenge — issue a time-limited, HMAC-signed challenge
@@ -51,7 +51,7 @@ function createChallenge(address: string): {
 // exporting non-route functions from a Next.js App Router route file.
 
 export async function GET(request: NextRequest) {
-  const blocked = await runMiddleware(request);
+  const blocked = await runMiddleware(request, AUTH_RATE_LIMIT);
   if (blocked) return blocked;
 
   const address = request.nextUrl.searchParams.get('address');

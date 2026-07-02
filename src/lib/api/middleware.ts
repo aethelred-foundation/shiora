@@ -20,6 +20,11 @@ import { serverEnv } from './env';
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 100;  // per window
 
+// Stricter class for credential-bearing endpoints (challenge issuance and
+// signature verification): brute-force surfaces get a fraction of the
+// default budget (GAP-04).
+export const AUTH_RATE_LIMIT = { maxRequests: 20, windowMs: RATE_LIMIT_WINDOW_MS };
+
 /**
  * Fixed-window rate limit keyed by client fingerprint, enforced via the
  * configured {@link getRateLimiter} (in-memory by default; Postgres-backed and
@@ -38,10 +43,23 @@ export async function checkRateLimit(
   );
 
   if (!decision.allowed) {
+    // Standard backoff headers (GAP-04): both fixed-window limiters reset at
+    // the next window boundary, so the reset instant is derivable from the
+    // clock without widening the RateLimiter port.
+    const now = Date.now();
+    const resetMs = (Math.floor(now / windowMs) + 1) * windowMs;
+    const retryAfterSeconds = Math.max(1, Math.ceil((resetMs - now) / 1000));
     return errorResponse(
       'RATE_LIMITED',
       `Too many requests. Limit: ${maxRequests} per ${windowMs / 1000}s`,
       HTTP.TOO_MANY_REQUESTS,
+      undefined,
+      {
+        'Retry-After': String(retryAfterSeconds),
+        'X-RateLimit-Limit': String(maxRequests),
+        'X-RateLimit-Remaining': '0',
+        'X-RateLimit-Reset': String(Math.floor(resetMs / 1000)),
+      },
     );
   }
 

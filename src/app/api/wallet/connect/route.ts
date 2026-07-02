@@ -12,7 +12,7 @@ import {
   validationError,
   HTTP,
 } from '@/lib/api/responses';
-import { runMiddleware, extractAuth } from '@/lib/api/middleware';
+import { AUTH_RATE_LIMIT, runMiddleware, extractAuth } from '@/lib/api/middleware';
 import {
   applySessionCookie,
   clearSessionCookie,
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
 // ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const blocked = await runMiddleware(request);
+  const blocked = await runMiddleware(request, AUTH_RATE_LIMIT);
   if (blocked) return blocked;
 
   try {
