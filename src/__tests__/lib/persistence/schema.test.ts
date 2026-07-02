@@ -21,6 +21,8 @@ import {
   DOCUMENTS_VERSION_DDL,
   LOGIN_ATTEMPTS_DDL,
   LOGIN_ATTEMPTS_INDEX_DDL,
+  HEALTH_RECORDS_DELETED_AT_DDL,
+  DOCUMENTS_DELETED_AT_DDL,
   MIGRATIONS,
 } from '@/lib/persistence/schema';
 
@@ -77,6 +79,8 @@ describe('persistence schema', () => {
       DOCUMENTS_VERSION_DDL,
       LOGIN_ATTEMPTS_DDL,
       LOGIN_ATTEMPTS_INDEX_DDL,
+      HEALTH_RECORDS_DELETED_AT_DDL,
+      DOCUMENTS_DELETED_AT_DDL,
     ]);
   });
 

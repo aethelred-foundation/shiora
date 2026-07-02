@@ -41,6 +41,8 @@ export interface StoredRecord {
   deleted: boolean;
   /** Monotonic version for optimistic concurrency (GAP-18); absent = 1. */
   version?: number;
+  /** When the row was soft-deleted (ms), for retention purging (GAP-16). */
+  deletedAt?: number;
 }
 
 /**

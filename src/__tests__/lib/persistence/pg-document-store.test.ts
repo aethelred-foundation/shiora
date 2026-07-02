@@ -39,8 +39,9 @@ function docRow() {
     owner_key: OWNER,
     id: 'doc-1',
     sealed: sealJson({ id: 'doc-1', v: 1 }, `${COLLECTION}:${OWNER}:doc-1`),
-    deleted: false,
+    deleted: true,
     version: 1,
+    deleted_at: 1700000000000,
   };
 }
 
@@ -59,9 +60,10 @@ describe('PgDocumentStore', () => {
     const { text, params } = client.calls[0];
     expect(text).toContain('INSERT INTO documents');
     expect(text).toContain('ON CONFLICT (collection, id) DO UPDATE SET');
-    expect(params).toHaveLength(6);
+    expect(params).toHaveLength(7);
     expect(typeof params![3]).toBe('string');
     expect(params![5]).toBe(1); // version
+    expect(params![6]).toBeNull(); // deleted_at (not set → null)
   });
 
   it('finds a document by collection, owner, and id', async () => {
@@ -70,6 +72,7 @@ describe('PgDocumentStore', () => {
     const found = await new PgDocumentStore(client).findById(COLLECTION, OWNER, 'doc-1');
     expect(found?.id).toBe('doc-1');
     expect(found?.ownerKey).toBe(OWNER);
+    expect(found?.deletedAt).toBe(1700000000000); // mapped from deleted_at
     expect(client.calls[0].params).toEqual([COLLECTION, OWNER, 'doc-1']);
   });
 

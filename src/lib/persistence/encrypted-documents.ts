@@ -117,7 +117,7 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
     if (!row || row.deleted) {
       return false;
     }
-    await this.store.put({ ...row, deleted: true });
+    await this.store.put({ ...row, deleted: true, deletedAt: Date.now() });
     await this.record(this.actions.update, ownerKey, id, ownerKey);
     return true;
   }

@@ -6,6 +6,9 @@ jest.mock('@/lib/api/rate-limiter', () => ({ getRateLimiter: jest.fn() }));
 jest.mock('@/lib/persistence/session-index-store', () => ({ getSessionIndexStore: jest.fn() }));
 jest.mock('@/lib/persistence/idempotency-store', () => ({ getIdempotencyStore: jest.fn() }));
 jest.mock('@/lib/persistence/login-attempt-store', () => ({ getLoginAttemptStore: jest.fn() }));
+jest.mock('@/lib/maintenance/retention', () => ({
+  runDurableRetention: jest.fn(async () => ({ durable: true, retentionDays: null, documentsPurged: 0, recordsPurged: 0, ranAt: 0 })),
+}));
 jest.mock('@/lib/api/preflight', () => ({ hasDurableDatastore: jest.fn(() => false) }));
 
 import {

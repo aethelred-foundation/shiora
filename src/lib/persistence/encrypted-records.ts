@@ -160,7 +160,7 @@ export class EncryptedRecordRepository {
       return undefined;
     }
 
-    const next: StoredRecord = { ...existing, deleted: true };
+    const next: StoredRecord = { ...existing, deleted: true, deletedAt: Date.now() };
     await this.store.put(next);
     await this.record('RECORD_DELETE', ownerAddress, id);
     return this.toRecord(next);

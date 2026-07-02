@@ -55,6 +55,7 @@ describe('POST /api/system/maintenance', () => {
       prunedIdempotencyKeys: 0,
       prunedLoginAttempts: 0,
     });
+    expect(body.data.retention).toMatchObject({ documentsPurged: 0, recordsPurged: 0 });
     expect(typeof body.data.ranAt).toBe('number');
   });
 
