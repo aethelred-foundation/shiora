@@ -1,0 +1,184 @@
+# Shiora — Technology Gap Assessment & Closure Roadmap
+
+Date: 2026-07-02. Scope: everything between the current platform (post
+Tier-1-audit remediation, 239 suites / 4,005 tests / 100% coverage) and what a
+top-tier digital-health incumbent (Maven Clinic, Sword, Hinge Health) ships.
+Each gap states what exists today, what is missing, and the closure. Items are
+prioritized: **P0** (correctness/operability defects), **P1** (enterprise
+capability gaps), **P2** (competitive differentiation), **EXT** (externally
+gated — cannot be closed by code alone and will not be faked).
+
+---
+
+## A. Reliability & Operations
+
+**GAP-01 (P0) — Durable-store garbage collection is never scheduled.**
+`PgNonceStore`, `PgRevocationStore`, and `PgRateLimiter` all expose `prune()`,
+and their own comments say "production schedules out-of-band" — but nothing in
+the platform does. Under Postgres, `used_nonces`, `revoked_tokens`, and
+`rate_limits` grow without bound. Closure: a maintenance subsystem — periodic
+in-process sweeper registered from instrumentation (unref'd interval, Postgres
+only) plus an admin-triggerable `POST /api/system/maintenance` for
+ops-scheduled runs, both auditable.
+
+**GAP-02 (P0) — No structured logging.** Raw `console.*` calls with unstructured
+strings; no levels, no JSON output, no request correlation (an `x-request-id`
+is minted in edge middleware but never reaches log lines). Closure: a
+zero-dependency structured logger (JSON lines, levels, child-logger context
+binding), wired through API middleware and services.
+
+**GAP-03 (P0) — No metrics.** No request counts, latencies, error rates, rate-limit
+hits, or store health — operating the platform blind. Closure: an in-process
+metrics registry (counters, histograms with labels), instrumented middleware,
+and a Prometheus-exposition endpoint (`GET /api/system/metrics`) gated by a
+scraper token or admin session. Honest scope: per-instance metrics (correct
+model for the standalone deployment; multi-replica scrapes per instance).
+
+**GAP-04 (P1) — Rate limiting is a blunt instrument.** One global default; a 429
+carries no `Retry-After` or `X-RateLimit-*` headers, so well-behaved clients
+can't back off intelligently; auth endpoints share limits with reads. Closure:
+standard rate-limit response headers + stricter per-class limits on auth
+endpoints.
+
+**GAP-05 (P1) — No graceful degradation contract.** Postgres outage mid-request
+surfaces as an unhandled 500 with no typed error, no readiness flip. Closure:
+typed `DATASTORE_UNAVAILABLE` error mapping + readiness probe reflecting store
+connectivity.
+
+**GAP-06 (P2) — No load/perf baseline.** No k6/autocannon scripts, no recorded
+throughput/latency baseline to detect regressions. Closure: scripted load
+profile + documented baseline.
+
+## B. Security depth
+
+**GAP-07 (P0) — MFA exists but protects nothing.** TOTP enrolment/verification
+shipped weeks ago; no route demands it. An attacker with a stolen session
+performs every sensitive operation without a second factor. Closure: step-up
+enforcement — short-lived, HMAC-signed step-up assertions minted on TOTP
+verification and required (when the account is enrolled) on high-impact routes:
+role assignment, GDPR erasure, org membership changes.
+
+**GAP-08 (P1) — Sessions are invisible to their owner.** M-03 added revocation and
+sign-out-everywhere, but users cannot see *which* sessions exist or revoke one
+device. Closure: session inventory — record issued sessions (jti, device,
+issued/expiry) at login; `GET /api/me/sessions` lists them with revocation
+status; `DELETE /api/me/sessions/{jti}` revokes a single device.
+
+**GAP-09 (P1) — No failed-authentication lockout.** Signature verification can be
+brute-forced at the per-IP rate limit forever; no per-address failure tracking,
+no backoff, no audit alarm. Closure: per-address failure counter with
+exponential backoff window + audit events.
+
+**GAP-10 (P1) — CSP violations vanish.** M-01's nonce CSP blocks injected scripts
+but nothing reports attempts. Closure: `report-to`/`report-uri` directive +
+`POST /api/security/csp-report` collector (rate-limited, logged, metriced).
+
+**GAP-11 (P1) — No vulnerability-disclosure channel.** No RFC 9116
+`/.well-known/security.txt`. Closure: publish one (with expiry) + SECURITY.md
+alignment.
+
+**GAP-12 (P2) — No WebAuthn/passkeys.** TOTP only. Closure: platform passkeys as
+a second factor (larger lift; after step-up enforcement exists).
+
+## C. Privacy engineering
+
+**GAP-13 (P1) — Erasure is soft-delete, not crypto-shredding.** GDPR Art. 17
+erasure soft-deletes sealed documents; ciphertext + wrapped DEK remain
+recoverable by the KEK holder. The envelope design (per-record DEKs) supports
+true crypto-erasure: destroy the wrapped DEK and the ciphertext is permanently
+unrecoverable. Closure: shred-on-erasure in the erasure path, audited.
+
+**GAP-14 (P1) — KEK rotation only protects new writes.** Versioned rotation
+exists, but no tool re-seals historical envelopes under the current KEK; old
+records stay under old keys forever, defeating rotation's purpose. Closure:
+batched re-seal maintenance operation (admin, resumable, audited).
+
+**GAP-15 (P2) — Sealed data is unsearchable.** Server-side search over encrypted
+fields is impossible by design; there is no blind-index. Closure: HMAC-based
+blind indexing (deterministic, key-derived tokens) for selected exact-match
+fields — the standard searchable-encryption compromise.
+
+**GAP-16 (P2) — No data-retention policy engine.** Nothing enforces storage
+limitation (GDPR Art. 5(1)(e)); soft-deleted rows persist indefinitely.
+Closure: retention config + purge job over soft-deleted documents past the
+window.
+
+## D. API platform & integration
+
+**GAP-17 (P1) — No idempotency keys.** A retried POST (client timeout, network
+blip) double-creates records/grants/notes. Closure: `Idempotency-Key` header
+support on mutating routes — response stored and replayed on key reuse.
+
+**GAP-18 (P1) — Lost-update window on all documents.** Concurrent updates
+last-write-wins silently (read-modify-write in every service). Closure:
+document `version` + `If-Match`/`409 CONFLICT` optimistic concurrency.
+
+**GAP-19 (P1) — No machine-readable API contract.** `docs/API.md` is prose; no
+OpenAPI 3.1 document, so integrators (MBZUAI IEC, pilot partners) hand-write
+clients. Closure: OpenAPI spec served at `/api/openapi` generated from a
+single typed route manifest, drift-tested against the route tree.
+
+**GAP-20 (P1) — Inconsistent pagination.** Some lists paginate, some return
+everything. Closure: uniform cursor pagination on unbounded lists (audit log,
+records, notifications).
+
+**GAP-21 (P2) — No webhooks/event delivery.** Partners must poll. Closure:
+signed webhook subscriptions with retry/backoff (needs outbound HTTP policy
+first).
+
+**GAP-22 (P2) — No real-time channel.** Notifications are poll-based. Closure:
+SSE stream (`/api/notifications/stream`) with heartbeat + reconnect.
+
+## E. Frontend excellence
+
+**GAP-23 (P1) — No root error containment.** `app/error.tsx` exists but there is
+no `global-error.tsx`; a root-layout render error white-screens the app.
+Closure: branded global error boundary with reset affordance.
+
+**GAP-24 (P1) — Accessibility is untested.** No automated a11y gate (jest-axe or
+equivalent); WCAG 2.2 AA / Section 508 matter in healthcare procurement.
+Closure: axe-based tests over key pages + fixes.
+
+**GAP-25 (P2) — No i18n.** English-only, LTR-only — a direct gap for the UAE/
+MBZUAI market (Arabic, RTL). Closure: locale framework + RTL layout audit +
+translated core flows.
+
+**GAP-26 (P2) — No E2E suite in-repo.** Playwright was used ad hoc during
+development but no committed E2E tests exist. Closure: Playwright suite (auth
+with wallet mock, record CRUD, grant flow) runnable locally and in CI.
+
+## F. Data layer
+
+**GAP-27 (P1) — Pool/statement hardening.** `getPgClient()` uses driver defaults:
+no statement timeout, no pool bounds tuning, no connection-error strategy.
+Closure: explicit pool config + `statement_timeout` + typed failure handling.
+
+**GAP-28 (P2) — No archival/WORM export for the audit chain.** The chain is
+verifiable in-place; there is no periodic sealed export for off-platform
+retention. Closure: chain-segment export with head attestation.
+
+## G. Externally gated (tracked, not fakeable)
+
+- **EXT-1 CI/CD**: GitHub Actions blocked on billing. Workflow files can land
+  now; runs need billing.
+- **EXT-2 External security/crypto audit** (I-04) — engagement, not code.
+- **EXT-3 TEE hardware, live L1 chain target** — the honesty boundary stands;
+  simulated surfaces stay labeled.
+- **EXT-4 Email/SMS delivery** — needs a provider contract; notification
+  channels remain in-app until then.
+
+---
+
+## Execution order
+
+| Phase | Items | Rationale |
+|---|---|---|
+| 1 (now) | GAP-01, 02, 03, 04 | Operability first: stop the leak, see the system |
+| 2 (now) | GAP-07, 08, 10, 11, 23 | Security depth + containment, all self-contained |
+| 3 (next) | GAP-13, 14, 17, 18, 20 | Privacy engineering + API correctness |
+| 4 | GAP-05, 09, 19, 22, 24, 27 | Platform maturity |
+| 5 | GAP-06, 12, 15, 16, 21, 25, 26, 28 | Differentiation |
+
+Every closure lands as an independent commit at the standing quality bar:
+100% coverage, strict TypeScript, ESLint clean, full suite + production build
+green, live verification for edge/runtime-sensitive changes.
