@@ -211,6 +211,14 @@ describe('middleware — page CSP nonce (audit M-01)', () => {
     expect(res.headers.get('x-middleware-request-content-security-policy')).toBe(responseCsp);
   });
 
+  it('wires violation reporting into the page CSP (GAP-10)', () => {
+    const res = middleware(makeRequest('/vault'));
+    const csp = res.headers.get('Content-Security-Policy')!;
+    expect(csp).toContain('report-uri /api/security/csp-report');
+    expect(csp).toContain('report-to csp-endpoint');
+    expect(res.headers.get('Reporting-Endpoints')).toBe('csp-endpoint="/api/security/csp-report"');
+  });
+
   it('generates a fresh nonce per request', () => {
     const first = middleware(makeRequest('/insights')).headers.get('Content-Security-Policy');
     const second = middleware(makeRequest('/insights')).headers.get('Content-Security-Policy');

@@ -31,6 +31,11 @@ function buildPageCsp(nonce: string): string {
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
     `connect-src 'self' https: wss:`,
     `form-action 'self'`,
+    // Violations are reported, not silently swallowed (GAP-10). report-uri is
+    // the universally-supported legacy channel; report-to (wired via the
+    // Reporting-Endpoints response header) is its successor.
+    `report-uri /api/security/csp-report`,
+    `report-to csp-endpoint`,
   ].join('; ');
 }
 
@@ -51,6 +56,7 @@ function createPageResponse(request: NextRequest): NextResponse {
     },
   });
   response.headers.set('Content-Security-Policy', csp);
+  response.headers.set('Reporting-Endpoints', 'csp-endpoint="/api/security/csp-report"');
   return response;
 }
 

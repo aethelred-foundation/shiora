@@ -1,0 +1,6 @@
+# Shiora on Aethelred — vulnerability disclosure (RFC 9116)
+Contact: mailto:security@aethelred.io
+Expires: 2027-07-01T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://app.shiora.health/.well-known/security.txt
+Policy: https://github.com/aethelred-foundation/shiora/blob/main/SECURITY.md
