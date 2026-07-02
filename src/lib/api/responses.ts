@@ -4,6 +4,8 @@
 // ============================================================
 
 import { NextResponse } from 'next/server';
+
+import { counter } from '@/lib/observability/metrics';
 import { ZodError } from 'zod';
 import { serverEnv } from './env';
 
@@ -108,6 +110,13 @@ function buildHeaders(headers?: HeadersInit): Headers {
 // Response Builders
 // ────────────────────────────────────────────────────────────
 
+// Every API response is built here, so this single counter gives app-wide
+// status visibility without instrumenting 145 routes (GAP-03).
+const responsesTotal = counter(
+  'shiora_http_responses_total',
+  'API responses by HTTP status and outcome',
+);
+
 /**
  * Return a success JSON response.
  */
@@ -117,6 +126,7 @@ export function successResponse<T>(
   meta?: Record<string, unknown>,
   headers?: HeadersInit,
 ): NextResponse<APISuccessResponse<T>> {
+  responsesTotal.inc({ status: String(status), outcome: 'success' });
   return NextResponse.json(
     { success: true as const, data, ...(meta ? { meta } : {}) },
     { status, headers: buildHeaders(headers) },
@@ -135,6 +145,7 @@ export function paginatedResponse<T>(
   headers?: HeadersInit,
 ): NextResponse<APIPaginatedResponse<T>> {
   const totalPages = Math.ceil(total / limit);
+  responsesTotal.inc({ status: String(HTTP.OK), outcome: 'success' });
   return NextResponse.json(
     {
       success: true as const,
@@ -163,6 +174,7 @@ export function errorResponse(
   details?: unknown,
   headers?: HeadersInit,
 ): NextResponse<APIErrorResponse> {
+  responsesTotal.inc({ status: String(status), outcome: 'error', code });
   return NextResponse.json(
     {
       success: false as const,

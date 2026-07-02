@@ -20,6 +20,9 @@ const RuntimeEnvSchema = z.object({
   // are trustworthy. Default 1 (a standard TLS-terminating reverse proxy). Set
   // to 0 to ignore X-Forwarded-For entirely (it is client-supplied, spoofable).
   SHIORA_TRUSTED_PROXY_COUNT: z.coerce.number().int().min(0).max(10).default(1),
+  // Bearer token that authorizes a metrics scraper (Prometheus) to read
+  // GET /api/system/metrics without a wallet session. Unset = admin-only.
+  SHIORA_METRICS_TOKEN: z.string().min(16).optional(),
 });
 
 const parsedEnv = RuntimeEnvSchema.parse({
@@ -30,6 +33,7 @@ const parsedEnv = RuntimeEnvSchema.parse({
   SHIORA_SESSION_TTL_HOURS: process.env.SHIORA_SESSION_TTL_HOURS,
   SHIORA_ENABLE_HSTS: process.env.SHIORA_ENABLE_HSTS,
   SHIORA_ALLOW_INSECURE_WALLET_HEADER: process.env.SHIORA_ALLOW_INSECURE_WALLET_HEADER,
+  SHIORA_METRICS_TOKEN: process.env.SHIORA_METRICS_TOKEN,
 });
 
 const allowedOrigins = parsedEnv.SHIORA_ALLOWED_ORIGINS
@@ -61,6 +65,7 @@ export const serverEnv = {
   },
   sessionTtlHours: parsedEnv.SHIORA_SESSION_TTL_HOURS,
   trustedProxyCount: parsedEnv.SHIORA_TRUSTED_PROXY_COUNT,
+  metricsToken: parsedEnv.SHIORA_METRICS_TOKEN ?? null,
   enableHsts: parsedEnv.SHIORA_ENABLE_HSTS === 'true',
   allowInsecureWalletHeader:
     parsedEnv.SHIORA_ALLOW_INSECURE_WALLET_HEADER === 'true'

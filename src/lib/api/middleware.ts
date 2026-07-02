@@ -8,6 +8,8 @@ import { errorResponse, HTTP } from './responses';
 import { getCorsHeaders, hasDisallowedOrigin, isMutatingMethod } from './origin';
 import { extractSessionToken, verifySessionToken } from './session';
 import { isSessionRevoked } from './session-revocation';
+import { createLogger } from '@/lib/observability/logger';
+import { counter, normalizeRoute } from '@/lib/observability/metrics';
 import { getRateLimiter } from './rate-limiter';
 import { serverEnv } from './env';
 
@@ -100,21 +102,34 @@ function getClientFingerprint(request: NextRequest): string {
 /**
  * Log incoming API request metadata.
  */
+const apiLogger = createLogger({ subsystem: 'api' });
+
+const requestsTotal = counter(
+  'shiora_http_requests_total',
+  'API requests entering the middleware, by method and normalized route',
+);
+
+const blockedTotal = counter(
+  'shiora_http_blocked_total',
+  'Requests rejected by the middleware perimeter, by reason',
+);
+
 export function logRequest(request: NextRequest): void {
+  const method = request.method;
+  const route = normalizeRoute(request.nextUrl.pathname);
+  requestsTotal.inc({ method, route });
+
   if (serverEnv.isTest) {
     return;
   }
 
-  const method = request.method;
-  const url = request.nextUrl.pathname;
-  const ip = getClientIp(request);
-  const requestId = request.headers.get('x-request-id') ?? 'unknown';
-  const userAgent = request.headers.get('user-agent')?.slice(0, 80) ?? 'unknown';
-
-  // eslint-disable-next-line no-console
-  console.log(
-    `[API] ${requestId} ${method} ${url} — IP: ${ip} — UA: ${userAgent}`,
-  );
+  apiLogger.info('request', {
+    requestId: request.headers.get('x-request-id') ?? 'unknown',
+    method,
+    path: request.nextUrl.pathname,
+    ip: getClientIp(request),
+    userAgent: request.headers.get('user-agent')?.slice(0, 80) ?? 'unknown',
+  });
 }
 
 // ────────────────────────────────────────────────────────────
@@ -232,6 +247,7 @@ export async function runMiddlewareWithOptions(
   logRequest(request);
 
   if (isMutatingMethod(request.method) && hasDisallowedOrigin(request)) {
+    blockedTotal.inc({ reason: 'origin' });
     return errorResponse(
       'ORIGIN_NOT_ALLOWED',
       'Cross-origin mutation requests are not allowed.',
@@ -246,13 +262,17 @@ export async function runMiddlewareWithOptions(
     options.maxRequests,
     options.windowMs,
   );
-  if (rateLimited) return rateLimited;
+  if (rateLimited) {
+    blockedTotal.inc({ reason: 'rate_limit' });
+    return rateLimited;
+  }
 
   // Honor server-side revocation for any presented session, on every route —
   // a logged-out or "signed-out-everywhere" token must never be accepted
   // anywhere, even before its stateless expiry (audit M-03).
   const claims = verifySessionToken(extractSessionToken(request));
   if (claims && (await isSessionRevoked(claims))) {
+    blockedTotal.inc({ reason: 'session_revoked' });
     return errorResponse(
       'SESSION_REVOKED',
       'This session has been revoked. Please sign in again.',
@@ -263,6 +283,7 @@ export async function runMiddlewareWithOptions(
   if (options.requireAuth) {
     const auth = requireAuth(request);
     if (auth instanceof NextResponse) {
+      blockedTotal.inc({ reason: 'auth' });
       return auth;
     }
   }

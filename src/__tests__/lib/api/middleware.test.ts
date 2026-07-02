@@ -272,8 +272,9 @@ describe('logRequest non-test behavior', () => {
         },
       });
       logReqDev(req);
+      // Structured JSON line from the api logger (GAP-02).
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[API]'),
+        expect.stringContaining('"subsystem":"api"'),
       );
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('req-abc-123'),
