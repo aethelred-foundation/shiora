@@ -51,10 +51,12 @@ const nextConfig = {
       }),
     );
     // The edge runtime bundles instrumentation.ts but never executes its node-only
-    // key-custody path (NEXT_RUNTIME-guarded). Stub node builtins so the edge build
-    // resolves instead of failing to find `crypto`.
+    // paths (NEXT_RUNTIME-guarded). Stub `crypto` (key custody) and alias the
+    // whole `pg` driver to an empty module (store-maintenance boot wiring pulls
+    // it via sql-client) so the edge build resolves; none of this runs on edge.
     if (nextRuntime === 'edge') {
       config.resolve.fallback = { ...config.resolve.fallback, crypto: false };
+      config.resolve.alias = { ...config.resolve.alias, pg: false };
     }
     return config;
   },
