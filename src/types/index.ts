@@ -305,8 +305,8 @@ export interface WalletState {
   connected: boolean;
   /** Aethelred wallet address (e.g. `aeth1...`). */
   address: string;
-  /** AETHEL token balance. */
-  aethelBalance: number;
+  /** AETHEL token balance, or null while unknown (Shiora does not query the chain). */
+  aethelBalance: number | null;
   /** Which wallet extension was used to connect (persisted for re-enable on reload). */
   provider?: 'keplr' | 'leap' | null;
   /** Chain ID used during authentication (persisted for signing after reload). */

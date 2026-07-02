@@ -371,6 +371,16 @@ describe('WalletConnect - connected state', () => {
   it('shows $AETHEL balance', () => {
     render(<WalletConnect />);
     expect(screen.getByText('$AETHEL')).toBeInTheDocument();
+    expect(screen.getByText('501')).toBeInTheDocument(); // formatNumber(500.5), no dash
+  });
+
+  it('shows an em-dash when the balance is unknown, never an invented number (audit L-01)', () => {
+    mockUseApp.mockReturnValue({
+      ...defaultConnectedApp,
+      wallet: { ...defaultConnectedApp.wallet, aethelBalance: null },
+    });
+    render(<WalletConnect />);
+    expect(screen.getByText('—')).toBeInTheDocument();
   });
 
   it('closes sign modal and clears state', () => {

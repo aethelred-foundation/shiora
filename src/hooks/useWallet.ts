@@ -53,7 +53,6 @@ interface ConnectResponse {
   address: string;
   expiresAt: number;
   expiresIn: string;
-  balances: { aethel: number };
 }
 
 // ---------------------------------------------------------------------------
@@ -240,7 +239,6 @@ export function useWallet(): UseWalletReturn {
         const connectResult = await api.post<ConnectResponse>('/api/wallet/connect', {
           address,
           signature: `${pubKeyHex}.${sigHex}`,
-          timestamp: Date.now(),
           chainId,
           nonce: challenge.nonce,
           issuedAt: challenge.issuedAt,
@@ -250,9 +248,11 @@ export function useWallet(): UseWalletReturn {
 
         // Step 5: Update local state with server-confirmed data
         // Persist provider & chainId so signing survives page reloads.
+        // Balance stays null (unknown): the server authenticates the wallet but
+        // does not know chain balances, and we never display an invented number.
         connectWalletWithData(
           connectResult.address,
-          connectResult.balances.aethel,
+          null,
           provider as 'keplr' | 'leap',
           chainId,
         );

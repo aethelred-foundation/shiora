@@ -221,7 +221,6 @@ export const AttestationListQuerySchema = PaginationSchema.extend({
 export const WalletConnectSchema = z.object({
   address: AethelredAddressSchema,
   signature: z.string().min(1).max(500),
-  timestamp: z.number().int().positive(),
   chainId: z.string().min(1).max(50).default('aethelred-1'),
   // Challenge fields for HMAC verification
   nonce: z.string().min(1).max(128),

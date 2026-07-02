@@ -27,7 +27,8 @@ import { seededRandom, seededAddress } from '@/lib/utils';
 export interface WalletState {
   connected: boolean;
   address: string;
-  aethelBalance: number;
+  /** AETHEL balance, or null while unknown (no live chain query). */
+  aethelBalance: number | null;
   /** Which wallet extension was used to connect (persisted for re-enable on reload). */
   provider?: 'keplr' | 'leap' | null;
   /** Chain ID used during authentication (persisted for signing after reload). */
@@ -117,7 +118,7 @@ export interface RewardsState {
 export interface AppContextValue {
   wallet: WalletState;
   connectWallet: () => void;
-  connectWalletWithData: (address: string, balance: number, provider?: 'keplr' | 'leap' | null, chainId?: string | null) => void;
+  connectWalletWithData: (address: string, balance: number | null, provider?: 'keplr' | 'leap' | null, chainId?: string | null) => void;
   disconnectWallet: () => void;
   healthData: HealthDataState;
   teeState: TEEState;
@@ -155,7 +156,7 @@ const SEED = 42;
 const DEFAULT_WALLET: WalletState = {
   connected: false,
   address: '',
-  aethelBalance: 0,
+  aethelBalance: null,
 };
 
 const DEFAULT_HEALTH: HealthDataState = {
@@ -285,12 +286,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Quick-connect with a generated address (dev/test convenience, no server auth).
+  // No balance is invented: it stays null (unknown) until a real source exists.
   const connectWallet = useCallback(() => {
     const seed = Date.now();
     persistWallet({
       connected: true,
       address: seededAddress(seed),
-      aethelBalance: 48250.75,
+      aethelBalance: null,
     });
   }, [persistWallet]);
 
@@ -298,7 +300,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // challenge-response handshake so the UI reflects real wallet data.
   const connectWalletWithData = useCallback((
     address: string,
-    balance: number,
+    balance: number | null,
     provider?: 'keplr' | 'leap' | null,
     chainId?: string | null,
   ) => {

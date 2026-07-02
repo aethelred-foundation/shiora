@@ -194,23 +194,26 @@ describe('/api/wallet/connect POST', () => {
     expect(body.error.code).toBe('INVALID_CHALLENGE');
   });
 
-  it('returns TIMESTAMP_EXPIRED for old timestamp', async () => {
+  it('ignores any client-supplied timestamp — freshness is challenge-bound (audit L-04)', async () => {
     const challenge = createTestChallenge(TEST_ADDRESS);
-    const oldTimestamp = Date.now() - 10 * 60 * 1000; // 10 minutes ago
+    // A "stale" client timestamp must not produce a freshness rejection: the
+    // field is attacker-controlled and was removed from the schema. Freshness
+    // comes from the HMAC-bound expiresAt + single-use nonce, so this request
+    // proceeds to real signature verification and fails there instead.
     const req = new NextRequest('http://localhost:3000/api/wallet/connect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         address: TEST_ADDRESS,
         signature: 'fakesig',
-        timestamp: oldTimestamp,
+        timestamp: Date.now() - 10 * 60 * 1000, // stripped, not validated
         ...challenge,
       }),
     });
     const res = await postConnect(req);
     expect(res.status).toBe(400);
     const body = await res.json();
-    expect(body.error.code).toBe('TIMESTAMP_EXPIRED');
+    expect(body.error.code).toBe('INVALID_SIGNATURE');
   });
 
   it('returns INVALID_SIGNATURE for wrong signature format', async () => {
@@ -415,8 +418,9 @@ describe('/api/wallet/connect POST', () => {
     expect(body.data.address).toBe(walletAddress);
     expect(body.data.expiresAt).toBeDefined();
     expect(body.data.session).toBeDefined();
-    expect(body.data.balances).toBeDefined();
-    expect(body.data.profile).toBeDefined();
+    // The server must not fabricate data it has no source for (audit L-01).
+    expect(body.data.balances).toBeUndefined();
+    expect(body.data.profile).toBeUndefined();
   });
 });
 

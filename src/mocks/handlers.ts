@@ -115,8 +115,6 @@ export const handlers = [
       expiresAt: Date.now() + 86400000,
       expiresIn: '24h',
       session: { transport: 'httpOnly-cookie', cookieName: 'shiora_session' },
-      balances: { aethel: 48250.42 },
-      profile: { recordCount: 147, activeGrants: 3, lastActivity: Date.now() - 3600000, memberSince: Date.now() - 180 * 86400000 },
     });
   }),
 

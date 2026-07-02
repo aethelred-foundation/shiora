@@ -27,7 +27,6 @@ import { verifyChallenge } from '@/lib/api/challenge';
 import { getNonceStore } from '@/lib/persistence/nonce-store';
 import { audit } from '@/lib/api/audit';
 import { verifyWalletSignature } from '@/lib/api/wallet-verify';
-import { seededRandom } from '@/lib/utils';
 
 // ────────────────────────────────────────────────────────────
 // GET /api/wallet/connect — Check session validity
@@ -107,22 +106,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── Step 3: Validate timestamp freshness ──────────────────
-    const now = Date.now();
-    const timestampDiff = Math.abs(now - validated.timestamp);
-    if (timestampDiff > 5 * 60 * 1000) {
-      audit({
-        action: 'WALLET_CONNECT',
-        actor: validated.address,
-        success: false,
-        metadata: { reason: 'timestamp_expired' },
-      });
-      return errorResponse(
-        'TIMESTAMP_EXPIRED',
-        'Signature timestamp has expired. Please sign a new message.',
-        HTTP.BAD_REQUEST,
-      );
-    }
+    // Freshness is enforced entirely server-side: the challenge's expiresAt is
+    // HMAC-bound and checked in Step 1, and the nonce is single-use (Step 2).
+    // A client-supplied timestamp adds nothing an attacker can't set (audit L-04).
 
     // ── Step 3: Verify wallet signature ───────────────────────
     // Reconstruct the challenge message the wallet was asked to sign,
@@ -160,7 +146,6 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Step 4: Create session ────────────────────────────────
-    const seed = Date.now();
     const { token, expiresAt } = createSessionToken(validated.address);
 
     audit({
@@ -170,6 +155,10 @@ export async function POST(request: NextRequest) {
       metadata: { chainId: validated.chainId },
     });
 
+    // The response contains only facts this server actually knows:
+    // authentication outcome and session parameters. Balances and profile
+    // stats are NOT fabricated here — Shiora does not query the chain, so an
+    // unknown balance is reported as unknown by the client (audit L-01).
     const response = successResponse(
       {
         address: validated.address,
@@ -178,15 +167,6 @@ export async function POST(request: NextRequest) {
         session: {
           transport: 'httpOnly-cookie',
           cookieName: SESSION_COOKIE_NAME,
-        },
-        balances: {
-          aethel: parseFloat((48000 + seededRandom(seed) * 5000).toFixed(2)),
-        },
-        profile: {
-          recordCount: 147,
-          activeGrants: 3,
-          lastActivity: now - 3600000,
-          memberSince: now - 180 * 86400000,
         },
       },
       HTTP.OK,

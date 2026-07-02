@@ -18,7 +18,7 @@ const mockCreate = { mutate: jest.fn(), mutateAsync: jest.fn(), isLoading: false
 const mockRefetch = jest.fn();
 
 let mockOverrides: Record<string, unknown> = {};
-let mockWalletBalance = 0;
+let mockWalletBalance: number | null = 0;
 
 jest.mock('@/contexts/AppContext', () => {
   const original = jest.requireActual('@/contexts/AppContext');
@@ -26,7 +26,7 @@ jest.mock('@/contexts/AppContext', () => {
     ...original,
     useApp: () => ({
       wallet: {
-        connected: mockWalletBalance > 0,
+        connected: (mockWalletBalance ?? 0) > 0,
         address: '0xmockwallet',
         aethelBalance: mockWalletBalance,
       },
@@ -380,6 +380,12 @@ describe('MarketplacePage', () => {
   it('renders marketplace stats bar with stats', () => {
     render(<TestWrapper><MarketplacePage /></TestWrapper>);
     // Stats bar should render when stats are provided
+    expect(screen.getByText('Health Data Marketplace')).toBeInTheDocument();
+  });
+
+  it('falls back to the preview default when the wallet balance is unknown (null)', () => {
+    mockWalletBalance = null; // unknown balance -> component preview default applies
+    render(<TestWrapper><MarketplacePage /></TestWrapper>);
     expect(screen.getByText('Health Data Marketplace')).toBeInTheDocument();
   });
 

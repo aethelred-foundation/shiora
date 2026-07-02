@@ -146,7 +146,7 @@ describe('Default context state', () => {
 // Wallet connect / disconnect
 // ---------------------------------------------------------------------------
 describe('Wallet operations', () => {
-  it('connects wallet and sets address and balances', () => {
+  it('connects wallet with a real address and no invented balance (audit L-01)', () => {
     render(
       <AppProvider>
         <ContextConsumer />
@@ -160,7 +160,8 @@ describe('Wallet operations', () => {
     expect(screen.getByTestId('connected').textContent).toBe('true');
     expect(screen.getByTestId('address').textContent).not.toBe('');
     expect(screen.getByTestId('address').textContent).toMatch(/^aeth1/);
-    expect(parseFloat(screen.getByTestId('aethel-balance').textContent || '0')).toBeGreaterThan(0);
+    // Balance is unknown (null) until a real chain source exists — never fabricated.
+    expect(screen.getByTestId('aethel-balance').textContent).toBe('');
   });
 
   it('saves wallet to localStorage on connect', () => {

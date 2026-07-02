@@ -250,7 +250,7 @@ export function WalletConnect() {
             <div className="mb-3">
               <div className="bg-slate-50 rounded-lg p-2.5 text-center">
                 <p className="text-xs text-slate-500">$AETHEL</p>
-                <p className="text-sm font-bold text-slate-900">{formatNumber(wallet.aethelBalance)}</p>
+                <p className="text-sm font-bold text-slate-900">{wallet.aethelBalance === null ? '—' : formatNumber(wallet.aethelBalance)}</p>
               </div>
             </div>
 
