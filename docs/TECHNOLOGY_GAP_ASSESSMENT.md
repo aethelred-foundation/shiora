@@ -4,10 +4,11 @@ Date: 2026-07-02. Scope: everything between the current platform (post
 Tier-1-audit remediation, 239 suites / 4,005 tests / 100% coverage) and what a
 top-tier digital-health incumbent (Maven Clinic, Sword, Hinge Health) ships.
 Each gap states what exists today, what is missing, and the closure. Items are
-> **Progress (2026-07-02):** Phases 1–3 complete — 14 gaps closed and pushed
+> **Progress (2026-07-02):** Phases 1–4 complete — 20 gaps closed and pushed
 > (Phase 1–2: GAP-01/02/03/04/07/08/10/11/23; Phase 3:
-> GAP-13/14/17/18/20), each an independent commit at 100% coverage with the
-> production build green. Suite grew 4,005 → 4,207 tests. Remaining: Phases 4–5.
+> GAP-13/14/17/18/20; Phase 4: GAP-05/09/19/22/24/27), each an independent
+> commit at 100% coverage with the production build green. Suite grew
+> 4,005 → 4,290 tests. Remaining: Phase 5 (GAP-06/12/15/16/21/25/26/28).
 
 Items are prioritized: **P0** (correctness/operability defects), **P1** (enterprise
 capability gaps), **P2** (competitive differentiation), **EXT** (externally
@@ -45,7 +46,7 @@ can't back off intelligently; auth endpoints share limits with reads. Closure:
 standard rate-limit response headers + stricter per-class limits on auth
 endpoints.
 
-**GAP-05 (P1) — No graceful degradation contract.** Postgres outage mid-request
+**GAP-05 (P1) — No graceful degradation contract.** ✅ CLOSED (commit 99ee532) Postgres outage mid-request
 surfaces as an unhandled 500 with no typed error, no readiness flip. Closure:
 typed `DATASTORE_UNAVAILABLE` error mapping + readiness probe reflecting store
 connectivity.
@@ -69,7 +70,7 @@ device. Closure: session inventory — record issued sessions (jti, device,
 issued/expiry) at login; `GET /api/me/sessions` lists them with revocation
 status; `DELETE /api/me/sessions/{jti}` revokes a single device.
 
-**GAP-09 (P1) — No failed-authentication lockout.** Signature verification can be
+**GAP-09 (P1) — No failed-authentication lockout.** ✅ CLOSED (commit 6b5b648) Signature verification can be
 brute-forced at the per-IP rate limit forever; no per-address failure tracking,
 no backoff, no audit alarm. Closure: per-address failure counter with
 exponential backoff window + audit events.
@@ -118,7 +119,7 @@ support on mutating routes — response stored and replayed on key reuse.
 last-write-wins silently (read-modify-write in every service). Closure:
 document `version` + `If-Match`/`409 CONFLICT` optimistic concurrency.
 
-**GAP-19 (P1) — No machine-readable API contract.** `docs/API.md` is prose; no
+**GAP-19 (P1) — No machine-readable API contract.** ✅ CLOSED (commit 914311b) `docs/API.md` is prose; no
 OpenAPI 3.1 document, so integrators (MBZUAI IEC, pilot partners) hand-write
 clients. Closure: OpenAPI spec served at `/api/openapi` generated from a
 single typed route manifest, drift-tested against the route tree.
@@ -131,7 +132,7 @@ records, notifications).
 signed webhook subscriptions with retry/backoff (needs outbound HTTP policy
 first).
 
-**GAP-22 (P2) — No real-time channel.** Notifications are poll-based. Closure:
+**GAP-22 (P2) — No real-time channel.** ✅ CLOSED (commit ee9ddc2) Notifications are poll-based. Closure:
 SSE stream (`/api/notifications/stream`) with heartbeat + reconnect.
 
 ## E. Frontend excellence
@@ -140,7 +141,7 @@ SSE stream (`/api/notifications/stream`) with heartbeat + reconnect.
 no `global-error.tsx`; a root-layout render error white-screens the app.
 Closure: branded global error boundary with reset affordance.
 
-**GAP-24 (P1) — Accessibility is untested.** No automated a11y gate (jest-axe or
+**GAP-24 (P1) — Accessibility is untested.** ✅ CLOSED (commit a156f07) No automated a11y gate (jest-axe or
 equivalent); WCAG 2.2 AA / Section 508 matter in healthcare procurement.
 Closure: axe-based tests over key pages + fixes.
 
@@ -154,7 +155,7 @@ with wallet mock, record CRUD, grant flow) runnable locally and in CI.
 
 ## F. Data layer
 
-**GAP-27 (P1) — Pool/statement hardening.** `getPgClient()` uses driver defaults:
+**GAP-27 (P1) — Pool/statement hardening.** ✅ CLOSED (commit 1ab4493) `getPgClient()` uses driver defaults:
 no statement timeout, no pool bounds tuning, no connection-error strategy.
 Closure: explicit pool config + `statement_timeout` + typed failure handling.
 
