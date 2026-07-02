@@ -10,6 +10,9 @@ import {
   RATE_LIMITS_WINDOW_INDEX_DDL,
   USED_NONCES_DDL,
   USED_NONCES_EXPIRY_INDEX_DDL,
+  REVOKED_TOKENS_DDL,
+  REVOKED_TOKENS_EXPIRY_INDEX_DDL,
+  SESSION_EPOCHS_DDL,
   MIGRATIONS,
 } from '@/lib/persistence/schema';
 
@@ -55,7 +58,18 @@ describe('persistence schema', () => {
       RATE_LIMITS_WINDOW_INDEX_DDL,
       USED_NONCES_DDL,
       USED_NONCES_EXPIRY_INDEX_DDL,
+      REVOKED_TOKENS_DDL,
+      REVOKED_TOKENS_EXPIRY_INDEX_DDL,
+      SESSION_EPOCHS_DDL,
     ]);
+  });
+
+  it('revocation DDL defines token denylist + per-subject sign-out cutoff', () => {
+    expect(REVOKED_TOKENS_DDL).toContain('CREATE TABLE IF NOT EXISTS revoked_tokens');
+    expect(REVOKED_TOKENS_DDL).toContain('PRIMARY KEY (jti)');
+    expect(SESSION_EPOCHS_DDL).toContain('CREATE TABLE IF NOT EXISTS session_epochs');
+    expect(SESSION_EPOCHS_DDL).toContain('PRIMARY KEY (subject)');
+    expect(REVOKED_TOKENS_EXPIRY_INDEX_DDL).toContain('idx_revoked_tokens_expiry');
   });
 
   it('single-use nonce DDL enforces a primary key on the nonce', () => {

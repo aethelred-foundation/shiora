@@ -22,8 +22,10 @@ import {
   POST as postConnect,
   DELETE as deleteConnect,
 } from '@/app/api/wallet/connect/route';
-import { createSessionToken } from '@/lib/api/session';
+import { createSessionToken, verifySessionToken } from '@/lib/api/session';
+import { isSessionRevoked } from '@/lib/api/session-revocation';
 import { __resetNonceStoreForTests } from '@/lib/persistence/nonce-store';
+import { __resetRevocationStoreForTests } from '@/lib/persistence/revocation-store';
 import { seededAddress } from '@/lib/utils';
 
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
@@ -35,6 +37,7 @@ afterEach(() => {
   });
   mockVerifyChallenge.mockImplementation(actualChallenge.verifyChallenge);
   __resetNonceStoreForTests();
+  __resetRevocationStoreForTests();
 });
 
 const TEST_ADDRESS = seededAddress(12345);
@@ -434,5 +437,22 @@ describe('/api/wallet/connect DELETE', () => {
     const body = await res.json();
     expect(body.success).toBe(true);
     expect(body.data.disconnected).toBe(true);
+  });
+
+  it('server-side revokes the presented session so the token stops being honored', async () => {
+    __resetRevocationStoreForTests();
+    const { token } = createSessionToken(seededAddress(6060));
+    const claims = verifySessionToken(token)!;
+    expect(await isSessionRevoked(claims)).toBe(false);
+
+    const req = new NextRequest('http://localhost:3000/api/wallet/connect', {
+      method: 'DELETE',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const res = await deleteConnect(req);
+    expect(res.status).toBe(200);
+
+    // The logged-out token is now rejected everywhere, not just cleared client-side.
+    expect(await isSessionRevoked(claims)).toBe(true);
   });
 });

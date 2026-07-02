@@ -103,6 +103,34 @@ CREATE INDEX IF NOT EXISTS idx_used_nonces_expiry
   ON used_nonces (expires_at);
 `.trim();
 
+// Explicitly revoked session tokens (logout / "this device"). A row exists only
+// for a jti that has been revoked; it is kept until the token would expire
+// anyway, then pruned.
+export const REVOKED_TOKENS_DDL = `
+CREATE TABLE IF NOT EXISTS revoked_tokens (
+  jti        text   NOT NULL,
+  expires_at bigint NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (jti)
+);
+`.trim();
+
+export const REVOKED_TOKENS_EXPIRY_INDEX_DDL = `
+CREATE INDEX IF NOT EXISTS idx_revoked_tokens_expiry
+  ON revoked_tokens (expires_at);
+`.trim();
+
+// Per-subject "sign out everywhere" cutoff: any token issued at or before
+// min_issued_at is invalid. One row per wallet address.
+export const SESSION_EPOCHS_DDL = `
+CREATE TABLE IF NOT EXISTS session_epochs (
+  subject        text   NOT NULL,
+  min_issued_at  bigint NOT NULL,
+  updated_at     timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (subject)
+);
+`.trim();
+
 /** Ordered list of statements that bring a fresh database up to schema. */
 export const MIGRATIONS: readonly string[] = [
   HEALTH_RECORDS_DDL,
@@ -114,4 +142,7 @@ export const MIGRATIONS: readonly string[] = [
   RATE_LIMITS_WINDOW_INDEX_DDL,
   USED_NONCES_DDL,
   USED_NONCES_EXPIRY_INDEX_DDL,
+  REVOKED_TOKENS_DDL,
+  REVOKED_TOKENS_EXPIRY_INDEX_DDL,
+  SESSION_EPOCHS_DDL,
 ];

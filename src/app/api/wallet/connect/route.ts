@@ -17,8 +17,11 @@ import {
   applySessionCookie,
   clearSessionCookie,
   createSessionToken,
+  extractSessionToken,
+  verifySessionToken,
   SESSION_COOKIE_NAME,
 } from '@/lib/api/session';
+import { revokeSession } from '@/lib/api/session-revocation';
 import { serverEnv } from '@/lib/api/env';
 import { verifyChallenge } from '@/lib/api/challenge';
 import { getNonceStore } from '@/lib/persistence/nonce-store';
@@ -202,9 +205,16 @@ export async function DELETE(request: NextRequest) {
   const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
+  // Server-side revoke this token so it stops being honored immediately, not
+  // just cleared from the caller's cookie jar (audit M-03).
+  const claims = verifySessionToken(extractSessionToken(request));
+  if (claims) {
+    await revokeSession(claims);
+  }
+
   audit({
     action: 'WALLET_DISCONNECT',
-    actor: 'session',
+    actor: claims?.sub ?? 'session',
     success: true,
   });
 

@@ -11,7 +11,9 @@ import {
   runMiddlewareWithOptions,
   getClientIp,
 } from '@/lib/api/middleware';
-import { createSessionToken } from '@/lib/api/session';
+import { createSessionToken, verifySessionToken } from '@/lib/api/session';
+import { revokeSession } from '@/lib/api/session-revocation';
+import { __resetRevocationStoreForTests } from '@/lib/persistence/revocation-store';
 import { __resetRateLimiterForTests } from '@/lib/api/rate-limiter';
 import { seededAddress } from '@/lib/utils';
 
@@ -521,5 +523,35 @@ describe('rate limiting is per-account for authenticated callers (audit H-01)', 
     expect(third).not.toBeNull();
     expect(third!.status).toBe(429);
     __resetRateLimiterForTests();
+  });
+});
+
+describe('runMiddleware honors server-side session revocation (audit M-03)', () => {
+  // Use the top-level imports (not requireActual): prior tests call
+  // jest.resetModules(), so a freshly required revocation-store would carry a
+  // different cached singleton than the runMiddleware imported at file load.
+  afterEach(() => __resetRevocationStoreForTests());
+
+  it('rejects a revoked token with 401 SESSION_REVOKED, on any route', async () => {
+    __resetRevocationStoreForTests();
+    const { token } = createSessionToken(seededAddress(55221));
+    await revokeSession(verifySessionToken(token)!);
+
+    const req = new NextRequest('http://localhost:3000/api/test', {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const res = await runMiddleware(req);
+    expect(res).not.toBeNull();
+    expect(res!.status).toBe(401);
+    expect((await res!.json()).error.code).toBe('SESSION_REVOKED');
+  });
+
+  it('passes a fresh (non-revoked) token through', async () => {
+    __resetRevocationStoreForTests();
+    const { token } = createSessionToken(seededAddress(55222));
+    const req = new NextRequest('http://localhost:3000/api/test', {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(await runMiddleware(req)).toBeNull();
   });
 });

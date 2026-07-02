@@ -5,8 +5,11 @@ import { type NextRequest, type NextResponse } from 'next/server';
 import { serverEnv } from './env';
 import { sessionSigningKey } from '@/lib/crypto/derived-secrets';
 
-interface SessionClaims {
+export interface SessionClaims {
+  /** Subject — the wallet address this session authenticates. */
   sub: string;
+  /** Unique token id — the handle used to revoke this specific session. */
+  jti: string;
   iat: number;
   exp: number;
   v: 1;
@@ -50,6 +53,7 @@ export function createSessionToken(address: string): { token: string; expiresAt:
   const expiresAt = issuedAt + serverEnv.sessionTtlHours * 60 * 60 * 1000;
   const claims: SessionClaims = {
     sub: address,
+    jti: crypto.randomUUID(),
     iat: issuedAt,
     exp: expiresAt,
     v: TOKEN_VERSION,
@@ -81,6 +85,7 @@ export function verifySessionToken(token: string | null | undefined): SessionCla
     const claims = JSON.parse(decodeBase64Url(payload)) as SessionClaims;
     if (claims.v !== TOKEN_VERSION) return null;
     if (!claims.sub || typeof claims.sub !== 'string') return null;
+    if (!claims.jti || typeof claims.jti !== 'string') return null;
     if (claims.exp <= Date.now()) return null;
     return claims;
   } catch {

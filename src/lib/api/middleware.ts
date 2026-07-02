@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { errorResponse, HTTP } from './responses';
 import { getCorsHeaders, hasDisallowedOrigin, isMutatingMethod } from './origin';
 import { extractSessionToken, verifySessionToken } from './session';
+import { isSessionRevoked } from './session-revocation';
 import { getRateLimiter } from './rate-limiter';
 import { serverEnv } from './env';
 
@@ -246,6 +247,18 @@ export async function runMiddlewareWithOptions(
     options.windowMs,
   );
   if (rateLimited) return rateLimited;
+
+  // Honor server-side revocation for any presented session, on every route —
+  // a logged-out or "signed-out-everywhere" token must never be accepted
+  // anywhere, even before its stateless expiry (audit M-03).
+  const claims = verifySessionToken(extractSessionToken(request));
+  if (claims && (await isSessionRevoked(claims))) {
+    return errorResponse(
+      'SESSION_REVOKED',
+      'This session has been revoked. Please sign in again.',
+      HTTP.UNAUTHORIZED,
+    );
+  }
 
   if (options.requireAuth) {
     const auth = requireAuth(request);
