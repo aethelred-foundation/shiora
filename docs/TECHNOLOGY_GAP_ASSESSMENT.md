@@ -4,7 +4,12 @@ Date: 2026-07-02. Scope: everything between the current platform (post
 Tier-1-audit remediation, 239 suites / 4,005 tests / 100% coverage) and what a
 top-tier digital-health incumbent (Maven Clinic, Sword, Hinge Health) ships.
 Each gap states what exists today, what is missing, and the closure. Items are
-prioritized: **P0** (correctness/operability defects), **P1** (enterprise
+> **Progress (2026-07-02):** Phases 1–2 complete — 9 gaps closed and pushed
+> (GAP-01/02/03/04/07/08/10/11/23), each an independent commit at 100%
+> coverage with the production build green. Suite grew 4,005 → 4,101 tests.
+> Remaining: Phases 3–5 below.
+
+Items are prioritized: **P0** (correctness/operability defects), **P1** (enterprise
 capability gaps), **P2** (competitive differentiation), **EXT** (externally
 gated — cannot be closed by code alone and will not be faked).
 
@@ -12,7 +17,7 @@ gated — cannot be closed by code alone and will not be faked).
 
 ## A. Reliability & Operations
 
-**GAP-01 (P0) — Durable-store garbage collection is never scheduled.**
+**GAP-01 (P0) — Durable-store garbage collection is never scheduled.** ✅ CLOSED (commit 6bad28d)
 `PgNonceStore`, `PgRevocationStore`, and `PgRateLimiter` all expose `prune()`,
 and their own comments say "production schedules out-of-band" — but nothing in
 the platform does. Under Postgres, `used_nonces`, `revoked_tokens`, and
@@ -21,20 +26,20 @@ in-process sweeper registered from instrumentation (unref'd interval, Postgres
 only) plus an admin-triggerable `POST /api/system/maintenance` for
 ops-scheduled runs, both auditable.
 
-**GAP-02 (P0) — No structured logging.** Raw `console.*` calls with unstructured
+**GAP-02 (P0) — No structured logging.** ✅ CLOSED (commit eb66443) Raw `console.*` calls with unstructured
 strings; no levels, no JSON output, no request correlation (an `x-request-id`
 is minted in edge middleware but never reaches log lines). Closure: a
 zero-dependency structured logger (JSON lines, levels, child-logger context
 binding), wired through API middleware and services.
 
-**GAP-03 (P0) — No metrics.** No request counts, latencies, error rates, rate-limit
+**GAP-03 (P0) — No metrics.** ✅ CLOSED (commit eb66443) No request counts, latencies, error rates, rate-limit
 hits, or store health — operating the platform blind. Closure: an in-process
 metrics registry (counters, histograms with labels), instrumented middleware,
 and a Prometheus-exposition endpoint (`GET /api/system/metrics`) gated by a
 scraper token or admin session. Honest scope: per-instance metrics (correct
 model for the standalone deployment; multi-replica scrapes per instance).
 
-**GAP-04 (P1) — Rate limiting is a blunt instrument.** One global default; a 429
+**GAP-04 (P1) — Rate limiting is a blunt instrument.** ✅ CLOSED (commit b54c259) One global default; a 429
 carries no `Retry-After` or `X-RateLimit-*` headers, so well-behaved clients
 can't back off intelligently; auth endpoints share limits with reads. Closure:
 standard rate-limit response headers + stricter per-class limits on auth
@@ -51,14 +56,14 @@ profile + documented baseline.
 
 ## B. Security depth
 
-**GAP-07 (P0) — MFA exists but protects nothing.** TOTP enrolment/verification
+**GAP-07 (P0) — MFA exists but protects nothing.** ✅ CLOSED (commit b1ce934) TOTP enrolment/verification
 shipped weeks ago; no route demands it. An attacker with a stolen session
 performs every sensitive operation without a second factor. Closure: step-up
 enforcement — short-lived, HMAC-signed step-up assertions minted on TOTP
 verification and required (when the account is enrolled) on high-impact routes:
 role assignment, GDPR erasure, org membership changes.
 
-**GAP-08 (P1) — Sessions are invisible to their owner.** M-03 added revocation and
+**GAP-08 (P1) — Sessions are invisible to their owner.** ✅ CLOSED (commit ae3999b) M-03 added revocation and
 sign-out-everywhere, but users cannot see *which* sessions exist or revoke one
 device. Closure: session inventory — record issued sessions (jti, device,
 issued/expiry) at login; `GET /api/me/sessions` lists them with revocation
@@ -69,11 +74,11 @@ brute-forced at the per-IP rate limit forever; no per-address failure tracking,
 no backoff, no audit alarm. Closure: per-address failure counter with
 exponential backoff window + audit events.
 
-**GAP-10 (P1) — CSP violations vanish.** M-01's nonce CSP blocks injected scripts
+**GAP-10 (P1) — CSP violations vanish.** ✅ CLOSED (commit 4a4c0de) M-01's nonce CSP blocks injected scripts
 but nothing reports attempts. Closure: `report-to`/`report-uri` directive +
 `POST /api/security/csp-report` collector (rate-limited, logged, metriced).
 
-**GAP-11 (P1) — No vulnerability-disclosure channel.** No RFC 9116
+**GAP-11 (P1) — No vulnerability-disclosure channel.** ✅ CLOSED (commit 4a4c0de) No RFC 9116
 `/.well-known/security.txt`. Closure: publish one (with expiry) + SECURITY.md
 alignment.
 
@@ -131,7 +136,7 @@ SSE stream (`/api/notifications/stream`) with heartbeat + reconnect.
 
 ## E. Frontend excellence
 
-**GAP-23 (P1) — No root error containment.** `app/error.tsx` exists but there is
+**GAP-23 (P1) — No root error containment.** ✅ CLOSED (commit d4f5911) `app/error.tsx` exists but there is
 no `global-error.tsx`; a root-layout render error white-screens the app.
 Closure: branded global error boundary with reset affordance.
 
