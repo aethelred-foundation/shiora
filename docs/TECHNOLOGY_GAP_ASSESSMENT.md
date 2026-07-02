@@ -4,10 +4,10 @@ Date: 2026-07-02. Scope: everything between the current platform (post
 Tier-1-audit remediation, 239 suites / 4,005 tests / 100% coverage) and what a
 top-tier digital-health incumbent (Maven Clinic, Sword, Hinge Health) ships.
 Each gap states what exists today, what is missing, and the closure. Items are
-> **Progress (2026-07-02):** Phases 1–2 complete — 9 gaps closed and pushed
-> (GAP-01/02/03/04/07/08/10/11/23), each an independent commit at 100%
-> coverage with the production build green. Suite grew 4,005 → 4,101 tests.
-> Remaining: Phases 3–5 below.
+> **Progress (2026-07-02):** Phases 1–3 complete — 14 gaps closed and pushed
+> (Phase 1–2: GAP-01/02/03/04/07/08/10/11/23; Phase 3:
+> GAP-13/14/17/18/20), each an independent commit at 100% coverage with the
+> production build green. Suite grew 4,005 → 4,207 tests. Remaining: Phases 4–5.
 
 Items are prioritized: **P0** (correctness/operability defects), **P1** (enterprise
 capability gaps), **P2** (competitive differentiation), **EXT** (externally
@@ -87,13 +87,13 @@ a second factor (larger lift; after step-up enforcement exists).
 
 ## C. Privacy engineering
 
-**GAP-13 (P1) — Erasure is soft-delete, not crypto-shredding.** GDPR Art. 17
+**GAP-13 (P1) — Erasure is soft-delete, not crypto-shredding.** ✅ CLOSED (commit 5706b9e) GDPR Art. 17
 erasure soft-deletes sealed documents; ciphertext + wrapped DEK remain
 recoverable by the KEK holder. The envelope design (per-record DEKs) supports
 true crypto-erasure: destroy the wrapped DEK and the ciphertext is permanently
 unrecoverable. Closure: shred-on-erasure in the erasure path, audited.
 
-**GAP-14 (P1) — KEK rotation only protects new writes.** Versioned rotation
+**GAP-14 (P1) — KEK rotation only protects new writes.** ✅ CLOSED (commit 204ac9a) Versioned rotation
 exists, but no tool re-seals historical envelopes under the current KEK; old
 records stay under old keys forever, defeating rotation's purpose. Closure:
 batched re-seal maintenance operation (admin, resumable, audited).
@@ -110,11 +110,11 @@ window.
 
 ## D. API platform & integration
 
-**GAP-17 (P1) — No idempotency keys.** A retried POST (client timeout, network
+**GAP-17 (P1) — No idempotency keys.** ✅ CLOSED (commit ac8f946) A retried POST (client timeout, network
 blip) double-creates records/grants/notes. Closure: `Idempotency-Key` header
 support on mutating routes — response stored and replayed on key reuse.
 
-**GAP-18 (P1) — Lost-update window on all documents.** Concurrent updates
+**GAP-18 (P1) — Lost-update window on all documents.** ✅ CLOSED (commit 9783eea) Concurrent updates
 last-write-wins silently (read-modify-write in every service). Closure:
 document `version` + `If-Match`/`409 CONFLICT` optimistic concurrency.
 
@@ -123,7 +123,7 @@ OpenAPI 3.1 document, so integrators (MBZUAI IEC, pilot partners) hand-write
 clients. Closure: OpenAPI spec served at `/api/openapi` generated from a
 single typed route manifest, drift-tested against the route tree.
 
-**GAP-20 (P1) — Inconsistent pagination.** Some lists paginate, some return
+**GAP-20 (P1) — Inconsistent pagination.** ✅ CLOSED (commit eab6182) Some lists paginate, some return
 everything. Closure: uniform cursor pagination on unbounded lists (audit log,
 records, notifications).
 
