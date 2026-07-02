@@ -53,7 +53,9 @@ function modInverse(value: bigint): bigint {
 }
 
 function randomFieldElement(): bigint {
-  return BigInt('0x' + randomBytes(20).toString('hex')) % P;
+  // 32 bytes = 256 bits over a 127-bit field keeps the mod-P bias below
+  // 2^-129 (RFC 9380 hash-to-field sizing: ceil((127 + 128) / 8) = 32).
+  return BigInt('0x' + randomBytes(32).toString('hex')) % P;
 }
 
 /**
