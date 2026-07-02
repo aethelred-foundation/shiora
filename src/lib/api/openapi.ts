@@ -82,6 +82,14 @@ export const ROUTE_MANIFEST: readonly RouteDoc[] = [
   { path: '/api/webhooks/{id}', method: 'delete', summary: 'Delete a webhook subscription', tags: ['Webhooks'], auth: true },
   { path: '/api/webhooks/{id}/test', method: 'post', summary: 'Send a signed test delivery', tags: ['Webhooks'], auth: true },
 
+  // Passkeys (WebAuthn / FIDO2)
+  { path: '/api/webauthn/register/options', method: 'post', summary: 'Begin passkey registration (challenge + options)', tags: ['Passkeys'], auth: true },
+  { path: '/api/webauthn/register/verify', method: 'post', summary: 'Complete passkey registration (verify attestation)', tags: ['Passkeys'], auth: true },
+  { path: '/api/webauthn/authenticate/options', method: 'post', summary: 'Begin passkey assertion (challenge + allowCredentials)', tags: ['Passkeys'], auth: true },
+  { path: '/api/webauthn/authenticate/verify', method: 'post', summary: 'Verify a passkey assertion (challenge/origin/signature/counter)', tags: ['Passkeys'], auth: true },
+  { path: '/api/webauthn/credentials', method: 'get', summary: 'List registered passkeys', tags: ['Passkeys'], auth: true },
+  { path: '/api/webauthn/credentials/{id}', method: 'delete', summary: 'Remove a registered passkey', tags: ['Passkeys'], auth: true },
+
   // System
   { path: '/api/health/live', method: 'get', summary: 'Liveness probe', tags: ['System'], auth: false },
   { path: '/api/health/ready', method: 'get', summary: 'Readiness probe (config + datastore)', tags: ['System'], auth: false },
@@ -96,6 +104,7 @@ export const ROUTE_MANIFEST: readonly RouteDoc[] = [
 const TAG_DESCRIPTIONS: Record<string, string> = {
   Authentication: 'Wallet challenge/response authentication.',
   MFA: 'TOTP multi-factor enrolment and step-up.',
+  Passkeys: 'WebAuthn/FIDO2 passkey enrolment and assertion.',
   Sessions: 'Session inventory and revocation.',
   Identity: 'Caller identity, roles, and profile.',
   Records: 'Encrypted health records.',

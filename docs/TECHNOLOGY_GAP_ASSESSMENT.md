@@ -4,11 +4,12 @@ Date: 2026-07-02. Scope: everything between the current platform (post
 Tier-1-audit remediation, 239 suites / 4,005 tests / 100% coverage) and what a
 top-tier digital-health incumbent (Maven Clinic, Sword, Hinge Health) ships.
 Each gap states what exists today, what is missing, and the closure. Items are
-> **Progress (2026-07-02):** Phases 1–4 complete — 20 gaps closed and pushed
-> (Phase 1–2: GAP-01/02/03/04/07/08/10/11/23; Phase 3:
-> GAP-13/14/17/18/20; Phase 4: GAP-05/09/19/22/24/27), each an independent
-> commit at 100% coverage with the production build green. Suite grew
-> 4,005 → 4,290 tests. Remaining: Phase 5 (GAP-06/12/15/16/21/25/26/28).
+> **Progress (2026-07-02):** Phases 1–5 nearly complete — **25 of 28 gaps closed**,
+> each an independent commit at 100% coverage with the production build green.
+> Phase 1–2: GAP-01/02/03/04/07/08/10/11/23; Phase 3: GAP-13/14/17/18/20;
+> Phase 4: GAP-05/09/19/22/24/27; Phase 5: GAP-12/15/16/21/28. Suite grew
+> 4,005 → 4,432 tests. Remaining: **GAP-06** (load/perf baseline),
+> **GAP-25** (i18n + RTL), **GAP-26** (Playwright E2E).
 
 Items are prioritized: **P0** (correctness/operability defects), **P1** (enterprise
 capability gaps), **P2** (competitive differentiation), **EXT** (externally
@@ -83,8 +84,18 @@ but nothing reports attempts. Closure: `report-to`/`report-uri` directive +
 `/.well-known/security.txt`. Closure: publish one (with expiry) + SECURITY.md
 alignment.
 
-**GAP-12 (P2) — No WebAuthn/passkeys.** TOTP only. Closure: platform passkeys as
-a second factor (larger lift; after step-up enforcement exists).
+**GAP-12 (P2) — No WebAuthn/passkeys.** ✅ CLOSED TOTP was the only second factor.
+Closure: full FIDO2/WebAuthn passkey support as a phishing-resistant second factor,
+built from first principles rather than pulling a heavyweight dependency — a minimal
+RFC 8949 CBOR decoder (`crypto/cbor-lite.ts`), COSE ES256 → SPKI conversion, and node
+`crypto` assertion verification (`api/webauthn.ts`). The ceremony service
+(`api/webauthn-service.ts`) stores each credential in the owner-scoped encrypted
+document repository (audited on enrol/enable/disable) and holds single-use, 5-minute
+challenges. Six routes under `/api/webauthn/*` drive registration and assertion, with
+challenge + origin + rpIdHash binding, signature verification, and a monotonic
+signature counter to detect cloned authenticators (fail-closed throughout). Documented
+in the OpenAPI manifest under a `Passkeys` tag. Honest scope: the challenge cache is
+per-instance — a multi-replica deployment needs a shared challenge store (noted inline).
 
 ## C. Privacy engineering
 
@@ -99,15 +110,14 @@ exists, but no tool re-seals historical envelopes under the current KEK; old
 records stay under old keys forever, defeating rotation's purpose. Closure:
 batched re-seal maintenance operation (admin, resumable, audited).
 
-**GAP-15 (P2) — Sealed data is unsearchable.** Server-side search over encrypted
-fields is impossible by design; there is no blind-index. Closure: HMAC-based
-blind indexing (deterministic, key-derived tokens) for selected exact-match
+**GAP-15 (P2) — Sealed data is unsearchable.** ✅ CLOSED (commit eb88c81) Server-side
+search over encrypted fields is impossible by design; there is no blind-index. Closure:
+HMAC-based blind indexing (deterministic, key-derived tokens) for selected exact-match
 fields — the standard searchable-encryption compromise.
 
-**GAP-16 (P2) — No data-retention policy engine.** Nothing enforces storage
-limitation (GDPR Art. 5(1)(e)); soft-deleted rows persist indefinitely.
-Closure: retention config + purge job over soft-deleted documents past the
-window.
+**GAP-16 (P2) — No data-retention policy engine.** ✅ CLOSED (commit f034ac1) Nothing
+enforces storage limitation (GDPR Art. 5(1)(e)); soft-deleted rows persist indefinitely.
+Closure: retention config + purge job over soft-deleted documents past the window.
 
 ## D. API platform & integration
 
@@ -128,9 +138,9 @@ single typed route manifest, drift-tested against the route tree.
 everything. Closure: uniform cursor pagination on unbounded lists (audit log,
 records, notifications).
 
-**GAP-21 (P2) — No webhooks/event delivery.** Partners must poll. Closure:
-signed webhook subscriptions with retry/backoff (needs outbound HTTP policy
-first).
+**GAP-21 (P2) — No webhooks/event delivery.** ✅ CLOSED (commit c749b2d) Partners must
+poll. Closure: signed webhook subscriptions with retry/backoff and an SSRF guard on the
+outbound HTTP path.
 
 **GAP-22 (P2) — No real-time channel.** ✅ CLOSED (commit ee9ddc2) Notifications are poll-based. Closure:
 SSE stream (`/api/notifications/stream`) with heartbeat + reconnect.
@@ -159,9 +169,9 @@ with wallet mock, record CRUD, grant flow) runnable locally and in CI.
 no statement timeout, no pool bounds tuning, no connection-error strategy.
 Closure: explicit pool config + `statement_timeout` + typed failure handling.
 
-**GAP-28 (P2) — No archival/WORM export for the audit chain.** The chain is
-verifiable in-place; there is no periodic sealed export for off-platform
-retention. Closure: chain-segment export with head attestation.
+**GAP-28 (P2) — No archival/WORM export for the audit chain.** ✅ CLOSED (commit f86e083)
+The chain is verifiable in-place; there is no periodic sealed export for off-platform
+retention. Closure: signed, self-verifiable chain-segment export with head attestation.
 
 ## G. Externally gated (tracked, not fakeable)
 
