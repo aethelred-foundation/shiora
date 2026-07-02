@@ -113,4 +113,30 @@ describe('PgRecordStore', () => {
     expect(rows.map((r) => r.id)).toEqual(['rec-1', 'rec-2']);
     expect(client.calls[0].text).toContain('ORDER BY created_at DESC');
   });
+
+  describe('scanForReseal (GAP-14)', () => {
+    it('scans from the start and reports a next cursor when the page is full', async () => {
+      const client = new FakeSqlClient();
+      const store = new PgRecordStore(client);
+      client.enqueue([sealedRow(), { ...sealedRow(), id: 'rec-2' }]);
+
+      const page = await store.scanForReseal(null, 2);
+      expect(page.rows.map((r) => r.id)).toEqual(['rec-1', 'rec-2']);
+      expect(page.nextCursor).not.toBeNull();
+      expect(client.calls[0].text).toContain('ORDER BY id');
+      expect(client.calls[0].params).toEqual(['', 2]);
+    });
+
+    it('decodes the cursor into an id bound and stops when the page is short', async () => {
+      const client = new FakeSqlClient();
+      const store = new PgRecordStore(client);
+      const { encodeCursor } = await import('@/lib/persistence/reseal-cursor');
+      client.enqueue([sealedRow()]);
+
+      const page = await store.scanForReseal(encodeCursor(['rec-0']), 5);
+      expect(page.rows).toHaveLength(1);
+      expect(page.nextCursor).toBeNull();
+      expect(client.calls[0].params).toEqual(['rec-0', 5]);
+    });
+  });
 });

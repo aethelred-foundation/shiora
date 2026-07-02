@@ -6,6 +6,8 @@ import {
   isShredded,
   shredEnvelope,
   SHRED_MARKER,
+  needsReseal,
+  resealString,
   openJson,
   openString,
   sealJson,
@@ -166,6 +168,60 @@ describe('PHI envelope encryption', () => {
 
     it('openString refuses a shredded value with a clear error', () => {
       expect(() => openString(shredEnvelope() as never)).toThrow(/crypto-shredded/);
+    });
+  });
+
+  describe('KEK re-sealing (rotation completeness, GAP-14)', () => {
+    const key1 = Buffer.alloc(32, 11).toString('base64');
+    const key2 = Buffer.alloc(32, 22).toString('base64');
+
+    it('needsReseal is true only for values below the current KEK version', () => {
+      process.env.SHIORA_DATA_ENCRYPTION_KEY = key1;
+      __resetKeyProviderForTests();
+      const v1 = sealString('phi', 'owner:rec');
+      expect(needsReseal(v1)).toBe(false); // current is v1
+
+      // Rotate to v2; the v1 value now needs re-sealing.
+      process.env.SHIORA_DATA_ENCRYPTION_KEY_VERSION = '2';
+      process.env.SHIORA_DATA_ENCRYPTION_KEY = key2;
+      process.env.SHIORA_DATA_ENCRYPTION_KEY_V1 = key1;
+      __resetKeyProviderForTests();
+      expect(needsReseal(v1)).toBe(true);
+      expect(needsReseal(sealString('fresh', 'owner:rec2'))).toBe(false); // sealed at v2
+    });
+
+    it('re-seals a v1 value under v2, preserving plaintext and AAD, retiring the old key', () => {
+      process.env.SHIORA_DATA_ENCRYPTION_KEY = key1;
+      __resetKeyProviderForTests();
+      const original = sealString('cycle-day-14 ovulation', 'aeth1owner:rec-9');
+      expect(original.v).toBe(1);
+
+      process.env.SHIORA_DATA_ENCRYPTION_KEY_VERSION = '2';
+      process.env.SHIORA_DATA_ENCRYPTION_KEY = key2;
+      process.env.SHIORA_DATA_ENCRYPTION_KEY_V1 = key1;
+      __resetKeyProviderForTests();
+
+      const resealed = resealString(original, 'aeth1owner:rec-9');
+      expect(resealed.v).toBe(2);
+      expect(openString(resealed, 'aeth1owner:rec-9')).toBe('cycle-day-14 ovulation');
+
+      // Once re-sealed, the v1 key can be retired: the value opens WITHOUT it.
+      delete process.env.SHIORA_DATA_ENCRYPTION_KEY_V1;
+      __resetKeyProviderForTests();
+      expect(openString(resealed, 'aeth1owner:rec-9')).toBe('cycle-day-14 ovulation');
+    });
+
+    it('re-sealing preserves the AAD binding (wrong context still fails)', () => {
+      process.env.SHIORA_DATA_ENCRYPTION_KEY = key1;
+      __resetKeyProviderForTests();
+      const original = sealString('bound', 'owner:a');
+      process.env.SHIORA_DATA_ENCRYPTION_KEY_VERSION = '2';
+      process.env.SHIORA_DATA_ENCRYPTION_KEY = key2;
+      process.env.SHIORA_DATA_ENCRYPTION_KEY_V1 = key1;
+      __resetKeyProviderForTests();
+
+      const resealed = resealString(original, 'owner:a');
+      expect(() => openString(resealed, 'owner:b')).toThrow();
     });
   });
 });

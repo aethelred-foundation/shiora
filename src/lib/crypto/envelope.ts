@@ -240,3 +240,28 @@ export function isShredded(value: unknown): value is ShreddedEnvelope {
   const v = value as Record<string, unknown>;
   return v.shredded === SHRED_MARKER && v.alg === ALGORITHM && typeof v.shreddedAt === 'number';
 }
+
+// ---------------------------------------------------------------------------
+// KEK re-sealing (rotation completeness — GAP-14)
+//
+// Versioned rotation lets new writes use a fresh KEK while old ciphertext still
+// opens under its original key. But rotation's benefit — retiring a
+// potentially-exposed key — is only realized once NO data still depends on it.
+// Re-sealing decrypts a value under its old KEK version and re-encrypts it
+// under the current one (a new random DEK, wrapped by the current KEK),
+// preserving the exact plaintext and AAD binding.
+// ---------------------------------------------------------------------------
+
+/** True when a sealed value predates the current KEK version and should be re-sealed. */
+export function needsReseal(sealed: SealedEnvelope): boolean {
+  return sealed.v < getKeyProvider().currentVersion();
+}
+
+/**
+ * Re-seal a value under the current KEK version, preserving its AAD binding.
+ * The same `aad` used at seal time must be supplied. Throws if the value cannot
+ * be opened (wrong AAD, missing historical key, tampering).
+ */
+export function resealString(sealed: SealedEnvelope, aad?: string): SealedEnvelope {
+  return sealString(openString(sealed, aad), aad);
+}

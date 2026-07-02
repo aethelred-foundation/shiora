@@ -6,16 +6,17 @@
 // (collection, owner_key). One table serves every owner-scoped collection.
 // ============================================================
 
-import type { SealedEnvelope } from '@/lib/crypto/envelope';
+import type { SealedEnvelope, ShreddedEnvelope } from '@/lib/crypto/envelope';
 import { DOCUMENTS_DDL, DOCUMENTS_OWNER_INDEX_DDL } from './schema';
 import type { DocumentStorePort, StoredDocument } from './document-store';
+import { type ResealScanPage, encodeCursor, decodeCursor } from './reseal-cursor';
 import type { SqlClient } from './sql-client';
 
 interface DocumentRow {
   collection: string;
   owner_key: string;
   id: string;
-  sealed: SealedEnvelope;
+  sealed: SealedEnvelope | ShreddedEnvelope;
   deleted: boolean;
 }
 
@@ -81,5 +82,25 @@ export class PgDocumentStore implements DocumentStorePort {
       [collection],
     );
     return rows.map(rowToDocument);
+  }
+
+  async scanForReseal(
+    cursor: string | null,
+    limit: number,
+  ): Promise<ResealScanPage<StoredDocument>> {
+    const [c, i] = cursor ? decodeCursor(cursor) : ['', ''];
+    const { rows } = await this.client.query<DocumentRow>(
+      `SELECT collection, owner_key, id, sealed, deleted FROM documents
+       WHERE ($1 = '' OR (collection, id) > ($1, $2))
+       ORDER BY collection, id
+       LIMIT $3`,
+      [c, i, limit],
+    );
+    const docs = rows.map(rowToDocument);
+    const last = docs[docs.length - 1];
+    return {
+      rows: docs,
+      nextCursor: docs.length === limit && last ? encodeCursor([last.collection, last.id]) : null,
+    };
   }
 }

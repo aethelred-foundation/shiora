@@ -8,6 +8,11 @@
 // ============================================================
 
 import type { SealedEnvelope, ShreddedEnvelope } from '@/lib/crypto/envelope';
+import {
+  type ResealScanPage,
+  encodeCursor,
+  decodeCursor,
+} from './reseal-cursor';
 
 /** A stored document: identity in the clear, payload sealed. */
 export interface StoredDocument {
@@ -33,6 +38,11 @@ export interface DocumentStorePort {
    * only — never expose individual documents from this to an owner.
    */
   listAll(collection: string): Promise<StoredDocument[]>;
+  /**
+   * Walk every document across all collections in stable (collection, id)
+   * order for KEK re-sealing (GAP-14). Resumable via the opaque cursor.
+   */
+  scanForReseal(cursor: string | null, limit: number): Promise<ResealScanPage<StoredDocument>>;
 }
 
 /**
@@ -83,5 +93,31 @@ export class InMemoryDocumentStore implements DocumentStorePort {
       }
     });
     return all;
+  }
+
+  async scanForReseal(
+    cursor: string | null,
+    limit: number,
+  ): Promise<ResealScanPage<StoredDocument>> {
+    const all: StoredDocument[] = [];
+    this.byKey.forEach((docs) => docs.forEach((doc) => all.push({ ...doc })));
+    all.sort((a, b) =>
+      a.collection === b.collection
+        ? a.id.localeCompare(b.id)
+        : a.collection.localeCompare(b.collection));
+
+    const start = cursor ? this.afterIndex(all, decodeCursor(cursor)) : 0;
+    const page = all.slice(start, start + limit);
+    const more = start + limit < all.length;
+    const last = page[page.length - 1];
+    return {
+      rows: page,
+      nextCursor: more && last ? encodeCursor([last.collection, last.id]) : null,
+    };
+  }
+
+  private afterIndex(sorted: StoredDocument[], [collection, id]: string[]): number {
+    const idx = sorted.findIndex((d) => d.collection === collection && d.id === id);
+    return idx === -1 ? 0 : idx + 1;
   }
 }

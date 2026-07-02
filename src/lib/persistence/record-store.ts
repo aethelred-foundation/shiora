@@ -9,6 +9,11 @@
 // ============================================================
 
 import type { SealedEnvelope, ShreddedEnvelope } from '@/lib/crypto/envelope';
+import {
+  type ResealScanPage,
+  encodeCursor,
+  decodeCursor,
+} from './reseal-cursor';
 
 /**
  * A persisted health record. Identifying/operational metadata is stored in the
@@ -46,6 +51,11 @@ export interface RecordStorePort {
   put(row: StoredRecord): Promise<void>;
   findById(ownerAddress: string, id: string): Promise<StoredRecord | undefined>;
   findByOwner(ownerAddress: string): Promise<StoredRecord[]>;
+  /**
+   * Walk every record in stable id order for KEK re-sealing (GAP-14).
+   * Resumable via the opaque cursor.
+   */
+  scanForReseal(cursor: string | null, limit: number): Promise<ResealScanPage<StoredRecord>>;
 }
 
 /**
@@ -74,5 +84,28 @@ export class InMemoryRecordStore implements RecordStorePort {
 
   async findByOwner(ownerAddress: string): Promise<StoredRecord[]> {
     return (this.byOwner.get(ownerAddress) ?? []).map((entry) => ({ ...entry }));
+  }
+
+  async scanForReseal(
+    cursor: string | null,
+    limit: number,
+  ): Promise<ResealScanPage<StoredRecord>> {
+    const all: StoredRecord[] = [];
+    this.byOwner.forEach((rows) => rows.forEach((row) => all.push({ ...row })));
+    all.sort((a, b) => a.id.localeCompare(b.id));
+
+    const start = cursor ? this.afterIndex(all, decodeCursor(cursor)[0]) : 0;
+    const page = all.slice(start, start + limit);
+    const more = start + limit < all.length;
+    const last = page[page.length - 1];
+    return {
+      rows: page,
+      nextCursor: more && last ? encodeCursor([last.id]) : null,
+    };
+  }
+
+  private afterIndex(sorted: StoredRecord[], id: string): number {
+    const idx = sorted.findIndex((r) => r.id === id);
+    return idx === -1 ? 0 : idx + 1;
   }
 }

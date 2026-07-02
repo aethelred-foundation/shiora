@@ -52,4 +52,35 @@ describe('InMemoryDocumentStore', () => {
     expect((await store.listAll('a')).map((d) => d.id).sort()).toEqual(['1', '2']);
     expect(await store.listAll('b')).toHaveLength(1);
   });
+
+  describe('scanForReseal (GAP-14)', () => {
+    it('pages every document in stable (collection, id) order and resumes via cursor', async () => {
+      const store = new InMemoryDocumentStore();
+      await store.put(doc('b'));
+      await store.put(doc('a'));
+      await store.put({ ...doc('z'), collection: 'a-first' }); // earlier collection
+
+      const page1 = await store.scanForReseal(null, 2);
+      expect(page1.rows.map((r) => `${r.collection}/${r.id}`)).toEqual(['a-first/z', 'c/a']);
+      expect(page1.nextCursor).not.toBeNull();
+
+      const page2 = await store.scanForReseal(page1.nextCursor, 2);
+      expect(page2.rows.map((r) => r.id)).toEqual(['b']);
+      expect(page2.nextCursor).toBeNull(); // exhausted
+    });
+
+    it('returns an empty page with no cursor for an empty store', async () => {
+      const store = new InMemoryDocumentStore();
+      expect(await store.scanForReseal(null, 10)).toEqual({ rows: [], nextCursor: null });
+    });
+
+    it('restarts from the beginning when the cursor row no longer exists', async () => {
+      const store = new InMemoryDocumentStore();
+      await store.put(doc('a'));
+      const { encodeCursor } = await import('@/lib/persistence/reseal-cursor');
+      const stale = encodeCursor(['c', 'deleted-id']);
+      const page = await store.scanForReseal(stale, 10);
+      expect(page.rows.map((r) => r.id)).toEqual(['a']);
+    });
+  });
 });

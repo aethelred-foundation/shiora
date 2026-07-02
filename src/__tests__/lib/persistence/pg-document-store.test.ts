@@ -91,4 +91,38 @@ describe('PgDocumentStore', () => {
     expect(client.calls[0].params).toEqual([COLLECTION]);
     expect(client.calls[0].text).toContain('WHERE collection=$1');
   });
+
+  describe('scanForReseal (GAP-14)', () => {
+    it('scans from the start with no cursor and reports a next cursor when full', async () => {
+      const client = new FakeSqlClient();
+      const store = new PgDocumentStore(client);
+      const rows = Array.from({ length: 2 }, (_, i) => ({
+        collection: 'c', owner_key: OWNER, id: `d${i}`,
+        sealed: sealJson({ id: `d${i}` }, `c:${OWNER}:d${i}`), deleted: false,
+      }));
+      client.enqueue(rows);
+
+      const page = await store.scanForReseal(null, 2);
+      expect(page.rows).toHaveLength(2);
+      expect(page.nextCursor).not.toBeNull(); // page was full → more may remain
+      const call = client.calls[0];
+      expect(call.text).toContain('ORDER BY collection, id');
+      expect(call.params).toEqual(['', '', 2]); // empty cursor sentinel
+    });
+
+    it('decodes the cursor into (collection, id) bounds and stops when short', async () => {
+      const client = new FakeSqlClient();
+      const store = new PgDocumentStore(client);
+      const { encodeCursor } = await import('@/lib/persistence/reseal-cursor');
+      client.enqueue([{
+        collection: 'c', owner_key: OWNER, id: 'last',
+        sealed: sealJson({ id: 'last' }, `c:${OWNER}:last`), deleted: false,
+      }]);
+
+      const page = await store.scanForReseal(encodeCursor(['c', 'd0']), 5);
+      expect(page.rows).toHaveLength(1);
+      expect(page.nextCursor).toBeNull(); // fewer than limit → exhausted
+      expect(client.calls[0].params).toEqual(['c', 'd0', 5]);
+    });
+  });
 });

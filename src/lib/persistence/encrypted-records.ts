@@ -34,9 +34,12 @@ export interface RecordUpdate {
 }
 
 /** Bind a record's ciphertext to its owner and id (defeats substitution). */
-function phiAad(ownerAddress: string, id: string): string {
+export function recordPhiAad(ownerAddress: string, id: string): string {
   return `${ownerAddress}:${id}`;
 }
+
+/** @deprecated internal alias — use {@link recordPhiAad}. */
+const phiAad = recordPhiAad;
 
 export class EncryptedRecordRepository {
   constructor(

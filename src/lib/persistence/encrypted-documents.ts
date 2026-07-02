@@ -17,6 +17,11 @@ export interface DocumentAuditActions {
   update: AuditAction;
 }
 
+/** Bind a document's ciphertext to its collection:owner:id context. */
+export function documentAad(collection: string, ownerKey: string, id: string): string {
+  return `${collection}:${ownerKey}:${id}`;
+}
+
 export class EncryptedDocumentRepository<T extends { id: string }> {
   constructor(
     private readonly store: DocumentStorePort,
@@ -120,7 +125,7 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
   // -- internals -----------------------------------------------------------
 
   private aad(ownerKey: string, id: string): string {
-    return `${this.collection}:${ownerKey}:${id}`;
+    return documentAad(this.collection, ownerKey, id);
   }
 
   private async persist(ownerKey: string, document: T): Promise<void> {

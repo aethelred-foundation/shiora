@@ -8,9 +8,10 @@
 // docs/COMPLIANCE.md C-DB-1.
 // ============================================================
 
-import type { SealedEnvelope } from '@/lib/crypto/envelope';
+import type { SealedEnvelope, ShreddedEnvelope } from '@/lib/crypto/envelope';
 import { MIGRATIONS } from './schema';
 import type { RecordStorePort, StoredRecord } from './record-store';
+import { type ResealScanPage, encodeCursor, decodeCursor } from './reseal-cursor';
 import type { SqlClient } from './sql-client';
 
 const SELECT_COLUMNS = `
@@ -33,7 +34,7 @@ interface RecordRow {
   ipfs_nodes: number;
   block_height: string | number;
   encryption: string;
-  sealed_phi: SealedEnvelope;
+  sealed_phi: SealedEnvelope | ShreddedEnvelope;
   deleted: boolean;
 }
 
@@ -121,5 +122,25 @@ export class PgRecordStore implements RecordStorePort {
       [ownerAddress],
     );
     return rows.map(rowToStored);
+  }
+
+  async scanForReseal(
+    cursor: string | null,
+    limit: number,
+  ): Promise<ResealScanPage<StoredRecord>> {
+    const afterId = cursor ? decodeCursor(cursor)[0] : '';
+    const { rows } = await this.client.query<RecordRow>(
+      `SELECT ${SELECT_COLUMNS} FROM health_records
+       WHERE ($1 = '' OR id > $1)
+       ORDER BY id
+       LIMIT $2`,
+      [afterId, limit],
+    );
+    const records = rows.map(rowToStored);
+    const last = records[records.length - 1];
+    return {
+      rows: records,
+      nextCursor: records.length === limit && last ? encodeCursor([last.id]) : null,
+    };
   }
 }
