@@ -15,6 +15,8 @@ import {
   SESSION_EPOCHS_DDL,
   SESSIONS_DDL,
   SESSIONS_SUBJECT_INDEX_DDL,
+  IDEMPOTENCY_DDL,
+  IDEMPOTENCY_EXPIRY_INDEX_DDL,
   MIGRATIONS,
 } from '@/lib/persistence/schema';
 
@@ -65,6 +67,8 @@ describe('persistence schema', () => {
       SESSION_EPOCHS_DDL,
       SESSIONS_DDL,
       SESSIONS_SUBJECT_INDEX_DDL,
+      IDEMPOTENCY_DDL,
+      IDEMPOTENCY_EXPIRY_INDEX_DDL,
     ]);
   });
 

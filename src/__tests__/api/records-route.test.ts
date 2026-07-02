@@ -567,3 +567,36 @@ describe('/api/records/[id] GET, PATCH, DELETE', () => {
     expect((await res.json()).data.deleted).toBe(true);
   });
 });
+
+describe('/api/records POST idempotency (GAP-17)', () => {
+  const address = seededAddress(717);
+  const { token } = createSessionToken(address);
+
+  afterEach(() => {
+    const { __resetIdempotencyStoreForTests } = jest.requireActual('@/lib/persistence/idempotency-store');
+    __resetIdempotencyStoreForTests();
+  });
+
+  function createWithKey(key: string) {
+    return createRecord(createAuthedRequest('http://localhost:3001/api/records', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key },
+      body: JSON.stringify({ type: 'lab_result', label: 'Idempotent', provider: 'Lab', encryption: 'AES-256-GCM' }),
+    }, token));
+  }
+
+  it('a retried create with the same key replays the first record, not a duplicate', async () => {
+    const first = await createWithKey('create-once');
+    expect(first.status).toBe(201);
+    const firstId = (await first.json()).data.id;
+
+    const retry = await createWithKey('create-once');
+    expect(retry.status).toBe(201);
+    expect(retry.headers.get('Idempotent-Replayed')).toBe('true');
+    expect((await retry.json()).data.id).toBe(firstId); // same record, no duplicate
+
+    // Exactly one record exists for the wallet.
+    const list = await listRecords(createAuthedRequest('http://localhost:3001/api/records?limit=100', { method: 'GET' }, token));
+    expect((await list.json()).data.filter((r: { label: string }) => r.label === 'Idempotent')).toHaveLength(1);
+  });
+});

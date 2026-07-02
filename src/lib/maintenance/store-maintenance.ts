@@ -13,6 +13,7 @@ import { getNonceStore } from '@/lib/persistence/nonce-store';
 import { getRevocationStore } from '@/lib/persistence/revocation-store';
 import { getRateLimiter } from '@/lib/api/rate-limiter';
 import { getSessionIndexStore } from '@/lib/persistence/session-index-store';
+import { getIdempotencyStore } from '@/lib/persistence/idempotency-store';
 import { hasDurableDatastore } from '@/lib/api/preflight';
 import { createLogger } from '@/lib/observability/logger';
 import { counter } from '@/lib/observability/metrics';
@@ -46,6 +47,7 @@ export interface MaintenanceReport {
   prunedRevocations: number;
   prunedRateLimitWindows: number;
   prunedSessions: number;
+  prunedIdempotencyKeys: number;
   ranAt: number;
 }
 
@@ -60,6 +62,7 @@ export async function runStoreMaintenance(now: number = Date.now()): Promise<Mai
     prunedRevocations: 0,
     prunedRateLimitWindows: 0,
     prunedSessions: 0,
+    prunedIdempotencyKeys: 0,
     ranAt: now,
   };
 
@@ -85,6 +88,12 @@ export async function runStoreMaintenance(now: number = Date.now()): Promise<Mai
   if (typeof sessions.prune === 'function') {
     report.prunedSessions = await sessions.prune(now);
     prunedTotal.inc({ store: 'sessions' }, report.prunedSessions);
+  }
+
+  const idempotency = getIdempotencyStore() as Prunable;
+  if (typeof idempotency.prune === 'function') {
+    report.prunedIdempotencyKeys = await idempotency.prune(now);
+    prunedTotal.inc({ store: 'idempotency' }, report.prunedIdempotencyKeys);
   }
 
   runsTotal.inc({ outcome: 'ok' });

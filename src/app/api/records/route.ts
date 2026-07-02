@@ -11,6 +11,7 @@ import {
   RecordListQuerySchema,
   parseSearchParams,
 } from '@/lib/api/validation';
+import { withIdempotency } from '@/lib/api/idempotency';
 import {
   successResponse,
   paginatedResponse,
@@ -94,10 +95,13 @@ export async function POST(request: NextRequest) {
   const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
-  try {
-    const auth = requireAuth(request);
-    if ('status' in auth) return auth;
+  const auth = requireAuth(request);
+  if ('status' in auth) return auth;
 
+  // A retried create (with an Idempotency-Key) replays the first response
+  // instead of writing a duplicate record (GAP-17).
+  return withIdempotency(request, auth.walletAddress!, async () => {
+  try {
     const body = await request.json();
     const validated = RecordCreateSchema.parse(body);
 
@@ -143,4 +147,5 @@ export async function POST(request: NextRequest) {
     if (err instanceof ZodError) return validationError(err);
     throw err;
   }
+  });
 }

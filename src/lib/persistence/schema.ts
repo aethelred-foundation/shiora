@@ -148,6 +148,22 @@ CREATE TABLE IF NOT EXISTS sessions (
 export const SESSIONS_SUBJECT_INDEX_DDL = `
 CREATE INDEX IF NOT EXISTS sessions_subject_idx ON sessions (subject, expires_at)`.trim();
 
+// Idempotency keys (GAP-17): stores the outcome of a mutating request keyed by
+// a client-supplied Idempotency-Key so a retry replays the original response
+// instead of acting twice. status NULL marks an in-flight request.
+export const IDEMPOTENCY_DDL = `
+CREATE TABLE IF NOT EXISTS idempotency_keys (
+  key         TEXT PRIMARY KEY,
+  fingerprint TEXT NOT NULL,
+  status      INTEGER,
+  body        TEXT,
+  created_at  BIGINT NOT NULL,
+  expires_at  BIGINT NOT NULL
+)`.trim();
+
+export const IDEMPOTENCY_EXPIRY_INDEX_DDL = `
+CREATE INDEX IF NOT EXISTS idempotency_keys_expiry_idx ON idempotency_keys (expires_at)`.trim();
+
 export const MIGRATIONS: readonly string[] = [
   HEALTH_RECORDS_DDL,
   HEALTH_RECORDS_OWNER_INDEX_DDL,
@@ -163,4 +179,6 @@ export const MIGRATIONS: readonly string[] = [
   SESSION_EPOCHS_DDL,
   SESSIONS_DDL,
   SESSIONS_SUBJECT_INDEX_DDL,
+  IDEMPOTENCY_DDL,
+  IDEMPOTENCY_EXPIRY_INDEX_DDL,
 ];
