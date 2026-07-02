@@ -26,6 +26,7 @@ const CHALLENGE_MAC_INFO = 'shiora/challenge-hmac/v1';
 const AUDIT_MAC_INFO = 'shiora/audit-chain-mac/v1';
 const STEP_UP_MAC_INFO = 'shiora/mfa-stepup/v1';
 const BLIND_INDEX_INFO = 'shiora/blind-index/v1';
+const AUDIT_EXPORT_INFO = 'shiora/audit-export/v1';
 
 const cache = new Map<string, Buffer>();
 
@@ -65,6 +66,11 @@ export function stepUpSigningKey(): Buffer {
 /** HMAC key for deterministic blind indexes over sealed fields (GAP-15). */
 export function blindIndexKey(): Buffer {
   return keyFor(BLIND_INDEX_INFO);
+}
+
+/** HMAC key authenticating exported audit-log segments (GAP-28). */
+export function auditExportKey(): Buffer {
+  return keyFor(AUDIT_EXPORT_INFO);
 }
 
 /**

@@ -73,6 +73,9 @@ export const ROUTE_MANIFEST: readonly RouteDoc[] = [
   { path: '/api/notifications/read-all', method: 'post', summary: 'Mark all notifications read', tags: ['Notifications'], auth: true },
   { path: '/api/notifications/stream', method: 'get', summary: 'Real-time notifications over Server-Sent Events', tags: ['Notifications'], auth: true },
 
+  // Audit
+  { path: '/api/audit/export', method: 'get', summary: 'Export a signed WORM audit-chain segment (admin)', tags: ['System'], auth: true },
+
   // System
   { path: '/api/health/live', method: 'get', summary: 'Liveness probe', tags: ['System'], auth: false },
   { path: '/api/health/ready', method: 'get', summary: 'Readiness probe (config + datastore)', tags: ['System'], auth: false },

@@ -24,6 +24,7 @@ import { getPgClient } from '@/lib/persistence/sql-client';
 import type { AuditAction, AuditEntry } from '@/lib/api/audit';
 import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
 import { pageByCursor, type CursorPage } from '@/lib/api/cursor-pagination';
+import { buildAuditExport, type AuditExportBundle } from '@/lib/api/audit-export';
 
 export interface AuditFilter {
   actor?: string;
@@ -97,6 +98,23 @@ export class PersistentAuditLog implements AuditRecorder {
   /** Verify the persisted chain has not been tampered with. */
   async verify(): Promise<ChainVerification> {
     return verifyAuditChain(await this.store.list());
+  }
+
+  /**
+   * Export a contiguous chain segment [from, to] (by seq, both inclusive) as a
+   * signed WORM bundle for off-platform retention (GAP-28). Omitting the bounds
+   * exports the whole chain.
+   */
+  async exportSegment(from?: number, to?: number): Promise<AuditExportBundle> {
+    const all = await this.store.list(); // ascending by seq
+    const lo = from ?? 0;
+    const hi = to ?? (all.length === 0 ? 0 : all[all.length - 1].seq);
+    const segment = all.filter((entry) => entry.seq >= lo && entry.seq <= hi);
+    const chainHead = {
+      hash: all.length === 0 ? GENESIS_HASH : all[all.length - 1].hash,
+      length: all.length,
+    };
+    return buildAuditExport(segment, chainHead);
   }
 
   /**
