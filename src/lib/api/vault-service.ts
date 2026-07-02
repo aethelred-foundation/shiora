@@ -436,8 +436,181 @@ export async function eraseVaultEntries(owner: string): Promise<number> {
   return symptomList.length + cycleList.length;
 }
 
+// ── Compartments ────────────────────────────────────────────────────────────
+//
+// A compartment is the user's REAL, persisted organizational unit over their
+// vault: one per category, owner-scoped and encrypted like every other vault
+// document, with a user-controlled lock state that is audited on change.
+// Record counts and storage are derived live from the user's actual entries —
+// nothing is fabricated. Per-record data keys are never exposed and there is
+// no per-compartment access-grant scoping, so those fields are honestly empty.
+
+export type CompartmentLockStatus = 'locked' | 'unlocked';
+
+export type CompartmentCategory =
+  | 'cycle_tracking'
+  | 'fertility_data'
+  | 'hormone_levels'
+  | 'medications'
+  | 'lab_results'
+  | 'imaging'
+  | 'symptoms'
+  | 'pregnancy';
+
+interface CompartmentDoc {
+  id: string;
+  category: CompartmentCategory;
+  label: string;
+  description: string;
+  lockStatus: CompartmentLockStatus;
+  createdAt: number;
+  lastAccessed: number;
+}
+
+export interface Compartment extends CompartmentDoc {
+  /** Live count of the user's real entries in this category. */
+  recordCount: number;
+  /** Live byte size of the user's real entries in this category. */
+  storageUsed: number;
+  /** Always empty — per-record data keys are never exposed through the API. */
+  encryptionKey: string;
+  /** Always empty — no per-compartment access-grant scoping exists. */
+  accessList: string[];
+  jurisdictionFlags: string[];
+}
+
+const COMPARTMENT_COLLECTION = 'vault-compartment';
+
+const DEFAULT_COMPARTMENTS: Array<{
+  category: CompartmentCategory;
+  label: string;
+  description: string;
+}> = [
+  { category: 'cycle_tracking', label: 'Cycle Tracking', description: 'Period and cycle-phase entries, encrypted at rest.' },
+  { category: 'fertility_data', label: 'Fertility Data', description: 'Fertility signals derived from your cycle entries.' },
+  { category: 'hormone_levels', label: 'Hormone Levels', description: 'Hormone panel results you choose to store.' },
+  { category: 'medications', label: 'Medications', description: 'Medication and prescription entries.' },
+  { category: 'lab_results', label: 'Lab Results', description: 'Laboratory results and panels.' },
+  { category: 'imaging', label: 'Imaging', description: 'Imaging reports and summaries.' },
+  { category: 'symptoms', label: 'Symptoms', description: 'Symptom log entries, encrypted at rest.' },
+  { category: 'pregnancy', label: 'Pregnancy', description: 'Pregnancy-related entries.' },
+];
+
+/** Stable display order — exhaustive over the closed category union. */
+const CATEGORY_ORDER: Record<CompartmentCategory, number> = {
+  cycle_tracking: 0,
+  fertility_data: 1,
+  hormone_levels: 2,
+  medications: 3,
+  lab_results: 4,
+  imaging: 5,
+  symptoms: 6,
+  pregnancy: 7,
+};
+
+let compartmentRepo: EncryptedDocumentRepository<CompartmentDoc> | null = null;
+
+function compartmentsRepo(): EncryptedDocumentRepository<CompartmentDoc> {
+  if (!compartmentRepo) {
+    compartmentRepo = new EncryptedDocumentRepository<CompartmentDoc>(
+      createStore(),
+      getAuditLog(),
+      COMPARTMENT_COLLECTION,
+      { create: 'VAULT_COMPARTMENT_CREATE', update: 'VAULT_COMPARTMENT_UPDATE' },
+    );
+  }
+  return compartmentRepo;
+}
+
+/** Byte size of the user's entries as stored JSON (0 when there are none). */
+function entryBytes(entries: unknown[]): number {
+  return entries.length === 0 ? 0 : Buffer.byteLength(JSON.stringify(entries), 'utf8');
+}
+
+function toCompartment(
+  doc: CompartmentDoc,
+  syms: SymptomEntry[],
+  cycs: CycleEntry[],
+): Compartment {
+  let entries: Array<{ date: number }> = [];
+  if (doc.category === 'symptoms') {
+    entries = syms;
+  } else if (doc.category === 'cycle_tracking') {
+    entries = cycs;
+  }
+  const lastEntryAt = entries.reduce((max, e) => Math.max(max, e.date), 0);
+  return {
+    ...doc,
+    recordCount: entries.length,
+    storageUsed: entryBytes(entries),
+    lastAccessed: Math.max(doc.lastAccessed, lastEntryAt),
+    encryptionKey: '',
+    accessList: [],
+    jurisdictionFlags: [],
+  };
+}
+
+/**
+ * The owner's compartment set, lazily initialized on first access (one
+ * compartment per category, locked by default — privacy-first), with live
+ * record counts and storage derived from the user's real entries.
+ */
+export async function listCompartments(owner: string): Promise<Compartment[]> {
+  let docs = await compartmentsRepo().list(owner);
+  if (docs.length === 0) {
+    const now = Date.now();
+    docs = [];
+    for (const preset of DEFAULT_COMPARTMENTS) {
+      docs.push(
+        await compartmentsRepo().create(owner, {
+          id: `cmp-${randomUUID().replace(/-/g, '')}`,
+          ...preset,
+          lockStatus: 'locked',
+          createdAt: now,
+          lastAccessed: now,
+        }),
+      );
+    }
+  }
+  const [syms, cycs] = await Promise.all([listSymptoms(owner), listCycleEntries(owner)]);
+  return docs
+    .map((doc) => toCompartment(doc, syms, cycs))
+    .sort((a, b) => CATEGORY_ORDER[a.category] - CATEGORY_ORDER[b.category]);
+}
+
+/** A single compartment with live derived stats, or null when not found. */
+export async function getCompartment(owner: string, id: string): Promise<Compartment | null> {
+  const doc = await compartmentsRepo().get(owner, id);
+  if (!doc) {
+    return null;
+  }
+  const [syms, cycs] = await Promise.all([listSymptoms(owner), listCycleEntries(owner)]);
+  return toCompartment(doc, syms, cycs);
+}
+
+/**
+ * Lock or unlock a compartment. Persisted and written to the audit chain;
+ * returns the updated compartment, or null when the id is unknown.
+ */
+export async function setCompartmentLock(
+  owner: string,
+  id: string,
+  action: 'lock' | 'unlock',
+): Promise<Compartment | null> {
+  const updated = await compartmentsRepo().update(owner, id, {
+    lockStatus: action === 'lock' ? 'locked' : 'unlocked',
+    lastAccessed: Date.now(),
+  });
+  if (!updated) {
+    return null;
+  }
+  const [syms, cycs] = await Promise.all([listSymptoms(owner), listCycleEntries(owner)]);
+  return toCompartment(updated, syms, cycs);
+}
+
 /** Test-only: reset the singletons so each test starts from empty state. */
 export function __resetVaultForTests(): void {
   symptomRepo = null;
   cycleRepo = null;
+  compartmentRepo = null;
 }

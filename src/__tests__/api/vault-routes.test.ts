@@ -1,5 +1,14 @@
 /** @jest-environment node */
 
+// ============================================================
+// Tests for the REAL vault compartments API:
+//   GET/PATCH /api/vault/compartments
+//   GET/PATCH /api/vault/compartments/[id]
+// Compartments are persisted, owner-scoped, encrypted state with derived
+// live stats — these tests exercise lazy initialization, lock/unlock,
+// derived counts from real entries, auth, and validation.
+// ============================================================
+
 jest.mock('@/lib/api/middleware', () => {
   const actual = jest.requireActual('@/lib/api/middleware');
   return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
@@ -7,10 +16,36 @@ jest.mock('@/lib/api/middleware', () => {
 
 import { NextRequest, NextResponse } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
-import { GET as getCompartments, POST as createCompartment } from '@/app/api/vault/compartments/route';
+import { GET as listCompartments, PATCH as patchCompartments } from '@/app/api/vault/compartments/route';
 import { GET as getCompartment, PATCH as patchCompartment } from '@/app/api/vault/compartments/[id]/route';
+import { POST as postSymptom } from '@/app/api/vault/symptoms/route';
+import { POST as postCycle } from '@/app/api/vault/cycle/route';
+import { __resetVaultForTests } from '@/lib/api/vault-service';
+import { createSessionToken } from '@/lib/api/session';
+import { seededAddress } from '@/lib/utils';
 
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
+const USER = seededAddress(710);
+const token = createSessionToken(USER).token;
+
+const BASE = 'http://localhost:3000/api/vault/compartments';
+
+function authed(url: string, init: RequestInit = {}): NextRequest {
+  return new NextRequest(url, {
+    ...init,
+    headers: { ...(init.headers as Record<string, string>), authorization: `Bearer ${token}` },
+  });
+}
+
+function jsonBody(method: string, body: unknown): RequestInit {
+  return {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: typeof body === 'string' ? body : JSON.stringify(body),
+  };
+}
+
+beforeEach(() => __resetVaultForTests());
 
 afterEach(() => {
   mockedRunMiddleware.mockImplementation((...args: unknown[]) => {
@@ -20,284 +55,220 @@ afterEach(() => {
 });
 
 describe('/api/vault/compartments', () => {
-  it('GET returns middleware error when blocked', async () => {
+  it('GET returns the middleware error when blocked', async () => {
     mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await getCompartments(new NextRequest('http://localhost:3000/api/vault/compartments'));
-    expect(res.status).toBe(403);
+    expect((await listCompartments(authed(BASE))).status).toBe(403);
   });
 
-  it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await createCompartment(
-      new NextRequest('http://localhost:3000/api/vault/compartments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category: 'cycle_tracking', label: 'Test' }),
-      }),
-    );
-    expect(res.status).toBe(403);
+  it('GET requires authentication', async () => {
+    const res = await listCompartments(new NextRequest(BASE));
+    expect(res.status).toBe(401);
   });
 
-  it('GET returns compartments list', async () => {
-    const res = await getCompartments(new NextRequest('http://localhost:3000/api/vault/compartments'));
+  it('GET returns the auth error when the session vanishes after middleware', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(null as unknown as Response);
+    const res = await listCompartments(new NextRequest(BASE));
+    expect(res.status).toBe(401);
+  });
+
+  it('GET lazily initializes the default set: 8 categories, locked, honest empty crypto fields', async () => {
+    const res = await listCompartments(authed(BASE));
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.compartments).toBeDefined();
-    expect(Array.isArray(body.data.compartments)).toBe(true);
-    expect(body.data.total).toBeGreaterThan(0);
+    expect(Array.isArray(body.data)).toBe(true);
+    expect(body.data).toHaveLength(8);
+    const categories = body.data.map((c: { category: string }) => c.category);
+    expect(categories).toEqual([
+      'cycle_tracking', 'fertility_data', 'hormone_levels', 'medications',
+      'lab_results', 'imaging', 'symptoms', 'pregnancy',
+    ]);
+    for (const c of body.data) {
+      expect(c.lockStatus).toBe('locked'); // privacy-first default
+      expect(c.recordCount).toBe(0);
+      expect(c.storageUsed).toBe(0);
+      // No fabricated crypto facts: keys are never exposed, no per-compartment
+      // access lists or jurisdiction flags exist.
+      expect(c.encryptionKey).toBe('');
+      expect(c.accessList).toEqual([]);
+      expect(c.jurisdictionFlags).toEqual([]);
+      expect(c.description).not.toMatch(/TEE/);
+    }
   });
 
-  it('POST creates a new compartment', async () => {
-    const res = await createCompartment(
-      new NextRequest('http://localhost:3000/api/vault/compartments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          category: 'cycle_tracking',
-          label: 'My Cycle Data',
-        }),
-      }),
+  it('GET is idempotent: the second call reuses the persisted set', async () => {
+    const first = await (await listCompartments(authed(BASE))).json();
+    const second = await (await listCompartments(authed(BASE))).json();
+    expect(second.data.map((c: { id: string }) => c.id)).toEqual(
+      first.data.map((c: { id: string }) => c.id),
     );
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.category).toBe('cycle_tracking');
-    expect(body.data.label).toBe('My Cycle Data');
-    expect(body.data.lockStatus).toBe('locked');
-    expect(body.data.encryptionKey).toBeDefined();
   });
 
-  it('POST returns 422 for invalid category', async () => {
-    const res = await createCompartment(
-      new NextRequest('http://localhost:3000/api/vault/compartments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category: 'invalid_category', label: 'Test' }),
-      }),
-    );
+  it('GET derives live record counts and storage from real entries', async () => {
+    await postSymptom(authed('http://localhost:3000/api/vault/symptoms',
+      jsonBody('POST', { category: 'pain', symptom: 'Cramps', severity: 3 })));
+    await postCycle(authed('http://localhost:3000/api/vault/cycle',
+      jsonBody('POST', { flow: 'heavy', isPeriodStart: true })));
+
+    const body = await (await listCompartments(authed(BASE))).json();
+    const byCat = Object.fromEntries(body.data.map((c: { category: string }) => [c.category, c]));
+    expect(byCat.symptoms.recordCount).toBe(1);
+    expect(byCat.symptoms.storageUsed).toBeGreaterThan(0);
+    expect(byCat.cycle_tracking.recordCount).toBe(1);
+    expect(byCat.cycle_tracking.storageUsed).toBeGreaterThan(0);
+    expect(byCat.medications.recordCount).toBe(0);
+    // lastAccessed reflects the newest real entry for data-bearing categories.
+    expect(byCat.symptoms.lastAccessed).toBeGreaterThan(0);
+  });
+
+  it('PATCH unlocks and re-locks a compartment (persisted)', async () => {
+    const list = await (await listCompartments(authed(BASE))).json();
+    const id = list.data[0].id;
+
+    const unlocked = await (await patchCompartments(
+      authed(BASE, jsonBody('PATCH', { id, action: 'unlock' })))).json();
+    expect(unlocked.data.lockStatus).toBe('unlocked');
+
+    // Persisted: a fresh list reflects the change.
+    const after = await (await listCompartments(authed(BASE))).json();
+    expect(after.data.find((c: { id: string }) => c.id === id).lockStatus).toBe('unlocked');
+
+    const relocked = await (await patchCompartments(
+      authed(BASE, jsonBody('PATCH', { id, action: 'lock' })))).json();
+    expect(relocked.data.lockStatus).toBe('locked');
+  });
+
+  it('PATCH returns 404 for an unknown compartment id', async () => {
+    await listCompartments(authed(BASE));
+    const res = await patchCompartments(
+      authed(BASE, jsonBody('PATCH', { id: 'cmp-nonexistent', action: 'lock' })));
+    expect(res.status).toBe(404);
+  });
+
+  it('PATCH returns 422 for an invalid action', async () => {
+    const res = await patchCompartments(
+      authed(BASE, jsonBody('PATCH', { id: 'x', action: 'explode' })));
     expect(res.status).toBe(422);
   });
 
-  it('POST returns 422 for missing label', async () => {
-    const res = await createCompartment(
-      new NextRequest('http://localhost:3000/api/vault/compartments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category: 'cycle_tracking' }),
-      }),
-    );
-    expect(res.status).toBe(422);
-  });
-
-  it('POST throws on invalid JSON body (non-Zod error)', async () => {
+  it('PATCH throws on invalid JSON (non-Zod error)', async () => {
     await expect(
-      createCompartment(
-        new NextRequest('http://localhost:3000/api/vault/compartments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: 'not-json',
-        }),
-      ),
+      patchCompartments(authed(BASE, jsonBody('PATCH', 'not-json'))),
     ).rejects.toThrow();
+  });
+
+  it('PATCH returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    expect((await patchCompartments(authed(BASE, jsonBody('PATCH', { id: 'x', action: 'lock' })))).status).toBe(403);
+  });
+
+  it('PATCH returns the auth error when the session vanishes after middleware', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(null as unknown as Response);
+    const res = await patchCompartments(new NextRequest(BASE, jsonBody('PATCH', { id: 'x', action: 'lock' })));
+    expect(res.status).toBe(401);
+  });
+
+  it('compartments are owner-scoped: another wallet gets its own fresh set', async () => {
+    const mine = await (await listCompartments(authed(BASE))).json();
+    const other = createSessionToken(seededAddress(711)).token;
+    const res = await listCompartments(new NextRequest(BASE, {
+      headers: { authorization: `Bearer ${other}` },
+    }));
+    const theirs = await res.json();
+    expect(theirs.data).toHaveLength(8);
+    const mineIds = new Set(mine.data.map((c: { id: string }) => c.id));
+    for (const c of theirs.data) {
+      expect(mineIds.has(c.id)).toBe(false);
+    }
   });
 });
 
 describe('/api/vault/compartments/[id]', () => {
-  it('GET returns middleware error when blocked', async () => {
+  async function firstId(): Promise<string> {
+    const body = await (await listCompartments(authed(BASE))).json();
+    return body.data[0].id;
+  }
+
+  it('GET returns the middleware error when blocked', async () => {
     mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await getCompartment(
-      new NextRequest('http://localhost:3000/api/vault/compartments/any-id'),
-      { params: Promise.resolve({ id: 'any-id' }) },
-    );
+    const res = await getCompartment(authed(`${BASE}/x`), { params: Promise.resolve({ id: 'x' }) });
     expect(res.status).toBe(403);
   });
 
-  it('PATCH returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await patchCompartment(
-      new NextRequest('http://localhost:3000/api/vault/compartments/any-id', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lockStatus: 'locked' }),
-      }),
-      { params: Promise.resolve({ id: 'any-id' }) },
-    );
-    expect(res.status).toBe(403);
+  it('GET returns the auth error when the session vanishes after middleware', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(null as unknown as Response);
+    const res = await getCompartment(new NextRequest(`${BASE}/x`), { params: Promise.resolve({ id: 'x' }) });
+    expect(res.status).toBe(401);
   });
 
-  let validId: string;
-
-  beforeAll(async () => {
-    const res = await getCompartments(new NextRequest('http://localhost:3000/api/vault/compartments'));
-    const body = await res.json();
-    validId = body.data.compartments[0]?.id;
-  });
-
-  it('GET returns a specific compartment', async () => {
-    expect(validId).toBeDefined();
-    const res = await getCompartment(
-      new NextRequest(`http://localhost:3000/api/vault/compartments/${validId}`),
-      { params: Promise.resolve({ id: validId }) },
-    );
+  it('GET returns real compartment detail', async () => {
+    const id = await firstId();
+    const res = await getCompartment(authed(`${BASE}/${id}`), { params: Promise.resolve({ id }) });
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.id).toBe(validId);
+    expect(body.data.id).toBe(id);
+    expect(body.data.category).toBe('cycle_tracking');
+    expect(body.data.encryptionKey).toBe('');
   });
 
-  it('GET returns 404 for unknown compartment', async () => {
-    const res = await getCompartment(
-      new NextRequest('http://localhost:3000/api/vault/compartments/vault-nonexistent'),
-      { params: Promise.resolve({ id: 'vault-nonexistent' }) },
+  it('GET returns 404 for an unknown id', async () => {
+    await firstId();
+    const res = await getCompartment(authed(`${BASE}/cmp-unknown`), { params: Promise.resolve({ id: 'cmp-unknown' }) });
+    expect(res.status).toBe(404);
+  });
+
+  it('PATCH locks/unlocks via the detail route', async () => {
+    const id = await firstId();
+    const res = await patchCompartment(
+      authed(`${BASE}/${id}`, jsonBody('PATCH', { action: 'unlock' })),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.lockStatus).toBe('unlocked');
+  });
+
+  it('PATCH returns 404 for an unknown id', async () => {
+    await firstId();
+    const res = await patchCompartment(
+      authed(`${BASE}/cmp-unknown`, jsonBody('PATCH', { action: 'lock' })),
+      { params: Promise.resolve({ id: 'cmp-unknown' }) },
     );
     expect(res.status).toBe(404);
   });
 
-  it('PATCH updates compartment lock status', async () => {
-    expect(validId).toBeDefined();
+  it('PATCH returns 422 for an invalid action', async () => {
+    const id = await firstId();
     const res = await patchCompartment(
-      new NextRequest(`http://localhost:3000/api/vault/compartments/${validId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lockStatus: 'unlocked' }),
-      }),
-      { params: Promise.resolve({ id: validId }) },
-    );
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.lockStatus).toBe('unlocked');
-  });
-
-  it('PATCH updates compartment to locked status', async () => {
-    expect(validId).toBeDefined();
-    const res = await patchCompartment(
-      new NextRequest(`http://localhost:3000/api/vault/compartments/${validId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lockStatus: 'locked' }),
-      }),
-      { params: Promise.resolve({ id: validId }) },
-    );
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.data.lockStatus).toBe('locked');
-    expect(body.meta.message).toContain('locked');
-  });
-
-  it('PATCH updates compartment to partial status', async () => {
-    expect(validId).toBeDefined();
-    const res = await patchCompartment(
-      new NextRequest(`http://localhost:3000/api/vault/compartments/${validId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lockStatus: 'partial' }),
-      }),
-      { params: Promise.resolve({ id: validId }) },
-    );
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.data.lockStatus).toBe('partial');
-    expect(body.meta.message).toContain('updated');
-  });
-
-  it('PATCH updates compartment label and description', async () => {
-    expect(validId).toBeDefined();
-    const res = await patchCompartment(
-      new NextRequest(`http://localhost:3000/api/vault/compartments/${validId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ label: 'Updated Label', description: 'New description' }),
-      }),
-      { params: Promise.resolve({ id: validId }) },
-    );
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.data.label).toBe('Updated Label');
-    expect(body.data.description).toBe('New description');
-  });
-
-  it('PATCH updates label only (description undefined)', async () => {
-    expect(validId).toBeDefined();
-    const res = await patchCompartment(
-      new NextRequest(`http://localhost:3000/api/vault/compartments/${validId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ label: 'Label Only Update' }),
-      }),
-      { params: Promise.resolve({ id: validId }) },
-    );
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.data.label).toBe('Label Only Update');
-    expect(body.meta.message).toContain('updated');
-  });
-
-  it('PATCH updates description only (label undefined)', async () => {
-    expect(validId).toBeDefined();
-    const res = await patchCompartment(
-      new NextRequest(`http://localhost:3000/api/vault/compartments/${validId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description: 'Description only update' }),
-      }),
-      { params: Promise.resolve({ id: validId }) },
-    );
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.data.description).toBe('Description only update');
-    expect(body.meta.message).toContain('updated');
-  });
-
-  it('GET returns details for multiple compartments (covering all lock states)', async () => {
-    const listRes = await getCompartments(new NextRequest('http://localhost:3000/api/vault/compartments'));
-    const listBody = await listRes.json();
-    for (const c of listBody.data.compartments) {
-      const res = await getCompartment(
-        new NextRequest(`http://localhost:3000/api/vault/compartments/${c.id}`),
-        { params: Promise.resolve({ id: c.id }) },
-      );
-      expect(res.status).toBe(200);
-    }
-  });
-
-  it('PATCH returns 422 for invalid lock status', async () => {
-    expect(validId).toBeDefined();
-    const res = await patchCompartment(
-      new NextRequest(`http://localhost:3000/api/vault/compartments/${validId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lockStatus: 'invalid_status' }),
-      }),
-      { params: Promise.resolve({ id: validId }) },
+      authed(`${BASE}/${id}`, jsonBody('PATCH', { lockStatus: 'partial' })),
+      { params: Promise.resolve({ id }) },
     );
     expect(res.status).toBe(422);
   });
 
-  it('PATCH returns 404 for unknown compartment', async () => {
-    const res = await patchCompartment(
-      new NextRequest('http://localhost:3000/api/vault/compartments/vault-nonexistent', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lockStatus: 'locked' }),
-      }),
-      { params: Promise.resolve({ id: 'vault-nonexistent' }) },
-    );
-    expect(res.status).toBe(404);
-  });
-
-  it('PATCH throws on invalid JSON body (non-Zod error)', async () => {
-    expect(validId).toBeDefined();
+  it('PATCH throws on invalid JSON (non-Zod error)', async () => {
+    const id = await firstId();
     await expect(
       patchCompartment(
-        new NextRequest(`http://localhost:3000/api/vault/compartments/${validId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: 'not-json',
-        }),
-        { params: Promise.resolve({ id: validId }) },
+        authed(`${BASE}/${id}`, jsonBody('PATCH', 'not-json')),
+        { params: Promise.resolve({ id }) },
       ),
     ).rejects.toThrow();
+  });
+
+  it('PATCH returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    const res = await patchCompartment(
+      authed(`${BASE}/x`, jsonBody('PATCH', { action: 'lock' })),
+      { params: Promise.resolve({ id: 'x' }) },
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('PATCH returns the auth error when the session vanishes after middleware', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(null as unknown as Response);
+    const res = await patchCompartment(
+      new NextRequest(`${BASE}/x`, jsonBody('PATCH', { action: 'lock' })),
+      { params: Promise.resolve({ id: 'x' }) },
+    );
+    expect(res.status).toBe(401);
   });
 });

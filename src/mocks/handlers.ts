@@ -273,30 +273,38 @@ export const handlers = [
     privacyScore: { overall: 92, encryptionScore: 98, accessControlScore: 90, jurisdictionScore: 85, dataMinimizationScore: 88 },
   })),
 
+  // Mirrors the REAL compartments API: a bare array with honest empty crypto
+  // fields (per-record keys are never exposed; no per-compartment access lists).
   http.get('*/api/vault/compartments', () => {
     const categories = ['cycle_tracking', 'fertility_data', 'hormone_levels', 'medications', 'lab_results', 'imaging', 'symptoms', 'pregnancy'];
     return ok(categories.map((cat, i) => ({
-      id: `vault-${String(i).padStart(4, '0')}`, category: cat,
+      id: `cmp-${String(i).padStart(4, '0')}`, category: cat,
       label: cat.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
       description: `Encrypted ${cat.replace(/_/g, ' ')} compartment`,
-      lockStatus: i < 3 ? 'locked' : 'unlocked', recordCount: 10 + i * 8,
-      storageUsed: (50 + i * 20) * 1024 * 1024, lastAccessed: Date.now() - i * 86400000,
-      encryptionKey: `0x${'f'.repeat(64)}`, accessListCount: i % 3,
-      jurisdictionFlags: ['us-ca', 'eu-gdpr'], createdAt: Date.now() - (180 + i * 30) * 86400000,
+      lockStatus: i < 3 ? 'locked' : 'unlocked', recordCount: i === 6 ? 4 : 0,
+      storageUsed: i === 6 ? 2048 : 0, lastAccessed: Date.now() - i * 86400000,
+      encryptionKey: '', accessList: [],
+      jurisdictionFlags: [], createdAt: Date.now() - (180 + i * 30) * 86400000,
     })));
   }),
 
   http.get('*/api/vault/compartments/:id', ({ params }) => ok({
     id: params.id, category: 'cycle_tracking', label: 'Cycle Tracking',
     description: 'Encrypted cycle tracking compartment', lockStatus: 'locked',
-    recordCount: 45, storageUsed: 120 * 1024 * 1024, lastAccessed: Date.now() - 3600000,
-    encryptionKey: `0x${'f'.repeat(64)}`, accessListCount: 2,
-    jurisdictionFlags: ['us-ca', 'eu-gdpr'], createdAt: Date.now() - 180 * 86400000,
+    recordCount: 45, storageUsed: 120 * 1024, lastAccessed: Date.now() - 3600000,
+    encryptionKey: '', accessList: [],
+    jurisdictionFlags: [], createdAt: Date.now() - 180 * 86400000,
   })),
 
-  http.post('*/api/vault/compartments', async ({ request }) => {
-    const body = (await request.json()) as Record<string, unknown>;
-    return ok({ id: `vault-${Date.now()}`, ...body, lockStatus: 'locked', recordCount: 0, storageUsed: 0, createdAt: Date.now() }, 201);
+  http.patch('*/api/vault/compartments', async ({ request }) => {
+    const body = (await request.json()) as { id: string; action: 'lock' | 'unlock' };
+    return ok({
+      id: body.id, category: 'cycle_tracking', label: 'Cycle Tracking',
+      description: 'Encrypted cycle tracking compartment',
+      lockStatus: body.action === 'lock' ? 'locked' : 'unlocked',
+      recordCount: 0, storageUsed: 0, lastAccessed: Date.now(),
+      encryptionKey: '', accessList: [], jurisdictionFlags: [], createdAt: Date.now(),
+    });
   }),
 
   http.get('*/api/vault/cycle', () => ok(Array.from({ length: 28 }, (_, i) => ({
