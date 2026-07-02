@@ -2,6 +2,27 @@
 // Tests for src/app/page.tsx (Dashboard)
 // ============================================================
 
+// The dashboard reads the user's REAL data via useHealthRecords,
+// useAccessControl, and useReproductiveVault. Mock all three with
+// deterministic fixtures (populated + empty) so both the real-data render and
+// the empty states are exercised; the live fetches are covered by each hook's
+// own test.
+const mockState = {
+  records: [] as unknown[],
+  grants: [] as unknown[],
+  auditLog: [] as unknown[],
+  cycleEntries: [] as unknown[],
+};
+jest.mock('@/hooks/useHealthRecords', () => ({
+  useHealthRecords: () => ({ records: mockState.records }),
+}));
+jest.mock('@/hooks/useAccessControl', () => ({
+  useAccessControl: () => ({ grants: mockState.grants, auditLog: mockState.auditLog }),
+}));
+jest.mock('@/hooks/useReproductiveVault', () => ({
+  useReproductiveVault: () => ({ cycleEntries: mockState.cycleEntries }),
+}));
+
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { AppProvider } from '@/contexts/AppContext';
@@ -11,125 +32,126 @@ function TestWrapper({ children }: { children: React.ReactNode }) {
   return <AppProvider>{children}</AppProvider>;
 }
 
-describe('DashboardPage', () => {
-  it('renders the dashboard page', () => {
-    render(
-      <TestWrapper>
-        <DashboardPage />
-      </TestWrapper>
-    );
-    // "Shiora on Aethelred" appears in TopNav and hero; verify at least one
-    expect(screen.getAllByText('Shiora on Aethelred').length).toBeGreaterThanOrEqual(1);
-  });
+const now = Date.now();
 
-  it('renders the hero section with welcome message', () => {
-    render(
-      <TestWrapper>
-        <DashboardPage />
-      </TestWrapper>
-    );
+function populate() {
+  mockState.records = [
+    { id: 'r1', type: 'lab_result', label: 'Complete Blood Count', date: now - 86400000, encrypted: true, size: 2048 },
+    { id: 'r2', type: 'imaging', label: 'Pelvic Ultrasound', date: now - 2 * 86400000, encrypted: true, size: 4096 },
+    { id: 'r3', type: 'unknown_type', label: 'Custom Import', date: now - 3 * 86400000, encrypted: false, size: 512 },
+  ];
+  mockState.grants = [
+    { id: 'g1', status: 'Active' },
+    { id: 'g2', status: 'Revoked' },
+  ];
+  mockState.auditLog = [
+    { id: 'a1', provider: '0xprov1', action: 'Record accessed', timestamp: now - 3600000, type: 'access' },
+    { id: 'a2', provider: '0xowner', action: 'Access granted', timestamp: now - 7200000, type: 'grant' },
+    { id: 'a3', provider: '0xowner', action: 'Access revoked', timestamp: now - 9600000, type: 'revoke' },
+    { id: 'a4', provider: '0xowner', action: 'Access modified', timestamp: now - 10800000, type: 'modify' },
+    { id: 'a5', provider: '0xprov1', action: 'Data exported', timestamp: now - 12000000, type: 'download' },
+  ];
+  mockState.cycleEntries = [
+    { id: 'c1', date: now - 3 * 86400000, temperature: 97.4 },
+    { id: 'c2', date: now - 2 * 86400000, temperature: 97.9 },
+    { id: 'c3', date: now - 86400000 }, // no temperature — filtered out
+  ];
+}
+
+function empty() {
+  mockState.records = [];
+  mockState.grants = [];
+  mockState.auditLog = [];
+  mockState.cycleEntries = [];
+}
+
+describe('DashboardPage (populated)', () => {
+  beforeEach(populate);
+
+  it('renders the hero with honest security copy', () => {
+    render(<TestWrapper><DashboardPage /></TestWrapper>);
     expect(screen.getByText(/Welcome back/)).toBeInTheDocument();
+    expect(screen.getByText(/encrypted at rest with AES-256-GCM/)).toBeInTheDocument();
   });
 
-  it('renders key metric cards', () => {
-    render(
-      <TestWrapper>
-        <DashboardPage />
-      </TestWrapper>
-    );
-    // These labels may appear in multiple places (metric cards + nav links)
+  it('renders real key metrics from the mocked hooks', () => {
+    render(<TestWrapper><DashboardPage /></TestWrapper>);
     expect(screen.getAllByText('Health Records').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Encrypted at Rest').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Storage Used').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Provider Access').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Encrypted at Rest')).toBeInTheDocument();
+    expect(screen.getByText('Storage Used')).toBeInTheDocument();
+    expect(screen.getByText('Provider Access')).toBeInTheDocument();
+    // 3 records total, 2 encrypted, 1 active grant.
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument();
   });
 
-  it('renders metric values', () => {
-    render(
-      <TestWrapper>
-        <DashboardPage />
-      </TestWrapper>
-    );
-    // Health records count is 147 (appears on Total + Encrypted-at-Rest cards)
-    expect(screen.getAllByText('147').length).toBeGreaterThanOrEqual(1);
-    // Provider access count is 3 — may appear in multiple places
-    expect(screen.getAllByText('3').length).toBeGreaterThanOrEqual(1);
+  it('renders real recent records incl. the unknown-type icon fallback', () => {
+    render(<TestWrapper><DashboardPage /></TestWrapper>);
+    expect(screen.getByText('Complete Blood Count')).toBeInTheDocument();
+    expect(screen.getByText('Pelvic Ultrasound')).toBeInTheDocument();
+    expect(screen.getByText('Custom Import')).toBeInTheDocument();
   });
 
-  it('renders quick action cards', () => {
-    render(
-      <TestWrapper>
-        <DashboardPage />
-      </TestWrapper>
-    );
-    expect(screen.getByText('Upload Health Data')).toBeInTheDocument();
-    expect(screen.getByText('Cycle Predictions')).toBeInTheDocument();
-    expect(screen.getByText('Manage Access')).toBeInTheDocument();
+  it('renders the real audit trail with all activity types', () => {
+    render(<TestWrapper><DashboardPage /></TestWrapper>);
+    expect(screen.getByText('Access Activity')).toBeInTheDocument();
+    expect(screen.getByText('Record accessed')).toBeInTheDocument();
+    expect(screen.getByText('Access granted')).toBeInTheDocument();
+    expect(screen.getByText('Access revoked')).toBeInTheDocument();
+    expect(screen.getByText('Access modified')).toBeInTheDocument();
+    expect(screen.getByText('Data exported')).toBeInTheDocument();
   });
 
-  it('renders quick actions with correct descriptions', () => {
-    render(
-      <TestWrapper>
-        <DashboardPage />
-      </TestWrapper>
-    );
+  it('renders storage breakdown from real record sizes (unknown type falls back to raw name)', () => {
+    render(<TestWrapper><DashboardPage /></TestWrapper>);
+    expect(screen.getByText('Storage Breakdown')).toBeInTheDocument();
+    expect(screen.getAllByText('Lab Results').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Imaging').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('unknown_type').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders the temperature chart section from real cycle entries', () => {
+    render(<TestWrapper><DashboardPage /></TestWrapper>);
+    expect(screen.getByText('Cycle Temperature Tracking')).toBeInTheDocument();
+    // Populated: the empty-state copy is absent.
+    expect(screen.queryByText('No temperature entries yet.')).not.toBeInTheDocument();
+  });
+
+  it('renders quick actions with honest descriptions', () => {
+    render(<TestWrapper><DashboardPage /></TestWrapper>);
     expect(screen.getByText('AES-256-GCM encrypted at rest')).toBeInTheDocument();
     expect(screen.getByText('Statistical analysis of your data')).toBeInTheDocument();
-    expect(screen.getByText('Granular provider permissions')).toBeInTheDocument();
     expect(screen.getByText('Verifier tooling (simulated)')).toBeInTheDocument();
   });
 
-  it('renders chart sections (mocked)', () => {
-    render(
-      <TestWrapper>
-        <DashboardPage />
-      </TestWrapper>
-    );
-    expect(screen.getByText('Cycle Temperature Tracking')).toBeInTheDocument();
-    expect(screen.getByText('Storage Breakdown')).toBeInTheDocument();
+  it('contains no fabricated personal alerts, predictions, or compliance scores', () => {
+    render(<TestWrapper><DashboardPage /></TestWrapper>);
+    expect(screen.queryByText('Clinical Alerts')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Warfarin/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Digital Health Twin')).not.toBeInTheDocument();
+    expect(screen.queryByText('Compliance Status')).not.toBeInTheDocument();
+    expect(screen.queryByText('Health-to-Earn Rewards')).not.toBeInTheDocument();
+    expect(screen.queryByText('Governance Activity')).not.toBeInTheDocument();
+    expect(screen.queryByText('Marketplace Earnings')).not.toBeInTheDocument();
   });
 
-  it('renders recent records section', () => {
-    render(
-      <TestWrapper>
-        <DashboardPage />
-      </TestWrapper>
-    );
-    expect(screen.getByText('Recent Records')).toBeInTheDocument();
-    // Check "View All" link
-    expect(screen.getByText('View All')).toBeInTheDocument();
-  });
-
-  it('renders access activity section', () => {
-    render(
-      <TestWrapper>
-        <DashboardPage />
-      </TestWrapper>
-    );
-    expect(screen.getByText('Access Activity')).toBeInTheDocument();
-    expect(screen.getByText('Manage')).toBeInTheDocument();
-  });
-
-  it('renders View Records and AI Insights action buttons', () => {
-    render(
-      <TestWrapper>
-        <DashboardPage />
-      </TestWrapper>
-    );
-    expect(screen.getByText('View Records')).toBeInTheDocument();
-    // "AI Insights" may appear in nav and hero
-    expect(screen.getAllByText('AI Insights').length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('renders navigation and footer', () => {
-    render(
-      <TestWrapper>
-        <DashboardPage />
-      </TestWrapper>
-    );
-    // TopNav renders navigation
-    expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
-    // Footer renders
+  it('renders the Explore Platform navigation and footer', () => {
+    render(<TestWrapper><DashboardPage /></TestWrapper>);
+    expect(screen.getByText('Explore Platform')).toBeInTheDocument();
+    expect(screen.getByText('Chat with AI')).toBeInTheDocument();
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+  });
+});
+
+describe('DashboardPage (empty / unauthenticated)', () => {
+  beforeEach(empty);
+
+  it('renders zeroed metrics and every empty state without fabricating data', () => {
+    render(<TestWrapper><DashboardPage /></TestWrapper>);
+    expect(screen.getByText('No records yet.')).toBeInTheDocument();
+    expect(screen.getByText('No access activity yet.')).toBeInTheDocument();
+    expect(screen.getByText('No temperature entries yet.')).toBeInTheDocument();
+    expect(screen.getByText('No records stored yet.')).toBeInTheDocument();
   });
 });
