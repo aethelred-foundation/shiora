@@ -113,7 +113,10 @@ describe('/api/wearables/[provider]', () => {
     expect(body.success).toBe(true);
     expect(body.data.provider).toBe('apple_health');
     expect(body.data.status).toBe('connected');
-    expect(body.data.attestation).toBeDefined();
+    // No fabricated attestation, and the simulated surface declares itself.
+    expect(body.data.attestation).toBeUndefined();
+    expect(body.meta.simulatedSurface).toBe(true);
+    expect(body.meta.message).toContain('(simulated)');
   });
 
   it('POST returns 400 for unknown provider', async () => {

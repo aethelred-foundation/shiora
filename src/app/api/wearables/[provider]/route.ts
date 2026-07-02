@@ -11,8 +11,18 @@ import {
   HTTP,
 } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
-import { seededHex, seededInt, generateAttestation } from '@/lib/utils';
+import { seededHex, seededInt } from '@/lib/utils';
 import { WEARABLE_PROVIDERS } from '@/lib/constants';
+
+
+// Body-level honesty marker for this not-yet-real half of the pilot wearables
+// feature: the device registry/sync surface is simulated until live vendor
+// OAuth (Fitbit / Apple Health / Garmin) lands. Real, encrypted telemetry
+// ingest and analytics live at /api/wearables/samples and /analytics.
+const SIMULATED_DEVICE_SYNC_META = {
+  simulatedSurface: true,
+  note: 'Device registry and sync are simulated pending live vendor OAuth; real telemetry ingest is at /api/wearables/samples.',
+} as const;
 
 interface RouteContext {
   params: Promise<{ provider: string }>;
@@ -41,10 +51,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
       dataPointsSynced: 0,
       batteryLevel: seededInt(seed, 50, 100),
       connectedAt: Date.now(),
-      attestation: generateAttestation(seed),
     },
     HTTP.CREATED,
-    { message: `${providerMeta.name} connected successfully.` },
+    { ...SIMULATED_DEVICE_SYNC_META, message: `${providerMeta.name} connected (simulated).` },
   );
 }
 
@@ -59,8 +68,9 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       provider,
       status: 'disconnected',
       disconnectedAt: Date.now(),
-      message: `Device disconnected. Data remains encrypted on IPFS.`,
+      message: 'Device disconnected (simulated). Ingested telemetry remains encrypted at rest.',
     },
     HTTP.OK,
+    { ...SIMULATED_DEVICE_SYNC_META },
   );
 }

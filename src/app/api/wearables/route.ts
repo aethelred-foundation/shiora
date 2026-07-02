@@ -4,7 +4,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse } from '@/lib/api/responses';
+import { successResponse, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededHex, seededInt, seededRandom } from '@/lib/utils';
 import { WEARABLE_PROVIDERS } from '@/lib/constants';
@@ -14,6 +14,15 @@ export async function GET(request: NextRequest) {
   if (blocked) return blocked;
 
   const SEED = 1000;
+// Body-level honesty marker for this not-yet-real half of the pilot wearables
+// feature: the device registry/sync surface is simulated until live vendor
+// OAuth (Fitbit / Apple Health / Garmin) lands. Real, encrypted telemetry
+// ingest and analytics live at /api/wearables/samples and /analytics.
+const SIMULATED_DEVICE_SYNC_META = {
+  simulatedSurface: true,
+  note: 'Device registry and sync are simulated pending live vendor OAuth; real telemetry ingest is at /api/wearables/samples.',
+} as const;
+
   const { searchParams } = new URL(request.url);
   const view = searchParams.get('view');
 
@@ -41,7 +50,7 @@ export async function GET(request: NextRequest) {
       timestamp: now - (50 - i) * 1800000 + seededInt(SEED + i * 3, 0, 600000),
       source: 'apple_health',
     }));
-    return successResponse(dataPoints);
+    return successResponse(dataPoints, HTTP.OK, { ...SIMULATED_DEVICE_SYNC_META });
   }
 
   const devices = WEARABLE_PROVIDERS.map((provider, i) => {
@@ -59,5 +68,5 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  return successResponse(devices);
+  return successResponse(devices, HTTP.OK, { ...SIMULATED_DEVICE_SYNC_META });
 }

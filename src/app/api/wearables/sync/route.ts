@@ -13,6 +13,16 @@ import {
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededHex, seededInt, generateAttestation } from '@/lib/utils';
 
+
+// Body-level honesty marker for this not-yet-real half of the pilot wearables
+// feature: the device registry/sync surface is simulated until live vendor
+// OAuth (Fitbit / Apple Health / Garmin) lands. Real, encrypted telemetry
+// ingest and analytics live at /api/wearables/samples and /analytics.
+const SIMULATED_DEVICE_SYNC_META = {
+  simulatedSurface: true,
+  note: 'Device registry and sync are simulated pending live vendor OAuth; real telemetry ingest is at /api/wearables/samples.',
+} as const;
+
 const SyncRequestSchema = z.object({
   deviceId: z.string().min(1),
 });
@@ -31,7 +41,7 @@ export async function GET(request: NextRequest) {
     status: i === 0 ? 'syncing' : 'completed',
   }));
 
-  return successResponse(batches);
+  return successResponse(batches, HTTP.OK, { ...SIMULATED_DEVICE_SYNC_META });
 }
 
 export async function POST(request: NextRequest) {
@@ -53,6 +63,7 @@ export async function POST(request: NextRequest) {
     };
 
     return successResponse(batch, HTTP.CREATED, {
+      ...SIMULATED_DEVICE_SYNC_META,
       message: 'Sync completed. Data verified via TEE attestation.',
     });
   } catch (err) {
