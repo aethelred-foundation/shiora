@@ -9,6 +9,8 @@
 
 import { Pool } from 'pg';
 
+import { DatastoreUnavailableError, looksLikeConnectivityFailure } from './datastore-errors';
+
 export interface SqlClient {
   query<T = Record<string, unknown>>(
     text: string,
@@ -32,7 +34,19 @@ export function getPgClient(): SqlClient {
   }
   const pool = _pool;
   return {
-    query: (text, params) => pool.query(text, params) as Promise<{ rows: never[] }>,
+    // Map connectivity failures to a typed error so the API layer can answer
+    // 503 (retryable) instead of an opaque 500 (GAP-05). Query/constraint
+    // errors pass through unchanged.
+    query: async (text, params) => {
+      try {
+        return await (pool.query(text, params) as Promise<{ rows: never[] }>);
+      } catch (err) {
+        if (looksLikeConnectivityFailure(err)) {
+          throw new DatastoreUnavailableError(err);
+        }
+        throw err;
+      }
+    },
   };
 }
 

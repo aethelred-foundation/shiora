@@ -688,3 +688,22 @@ describe('/api/records/[id] optimistic concurrency (GAP-18)', () => {
     expect(res.headers.get('ETag')).toBeNull();
   });
 });
+
+describe('/api/records datastore graceful degradation (GAP-05)', () => {
+  const address = seededAddress(505);
+  const { token } = createSessionToken(address);
+
+  afterEach(() => {
+    mockedListRecords.mockImplementation((...args: unknown[]) => actualService.listRecords(...args));
+  });
+
+  it('returns 503 DATASTORE_UNAVAILABLE (not 500) when the datastore is unreachable', async () => {
+    const { DatastoreUnavailableError } = jest.requireActual('@/lib/persistence/datastore-errors');
+    mockedListRecords.mockRejectedValueOnce(new DatastoreUnavailableError());
+
+    const res = await listRecords(createAuthedRequest('http://localhost:3001/api/records', { method: 'GET' }, token));
+    expect(res.status).toBe(503);
+    expect(res.headers.get('Retry-After')).toBe('5');
+    expect((await res.json()).error.code).toBe('DATASTORE_UNAVAILABLE');
+  });
+});

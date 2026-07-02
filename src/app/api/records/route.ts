@@ -5,7 +5,6 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { ZodError } from 'zod';
 import {
   RecordCreateSchema,
   RecordListQuerySchema,
@@ -15,7 +14,7 @@ import { withIdempotency } from '@/lib/api/idempotency';
 import {
   successResponse,
   paginatedResponse,
-  validationError,
+  errorFromThrow,
   HTTP,
 } from '@/lib/api/responses';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
@@ -82,7 +81,8 @@ export async function GET(request: NextRequest) {
 
     return paginatedResponse(paged, total, query.page, query.limit);
   } catch (err) {
-    if (err instanceof ZodError) return validationError(err);
+    const mapped = errorFromThrow(err);
+    if (mapped) return mapped;
     throw err;
   }
 }
@@ -144,7 +144,8 @@ export async function POST(request: NextRequest) {
       message: 'Record created and encrypted at rest.',
     });
   } catch (err) {
-    if (err instanceof ZodError) return validationError(err);
+    const mapped = errorFromThrow(err);
+    if (mapped) return mapped;
     throw err;
   }
   });

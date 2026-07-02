@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import { counter } from '@/lib/observability/metrics';
 import { ZodError } from 'zod';
 import { serverEnv } from './env';
+import { isDatastoreUnavailableError } from '@/lib/persistence/datastore-errors';
 
 // ────────────────────────────────────────────────────────────
 // HTTP Status Constants
@@ -199,6 +200,28 @@ export function validationError(
     err.flatten().fieldErrors,
     headers,
   );
+}
+
+/**
+ * Map a thrown error to a response for the common cases, or return null so the
+ * caller rethrows (a genuine 500). Handles Zod validation (422) and datastore
+ * connectivity failures (503 + Retry-After) — the graceful-degradation contract
+ * (GAP-05). Use as the first line of a route's catch block.
+ */
+export function errorFromThrow(err: unknown): NextResponse<APIErrorResponse> | null {
+  if (err instanceof ZodError) {
+    return validationError(err);
+  }
+  if (isDatastoreUnavailableError(err)) {
+    return errorResponse(
+      'DATASTORE_UNAVAILABLE',
+      'The service is temporarily unable to reach its datastore. Please retry shortly.',
+      HTTP.SERVICE_UNAVAILABLE,
+      undefined,
+      { 'Retry-After': '5' },
+    );
+  }
+  return null;
 }
 
 /**

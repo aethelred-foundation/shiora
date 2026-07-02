@@ -42,4 +42,21 @@ describe('getPgClient', () => {
     expect(mockQuery).toHaveBeenCalledWith('SELECT 1', [1]);
     expect(result.rows).toEqual([]);
   });
+
+  it('maps a connectivity failure to DatastoreUnavailableError (GAP-05)', async () => {
+    process.env.DATABASE_URL = 'postgres://user:pass@localhost:5432/shiora';
+    __resetPgPoolForTests();
+    mockQuery.mockRejectedValueOnce(Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' }));
+
+    const { DatastoreUnavailableError } = await import('@/lib/persistence/datastore-errors');
+    await expect(getPgClient().query('SELECT 1')).rejects.toBeInstanceOf(DatastoreUnavailableError);
+  });
+
+  it('passes a genuine query error through unchanged', async () => {
+    process.env.DATABASE_URL = 'postgres://user:pass@localhost:5432/shiora';
+    __resetPgPoolForTests();
+    mockQuery.mockRejectedValueOnce(Object.assign(new Error('duplicate key'), { code: '23505' }));
+
+    await expect(getPgClient().query('INSERT ...')).rejects.toThrow('duplicate key');
+  });
 });

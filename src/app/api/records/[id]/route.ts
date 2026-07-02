@@ -6,13 +6,12 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { ZodError } from 'zod';
 import { RecordUpdateSchema } from '@/lib/api/validation';
 import {
   successResponse,
   errorResponse,
   notFoundResponse,
-  validationError,
+  errorFromThrow,
   HTTP,
 } from '@/lib/api/responses';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
@@ -126,7 +125,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       newVersion !== undefined ? { ETag: `"${newVersion}"` } : undefined,
     );
   } catch (err) {
-    if (err instanceof ZodError) return validationError(err);
     if (isOptimisticLockError(err)) {
       return errorResponse(
         'VERSION_CONFLICT',
@@ -134,6 +132,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         HTTP.PRECONDITION_FAILED,
       );
     }
+    const mapped = errorFromThrow(err);
+    if (mapped) return mapped;
     throw err;
   }
 }
