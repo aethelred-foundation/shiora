@@ -81,10 +81,11 @@ describe('PgRecordStore', () => {
     const { text, params } = client.calls[0];
     expect(text).toContain('INSERT INTO health_records');
     expect(text).toContain('ON CONFLICT (id) DO UPDATE SET');
-    expect(params).toHaveLength(16);
+    expect(params).toHaveLength(17);
     expect(params![0]).toBe('rec-1');
     // sealed_phi (param 15) must be a JSON string, not a live object.
     expect(typeof params![14]).toBe('string');
+    expect(params![16]).toBe(1); // version
   });
 
   it('finds a record by id and maps bigint columns to numbers', async () => {

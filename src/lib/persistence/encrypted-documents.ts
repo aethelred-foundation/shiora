@@ -10,6 +10,7 @@
 import { type AuditAction, type AuditRecorder } from '@/lib/crypto/audit-chain';
 import { openJson, sealJson, shredEnvelope, isShredded } from '@/lib/crypto/envelope';
 import type { DocumentStorePort, StoredDocument } from './document-store';
+import { OptimisticLockError, versionOf } from './optimistic-lock';
 
 /** Audit action names emitted for a collection's mutations. */
 export interface DocumentAuditActions {
@@ -38,7 +39,7 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
    * party so the audit trail attributes it truthfully.
    */
   async create(ownerKey: string, document: T, actor: string = ownerKey): Promise<T> {
-    await this.persist(ownerKey, document);
+    await this.persist(ownerKey, document, 1);
     await this.record(this.actions.create, actor, document.id, ownerKey);
     return document;
   }
@@ -50,6 +51,15 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
       return undefined;
     }
     return this.open(ownerKey, row);
+  }
+
+  /** Fetch a document together with its optimistic-concurrency version (GAP-18). */
+  async getVersioned(ownerKey: string, id: string): Promise<{ document: T; version: number } | undefined> {
+    const row = await this.store.findById(this.collection, ownerKey, id);
+    if (!row || row.deleted) {
+      return undefined;
+    }
+    return { document: this.open(ownerKey, row), version: versionOf(row) };
   }
 
   /** List and decrypt all of an owner's non-deleted documents. */
@@ -68,24 +78,31 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
   }
 
   /**
-   * Merge a patch into an existing document and re-seal it. `actor` records who
-   * performed the write (defaults to the owner; pass the acting party for a
-   * write made on the owner's record by someone else).
+   * Merge a patch into an existing document and re-seal it, bumping the version.
+   * `actor` records who performed the write (defaults to the owner). When
+   * `expectedVersion` is supplied and the stored version has moved on, throws
+   * {@link OptimisticLockError} rather than clobbering a concurrent write (GAP-18).
    */
   async update(
     ownerKey: string,
     id: string,
     patch: Partial<T>,
     actor: string = ownerKey,
+    expectedVersion?: number,
   ): Promise<T | undefined> {
     const row = await this.store.findById(this.collection, ownerKey, id);
     if (!row || row.deleted) {
       return undefined;
     }
 
+    const currentVersion = versionOf(row);
+    if (expectedVersion !== undefined && expectedVersion !== currentVersion) {
+      throw new OptimisticLockError(expectedVersion, currentVersion);
+    }
+
     const current = this.open(ownerKey, row);
     const next = { ...current, ...patch, id: current.id } as T;
-    await this.persist(ownerKey, next);
+    await this.persist(ownerKey, next, currentVersion + 1);
     await this.record(this.actions.update, actor, id, ownerKey);
     return next;
   }
@@ -128,7 +145,7 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
     return documentAad(this.collection, ownerKey, id);
   }
 
-  private async persist(ownerKey: string, document: T): Promise<void> {
+  private async persist(ownerKey: string, document: T, version: number): Promise<void> {
     const sealed = sealJson<T>(document, this.aad(ownerKey, document.id));
     await this.store.put({
       collection: this.collection,
@@ -136,6 +153,7 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
       id: document.id,
       sealed,
       deleted: false,
+      version,
     });
   }
 

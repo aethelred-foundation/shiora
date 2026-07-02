@@ -196,4 +196,32 @@ describe('EncryptedRecordRepository', () => {
     ]);
     expect(audit.verify().valid).toBe(true);
   });
+
+  describe('optimistic concurrency (GAP-18)', () => {
+    it('assigns version 1 on create and bumps on update', async () => {
+      const { repo } = newRepo();
+      await repo.create(OWNER, makeRecord());
+      expect(await repo.version(OWNER, 'rec-1')).toBe(1);
+      await repo.update(OWNER, 'rec-1', { status: 'Pinned' });
+      expect(await repo.version(OWNER, 'rec-1')).toBe(2);
+    });
+
+    it('version returns undefined for a missing or deleted record', async () => {
+      const { repo } = newRepo();
+      expect(await repo.version(OWNER, 'nope')).toBeUndefined();
+      await repo.create(OWNER, makeRecord());
+      await repo.softDelete(OWNER, 'rec-1');
+      expect(await repo.version(OWNER, 'rec-1')).toBeUndefined();
+    });
+
+    it('rejects a stale expectedVersion, allows the matching one', async () => {
+      const { repo } = newRepo();
+      await repo.create(OWNER, makeRecord());
+      const ok = await repo.update(OWNER, 'rec-1', { provider: 'Dr. New' }, 1);
+      expect(ok!.provider).toBe('Dr. New');
+      await expect(repo.update(OWNER, 'rec-1', { provider: 'X' }, 1)).rejects.toMatchObject({
+        name: 'OptimisticLockError', expected: 1, actual: 2,
+      });
+    });
+  });
 });

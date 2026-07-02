@@ -14,6 +14,7 @@
 
 import type { AuditRecorder } from '@/lib/crypto/audit-chain';
 import { openJson, sealJson, shredEnvelope, isShredded } from '@/lib/crypto/envelope';
+import { OptimisticLockError, versionOf } from './optimistic-lock';
 import type { MockHealthRecord } from '@/lib/api/mock-data';
 import type { RecordStorePort, StoredRecord } from './record-store';
 
@@ -70,6 +71,7 @@ export class EncryptedRecordRepository {
         tags: record.tags,
       }),
       deleted: false,
+      version: 1,
     };
 
     await this.store.put(row);
@@ -87,24 +89,44 @@ export class EncryptedRecordRepository {
     return this.toRecord(row);
   }
 
+  /** The record's current optimistic-concurrency version, or undefined if absent. */
+  async version(ownerAddress: string, id: string): Promise<number | undefined> {
+    const row = await this.store.findById(ownerAddress, id);
+    if (!row || row.deleted) {
+      return undefined;
+    }
+    return versionOf(row);
+  }
+
   /** List an owner's non-deleted records, decrypting each. */
   async list(ownerAddress: string): Promise<MockHealthRecord[]> {
     const rows = await this.store.findByOwner(ownerAddress);
     return rows.filter((row) => !row.deleted).map((row) => this.toRecord(row));
   }
 
-  /** Apply changes, re-sealing PHI when any PHI field is touched. */
+  /**
+   * Apply changes, re-sealing PHI when any PHI field is touched, and bump the
+   * version. When `expectedVersion` is supplied and the stored version has
+   * moved on, throws {@link OptimisticLockError} instead of clobbering the
+   * concurrent writer's change (GAP-18).
+   */
   async update(
     ownerAddress: string,
     id: string,
     updates: RecordUpdate,
+    expectedVersion?: number,
   ): Promise<MockHealthRecord | undefined> {
     const existing = await this.store.findById(ownerAddress, id);
     if (!existing || existing.deleted) {
       return undefined;
     }
 
-    const next: StoredRecord = { ...existing };
+    const currentVersion = versionOf(existing);
+    if (expectedVersion !== undefined && expectedVersion !== currentVersion) {
+      throw new OptimisticLockError(expectedVersion, currentVersion);
+    }
+
+    const next: StoredRecord = { ...existing, version: currentVersion + 1 };
 
     if (updates.status !== undefined) {
       next.status = updates.status;

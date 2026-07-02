@@ -12,6 +12,7 @@ jest.mock('@/lib/api/records-service', () => {
     listRecords: jest.fn((...args: unknown[]) => actual.listRecords(...args)),
     updateRecord: jest.fn((...args: unknown[]) => actual.updateRecord(...args)),
     softDeleteRecord: jest.fn((...args: unknown[]) => actual.softDeleteRecord(...args)),
+    recordVersion: jest.fn((...args: unknown[]) => actual.recordVersion(...args)),
   };
 });
 
@@ -21,6 +22,7 @@ import {
   listRecords as svcListRecords,
   updateRecord as svcUpdateRecord,
   softDeleteRecord as svcSoftDeleteRecord,
+  recordVersion as svcRecordVersion,
 } from '@/lib/api/records-service';
 
 import { POST as createRecord, GET as listRecords } from '@/app/api/records/route';
@@ -31,6 +33,7 @@ import { seededAddress } from '@/lib/utils';
 const mockedListRecords = svcListRecords as jest.MockedFunction<typeof svcListRecords>;
 const mockedUpdateRecord = svcUpdateRecord as jest.MockedFunction<typeof svcUpdateRecord>;
 const mockedSoftDeleteRecord = svcSoftDeleteRecord as jest.MockedFunction<typeof svcSoftDeleteRecord>;
+const mockedRecordVersion = svcRecordVersion as jest.MockedFunction<typeof svcRecordVersion>;
 const actualService = jest.requireActual('@/lib/api/records-service');
 
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
@@ -43,6 +46,7 @@ afterEach(() => {
   mockedListRecords.mockImplementation((...args: unknown[]) => actualService.listRecords(...args));
   mockedUpdateRecord.mockImplementation((...args: unknown[]) => actualService.updateRecord(...args));
   mockedSoftDeleteRecord.mockImplementation((...args: unknown[]) => actualService.softDeleteRecord(...args));
+  mockedRecordVersion.mockImplementation((...args: unknown[]) => actualService.recordVersion(...args));
 });
 
 function createAuthedRequest(url: string, init: RequestInit, token: string): NextRequest {
@@ -598,5 +602,89 @@ describe('/api/records POST idempotency (GAP-17)', () => {
     // Exactly one record exists for the wallet.
     const list = await listRecords(createAuthedRequest('http://localhost:3001/api/records?limit=100', { method: 'GET' }, token));
     expect((await list.json()).data.filter((r: { label: string }) => r.label === 'Idempotent')).toHaveLength(1);
+  });
+});
+
+describe('/api/records/[id] optimistic concurrency (GAP-18)', () => {
+  const address = seededAddress(818);
+  const { token } = createSessionToken(address);
+
+  async function create(): Promise<string> {
+    const res = await createRecord(createAuthedRequest('http://localhost:3001/api/records', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'lab_result', label: 'Versioned', provider: 'Lab', encryption: 'AES-256-GCM' }),
+    }, token));
+    return (await res.json()).data.id;
+  }
+
+  function patch(id: string, body: unknown, ifMatch?: string) {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (ifMatch !== undefined) headers['If-Match'] = ifMatch;
+    return patchRecord(
+      createAuthedRequest(`http://localhost:3001/api/records/${id}`, { method: 'PATCH', headers, body: JSON.stringify(body) }, token),
+      { params: Promise.resolve({ id }) },
+    );
+  }
+
+  it('GET exposes the version and an ETag', async () => {
+    const id = await create();
+    const res = await getRecord(
+      createAuthedRequest(`http://localhost:3001/api/records/${id}`, { method: 'GET' }, token),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.version).toBe(1);
+    expect(res.headers.get('ETag')).toBe('"1"');
+  });
+
+  it('accepts a PATCH with the matching If-Match and advances the version', async () => {
+    const id = await create();
+    const res = await patch(id, { status: 'Pinned' }, '"1"');
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.version).toBe(2);
+    expect(res.headers.get('ETag')).toBe('"2"');
+  });
+
+  it('rejects a PATCH whose If-Match is stale with 412', async () => {
+    const id = await create();
+    await patch(id, { status: 'Pinned' }, '"1"'); // moves to version 2
+    const conflict = await patch(id, { status: 'Verified' }, '"1"'); // stale
+    expect(conflict.status).toBe(412);
+    expect((await conflict.json()).error.code).toBe('VERSION_CONFLICT');
+  });
+
+  it('rejects a malformed If-Match with 400', async () => {
+    const id = await create();
+    const res = await patch(id, { status: 'Pinned' }, 'not-a-number');
+    expect(res.status).toBe(400);
+    expect((await res.json()).error.code).toBe('INVALID_IF_MATCH');
+  });
+
+  it('without If-Match, updates last-write-wins (backward compatible)', async () => {
+    const id = await create();
+    const res = await patch(id, { status: 'Pinned' });
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.version).toBe(2);
+  });
+
+  it('omits the ETag on GET when the version is unavailable', async () => {
+    const id = await create();
+    mockedRecordVersion.mockResolvedValueOnce(undefined);
+    const res = await getRecord(
+      createAuthedRequest(`http://localhost:3001/api/records/${id}`, { method: 'GET' }, token),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get('ETag')).toBeNull();
+    expect((await res.json()).data.version).toBeUndefined();
+  });
+
+  it('omits the ETag on PATCH when the new version is unavailable', async () => {
+    const id = await create();
+    mockedRecordVersion.mockResolvedValueOnce(undefined);
+    const res = await patch(id, { status: 'Pinned' });
+    expect(res.status).toBe(200);
+    expect(res.headers.get('ETag')).toBeNull();
   });
 });

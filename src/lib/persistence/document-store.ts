@@ -26,6 +26,8 @@ export interface StoredDocument {
   /** Envelope-encrypted payload, or a shred tombstone after crypto-erasure. */
   sealed: SealedEnvelope | ShreddedEnvelope;
   deleted: boolean;
+  /** Monotonic version for optimistic concurrency (GAP-18); absent = 1. */
+  version?: number;
 }
 
 export interface DocumentStorePort {

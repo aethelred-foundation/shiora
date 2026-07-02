@@ -164,6 +164,14 @@ CREATE TABLE IF NOT EXISTS idempotency_keys (
 export const IDEMPOTENCY_EXPIRY_INDEX_DDL = `
 CREATE INDEX IF NOT EXISTS idempotency_keys_expiry_idx ON idempotency_keys (expires_at)`.trim();
 
+// Optimistic-concurrency version columns (GAP-18). Additive ALTERs so existing
+// tables gain the column with a safe default; new tables already have it via
+// the CREATE statements below is not needed — these ALTERs are idempotent.
+export const HEALTH_RECORDS_VERSION_DDL =
+  `ALTER TABLE health_records ADD COLUMN IF NOT EXISTS version integer NOT NULL DEFAULT 1`;
+export const DOCUMENTS_VERSION_DDL =
+  `ALTER TABLE documents ADD COLUMN IF NOT EXISTS version integer NOT NULL DEFAULT 1`;
+
 export const MIGRATIONS: readonly string[] = [
   HEALTH_RECORDS_DDL,
   HEALTH_RECORDS_OWNER_INDEX_DDL,
@@ -181,4 +189,6 @@ export const MIGRATIONS: readonly string[] = [
   SESSIONS_SUBJECT_INDEX_DDL,
   IDEMPOTENCY_DDL,
   IDEMPOTENCY_EXPIRY_INDEX_DDL,
+  HEALTH_RECORDS_VERSION_DDL,
+  DOCUMENTS_VERSION_DDL,
 ];

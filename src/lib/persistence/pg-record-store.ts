@@ -16,7 +16,7 @@ import type { SqlClient } from './sql-client';
 
 const SELECT_COLUMNS = `
   id, owner_address, type, date, upload_date, cid, tx_hash, attestation,
-  size, provider, status, ipfs_nodes, block_height, encryption, sealed_phi, deleted
+  size, provider, status, ipfs_nodes, block_height, encryption, sealed_phi, deleted, version
 `.trim();
 
 interface RecordRow {
@@ -36,6 +36,7 @@ interface RecordRow {
   encryption: string;
   sealed_phi: SealedEnvelope | ShreddedEnvelope;
   deleted: boolean;
+  version: number | string;
 }
 
 function rowToStored(row: RecordRow): StoredRecord {
@@ -56,6 +57,7 @@ function rowToStored(row: RecordRow): StoredRecord {
     encryption: row.encryption,
     sealedPhi: row.sealed_phi,
     deleted: row.deleted,
+    version: Number(row.version),
   };
 }
 
@@ -74,15 +76,15 @@ export class PgRecordStore implements RecordStorePort {
       `INSERT INTO health_records
          (id, owner_address, type, date, upload_date, cid, tx_hash, attestation,
           size, provider, status, ipfs_nodes, block_height, encryption, sealed_phi,
-          deleted, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb,$16, now())
+          deleted, version, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb,$16,$17, now())
        ON CONFLICT (id) DO UPDATE SET
          type=EXCLUDED.type, date=EXCLUDED.date, upload_date=EXCLUDED.upload_date,
          cid=EXCLUDED.cid, tx_hash=EXCLUDED.tx_hash, attestation=EXCLUDED.attestation,
          size=EXCLUDED.size, provider=EXCLUDED.provider, status=EXCLUDED.status,
          ipfs_nodes=EXCLUDED.ipfs_nodes, block_height=EXCLUDED.block_height,
          encryption=EXCLUDED.encryption, sealed_phi=EXCLUDED.sealed_phi,
-         deleted=EXCLUDED.deleted, updated_at=now()`,
+         deleted=EXCLUDED.deleted, version=EXCLUDED.version, updated_at=now()`,
       [
         row.id,
         row.ownerAddress,
@@ -100,6 +102,7 @@ export class PgRecordStore implements RecordStorePort {
         row.encryption,
         JSON.stringify(row.sealedPhi),
         row.deleted,
+        row.version ?? 1,
       ],
     );
   }

@@ -87,8 +87,14 @@ export function updateRecord(
   ownerAddress: string,
   id: string,
   updates: RecordUpdate,
+  expectedVersion?: number,
 ): Promise<MockHealthRecord | undefined> {
-  return repo().update(ownerAddress, id, updates);
+  return repo().update(ownerAddress, id, updates, expectedVersion);
+}
+
+/** Current optimistic-concurrency version of a record, for ETag/If-Match (GAP-18). */
+export function recordVersion(ownerAddress: string, id: string): Promise<number | undefined> {
+  return repo().version(ownerAddress, id);
 }
 
 export function softDeleteRecord(

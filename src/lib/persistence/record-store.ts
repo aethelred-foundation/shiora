@@ -39,6 +39,8 @@ export interface StoredRecord {
   /** Envelope-encrypted payload, or a shred tombstone after crypto-erasure. */
   sealedPhi: SealedEnvelope | ShreddedEnvelope;
   deleted: boolean;
+  /** Monotonic version for optimistic concurrency (GAP-18); absent = 1. */
+  version?: number;
 }
 
 /**

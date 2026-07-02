@@ -23,6 +23,7 @@ const COLLECTION = 'access-grant';
 const OWNER = 'aeth1owner';
 
 function storedDoc(): StoredDocument {
+  // No version field → put() must fall back to version 1.
   return {
     collection: COLLECTION,
     ownerKey: OWNER,
@@ -39,6 +40,7 @@ function docRow() {
     id: 'doc-1',
     sealed: sealJson({ id: 'doc-1', v: 1 }, `${COLLECTION}:${OWNER}:doc-1`),
     deleted: false,
+    version: 1,
   };
 }
 
@@ -57,8 +59,9 @@ describe('PgDocumentStore', () => {
     const { text, params } = client.calls[0];
     expect(text).toContain('INSERT INTO documents');
     expect(text).toContain('ON CONFLICT (collection, id) DO UPDATE SET');
-    expect(params).toHaveLength(5);
+    expect(params).toHaveLength(6);
     expect(typeof params![3]).toBe('string');
+    expect(params![5]).toBe(1); // version
   });
 
   it('finds a document by collection, owner, and id', async () => {

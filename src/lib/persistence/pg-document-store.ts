@@ -18,6 +18,7 @@ interface DocumentRow {
   id: string;
   sealed: SealedEnvelope | ShreddedEnvelope;
   deleted: boolean;
+  version: number | string;
 }
 
 function rowToDocument(row: DocumentRow): StoredDocument {
@@ -27,6 +28,7 @@ function rowToDocument(row: DocumentRow): StoredDocument {
     id: row.id,
     sealed: row.sealed,
     deleted: row.deleted,
+    version: Number(row.version),
   };
 }
 
@@ -41,12 +43,12 @@ export class PgDocumentStore implements DocumentStorePort {
 
   async put(doc: StoredDocument): Promise<void> {
     await this.client.query(
-      `INSERT INTO documents (collection, owner_key, id, sealed, deleted, updated_at)
-       VALUES ($1,$2,$3,$4::jsonb,$5, now())
+      `INSERT INTO documents (collection, owner_key, id, sealed, deleted, version, updated_at)
+       VALUES ($1,$2,$3,$4::jsonb,$5,$6, now())
        ON CONFLICT (collection, id) DO UPDATE SET
          owner_key=EXCLUDED.owner_key, sealed=EXCLUDED.sealed,
-         deleted=EXCLUDED.deleted, updated_at=now()`,
-      [doc.collection, doc.ownerKey, doc.id, JSON.stringify(doc.sealed), doc.deleted],
+         deleted=EXCLUDED.deleted, version=EXCLUDED.version, updated_at=now()`,
+      [doc.collection, doc.ownerKey, doc.id, JSON.stringify(doc.sealed), doc.deleted, doc.version ?? 1],
     );
   }
 
@@ -56,7 +58,7 @@ export class PgDocumentStore implements DocumentStorePort {
     id: string,
   ): Promise<StoredDocument | undefined> {
     const { rows } = await this.client.query<DocumentRow>(
-      `SELECT collection, owner_key, id, sealed, deleted FROM documents
+      `SELECT collection, owner_key, id, sealed, deleted, version FROM documents
        WHERE collection=$1 AND owner_key=$2 AND id=$3`,
       [collection, ownerKey, id],
     );
@@ -66,7 +68,7 @@ export class PgDocumentStore implements DocumentStorePort {
 
   async findByOwner(collection: string, ownerKey: string): Promise<StoredDocument[]> {
     const { rows } = await this.client.query<DocumentRow>(
-      `SELECT collection, owner_key, id, sealed, deleted FROM documents
+      `SELECT collection, owner_key, id, sealed, deleted, version FROM documents
        WHERE collection=$1 AND owner_key=$2
        ORDER BY created_at DESC`,
       [collection, ownerKey],
@@ -76,7 +78,7 @@ export class PgDocumentStore implements DocumentStorePort {
 
   async listAll(collection: string): Promise<StoredDocument[]> {
     const { rows } = await this.client.query<DocumentRow>(
-      `SELECT collection, owner_key, id, sealed, deleted FROM documents
+      `SELECT collection, owner_key, id, sealed, deleted, version FROM documents
        WHERE collection=$1
        ORDER BY created_at DESC`,
       [collection],
@@ -90,7 +92,7 @@ export class PgDocumentStore implements DocumentStorePort {
   ): Promise<ResealScanPage<StoredDocument>> {
     const [c, i] = cursor ? decodeCursor(cursor) : ['', ''];
     const { rows } = await this.client.query<DocumentRow>(
-      `SELECT collection, owner_key, id, sealed, deleted FROM documents
+      `SELECT collection, owner_key, id, sealed, deleted, version FROM documents
        WHERE ($1 = '' OR (collection, id) > ($1, $2))
        ORDER BY collection, id
        LIMIT $3`,

@@ -179,4 +179,50 @@ describe('EncryptedDocumentRepository', () => {
     const all = await repo.listAll();
     expect(all.map((d) => d.secret).sort()).toEqual(['one', 'two']);
   });
+
+  describe('optimistic concurrency (GAP-18)', () => {
+    it('assigns version 1 on create and bumps on each update', async () => {
+      const { repo } = newRepo();
+      await repo.create(OWNER, { id: 'd1', secret: 's', count: 1 });
+      expect((await repo.getVersioned(OWNER, 'd1'))!.version).toBe(1);
+
+      await repo.update(OWNER, 'd1', { count: 2 });
+      expect((await repo.getVersioned(OWNER, 'd1'))!.version).toBe(2);
+
+      await repo.update(OWNER, 'd1', { count: 3 });
+      expect((await repo.getVersioned(OWNER, 'd1'))!.version).toBe(3);
+    });
+
+    it('getVersioned returns undefined for missing/deleted docs', async () => {
+      const { repo } = newRepo();
+      expect(await repo.getVersioned(OWNER, 'nope')).toBeUndefined();
+      await repo.create(OWNER, { id: 'd1', secret: 's', count: 1 });
+      await repo.softDelete(OWNER, 'd1');
+      expect(await repo.getVersioned(OWNER, 'd1')).toBeUndefined();
+    });
+
+    it('rejects an update whose expectedVersion is stale, but allows the matching one', async () => {
+      const { repo } = newRepo();
+      await repo.create(OWNER, { id: 'd1', secret: 's', count: 1 });
+
+      // A writer who read version 1 succeeds.
+      const ok = await repo.update(OWNER, 'd1', { count: 2 }, OWNER, 1);
+      expect(ok!.count).toBe(2);
+
+      // A second writer still holding version 1 is rejected (now at version 2).
+      await expect(repo.update(OWNER, 'd1', { count: 99 }, OWNER, 1)).rejects.toMatchObject({
+        name: 'OptimisticLockError', expected: 1, actual: 2,
+      });
+    });
+
+    it('a legacy row without a version is treated as version 1', async () => {
+      const { store, repo } = newRepo();
+      await store.put({ // no version field
+        collection: COLLECTION, ownerKey: OWNER, id: 'legacy',
+        sealed: sealJson({ id: 'legacy', secret: 'x', count: 0 }, aad('legacy')), deleted: false,
+      });
+      expect((await repo.getVersioned(OWNER, 'legacy'))!.version).toBe(1);
+      await expect(repo.update(OWNER, 'legacy', { count: 1 }, OWNER, 2)).rejects.toMatchObject({ actual: 1 });
+    });
+  });
 });
