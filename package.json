@@ -15,6 +15,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
+    "perf": "node perf/load-test.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\" \"*.{js,mjs,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\" \"*.{js,mjs,json}\"",
     "validate": "npm run type-check && npm run lint && npm run format:check && npm run test"
@@ -45,6 +46,7 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
+    "autocannon": "^8.0.0",
     "eslint": "^8.56.0",
     "eslint-config-next": "^15.5.19",
     "jest": "^30.4.1",
