@@ -21,6 +21,7 @@ import {
 } from '@/lib/api/session';
 import { serverEnv } from '@/lib/api/env';
 import { verifyChallenge } from '@/lib/api/challenge';
+import { getNonceStore } from '@/lib/persistence/nonce-store';
 import { audit } from '@/lib/api/audit';
 import { verifyWalletSignature } from '@/lib/api/wallet-verify';
 import { seededRandom } from '@/lib/utils';
@@ -83,7 +84,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── Step 2: Validate timestamp freshness ──────────────────
+    // ── Step 2: Enforce single-use (audit H-02) ───────────────
+    // A valid, unexpired challenge may be redeemed exactly once. Consuming the
+    // nonce after HMAC verification (so only genuine server-issued challenges
+    // are recorded) atomically rejects any replay of the same nonce within its
+    // TTL — even concurrent replays across replicas.
+    const fresh = await getNonceStore().consume(validated.nonce, validated.expiresAt);
+    if (!fresh) {
+      audit({
+        action: 'WALLET_CONNECT',
+        actor: validated.address,
+        success: false,
+        metadata: { reason: 'nonce_replayed' },
+      });
+      return errorResponse(
+        'CHALLENGE_ALREADY_USED',
+        'This challenge has already been used. Please request a new one.',
+        HTTP.BAD_REQUEST,
+      );
+    }
+
+    // ── Step 3: Validate timestamp freshness ──────────────────
     const now = Date.now();
     const timestampDiff = Math.abs(now - validated.timestamp);
     if (timestampDiff > 5 * 60 * 1000) {

@@ -87,6 +87,22 @@ CREATE INDEX IF NOT EXISTS idx_rate_limits_window
   ON rate_limits (window_start);
 `.trim();
 
+// Single-use authentication nonces. A row exists only for a nonce that has been
+// consumed; the PRIMARY KEY makes the first INSERT win and every replay lose.
+export const USED_NONCES_DDL = `
+CREATE TABLE IF NOT EXISTS used_nonces (
+  nonce      text   NOT NULL,
+  expires_at bigint NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (nonce)
+);
+`.trim();
+
+export const USED_NONCES_EXPIRY_INDEX_DDL = `
+CREATE INDEX IF NOT EXISTS idx_used_nonces_expiry
+  ON used_nonces (expires_at);
+`.trim();
+
 /** Ordered list of statements that bring a fresh database up to schema. */
 export const MIGRATIONS: readonly string[] = [
   HEALTH_RECORDS_DDL,
@@ -96,4 +112,6 @@ export const MIGRATIONS: readonly string[] = [
   DOCUMENTS_OWNER_INDEX_DDL,
   RATE_LIMITS_DDL,
   RATE_LIMITS_WINDOW_INDEX_DDL,
+  USED_NONCES_DDL,
+  USED_NONCES_EXPIRY_INDEX_DDL,
 ];

@@ -8,6 +8,8 @@ import {
   HEALTH_RECORDS_OWNER_INDEX_DDL,
   RATE_LIMITS_DDL,
   RATE_LIMITS_WINDOW_INDEX_DDL,
+  USED_NONCES_DDL,
+  USED_NONCES_EXPIRY_INDEX_DDL,
   MIGRATIONS,
 } from '@/lib/persistence/schema';
 
@@ -42,7 +44,7 @@ describe('persistence schema', () => {
     expect(RATE_LIMITS_WINDOW_INDEX_DDL).toContain('idx_rate_limits_window');
   });
 
-  it('orders migrations: tables and their indexes, records, documents, rate limits', () => {
+  it('orders migrations: tables and their indexes, records, documents, rate limits, nonces', () => {
     expect(MIGRATIONS).toEqual([
       HEALTH_RECORDS_DDL,
       HEALTH_RECORDS_OWNER_INDEX_DDL,
@@ -51,6 +53,14 @@ describe('persistence schema', () => {
       DOCUMENTS_OWNER_INDEX_DDL,
       RATE_LIMITS_DDL,
       RATE_LIMITS_WINDOW_INDEX_DDL,
+      USED_NONCES_DDL,
+      USED_NONCES_EXPIRY_INDEX_DDL,
     ]);
+  });
+
+  it('single-use nonce DDL enforces a primary key on the nonce', () => {
+    expect(USED_NONCES_DDL).toContain('CREATE TABLE IF NOT EXISTS used_nonces');
+    expect(USED_NONCES_DDL).toContain('PRIMARY KEY (nonce)');
+    expect(USED_NONCES_EXPIRY_INDEX_DDL).toContain('idx_used_nonces_expiry');
   });
 });

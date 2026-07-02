@@ -23,6 +23,7 @@ import {
   DELETE as deleteConnect,
 } from '@/app/api/wallet/connect/route';
 import { createSessionToken } from '@/lib/api/session';
+import { __resetNonceStoreForTests } from '@/lib/persistence/nonce-store';
 import { seededAddress } from '@/lib/utils';
 
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
@@ -33,6 +34,7 @@ afterEach(() => {
     return actual.runMiddleware(...args);
   });
   mockVerifyChallenge.mockImplementation(actualChallenge.verifyChallenge);
+  __resetNonceStoreForTests();
 });
 
 const TEST_ADDRESS = seededAddress(12345);
@@ -257,6 +259,30 @@ describe('/api/wallet/connect POST', () => {
         }),
       ),
     ).rejects.toThrow();
+  });
+
+  it('rejects a replayed challenge — single-use nonce (audit H-02)', async () => {
+    const challenge = createTestChallenge(TEST_ADDRESS);
+    const payload = {
+      address: TEST_ADDRESS,
+      signature: 'deadbeef.deadbeef', // HMAC valid → nonce consumed; signature then fails
+      timestamp: Date.now(),
+      ...challenge,
+    };
+    const mk = () => new NextRequest('http://localhost:3000/api/wallet/connect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    // First redemption consumes the nonce, then fails on the bogus signature.
+    const first = await postConnect(mk());
+    expect((await first.json()).error.code).toBe('INVALID_SIGNATURE');
+
+    // Replaying the same challenge is rejected before signature verification.
+    const second = await postConnect(mk());
+    expect(second.status).toBe(400);
+    expect((await second.json()).error.code).toBe('CHALLENGE_ALREADY_USED');
   });
 
   it('returns 200 with session on valid signature', async () => {
