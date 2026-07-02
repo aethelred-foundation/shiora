@@ -398,7 +398,18 @@ describe('/api/wallet/connect POST', () => {
       sTrimmed.copy(sPadded, 32 - sTrimmed.length);
       return Buffer.concat([rPadded, sPadded]);
     }
-    const rawSig = derToRaw(sigDer);
+    // Normalize to canonical low-S like real Cosmos wallets do — the server
+    // rejects high-S signatures (audit L-02) and OpenSSL does not normalize.
+    const SECP256K1_N = BigInt(
+      '0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141',
+    );
+    function normalizeLowS(raw: Buffer): Buffer {
+      const sVal = BigInt(`0x${raw.subarray(32).toString('hex')}`);
+      if (sVal * BigInt(2) <= SECP256K1_N) return raw;
+      const sLow = (SECP256K1_N - sVal).toString(16).padStart(64, '0');
+      return Buffer.concat([raw.subarray(0, 32), Buffer.from(sLow, 'hex')]);
+    }
+    const rawSig = normalizeLowS(derToRaw(sigDer));
     const signatureField = `${pubKeyHex}.${rawSig.toString('hex')}`;
 
     const req = new NextRequest('http://localhost:3000/api/wallet/connect', {

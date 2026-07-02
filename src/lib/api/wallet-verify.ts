@@ -19,8 +19,9 @@ import crypto from 'node:crypto';
  *
  * Returns true only when:
  *   1. The public key is a valid 33-byte compressed secp256k1 point.
- *   2. The ECDSA signature over SHA-256(message) verifies against the key.
- *   3. The bech32 address derived from the key matches `expectedAddress`.
+ *   2. The signature's s scalar is canonical low-S (0 < s ≤ n/2).
+ *   3. The ECDSA signature over SHA-256(message) verifies against the key.
+ *   4. The bech32 address derived from the key matches `expectedAddress`.
  */
 export function verifyWalletSignature(
   message: string,
@@ -61,6 +62,16 @@ export function verifyWalletSignature(
     const derSig = sigBytes.length === 64
       ? rawToDer(sigBytes)
       : sigBytes;
+
+    // Enforce canonical low-S (audit L-02). ECDSA is malleable: for any valid
+    // (r, s) the twin (r, n − s) also verifies, so a third party could mint a
+    // second "distinct" signature over the same challenge. Cosmos wallets
+    // (cosmjs) always emit low-S, so rejecting high-S loses no legitimate
+    // logins while pinning one canonical signature per (key, message).
+    const sScalar = extractS(sigBytes);
+    if (sScalar === null || !isLowS(sScalar)) {
+      return false;
+    }
 
     // Build SPKI DER for compressed secp256k1 key:
     // SEQUENCE { SEQUENCE { OID ecPublicKey, OID secp256k1 }, BIT STRING { compressed key } }
@@ -152,6 +163,49 @@ function bech32Polymod(values: number[]): number {
     }
   }
   return chk;
+}
+
+// secp256k1 group order n and its half, for canonical low-S enforcement
+// (BIP-62 / Cosmos SDK convention).
+const SECP256K1_N = BigInt(
+  '0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141',
+);
+const SECP256K1_HALF_N = SECP256K1_N / BigInt(2);
+
+/**
+ * Extract the s scalar bytes from a raw (r‖s) or DER-encoded ECDSA signature.
+ * Returns null when the DER structure is malformed (fail closed).
+ */
+function extractS(sig: Buffer): Buffer | null {
+  if (sig.length === 64) {
+    return sig.subarray(32);
+  }
+
+  // DER: SEQUENCE(0x30, len) { INTEGER(0x02, rLen) r, INTEGER(0x02, sLen) s }
+  // Signatures are < 128 bytes, so only short-form lengths are legitimate.
+  if (sig.length < 8 || sig[0] !== 0x30 || sig[1] !== sig.length - 2) {
+    return null;
+  }
+  if (sig[2] !== 0x02) {
+    return null;
+  }
+  const rLen = sig[3];
+  const sTagOffset = 4 + rLen;
+  if (sTagOffset + 2 > sig.length || sig[sTagOffset] !== 0x02) {
+    return null;
+  }
+  const sLen = sig[sTagOffset + 1];
+  const sStart = sTagOffset + 2;
+  if (sLen === 0 || sStart + sLen !== sig.length) {
+    return null;
+  }
+  return sig.subarray(sStart, sStart + sLen);
+}
+
+/** Canonical low-S check: 0 < s ≤ n/2. */
+function isLowS(sBytes: Buffer): boolean {
+  const s = BigInt(`0x${sBytes.toString('hex')}`);
+  return s > BigInt(0) && s <= SECP256K1_HALF_N;
 }
 
 /**

@@ -18,6 +18,45 @@ function compressPublicKey(uncompressedKey: Buffer): Buffer {
   return Buffer.concat([Buffer.from([prefix]), x]);
 }
 
+// secp256k1 group order, for low-S normalization/malleation in tests.
+const SECP256K1_N = BigInt(
+  '0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141',
+);
+
+/**
+ * Normalize a raw (r‖s) signature to canonical low-S, exactly as Cosmos
+ * wallets (cosmjs) do before submitting. Node's OpenSSL signer does not
+ * normalize, so ~half of freshly generated signatures would otherwise be
+ * high-S and (correctly) rejected by the verifier's L-02 gate.
+ */
+function normalizeLowS(raw: Buffer): Buffer {
+  const s = BigInt(`0x${raw.subarray(32).toString('hex')}`);
+  if (s * BigInt(2) <= SECP256K1_N) return raw;
+  const sLow = (SECP256K1_N - s).toString(16).padStart(64, '0');
+  return Buffer.concat([raw.subarray(0, 32), Buffer.from(sLow, 'hex')]);
+}
+
+/** Produce the high-S malleated twin (r, n − s) of a low-S raw signature. */
+function malleate(raw: Buffer): Buffer {
+  const s = BigInt(`0x${raw.subarray(32).toString('hex')}`);
+  const sHigh = (SECP256K1_N - s).toString(16).padStart(64, '0');
+  return Buffer.concat([raw.subarray(0, 32), Buffer.from(sHigh, 'hex')]);
+}
+
+/** Test-local raw (r‖s) → DER encoder mirroring wallet submission formats. */
+function rawToDerTest(raw: Buffer): Buffer {
+  const encodeInt = (bytes: Buffer): Buffer => {
+    let start = 0;
+    while (start < bytes.length - 1 && bytes[start] === 0) start++;
+    let trimmed = bytes.subarray(start);
+    if (trimmed[0] & 0x80) trimmed = Buffer.concat([Buffer.from([0]), trimmed]);
+    return Buffer.concat([Buffer.from([0x02, trimmed.length]), trimmed]);
+  };
+  const r = encodeInt(raw.subarray(0, 32));
+  const s = encodeInt(raw.subarray(32, 64));
+  return Buffer.concat([Buffer.from([0x30, r.length + s.length]), r, s]);
+}
+
 /**
  * Helper: generate a secp256k1 key pair, derive the aeth bech32 address,
  * sign a message, and return all artifacts for testing.
@@ -40,13 +79,16 @@ function generateTestWalletSignature(message: string) {
   const ripemd160Hash = crypto.createHash('ripemd160').update(sha256Hash).digest();
   const address = bech32Encode('aeth', ripemd160Hash);
 
-  // Sign SHA-256(message) with the private key
+  // Sign SHA-256(message) and normalize to low-S like a real wallet
   const messageHash = crypto.createHash('sha256').update(message).digest();
-  const signature = crypto.sign(null, messageHash, { key: privateKey, dsaEncoding: 'ieee-p1363' });
+  const signature = normalizeLowS(
+    crypto.sign(null, messageHash, { key: privateKey, dsaEncoding: 'ieee-p1363' }),
+  );
 
   return {
     pubKeyHex: pubKeyBytes.toString('hex'),
     signatureHex: signature.toString('hex'),
+    signatureRaw: signature,
     address,
     signatureField: `${pubKeyBytes.toString('hex')}.${signature.toString('hex')}`,
     privateKey,
@@ -200,8 +242,11 @@ describe('verifyWalletSignature', () => {
     const address = bech32Encode('aeth', ripemd160Hash);
 
     const messageHash = crypto.createHash('sha256').update(testMessage).digest();
-    // Sign with DER encoding
-    const derSignature = crypto.sign(null, messageHash, { key: privateKey, dsaEncoding: 'der' });
+    // Sign raw, normalize to low-S (as wallets do), then DER-encode
+    const rawSig = normalizeLowS(
+      crypto.sign(null, messageHash, { key: privateKey, dsaEncoding: 'ieee-p1363' }),
+    );
+    const derSignature = rawToDerTest(rawSig);
 
     const sigField = `${pubKeyBytes.toString('hex')}.${derSignature.toString('hex')}`;
     const result = verifyWalletSignature(testMessage, sigField, address);
@@ -245,8 +290,64 @@ describe('verifyWalletSignature', () => {
     const ripemd160Hash = crypto.createHash('ripemd160').update(sha256Hash).digest();
     const derivedAddr = bech32Encode('aeth', ripemd160Hash);
 
-    const sigHex = 'aa'.repeat(64);
+    // Low-S filler (s starts 0x0a…) so the L-02 gate passes and the request
+    // actually reaches crypto.createPublicKey, which throws on the zero key.
+    const sigHex = 'aa'.repeat(32) + '0a'.repeat(32);
     const result = verifyWalletSignature('test', `${pubKeyHex}.${sigHex}`, derivedAddr);
     expect(result).toBe(false);
+  });
+
+  // ─── Canonical low-S enforcement (audit L-02) ───
+
+  describe('low-S enforcement (signature malleability, audit L-02)', () => {
+    it('rejects the high-S malleated twin of a valid raw signature', () => {
+      const msg = 'malleability check';
+      const { pubKeyHex, signatureRaw, signatureField, address } = generateTestWalletSignature(msg);
+
+      // Sanity: the canonical signature verifies…
+      expect(verifyWalletSignature(msg, signatureField, address)).toBe(true);
+
+      // …but its mathematically-valid twin (r, n − s) must be rejected.
+      const twinHex = malleate(signatureRaw).toString('hex');
+      expect(verifyWalletSignature(msg, `${pubKeyHex}.${twinHex}`, address)).toBe(false);
+    });
+
+    it('rejects the high-S malleated twin in DER form', () => {
+      const msg = 'malleability check (DER)';
+      const { pubKeyHex, signatureRaw, address } = generateTestWalletSignature(msg);
+      const twinDerHex = rawToDerTest(malleate(signatureRaw)).toString('hex');
+      expect(verifyWalletSignature(msg, `${pubKeyHex}.${twinDerHex}`, address)).toBe(false);
+    });
+
+    it('rejects a zero s scalar', () => {
+      const msg = 'zero s';
+      const { pubKeyHex, address } = generateTestWalletSignature(msg);
+      const zeroS = 'ab'.repeat(32) + '00'.repeat(32);
+      expect(verifyWalletSignature(msg, `${pubKeyHex}.${zeroS}`, address)).toBe(false);
+    });
+
+    it('fails closed on malformed DER structures', () => {
+      const msg = 'malformed DER';
+      const { pubKeyHex, address } = generateTestWalletSignature(msg);
+      const check = (sigHex: string) =>
+        verifyWalletSignature(msg, `${pubKeyHex}.${sigHex}`, address);
+
+      // Not raw-64 and shorter than a minimal DER signature.
+      expect(check('300102')).toBe(false);
+      // Long enough but does not start with a SEQUENCE tag.
+      expect(check('ff' + '00'.repeat(9))).toBe(false);
+      // SEQUENCE length byte disagrees with the actual length.
+      expect(check('30ff' + '00'.repeat(8))).toBe(false);
+      // r is not tagged as an INTEGER (0x02).
+      expect(check('3008' + '0101' + '00'.repeat(6))).toBe(false);
+      // rLen overruns the buffer, leaving no room for the s INTEGER.
+      expect(check('3008' + '02ff' + '00'.repeat(6))).toBe(false);
+      // s is not tagged as an INTEGER.
+      expect(check('3008' + '020101' + '0303aabbcc')).toBe(false);
+      // Zero-length s.
+      expect(check('3006' + '02020101' + '0200')).toBe(false);
+      // sLen disagrees with the remaining bytes (trailing garbage).
+      expect(check('3007' + '020101' + '020122' + 'ee')).toBe(false);
+    });
   });
 });
