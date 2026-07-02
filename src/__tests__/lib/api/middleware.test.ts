@@ -9,8 +9,10 @@ import {
   requireAuth,
   runMiddleware,
   runMiddlewareWithOptions,
+  getClientIp,
 } from '@/lib/api/middleware';
 import { createSessionToken } from '@/lib/api/session';
+import { __resetRateLimiterForTests } from '@/lib/api/rate-limiter';
 import { seededAddress } from '@/lib/utils';
 
 const TEST_ADDRESS = seededAddress(9876);
@@ -250,6 +252,7 @@ describe('logRequest non-test behavior', () => {
         hasConfiguredSessionSecret: false,
         sessionSecret: 'test-secret-at-least-32-chars-long-for-mocking',
         sessionTtlHours: 24,
+        trustedProxyCount: 1,
         enableHsts: false,
         allowInsecureWalletHeader: true,
       },
@@ -295,6 +298,7 @@ describe('logRequest non-test behavior', () => {
         hasConfiguredSessionSecret: false,
         sessionSecret: 'test-secret-at-least-32-chars-long-for-mocking',
         sessionTtlHours: 24,
+        trustedProxyCount: 1,
         enableHsts: false,
         allowInsecureWalletHeader: true,
       },
@@ -331,6 +335,7 @@ describe('logRequest non-test behavior', () => {
         hasConfiguredSessionSecret: false,
         sessionSecret: 'test-secret-at-least-32-chars-long-for-mocking',
         sessionTtlHours: 24,
+        trustedProxyCount: 1,
         enableHsts: false,
         allowInsecureWalletHeader: true,
       },
@@ -365,6 +370,7 @@ describe('logRequest non-test behavior', () => {
         hasConfiguredSessionSecret: false,
         sessionSecret: 'test-secret-at-least-32-chars-long-for-mocking',
         sessionTtlHours: 24,
+        trustedProxyCount: 1,
         enableHsts: false,
         allowInsecureWalletHeader: true,
       },
@@ -403,6 +409,7 @@ describe('extractAuth with wallet header when insecure header is disabled', () =
         hasConfiguredSessionSecret: true,
         sessionSecret: 'test-secret-at-least-32-chars-long-for-mocking',
         sessionTtlHours: 24,
+        trustedProxyCount: 1,
         enableHsts: true,
         allowInsecureWalletHeader: false,
       },
@@ -449,5 +456,70 @@ describe('runMiddlewareWithOptions rate limiting', () => {
     );
     expect(result).not.toBeNull();
     expect(result!.status).toBe(429);
+  });
+});
+
+describe('getClientIp — trusted-proxy resolution (audit H-01)', () => {
+  const REAL_IP = '203.0.113.9';
+  const xff = (value: string) =>
+    new NextRequest('http://localhost:3000/api/test', { headers: { 'x-forwarded-for': value } });
+
+  it('ignores spoofed leftmost XFF entries and uses the proxy-appended client IP', () => {
+    // Default trusted-proxy count is 1: the real client IP is the rightmost hop
+    // (appended by our proxy). An attacker rotating leftmost values cannot move it.
+    expect(getClientIp(xff(`9.9.9.9, 8.8.8.8, ${REAL_IP}`))).toBe(REAL_IP);
+    expect(getClientIp(xff(`10.10.10.10, ${REAL_IP}`))).toBe(REAL_IP);
+    expect(getClientIp(xff(REAL_IP))).toBe(REAL_IP);
+  });
+
+  it('falls back to x-real-ip when XFF is present but has no usable hop', () => {
+    // A non-empty header that yields no hops after trimming/filtering exercises
+    // the clientIndex < 0 path (fewer real hops than the trusted-proxy count).
+    const req = new NextRequest('http://localhost:3000/api/test', {
+      headers: { 'x-forwarded-for': ',', 'x-real-ip': '198.51.100.7' },
+    });
+    expect(getClientIp(req)).toBe('198.51.100.7');
+  });
+
+  it('returns unknown when neither XFF nor x-real-ip is present', () => {
+    expect(getClientIp(new NextRequest('http://localhost:3000/api/test'))).toBe('unknown');
+  });
+
+  it('ignores X-Forwarded-For entirely when no trusted proxy is configured (count=0)', () => {
+    jest.isolateModules(() => {
+      jest.doMock('@/lib/api/env', () => ({
+        serverEnv: {
+          trustedProxyCount: 0,
+          isTest: true, isProduction: false, isDevelopment: true, nodeEnv: 'test',
+          allowedOrigins: [], enableHsts: false, allowInsecureWalletHeader: false,
+          sessionTtlHours: 24, hasConfiguredSessionSecret: false,
+          sessionSecret: 'x'.repeat(32),
+        },
+      }));
+      const { getClientIp: isolated } = require('@/lib/api/middleware');
+      const req = new NextRequest('http://localhost:3000/api/test', {
+        headers: { 'x-forwarded-for': '1.2.3.4', 'x-real-ip': '5.6.7.8' },
+      });
+      expect(isolated(req)).toBe('unknown');
+    });
+  });
+});
+
+describe('rate limiting is per-account for authenticated callers (audit H-01)', () => {
+  it('shares one bucket across source IPs for the same wallet', async () => {
+    __resetRateLimiterForTests();
+    const acct = seededAddress(24680);
+    const { token } = createSessionToken(acct);
+    const authed = (ip: string) =>
+      new NextRequest('http://localhost:3000/api/test', {
+        headers: { authorization: `Bearer ${token}`, 'x-forwarded-for': ip },
+      });
+
+    expect((await checkRateLimit(authed('1.1.1.1'), 2))).toBeNull();
+    expect((await checkRateLimit(authed('2.2.2.2'), 2))).toBeNull(); // different IP, same account
+    const third = await checkRateLimit(authed('3.3.3.3'), 2);        // still the account's bucket
+    expect(third).not.toBeNull();
+    expect(third!.status).toBe(429);
+    __resetRateLimiterForTests();
   });
 });

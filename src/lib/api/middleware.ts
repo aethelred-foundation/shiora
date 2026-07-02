@@ -49,19 +49,51 @@ export async function checkRateLimit(
 // Request Logging
 // ────────────────────────────────────────────────────────────
 
-function getClientIp(request: NextRequest): string {
+/**
+ * Resolve the client IP from X-Forwarded-For using the configured trusted-proxy
+ * count. Only the last N entries of XFF are appended by our own infrastructure
+ * and therefore trustworthy; the real client IP is the (N+1)-th from the right.
+ * The leftmost entries are attacker-controllable and MUST NOT be used, or an
+ * attacker could rotate them to mint a fresh rate-limit bucket per request
+ * (audit H-01). With no trusted proxy (count 0) or a malformed/short header we
+ * fail closed to `unknown` rather than trusting client-supplied values.
+ */
+export function getClientIp(request: NextRequest): string {
+  const trustedProxies = serverEnv.trustedProxyCount;
   const forwardedFor = request.headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0]?.trim() || 'unknown';
+
+  if (trustedProxies > 0 && forwardedFor) {
+    const hops = forwardedFor.split(',').map((h) => h.trim()).filter(Boolean);
+    const clientIndex = hops.length - trustedProxies;
+    // filter(Boolean) guarantees a non-empty value at any in-range index.
+    if (clientIndex >= 0) {
+      return hops[clientIndex];
+    }
   }
 
-  return request.headers.get('x-real-ip') ?? 'unknown';
+  // A trusted proxy sets X-Real-IP authoritatively (and strips any client copy);
+  // fall back to it only when a proxy is configured. Never trust it otherwise.
+  if (trustedProxies > 0) {
+    return request.headers.get('x-real-ip')?.trim() || 'unknown';
+  }
+
+  return 'unknown';
 }
 
+/**
+ * The rate-limit bucket key. Authenticated requests are keyed by the verified
+ * wallet address — stable and non-spoofable — so a single account cannot evade
+ * its limit by rotating network identifiers. Unauthenticated requests are keyed
+ * by the trusted client IP + user agent.
+ */
 function getClientFingerprint(request: NextRequest): string {
+  const auth = extractAuth(request);
+  if (auth.isAuthenticated && auth.walletAddress) {
+    return `acct:${auth.walletAddress}`;
+  }
   const ip = getClientIp(request);
   const userAgent = request.headers.get('user-agent') ?? 'unknown';
-  return `${ip}:${userAgent.slice(0, 80)}`;
+  return `ip:${ip}:${userAgent.slice(0, 80)}`;
 }
 
 /**

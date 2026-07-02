@@ -14,10 +14,17 @@ const RuntimeEnvSchema = z.object({
   SHIORA_SESSION_TTL_HOURS: z.coerce.number().int().min(1).max(168).default(24),
   SHIORA_ENABLE_HSTS: z.enum(['true', 'false']).default('false'),
   SHIORA_ALLOW_INSECURE_WALLET_HEADER: z.enum(['true', 'false']).optional(),
+  // Number of trusted reverse proxies in front of the app. The real client IP
+  // is taken as the (N+1)-th X-Forwarded-For entry from the right; the last N
+  // entries are appended by our own infrastructure and are the only ones that
+  // are trustworthy. Default 1 (a standard TLS-terminating reverse proxy). Set
+  // to 0 to ignore X-Forwarded-For entirely (it is client-supplied, spoofable).
+  SHIORA_TRUSTED_PROXY_COUNT: z.coerce.number().int().min(0).max(10).default(1),
 });
 
 const parsedEnv = RuntimeEnvSchema.parse({
   NODE_ENV: process.env.NODE_ENV,
+  SHIORA_TRUSTED_PROXY_COUNT: process.env.SHIORA_TRUSTED_PROXY_COUNT,
   SHIORA_ALLOWED_ORIGINS: process.env.SHIORA_ALLOWED_ORIGINS,
   SHIORA_SESSION_SECRET: process.env.SHIORA_SESSION_SECRET,
   SHIORA_SESSION_TTL_HOURS: process.env.SHIORA_SESSION_TTL_HOURS,
@@ -53,6 +60,7 @@ export const serverEnv = {
       ?? 'shiora-dev-session-secret-change-me-before-production';
   },
   sessionTtlHours: parsedEnv.SHIORA_SESSION_TTL_HOURS,
+  trustedProxyCount: parsedEnv.SHIORA_TRUSTED_PROXY_COUNT,
   enableHsts: parsedEnv.SHIORA_ENABLE_HSTS === 'true',
   allowInsecureWalletHeader:
     parsedEnv.SHIORA_ALLOW_INSECURE_WALLET_HEADER === 'true'
