@@ -71,6 +71,7 @@ export const ROUTE_MANIFEST: readonly RouteDoc[] = [
   { path: '/api/notifications', method: 'get', summary: 'List notifications', tags: ['Notifications'], auth: true },
   { path: '/api/notifications/{id}', method: 'patch', summary: 'Mark a notification read', tags: ['Notifications'], auth: true },
   { path: '/api/notifications/read-all', method: 'post', summary: 'Mark all notifications read', tags: ['Notifications'], auth: true },
+  { path: '/api/notifications/stream', method: 'get', summary: 'Real-time notifications over Server-Sent Events', tags: ['Notifications'], auth: true },
 
   // System
   { path: '/api/health/live', method: 'get', summary: 'Liveness probe', tags: ['System'], auth: false },
