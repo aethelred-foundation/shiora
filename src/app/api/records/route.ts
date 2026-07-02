@@ -20,7 +20,7 @@ import {
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import type { MockHealthRecord } from '@/lib/api/mock-data';
 import { randomUUID } from 'node:crypto';
-import { createRecord, listRecords } from '@/lib/api/records-service';
+import { createRecord, listRecords, findRecordsByTag } from '@/lib/api/records-service';
 
 // ────────────────────────────────────────────────────────────
 // GET /api/records
@@ -39,7 +39,11 @@ export async function GET(request: NextRequest) {
       request.nextUrl.searchParams,
     );
 
-    let records = await listRecords(auth.walletAddress!);
+    // An exact ?tag= match resolves via the blind index — the tag is a sealed
+    // field, so this finds records without decrypting anything to filter (GAP-15).
+    let records = query.tag
+      ? await findRecordsByTag(auth.walletAddress!, query.tag)
+      : await listRecords(auth.walletAddress!);
 
     // Filter by type
     if (query.type) {

@@ -43,6 +43,8 @@ export interface StoredRecord {
   version?: number;
   /** When the row was soft-deleted (ms), for retention purging (GAP-16). */
   deletedAt?: number;
+  /** Blind-index tokens for the sealed tags, for search without decryption (GAP-15). */
+  blindTags?: string[];
 }
 
 /**

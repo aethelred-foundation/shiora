@@ -23,6 +23,7 @@ import {
   LOGIN_ATTEMPTS_INDEX_DDL,
   HEALTH_RECORDS_DELETED_AT_DDL,
   DOCUMENTS_DELETED_AT_DDL,
+  HEALTH_RECORDS_BLIND_TAGS_DDL,
   MIGRATIONS,
 } from '@/lib/persistence/schema';
 
@@ -81,6 +82,7 @@ describe('persistence schema', () => {
       LOGIN_ATTEMPTS_INDEX_DDL,
       HEALTH_RECORDS_DELETED_AT_DDL,
       DOCUMENTS_DELETED_AT_DDL,
+      HEALTH_RECORDS_BLIND_TAGS_DDL,
     ]);
   });
 

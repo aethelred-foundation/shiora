@@ -80,6 +80,7 @@ export const RecordListQuerySchema = PaginationSchema.extend({
   sort: z.enum(['date', 'label', 'size']).default('date'),
   order: SortOrderSchema,
   q: z.string().max(200).optional(),
+  tag: z.string().max(80).optional(),
 });
 
 // ────────────────────────────────────────────────────────────

@@ -707,3 +707,18 @@ describe('/api/records datastore graceful degradation (GAP-05)', () => {
     expect((await res.json()).error.code).toBe('DATASTORE_UNAVAILABLE');
   });
 });
+
+describe('/api/records ?tag= blind-index search (GAP-15)', () => {
+  const address = seededAddress(1515);
+  const { token } = createSessionToken(address);
+
+  it('returns only records carrying the exact tag, matched via blind index', async () => {
+    await postRecord(token, { type: 'lab_result', label: 'A', provider: 'P', encryption: 'AES-256-GCM', tags: ['genomics', 'oncology'] });
+    await postRecord(token, { type: 'lab_result', label: 'B', provider: 'P', encryption: 'AES-256-GCM', tags: ['cardiology'] });
+
+    const res = await listRecords(createAuthedRequest('http://localhost:3001/api/records?tag=genomics&limit=100', { method: 'GET' }, token));
+    expect(res.status).toBe(200);
+    const labels = (await res.json()).data.map((r: { label: string }) => r.label);
+    expect(labels).toEqual(['A']);
+  });
+});

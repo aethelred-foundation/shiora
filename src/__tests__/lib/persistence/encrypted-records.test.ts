@@ -224,4 +224,48 @@ describe('EncryptedRecordRepository', () => {
       });
     });
   });
+
+  describe('blind-index tag search (GAP-15)', () => {
+    it('finds records by exact tag without exposing the tag in cleartext', async () => {
+      const { store, repo } = newRepo();
+      await repo.create(OWNER, makeRecord({ id: 'r1', tags: ['genomics', 'oncology'] }));
+      await repo.create(OWNER, makeRecord({ id: 'r2', tags: ['cardiology'] }));
+
+      // The stored row carries opaque blind tokens, not the plaintext tags.
+      const row = await store.findById(OWNER, 'r1');
+      expect(row!.blindTags!.length).toBe(2);
+      expect(JSON.stringify(row!.blindTags)).not.toContain('genomics');
+
+      // Search matches by exact (normalized) tag, without decrypting.
+      expect((await repo.findByTag(OWNER, 'genomics')).map((r) => r.id)).toEqual(['r1']);
+      expect((await repo.findByTag(OWNER, 'GENOMICS')).map((r) => r.id)).toEqual(['r1']); // case-insensitive
+      expect((await repo.findByTag(OWNER, 'cardiology')).map((r) => r.id)).toEqual(['r2']);
+      expect(await repo.findByTag(OWNER, 'nonexistent')).toEqual([]);
+    });
+
+    it('excludes soft-deleted records and scopes to the owner', async () => {
+      const { repo } = newRepo();
+      await repo.create(OWNER, makeRecord({ id: 'r1', tags: ['shared'] }));
+      await repo.create(OTHER, makeRecord({ id: 'r2', tags: ['shared'] }));
+      await repo.softDelete(OWNER, 'r1');
+      expect(await repo.findByTag(OWNER, 'shared')).toEqual([]); // deleted excluded
+      expect((await repo.findByTag(OTHER, 'shared')).map((r) => r.id)).toEqual(['r2']);
+    });
+
+    it('re-indexes blind tags when tags change on update', async () => {
+      const { repo } = newRepo();
+      await repo.create(OWNER, makeRecord({ id: 'r1', tags: ['old-tag'] }));
+      await repo.update(OWNER, 'r1', { tags: ['new-tag'] });
+      expect(await repo.findByTag(OWNER, 'old-tag')).toEqual([]);
+      expect((await repo.findByTag(OWNER, 'new-tag')).map((r) => r.id)).toEqual(['r1']);
+    });
+
+    it('treats a record with no blindTags as unmatched (legacy row)', async () => {
+      const { store, repo } = newRepo();
+      await repo.create(OWNER, makeRecord({ id: 'r1', tags: ['x'] }));
+      const row = await store.findById(OWNER, 'r1');
+      await store.put({ ...row!, blindTags: undefined }); // simulate a pre-GAP-15 row
+      expect(await repo.findByTag(OWNER, 'x')).toEqual([]);
+    });
+  });
 });

@@ -42,6 +42,7 @@ function sealedRow() {
     sealed_phi: sealJson({ label: 'BRCA1', description: 'd', tags: ['g'] }, `${OWNER}:rec-1`),
     deleted: false,
     deleted_at: 1700000000000,
+    blind_tags: ['tok1', 'tok2'],
   };
 }
 
@@ -82,12 +83,13 @@ describe('PgRecordStore', () => {
     const { text, params } = client.calls[0];
     expect(text).toContain('INSERT INTO health_records');
     expect(text).toContain('ON CONFLICT (id) DO UPDATE SET');
-    expect(params).toHaveLength(18);
+    expect(params).toHaveLength(19);
     expect(params![0]).toBe('rec-1');
     // sealed_phi (param 15) must be a JSON string, not a live object.
     expect(typeof params![14]).toBe('string');
     expect(params![16]).toBe(1); // version
     expect(params![17]).toBeNull(); // deleted_at
+    expect(params![18]).toEqual([]); // blind_tags default
   });
 
   it('finds a record by id and maps bigint columns to numbers', async () => {
@@ -100,14 +102,16 @@ describe('PgRecordStore', () => {
     expect(typeof row?.date).toBe('number');
     expect(row?.blockHeight).toBe(2_847_400);
     expect(row?.deletedAt).toBe(1_700_000_000_000); // mapped from deleted_at
+    expect(row?.blindTags).toEqual(['tok1', 'tok2']); // mapped from blind_tags
     expect(client.calls[0].params).toEqual([OWNER, 'rec-1']);
   });
 
   it('omits deletedAt when deleted_at is null', async () => {
     const client = new FakeSqlClient();
-    client.enqueue([{ ...sealedRow(), deleted_at: null }]);
+    client.enqueue([{ ...sealedRow(), deleted_at: null, blind_tags: null }]);
     const row = await new PgRecordStore(client).findById(OWNER, 'rec-1');
     expect(row?.deletedAt).toBeUndefined();
+    expect(row?.blindTags).toBeUndefined();
   });
 
   it('returns undefined when no record matches', async () => {

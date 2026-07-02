@@ -97,6 +97,11 @@ export function recordVersion(ownerAddress: string, id: string): Promise<number 
   return repo().version(ownerAddress, id);
 }
 
+/** Find records by exact tag via blind index — no decryption of the filter (GAP-15). */
+export function findRecordsByTag(ownerAddress: string, tag: string): Promise<MockHealthRecord[]> {
+  return repo().findByTag(ownerAddress, tag);
+}
+
 export function softDeleteRecord(
   ownerAddress: string,
   id: string,

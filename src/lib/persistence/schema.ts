@@ -175,6 +175,8 @@ export const HEALTH_RECORDS_DELETED_AT_DDL =
   `ALTER TABLE health_records ADD COLUMN IF NOT EXISTS deleted_at bigint`;
 export const DOCUMENTS_DELETED_AT_DDL =
   `ALTER TABLE documents ADD COLUMN IF NOT EXISTS deleted_at bigint`;
+export const HEALTH_RECORDS_BLIND_TAGS_DDL =
+  `ALTER TABLE health_records ADD COLUMN IF NOT EXISTS blind_tags text[] NOT NULL DEFAULT '{}'`;
 
 // Failed-auth lockout (GAP-09): per-address failure counter + lockout window,
 // so a targeted signature brute-force is throttled with exponential backoff.
@@ -212,4 +214,5 @@ export const MIGRATIONS: readonly string[] = [
   LOGIN_ATTEMPTS_INDEX_DDL,
   HEALTH_RECORDS_DELETED_AT_DDL,
   DOCUMENTS_DELETED_AT_DDL,
+  HEALTH_RECORDS_BLIND_TAGS_DDL,
 ];

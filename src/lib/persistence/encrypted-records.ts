@@ -14,9 +14,13 @@
 
 import type { AuditRecorder } from '@/lib/crypto/audit-chain';
 import { openJson, sealJson, shredEnvelope, isShredded } from '@/lib/crypto/envelope';
+import { blindIndex, blindIndexAll } from '@/lib/crypto/blind-index';
 import { OptimisticLockError, versionOf } from './optimistic-lock';
 import type { MockHealthRecord } from '@/lib/api/mock-data';
 import type { RecordStorePort, StoredRecord } from './record-store';
+
+/** Domain separator for record-tag blind indexes (GAP-15). */
+const TAG_INDEX_DOMAIN = 'record-tag';
 
 /** The subset of a record that is PHI and therefore encrypted at rest. */
 interface SealedPhiPayload {
@@ -72,6 +76,7 @@ export class EncryptedRecordRepository {
       }),
       deleted: false,
       version: 1,
+      blindTags: blindIndexAll(record.tags, TAG_INDEX_DOMAIN),
     };
 
     await this.store.put(row);
@@ -141,16 +146,33 @@ export class EncryptedRecordRepository {
 
     if (phiChanged) {
       const current = this.openPhi(existing);
+      const tags = updates.tags ?? current.tags;
       next.sealedPhi = this.sealPhi(ownerAddress, id, {
         label: updates.label ?? current.label,
         description: updates.description ?? current.description,
-        tags: updates.tags ?? current.tags,
+        tags,
       });
+      // Keep the blind index in step whenever the tags could have changed.
+      next.blindTags = blindIndexAll(tags, TAG_INDEX_DOMAIN);
     }
 
     await this.store.put(next);
     await this.record('RECORD_UPDATE', ownerAddress, id);
     return this.toRecord(next);
+  }
+
+  /**
+   * Find an owner's non-deleted records carrying an exact tag, WITHOUT
+   * decrypting anything (GAP-15): the query tag is blind-indexed and matched
+   * against the stored tokens. Case/'‍width-insensitive via the same
+   * normalization used at write time.
+   */
+  async findByTag(ownerAddress: string, tag: string): Promise<MockHealthRecord[]> {
+    const token = blindIndex(tag, TAG_INDEX_DOMAIN);
+    const rows = await this.store.findByOwner(ownerAddress);
+    return rows
+      .filter((row) => !row.deleted && (row.blindTags ?? []).includes(token))
+      .map((row) => this.toRecord(row));
   }
 
   /** Soft-delete a record (retained, but excluded from reads). */
