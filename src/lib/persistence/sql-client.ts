@@ -10,6 +10,39 @@
 import { Pool } from 'pg';
 
 import { DatastoreUnavailableError, looksLikeConnectivityFailure } from './datastore-errors';
+import { createLogger } from '@/lib/observability/logger';
+
+const log = createLogger({ subsystem: 'postgres' });
+
+/** Read a positive-integer env var, falling back to `fallback`. */
+function intEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  const parsed = raw ? Number(raw) : NaN;
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+/**
+ * Hardened pool configuration (GAP-27). Bounds concurrency, caps how long a
+ * connection or a single statement may run, and recycles idle clients — so a
+ * slow query or a leaked connection cannot exhaust the pool or hang a request.
+ * All tunable via env with production-sane defaults.
+ */
+export function poolConfig(): {
+  max: number;
+  idleTimeoutMillis: number;
+  connectionTimeoutMillis: number;
+  statement_timeout: number;
+  query_timeout: number;
+} {
+  const statementTimeout = intEnv('SHIORA_PG_STATEMENT_TIMEOUT_MS', 30_000);
+  return {
+    max: intEnv('SHIORA_PG_POOL_MAX', 10),
+    idleTimeoutMillis: intEnv('SHIORA_PG_IDLE_TIMEOUT_MS', 30_000),
+    connectionTimeoutMillis: intEnv('SHIORA_PG_CONNECT_TIMEOUT_MS', 10_000),
+    statement_timeout: statementTimeout, // server-side cap per statement
+    query_timeout: statementTimeout, // client-side cap
+  };
+}
 
 export interface SqlClient {
   query<T = Record<string, unknown>>(
@@ -30,7 +63,11 @@ export function getPgClient(): SqlClient {
     throw new Error('DATABASE_URL must be set to use the Postgres datastore.');
   }
   if (!_pool) {
-    _pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    _pool = new Pool({ connectionString: process.env.DATABASE_URL, ...poolConfig() });
+    // An idle client can emit an async error (server restart, network drop).
+    // Unhandled, the pg pool would crash the process — log it and let the pool
+    // recycle the client instead (GAP-27).
+    _pool.on('error', (err) => log.error('postgres pool client error', { err }));
   }
   const pool = _pool;
   return {
