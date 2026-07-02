@@ -15,4 +15,16 @@ module.exports = {
     settings: { optimizer: { enabled: true, runs: 200 }, viaIR: true },
   },
   paths: { sources: './seal', tests: './test', cache: './cache', artifacts: './artifacts' },
+  networks: {
+    // Local aethelredd EVM devnet (chain-id 7332) — the live-node target for
+    // scripts/devnet-seal-attestation-e2e.js, the running-node counterpart to
+    // internal/evmhost/shiora_test.go. Accounts are populated only when a funded
+    // DEPLOYER_KEY is supplied; harmless (no accounts) otherwise, so this entry
+    // never affects the scoped `sources: './seal'` compile/test path.
+    aethelredDevnet: {
+      url: process.env.RPC_URL || 'http://127.0.0.1:8545',
+      chainId: 7332,
+      accounts: process.env.DEPLOYER_KEY ? [process.env.DEPLOYER_KEY] : [],
+    },
+  },
 };
