@@ -12,6 +12,7 @@
 import { getNonceStore } from '@/lib/persistence/nonce-store';
 import { getRevocationStore } from '@/lib/persistence/revocation-store';
 import { getRateLimiter } from '@/lib/api/rate-limiter';
+import { getSessionIndexStore } from '@/lib/persistence/session-index-store';
 import { hasDurableDatastore } from '@/lib/api/preflight';
 import { createLogger } from '@/lib/observability/logger';
 import { counter } from '@/lib/observability/metrics';
@@ -44,6 +45,7 @@ export interface MaintenanceReport {
   prunedNonces: number;
   prunedRevocations: number;
   prunedRateLimitWindows: number;
+  prunedSessions: number;
   ranAt: number;
 }
 
@@ -57,6 +59,7 @@ export async function runStoreMaintenance(now: number = Date.now()): Promise<Mai
     prunedNonces: 0,
     prunedRevocations: 0,
     prunedRateLimitWindows: 0,
+    prunedSessions: 0,
     ranAt: now,
   };
 
@@ -76,6 +79,12 @@ export async function runStoreMaintenance(now: number = Date.now()): Promise<Mai
   if (typeof rateLimiter.prune === 'function') {
     report.prunedRateLimitWindows = await rateLimiter.prune(RATE_LIMIT_RETENTION_MS);
     prunedTotal.inc({ store: 'rate_limits' }, report.prunedRateLimitWindows);
+  }
+
+  const sessions = getSessionIndexStore() as Prunable;
+  if (typeof sessions.prune === 'function') {
+    report.prunedSessions = await sessions.prune(now);
+    prunedTotal.inc({ store: 'sessions' }, report.prunedSessions);
   }
 
   runsTotal.inc({ outcome: 'ok' });

@@ -132,6 +132,22 @@ CREATE TABLE IF NOT EXISTS session_epochs (
 `.trim();
 
 /** Ordered list of statements that bring a fresh database up to schema. */
+// Issued-session index (GAP-08): one row per issued token so users can see
+// and revoke individual devices. Rows expire with the token and are pruned
+// by store maintenance.
+export const SESSIONS_DDL = `
+CREATE TABLE IF NOT EXISTS sessions (
+  jti TEXT PRIMARY KEY,
+  subject TEXT NOT NULL,
+  issued_at BIGINT NOT NULL,
+  expires_at BIGINT NOT NULL,
+  user_agent TEXT NOT NULL DEFAULT '',
+  ip TEXT NOT NULL DEFAULT ''
+)`.trim();
+
+export const SESSIONS_SUBJECT_INDEX_DDL = `
+CREATE INDEX IF NOT EXISTS sessions_subject_idx ON sessions (subject, expires_at)`.trim();
+
 export const MIGRATIONS: readonly string[] = [
   HEALTH_RECORDS_DDL,
   HEALTH_RECORDS_OWNER_INDEX_DDL,
@@ -145,4 +161,6 @@ export const MIGRATIONS: readonly string[] = [
   REVOKED_TOKENS_DDL,
   REVOKED_TOKENS_EXPIRY_INDEX_DDL,
   SESSION_EPOCHS_DDL,
+  SESSIONS_DDL,
+  SESSIONS_SUBJECT_INDEX_DDL,
 ];

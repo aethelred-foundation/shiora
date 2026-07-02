@@ -48,7 +48,9 @@ function safeCompare(a: string, b: string): boolean {
   return crypto.timingSafeEqual(left, right);
 }
 
-export function createSessionToken(address: string): { token: string; expiresAt: number } {
+export function createSessionToken(
+  address: string,
+): { token: string; expiresAt: number; claims: SessionClaims } {
   const issuedAt = Date.now();
   const expiresAt = issuedAt + serverEnv.sessionTtlHours * 60 * 60 * 1000;
   const claims: SessionClaims = {
@@ -65,6 +67,7 @@ export function createSessionToken(address: string): { token: string; expiresAt:
   return {
     token: `${encodedPayload}.${signature}`,
     expiresAt,
+    claims,
   };
 }
 

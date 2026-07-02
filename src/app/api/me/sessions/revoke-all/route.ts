@@ -14,6 +14,7 @@ import { successResponse, HTTP } from '@/lib/api/responses';
 import { runMiddleware, requireAuth } from '@/lib/api/middleware';
 import { applySessionCookie, createSessionToken } from '@/lib/api/session';
 import { revokeAllSessions } from '@/lib/api/session-revocation';
+import { recordIssuedSession } from '@/lib/api/session-inventory';
 import { audit } from '@/lib/api/audit';
 
 export async function POST(request: NextRequest) {
@@ -35,7 +36,8 @@ export async function POST(request: NextRequest) {
   });
 
   // Keep the current device signed in with a token issued at/after the cutoff.
-  const { token, expiresAt } = createSessionToken(address);
+  const { token, expiresAt, claims } = createSessionToken(address);
+  await recordIssuedSession(claims, request);
   const response = successResponse(
     { address, revokedBefore: cutoff, expiresAt },
     HTTP.OK,

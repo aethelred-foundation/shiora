@@ -13,6 +13,8 @@ import {
   REVOKED_TOKENS_DDL,
   REVOKED_TOKENS_EXPIRY_INDEX_DDL,
   SESSION_EPOCHS_DDL,
+  SESSIONS_DDL,
+  SESSIONS_SUBJECT_INDEX_DDL,
   MIGRATIONS,
 } from '@/lib/persistence/schema';
 
@@ -61,6 +63,8 @@ describe('persistence schema', () => {
       REVOKED_TOKENS_DDL,
       REVOKED_TOKENS_EXPIRY_INDEX_DDL,
       SESSION_EPOCHS_DDL,
+      SESSIONS_DDL,
+      SESSIONS_SUBJECT_INDEX_DDL,
     ]);
   });
 

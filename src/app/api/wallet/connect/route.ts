@@ -22,6 +22,7 @@ import {
   SESSION_COOKIE_NAME,
 } from '@/lib/api/session';
 import { revokeSession } from '@/lib/api/session-revocation';
+import { recordIssuedSession } from '@/lib/api/session-inventory';
 import { serverEnv } from '@/lib/api/env';
 import { verifyChallenge } from '@/lib/api/challenge';
 import { getNonceStore } from '@/lib/persistence/nonce-store';
@@ -146,7 +147,9 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Step 4: Create session ────────────────────────────────
-    const { token, expiresAt } = createSessionToken(validated.address);
+    const { token, expiresAt, claims } = createSessionToken(validated.address);
+    // Index the issued session so the owner can list/revoke devices (GAP-08).
+    await recordIssuedSession(claims, request);
 
     audit({
       action: 'WALLET_CONNECT',

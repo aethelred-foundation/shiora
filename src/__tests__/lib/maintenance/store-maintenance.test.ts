@@ -3,6 +3,7 @@
 jest.mock('@/lib/persistence/nonce-store', () => ({ getNonceStore: jest.fn() }));
 jest.mock('@/lib/persistence/revocation-store', () => ({ getRevocationStore: jest.fn() }));
 jest.mock('@/lib/api/rate-limiter', () => ({ getRateLimiter: jest.fn() }));
+jest.mock('@/lib/persistence/session-index-store', () => ({ getSessionIndexStore: jest.fn() }));
 jest.mock('@/lib/api/preflight', () => ({ hasDurableDatastore: jest.fn(() => false) }));
 
 import {
@@ -15,11 +16,13 @@ import {
 import { getNonceStore } from '@/lib/persistence/nonce-store';
 import { getRevocationStore } from '@/lib/persistence/revocation-store';
 import { getRateLimiter } from '@/lib/api/rate-limiter';
+import { getSessionIndexStore } from '@/lib/persistence/session-index-store';
 import { hasDurableDatastore } from '@/lib/api/preflight';
 
 const mockNonces = getNonceStore as jest.Mock;
 const mockRevocations = getRevocationStore as jest.Mock;
 const mockLimiter = getRateLimiter as jest.Mock;
+const mockSessions = getSessionIndexStore as jest.Mock;
 const mockDurable = hasDurableDatastore as jest.Mock;
 
 let logSpy: jest.SpyInstance;
@@ -43,9 +46,11 @@ describe('runStoreMaintenance', () => {
     const noncePrune = jest.fn(async () => 3);
     const revocationPrune = jest.fn(async () => 5);
     const limiterPrune = jest.fn(async () => 7);
+    const sessionPrune = jest.fn(async () => 9);
     mockNonces.mockReturnValue({ prune: noncePrune });
     mockRevocations.mockReturnValue({ prune: revocationPrune });
     mockLimiter.mockReturnValue({ prune: limiterPrune });
+    mockSessions.mockReturnValue({ prune: sessionPrune });
 
     const report = await runStoreMaintenance(1_000_000);
 
@@ -54,10 +59,12 @@ describe('runStoreMaintenance', () => {
       prunedNonces: 3,
       prunedRevocations: 5,
       prunedRateLimitWindows: 7,
+      prunedSessions: 9,
       ranAt: 1_000_000,
     });
     expect(noncePrune).toHaveBeenCalledWith(1_000_000);
     expect(revocationPrune).toHaveBeenCalledWith(1_000_000);
+    expect(sessionPrune).toHaveBeenCalledWith(1_000_000);
     // The rate limiter prunes by retention window, not "now".
     expect(limiterPrune).toHaveBeenCalledWith(RATE_LIMIT_RETENTION_MS);
     // Structured completion log emitted.
@@ -69,6 +76,7 @@ describe('runStoreMaintenance', () => {
     mockNonces.mockReturnValue({});
     mockRevocations.mockReturnValue({});
     mockLimiter.mockReturnValue({});
+    mockSessions.mockReturnValue({});
 
     const report = await runStoreMaintenance();
 
@@ -76,6 +84,7 @@ describe('runStoreMaintenance', () => {
     expect(report.prunedNonces).toBe(0);
     expect(report.prunedRevocations).toBe(0);
     expect(report.prunedRateLimitWindows).toBe(0);
+    expect(report.prunedSessions).toBe(0);
     expect(typeof report.ranAt).toBe('number');
   });
 });
@@ -87,6 +96,7 @@ describe('maintenance scheduler', () => {
     mockNonces.mockReturnValue({ prune: noncePrune });
     mockRevocations.mockReturnValue({});
     mockLimiter.mockReturnValue({});
+    mockSessions.mockReturnValue({});
     mockDurable.mockReturnValue(true);
 
     expect(startMaintenanceScheduler(1000)).toBe(true);
@@ -103,6 +113,7 @@ describe('maintenance scheduler', () => {
     mockNonces.mockReturnValue({ prune: jest.fn(async () => { throw new Error('pg down'); }) });
     mockRevocations.mockReturnValue({});
     mockLimiter.mockReturnValue({});
+    mockSessions.mockReturnValue({});
     mockDurable.mockReturnValue(true);
 
     startMaintenanceScheduler(1000);

@@ -51,6 +51,7 @@ describe('POST /api/system/maintenance', () => {
       prunedNonces: 0,
       prunedRevocations: 0,
       prunedRateLimitWindows: 0,
+      prunedSessions: 0,
     });
     expect(typeof body.data.ranAt).toBe('number');
   });
