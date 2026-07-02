@@ -148,6 +148,9 @@ export function sealString(plaintext: string, aad?: string): SealedEnvelope {
  * was tampered with, or `aad` does not match the seal-time value.
  */
 export function openString(envelope: SealedEnvelope, aad?: string): string {
+  if (isShredded(envelope)) {
+    throw new Error('Cannot open a crypto-shredded value: its key was destroyed during erasure.');
+  }
   if (envelope.alg !== ALGORITHM) {
     throw new Error(`Unsupported envelope algorithm: ${envelope.alg}`);
   }
@@ -199,4 +202,41 @@ export function isSealed(value: unknown): value is SealedEnvelope {
     && typeof v.tag === 'string'
     && typeof v.ct === 'string'
   );
+}
+
+// ---------------------------------------------------------------------------
+// Crypto-shredding (GDPR Art. 17 erasure — GAP-13)
+//
+// Soft-deletion hides a record but leaves its ciphertext and wrapped DEK on
+// disk, recoverable by whoever holds the KEK. Crypto-erasure instead destroys
+// the wrapped DEK: because the per-record DEK is the ONLY key that can decrypt
+// the payload, and it exists nowhere else, discarding it makes the ciphertext
+// permanently unrecoverable — by anyone, including the operator. What remains
+// is a tombstone: proof that erasure happened, carrying no recoverable data.
+// ---------------------------------------------------------------------------
+
+export const SHRED_MARKER = 'shredded' as const;
+
+/**
+ * The remains of a crypto-shredded value: the wrapped DEK and ciphertext are
+ * gone, only the fact and time of erasure persist. Deliberately NOT a
+ * {@link SealedEnvelope} — there is nothing left to open.
+ */
+export interface ShreddedEnvelope {
+  alg: typeof ALGORITHM;
+  shredded: typeof SHRED_MARKER;
+  /** Epoch milliseconds when the DEK was destroyed. */
+  shreddedAt: number;
+}
+
+/** Produce a shred tombstone to overwrite a sealed value during erasure. */
+export function shredEnvelope(shreddedAt: number = Date.now()): ShreddedEnvelope {
+  return { alg: ALGORITHM, shredded: SHRED_MARKER, shreddedAt };
+}
+
+/** True when a value has been crypto-shredded (its DEK destroyed). */
+export function isShredded(value: unknown): value is ShreddedEnvelope {
+  if (typeof value !== 'object' || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return v.shredded === SHRED_MARKER && v.alg === ALGORITHM && typeof v.shreddedAt === 'number';
 }

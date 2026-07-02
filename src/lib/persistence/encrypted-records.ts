@@ -13,7 +13,7 @@
 // ============================================================
 
 import type { AuditRecorder } from '@/lib/crypto/audit-chain';
-import { openJson, sealJson } from '@/lib/crypto/envelope';
+import { openJson, sealJson, shredEnvelope, isShredded } from '@/lib/crypto/envelope';
 import type { MockHealthRecord } from '@/lib/api/mock-data';
 import type { RecordStorePort, StoredRecord } from './record-store';
 
@@ -141,6 +141,22 @@ export class EncryptedRecordRepository {
     return this.toRecord(next);
   }
 
+  /**
+   * Crypto-shred a record's PHI (GDPR Art. 17): destroy the wrapped DEK so the
+   * sealed label/description/tags become permanently unrecoverable. The row
+   * survives as a tombstone (its non-PHI columns remain for audit continuity).
+   * Returns false when the record is missing or already shredded.
+   */
+  async cryptoShred(ownerAddress: string, id: string): Promise<boolean> {
+    const existing = await this.store.findById(ownerAddress, id);
+    if (!existing || isShredded(existing.sealedPhi)) {
+      return false;
+    }
+    await this.store.put({ ...existing, sealedPhi: shredEnvelope(), deleted: true });
+    await this.record('RECORD_DELETE', ownerAddress, id);
+    return true;
+  }
+
   // -- internals -----------------------------------------------------------
 
   private sealPhi(ownerAddress: string, id: string, phi: SealedPhiPayload) {
@@ -148,6 +164,9 @@ export class EncryptedRecordRepository {
   }
 
   private openPhi(row: StoredRecord): SealedPhiPayload {
+    if (isShredded(row.sealedPhi)) {
+      throw new Error('Record PHI has been crypto-shredded and cannot be read.');
+    }
     return openJson<SealedPhiPayload>(row.sealedPhi, phiAad(row.ownerAddress, row.id));
   }
 

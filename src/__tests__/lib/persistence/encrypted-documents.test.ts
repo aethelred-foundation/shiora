@@ -1,7 +1,7 @@
 /** @jest-environment node */
 
 import { AuditChain } from '@/lib/crypto/audit-chain';
-import { isSealed, sealJson } from '@/lib/crypto/envelope';
+import { isSealed, isShredded, sealJson, shredEnvelope } from '@/lib/crypto/envelope';
 import { EncryptedDocumentRepository } from '@/lib/persistence/encrypted-documents';
 import { InMemoryDocumentStore } from '@/lib/persistence/document-store';
 
@@ -107,6 +107,54 @@ describe('EncryptedDocumentRepository', () => {
 
     expect(audit.snapshot().map((e) => e.action)).toEqual(['GRANT_CREATE', 'GRANT_UPDATE']);
     expect(audit.verify().valid).toBe(true);
+  });
+
+  describe('cryptoShred (GDPR erasure, GAP-13)', () => {
+    it('destroys the wrapped DEK so the payload is unrecoverable', async () => {
+      const { store, repo } = newRepo();
+      await repo.create(OWNER, { id: 'd1', secret: 'top-secret', count: 1 });
+
+      expect(await repo.cryptoShred(OWNER, 'd1')).toBe(true);
+
+      // The stored row is now a tombstone: no ciphertext, no wrapped DEK.
+      const raw = await store.findById(COLLECTION, OWNER, 'd1');
+      expect(isShredded(raw!.sealed)).toBe(true);
+      expect(JSON.stringify(raw!.sealed)).not.toContain('top-secret');
+      expect((raw!.sealed as Record<string, unknown>).dek).toBeUndefined();
+
+      // Excluded from reads exactly like a delete.
+      expect(await repo.get(OWNER, 'd1')).toBeUndefined();
+      expect(await repo.list(OWNER)).toEqual([]);
+    });
+
+    it('shreds even an already soft-deleted document', async () => {
+      const { store, repo } = newRepo();
+      await repo.create(OWNER, { id: 'd1', secret: 's', count: 1 });
+      await repo.softDelete(OWNER, 'd1');
+
+      expect(await repo.cryptoShred(OWNER, 'd1')).toBe(true);
+      expect(isShredded((await store.findById(COLLECTION, OWNER, 'd1'))!.sealed)).toBe(true);
+    });
+
+    it('returns false for a missing or already-shredded document', async () => {
+      const { repo } = newRepo();
+      await repo.create(OWNER, { id: 'd1', secret: 's', count: 1 });
+
+      expect(await repo.cryptoShred(OWNER, 'nope')).toBe(false);
+      expect(await repo.cryptoShred(OWNER, 'd1')).toBe(true);
+      expect(await repo.cryptoShred(OWNER, 'd1')).toBe(false); // already shredded
+    });
+
+    it('a shredded row surfaced to open() throws rather than returning garbage', async () => {
+      const { store, repo } = newRepo();
+      // A shredded-but-not-deleted row should never occur in practice, but the
+      // reader must fail loudly if it ever does.
+      await store.put({
+        collection: COLLECTION, ownerKey: OWNER, id: 'ghost',
+        sealed: shredEnvelope(), deleted: false,
+      });
+      await expect(repo.get(OWNER, 'ghost')).rejects.toThrow(/crypto-shredded/);
+    });
   });
 
   it('binds ciphertext to its collection:owner:id context', async () => {

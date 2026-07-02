@@ -127,7 +127,7 @@ export function listObjects(ownerAddress: string): Promise<IpfsObject[]> {
 /** Soft-delete the owner's object index (the content-addressed blob is immutable). */
 export async function eraseObjects(ownerAddress: string): Promise<number> {
   const objects = await repo().list(ownerAddress);
-  await Promise.all(objects.map((object) => repo().softDelete(ownerAddress, object.id)));
+  await Promise.all(objects.map((object) => repo().cryptoShred(ownerAddress, object.id)));
   return objects.length;
 }
 

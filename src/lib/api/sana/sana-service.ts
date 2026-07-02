@@ -174,7 +174,7 @@ export function deleteConversation(ownerAddress: string, id: string): Promise<bo
 /** Soft-delete all of an owner's SANA conversations (right to erasure). */
 export async function eraseSanaConversations(ownerAddress: string): Promise<number> {
   const conversations = await repo().list(ownerAddress);
-  await Promise.all(conversations.map((conversation) => repo().softDelete(ownerAddress, conversation.id)));
+  await Promise.all(conversations.map((conversation) => repo().cryptoShred(ownerAddress, conversation.id)));
   return conversations.length;
 }
 

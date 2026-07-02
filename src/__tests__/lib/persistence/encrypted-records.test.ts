@@ -1,7 +1,7 @@
 /** @jest-environment node */
 
 import { AuditChain } from '@/lib/crypto/audit-chain';
-import { isSealed } from '@/lib/crypto/envelope';
+import { isSealed, isShredded, shredEnvelope } from '@/lib/crypto/envelope';
 import { EncryptedRecordRepository } from '@/lib/persistence/encrypted-records';
 import { InMemoryRecordStore } from '@/lib/persistence/record-store';
 import type { MockHealthRecord } from '@/lib/api/mock-data';
@@ -88,6 +88,40 @@ describe('EncryptedRecordRepository', () => {
     await repo.create(OWNER, makeRecord());
     await repo.softDelete(OWNER, 'rec-1');
     expect(await repo.get(OWNER, 'rec-1')).toBeUndefined();
+  });
+
+  describe('cryptoShred (GDPR erasure, GAP-13)', () => {
+    it('destroys the PHI DEK so label/description/tags are unrecoverable', async () => {
+      const { store, repo } = newRepo();
+      await repo.create(OWNER, makeRecord());
+
+      expect(await repo.cryptoShred(OWNER, 'rec-1')).toBe(true);
+
+      const row = await store.findById(OWNER, 'rec-1');
+      expect(isShredded(row!.sealedPhi)).toBe(true);
+      expect(JSON.stringify(row!.sealedPhi)).not.toContain('BRCA1');
+      expect(row!.deleted).toBe(true);
+      expect(await repo.get(OWNER, 'rec-1')).toBeUndefined();
+    });
+
+    it('shreds an already soft-deleted record and is idempotent', async () => {
+      const { repo } = newRepo();
+      await repo.create(OWNER, makeRecord());
+      await repo.softDelete(OWNER, 'rec-1');
+
+      expect(await repo.cryptoShred(OWNER, 'rec-1')).toBe(true);
+      expect(await repo.cryptoShred(OWNER, 'rec-1')).toBe(false); // already shredded
+      expect(await repo.cryptoShred(OWNER, 'nope')).toBe(false); // never existed
+    });
+
+    it('a shredded row surfaced to a reader throws rather than leaking', async () => {
+      const { store, repo } = newRepo();
+      await repo.create(OWNER, makeRecord());
+      const row = await store.findById(OWNER, 'rec-1');
+      // Force a shredded-but-visible row (should never happen in practice).
+      await store.put({ ...row!, sealedPhi: shredEnvelope(), deleted: false });
+      await expect(repo.get(OWNER, 'rec-1')).rejects.toThrow(/crypto-shredded/);
+    });
   });
 
   it('updates metadata without touching PHI', async () => {

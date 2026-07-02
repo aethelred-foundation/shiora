@@ -8,7 +8,7 @@
 // never sees plaintext health information.
 // ============================================================
 
-import type { SealedEnvelope } from '@/lib/crypto/envelope';
+import type { SealedEnvelope, ShreddedEnvelope } from '@/lib/crypto/envelope';
 
 /**
  * A persisted health record. Identifying/operational metadata is stored in the
@@ -31,7 +31,8 @@ export interface StoredRecord {
   blockHeight: number;
   encryption: string;
   /** Envelope-encrypted `{ label, description, tags }`. */
-  sealedPhi: SealedEnvelope;
+  /** Envelope-encrypted payload, or a shred tombstone after crypto-erasure. */
+  sealedPhi: SealedEnvelope | ShreddedEnvelope;
   deleted: boolean;
 }
 

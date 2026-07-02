@@ -7,7 +7,7 @@
 // (access grants, consent records, …) behind a single, reusable interface.
 // ============================================================
 
-import type { SealedEnvelope } from '@/lib/crypto/envelope';
+import type { SealedEnvelope, ShreddedEnvelope } from '@/lib/crypto/envelope';
 
 /** A stored document: identity in the clear, payload sealed. */
 export interface StoredDocument {
@@ -18,7 +18,8 @@ export interface StoredDocument {
   /** Document id, unique within its collection. */
   id: string;
   /** Envelope-encrypted full document. */
-  sealed: SealedEnvelope;
+  /** Envelope-encrypted payload, or a shred tombstone after crypto-erasure. */
+  sealed: SealedEnvelope | ShreddedEnvelope;
   deleted: boolean;
 }
 

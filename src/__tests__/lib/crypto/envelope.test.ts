@@ -3,6 +3,9 @@
 import {
   KEK_VERSION,
   isSealed,
+  isShredded,
+  shredEnvelope,
+  SHRED_MARKER,
   openJson,
   openString,
   sealJson,
@@ -136,5 +139,33 @@ describe('PHI envelope encryption', () => {
     expect(isSealed('string')).toBe(false);
     expect(isSealed({ v: 1 })).toBe(false);
     expect(isSealed({ alg: 'aes-256-gcm' })).toBe(false);
+  });
+
+  describe('crypto-shredding (GDPR erasure, GAP-13)', () => {
+    it('produces a tombstone carrying no recoverable data', () => {
+      const tombstone = shredEnvelope(1_700_000_000_000);
+      expect(tombstone).toEqual({ alg: 'aes-256-gcm', shredded: SHRED_MARKER, shreddedAt: 1_700_000_000_000 });
+      expect('dek' in tombstone).toBe(false);
+      expect('ct' in tombstone).toBe(false);
+      expect(isSealed(tombstone)).toBe(false);
+    });
+
+    it('defaults shreddedAt to now', () => {
+      const before = Date.now();
+      expect(shredEnvelope().shreddedAt).toBeGreaterThanOrEqual(before);
+    });
+
+    it('isShredded recognizes tombstones and rejects everything else', () => {
+      expect(isShredded(shredEnvelope())).toBe(true);
+      expect(isShredded(sealString('x'))).toBe(false);
+      expect(isShredded(null)).toBe(false);
+      expect(isShredded('shredded')).toBe(false);
+      expect(isShredded({ shredded: 'shredded' })).toBe(false); // missing alg/shreddedAt
+      expect(isShredded({ shredded: 'shredded', alg: 'aes-256-gcm', shreddedAt: 'no' })).toBe(false);
+    });
+
+    it('openString refuses a shredded value with a clear error', () => {
+      expect(() => openString(shredEnvelope() as never)).toThrow(/crypto-shredded/);
+    });
   });
 });

@@ -98,6 +98,11 @@ export function softDeleteRecord(
   return repo().softDelete(ownerAddress, id);
 }
 
+/** Crypto-shred a record's PHI (GDPR erasure); true when it existed and was shredded. */
+export function cryptoShredRecord(ownerAddress: string, id: string): Promise<boolean> {
+  return repo().cryptoShred(ownerAddress, id);
+}
+
 /** Test-only: reset the singleton so each test starts from empty state. */
 export function __resetRecordsForTests(): void {
   repository = null;

@@ -8,7 +8,7 @@
 // ============================================================
 
 import { type AuditAction, type AuditRecorder } from '@/lib/crypto/audit-chain';
-import { openJson, sealJson } from '@/lib/crypto/envelope';
+import { openJson, sealJson, shredEnvelope, isShredded } from '@/lib/crypto/envelope';
 import type { DocumentStorePort, StoredDocument } from './document-store';
 
 /** Audit action names emitted for a collection's mutations. */
@@ -87,7 +87,8 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
 
   /**
    * Soft-delete a document so it no longer appears in get/list. Returns false
-   * when it does not exist or is already deleted. Used for right-to-erasure.
+   * when it does not exist or is already deleted. Reversible: the ciphertext
+   * is retained. For irreversible GDPR erasure use {@link cryptoShred}.
    */
   async softDelete(ownerKey: string, id: string): Promise<boolean> {
     const row = await this.store.findById(this.collection, ownerKey, id);
@@ -95,6 +96,23 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
       return false;
     }
     await this.store.put({ ...row, deleted: true });
+    await this.record(this.actions.update, ownerKey, id, ownerKey);
+    return true;
+  }
+
+  /**
+   * Crypto-shred a document (GDPR Art. 17): overwrite its sealed payload with a
+   * tombstone so the wrapped DEK is destroyed and the plaintext becomes
+   * permanently unrecoverable — even by the operator. Works whether or not the
+   * document was previously soft-deleted; returns false only when it is missing
+   * or already shredded.
+   */
+  async cryptoShred(ownerKey: string, id: string): Promise<boolean> {
+    const row = await this.store.findById(this.collection, ownerKey, id);
+    if (!row || isShredded(row.sealed)) {
+      return false;
+    }
+    await this.store.put({ ...row, sealed: shredEnvelope(), deleted: true });
     await this.record(this.actions.update, ownerKey, id, ownerKey);
     return true;
   }
@@ -117,6 +135,9 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
   }
 
   private open(ownerKey: string, row: StoredDocument): T {
+    if (isShredded(row.sealed)) {
+      throw new Error('Document has been crypto-shredded and cannot be read.');
+    }
     return openJson<T>(row.sealed, this.aad(ownerKey, row.id));
   }
 

@@ -430,8 +430,8 @@ export async function eraseVaultEntries(owner: string): Promise<number> {
     listCycleEntries(owner),
   ]);
   await Promise.all([
-    ...symptomList.map((entry) => symptoms().softDelete(owner, entry.id)),
-    ...cycleList.map((entry) => cycles().softDelete(owner, entry.id)),
+    ...symptomList.map((entry) => symptoms().cryptoShred(owner, entry.id)),
+    ...cycleList.map((entry) => cycles().cryptoShred(owner, entry.id)),
   ]);
   return symptomList.length + cycleList.length;
 }

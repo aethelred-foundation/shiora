@@ -171,7 +171,7 @@ export async function markAllRead(ownerAddress: string): Promise<number> {
 /** Soft-delete all of an owner's notifications (right to erasure). */
 export async function eraseNotifications(ownerAddress: string): Promise<number> {
   const list = await listNotifications(ownerAddress);
-  await Promise.all(list.map((notification) => repo().softDelete(ownerAddress, notification.id)));
+  await Promise.all(list.map((notification) => repo().cryptoShred(ownerAddress, notification.id)));
   return list.length;
 }
 

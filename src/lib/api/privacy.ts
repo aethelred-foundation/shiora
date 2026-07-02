@@ -8,7 +8,7 @@
 // ever sees or erases their own data.
 // ============================================================
 
-import { listRecords, softDeleteRecord } from './records-service';
+import { listRecords, cryptoShredRecord } from './records-service';
 import { listConsents, updateConsent } from './consent-service';
 import { listAccessGrants, updateAccessGrant } from './access-service';
 import { listSymptoms, listCycleEntries, eraseVaultEntries, type SymptomEntry, type CycleEntry } from './vault-service';
@@ -75,7 +75,7 @@ export interface ErasureSummary {
  */
 export async function eraseUserData(owner: string): Promise<ErasureSummary> {
   const records = await listRecords(owner);
-  await Promise.all(records.map((record) => softDeleteRecord(owner, record.id)));
+  await Promise.all(records.map((record) => cryptoShredRecord(owner, record.id)));
 
   const activeConsents = (await listConsents(owner)).filter(
     (consent) => consent.status === 'active',

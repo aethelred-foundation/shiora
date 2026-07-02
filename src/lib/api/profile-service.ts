@@ -112,7 +112,7 @@ export async function updateProfile(ownerAddress: string, input: ProfileInput): 
 
 /** Soft-delete the caller's profile (right to erasure). Returns how many removed. */
 export async function eraseProfile(ownerAddress: string): Promise<number> {
-  const removed = await repo().softDelete(ownerAddress, ownerAddress);
+  const removed = await repo().cryptoShred(ownerAddress, ownerAddress);
   return removed ? 1 : 0;
 }
 
