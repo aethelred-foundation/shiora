@@ -21,6 +21,8 @@ export interface SealedFieldProps {
   onUnlock: () => void;
   placeholder?: string;
   rows?: number;
+  /** Accessible name for the field (screen readers). Falls back to the placeholder. */
+  label?: string;
 }
 
 export function SealedField({
@@ -31,6 +33,7 @@ export function SealedField({
   onUnlock,
   placeholder,
   rows = 3,
+  label,
 }: SealedFieldProps) {
   return (
     <div className="space-y-1.5">
@@ -38,6 +41,7 @@ export function SealedField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        aria-label={label ?? placeholder ?? 'Encrypted note'}
         rows={rows}
         className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none"
       />

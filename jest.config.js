@@ -15,7 +15,11 @@ module.exports = createJestConfig({
   // the React Query hook tests starve and hang; leaving headroom keeps every
   // worker's loop ticking so async settles promptly.
   maxWorkers: '50%',
-  testPathIgnorePatterns: ['/node_modules/', '<rootDir>/src/__tests__/api/helpers.ts'],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '<rootDir>/src/__tests__/api/helpers.ts',
+    '<rootDir>/src/__tests__/helpers/',
+  ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
