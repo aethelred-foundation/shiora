@@ -20,6 +20,7 @@ import { AethelredAddressSchema } from '@/lib/api/validation';
 import { ROLES, ROLE_LABELS, type Role } from '@/lib/api/roles';
 import { assignRole, getRoles, revokeRole } from '@/lib/api/roles-service';
 import { audit } from '@/lib/api/audit';
+import { requireStepUp } from '@/lib/api/step-up';
 
 const RoleMutationSchema = z.object({
   address: AethelredAddressSchema,
@@ -52,6 +53,11 @@ export async function POST(request: NextRequest) {
   const auth = await requireAdmin(request);
   if ('status' in auth) return auth;
 
+  // Sensitive operation: accounts with MFA enabled must present a fresh
+  // step-up assertion (GAP-07).
+  const stepUp = await requireStepUp(request, auth.walletAddress!);
+  if (stepUp) return stepUp;
+
   try {
     const body = await request.json();
     const { address, role } = RoleMutationSchema.parse(body);
@@ -81,6 +87,11 @@ export async function DELETE(request: NextRequest) {
 
   const auth = await requireAdmin(request);
   if ('status' in auth) return auth;
+
+  // Sensitive operation: accounts with MFA enabled must present a fresh
+  // step-up assertion (GAP-07).
+  const stepUp = await requireStepUp(request, auth.walletAddress!);
+  if (stepUp) return stepUp;
 
   try {
     const body = await request.json();

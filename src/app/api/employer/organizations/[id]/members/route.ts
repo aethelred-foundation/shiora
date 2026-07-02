@@ -11,6 +11,7 @@ import { z, ZodError } from 'zod';
 import { successResponse, notFoundResponse, validationError, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
 import { requireCapability } from '@/lib/api/rbac';
+import { requireStepUp } from '@/lib/api/step-up';
 import { AethelredAddressSchema } from '@/lib/api/validation';
 import { addMember, getOrganization, listMembers } from '@/lib/api/employer-service';
 
@@ -45,6 +46,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
   const auth = await requireCapability(request, 'manage_org_members');
   if ('status' in auth) return auth;
+
+  // Sensitive operation: accounts with MFA enabled must present a fresh
+  // step-up assertion (GAP-07).
+  const stepUp = await requireStepUp(request, auth.walletAddress!);
+  if (stepUp) return stepUp;
 
   const { id } = await context.params;
   const organization = await getOrganization(auth.walletAddress!, id);

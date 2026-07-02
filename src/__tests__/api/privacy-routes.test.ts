@@ -15,6 +15,9 @@ import { __resetConsentForTests } from '@/lib/api/consent-service';
 import { __resetAccessForTests } from '@/lib/api/access-service';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
+import { beginMfaEnrollment, confirmMfaEnrollment, __resetMfaForTests } from '@/lib/api/mfa-service';
+import { totpCode } from '@/lib/api/totp';
+import { mintStepUpAssertion, STEP_UP_HEADER } from '@/lib/api/step-up';
 
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
 const token = createSessionToken(seededAddress(400)).token;
@@ -109,5 +112,33 @@ describe('/api/privacy/portability format validation', () => {
     const data = (await res.json()).data;
     expect(data.format).toBe('json');
     expect(data.export).toContain('"records"');
+  });
+});
+
+
+describe('MFA step-up on GDPR erasure (GAP-07)', () => {
+  const subject = seededAddress(400);
+  afterEach(() => __resetMfaForTests());
+
+  it('demands a fresh assertion from an MFA-enabled account, then honors it', async () => {
+    const { secret } = await beginMfaEnrollment(subject);
+    expect(await confirmMfaEnrollment(subject, totpCode(secret))).toBe(true);
+
+    const denied = await erasure(post('http://localhost:3000/api/privacy/erasure', { categories: ['records'] }, token));
+    expect(denied.status).toBe(403);
+    expect((await denied.json()).error.code).toBe('STEP_UP_REQUIRED');
+
+    const { assertion } = mintStepUpAssertion(subject);
+    const req = new NextRequest('http://localhost:3000/api/privacy/erasure', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        authorization: `Bearer ${token}`,
+        [STEP_UP_HEADER]: assertion,
+      },
+      body: JSON.stringify({ categories: ['records'] }),
+    });
+    const ok = await erasure(req);
+    expect(ok.status).toBe(201);
   });
 });

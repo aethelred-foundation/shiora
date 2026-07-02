@@ -24,6 +24,7 @@ const SUBKEY_BYTES = 32; // 256-bit subkeys
 const SESSION_MAC_INFO = 'shiora/session-hmac/v1';
 const CHALLENGE_MAC_INFO = 'shiora/challenge-hmac/v1';
 const AUDIT_MAC_INFO = 'shiora/audit-chain-mac/v1';
+const STEP_UP_MAC_INFO = 'shiora/mfa-stepup/v1';
 
 const cache = new Map<string, Buffer>();
 
@@ -53,6 +54,11 @@ export function sessionSigningKey(): Buffer {
 /** HMAC key for binding authentication challenges to this server. */
 export function challengeSigningKey(): Buffer {
   return keyFor(CHALLENGE_MAC_INFO);
+}
+
+/** HMAC key for short-lived MFA step-up assertions (GAP-07). */
+export function stepUpSigningKey(): Buffer {
+  return keyFor(STEP_UP_MAC_INFO);
 }
 
 /**

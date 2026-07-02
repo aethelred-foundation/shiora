@@ -11,6 +11,7 @@ import { randomUUID } from 'node:crypto';
 
 import type { PrivacyRequest } from '@/types';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
+import { requireStepUp } from '@/lib/api/step-up';
 import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
 import { eraseUserData } from '@/lib/api/privacy';
 import { audit } from '@/lib/api/audit';
@@ -21,6 +22,11 @@ export async function POST(request: NextRequest) {
 
   const auth = requireAuth(request);
   if ('status' in auth) return auth;
+
+  // Sensitive operation: accounts with MFA enabled must present a fresh
+  // step-up assertion (GAP-07).
+  const stepUp = await requireStepUp(request, auth.walletAddress!);
+  if (stepUp) return stepUp;
 
   try {
     const body = await request.json();

@@ -12,6 +12,9 @@ import { GET as getRolesFor } from '@/app/api/roles/[address]/route';
 import { __resetRolesForTests } from '@/lib/api/roles-service';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
+import { beginMfaEnrollment, confirmMfaEnrollment, __resetMfaForTests } from '@/lib/api/mfa-service';
+import { totpCode } from '@/lib/api/totp';
+import { mintStepUpAssertion, STEP_UP_HEADER } from '@/lib/api/step-up';
 
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
 
@@ -170,5 +173,58 @@ describe('GET /api/roles/[address] (admin lookup)', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.roles).toContain('researcher');
+  });
+});
+
+
+describe('MFA step-up on role mutations (GAP-07)', () => {
+  afterEach(() => __resetMfaForTests());
+
+  async function enableMfaForAdmin(): Promise<void> {
+    const { secret } = await beginMfaEnrollment(ADMIN);
+    expect(await confirmMfaEnrollment(ADMIN, totpCode(secret))).toBe(true);
+  }
+
+  it('demands a fresh assertion from an MFA-enabled admin, then honors it', async () => {
+    await enableMfaForAdmin();
+
+    const denied = await assign(authed(jsonBody({ address: seededAddress(700), role: 'provider' }), adminToken));
+    expect(denied.status).toBe(403);
+    expect((await denied.json()).error.code).toBe('STEP_UP_REQUIRED');
+
+    const { assertion } = mintStepUpAssertion(ADMIN);
+    const granted = await assign(authed({
+      ...jsonBody({ address: seededAddress(700), role: 'provider' }),
+      headers: { 'Content-Type': 'application/json', [STEP_UP_HEADER]: assertion },
+    }, adminToken));
+    expect(granted.status).toBe(201);
+  });
+
+  it('demands step-up on role revocation too', async () => {
+    await enableMfaForAdmin();
+
+    // Assign first (with a valid assertion) so there is something to revoke.
+    const setupAssertion = mintStepUpAssertion(ADMIN).assertion;
+    const setup = await assign(authed({
+      ...jsonBody({ address: seededAddress(700), role: 'provider' }),
+      headers: { 'Content-Type': 'application/json', [STEP_UP_HEADER]: setupAssertion },
+    }, adminToken));
+    expect(setup.status).toBe(201);
+
+    const denied = await revoke(authed({
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address: seededAddress(700), role: 'provider' }),
+    }, adminToken));
+    expect(denied.status).toBe(403);
+    expect((await denied.json()).error.code).toBe('STEP_UP_REQUIRED');
+
+    const { assertion } = mintStepUpAssertion(ADMIN);
+    const ok = await revoke(authed({
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', [STEP_UP_HEADER]: assertion },
+      body: JSON.stringify({ address: seededAddress(700), role: 'provider' }),
+    }, adminToken));
+    expect(ok.status).toBe(200);
   });
 });

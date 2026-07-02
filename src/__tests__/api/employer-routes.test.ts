@@ -14,6 +14,9 @@ import { __resetEmployerForTests } from '@/lib/api/employer-service';
 import { assignRole, __resetRolesForTests } from '@/lib/api/roles-service';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
+import { beginMfaEnrollment, confirmMfaEnrollment, __resetMfaForTests } from '@/lib/api/mfa-service';
+import { totpCode } from '@/lib/api/totp';
+import { mintStepUpAssertion, STEP_UP_HEADER } from '@/lib/api/step-up';
 
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
 
@@ -195,5 +198,48 @@ describe('/api/employer/organizations/[id]/members/[address]', () => {
     const res = await del(id, MEMBER, adminToken);
     expect(res.status).toBe(200);
     expect((await res.json()).data.status).toBe('removed');
+  });
+});
+
+
+describe('MFA step-up on org membership mutations (GAP-07)', () => {
+  afterEach(() => __resetMfaForTests());
+
+  it('demands a fresh assertion for member add and remove, then honors it', async () => {
+    const id = await createOrgAsAdmin();
+    const { secret } = await beginMfaEnrollment(ADMIN);
+    expect(await confirmMfaEnrollment(ADMIN, totpCode(secret))).toBe(true);
+
+    const denied = await addMember(
+      authed(`${ORGS_URL}/${id}/members`, jsonBody({ address: MEMBER, role: 'employee' }), adminToken),
+      ctx(id),
+    );
+    expect(denied.status).toBe(403);
+    expect((await denied.json()).error.code).toBe('STEP_UP_REQUIRED');
+
+    const { assertion } = mintStepUpAssertion(ADMIN);
+    const withHeader = (body: unknown, method = 'POST') => ({
+      method,
+      headers: { 'Content-Type': 'application/json', [STEP_UP_HEADER]: assertion },
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    });
+
+    const added = await addMember(
+      authed(`${ORGS_URL}/${id}/members`, withHeader({ address: MEMBER, role: 'employee' }), adminToken),
+      ctx(id),
+    );
+    expect(added.status).toBe(201);
+
+    const removeDenied = await removeMember(
+      authed(`${ORGS_URL}/${id}/members/${MEMBER}`, { method: 'DELETE' }, adminToken),
+      ctx(id, MEMBER),
+    );
+    expect(removeDenied.status).toBe(403);
+
+    const removed = await removeMember(
+      authed(`${ORGS_URL}/${id}/members/${MEMBER}`, withHeader(undefined, 'DELETE'), adminToken),
+      ctx(id, MEMBER),
+    );
+    expect(removed.status).toBe(200);
   });
 });
