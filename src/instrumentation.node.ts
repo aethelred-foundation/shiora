@@ -8,7 +8,8 @@
 // ============================================================
 
 import { preloadKeyProvider } from '@/lib/crypto/key-provider';
-import { assertProductionReadiness } from '@/lib/api/preflight';
+import { assertProductionReadiness, hasDurableDatastore } from '@/lib/api/preflight';
+import { startMaintenanceScheduler } from '@/lib/maintenance/store-maintenance';
 
 export async function registerNode(): Promise<void> {
   // Warm key custody (fetch + cache the KEK from Vault) before any PHI is served.
@@ -16,4 +17,9 @@ export async function registerNode(): Promise<void> {
   // In production, hard-fail a misconfigured boot (durable DB, key custody,
   // session secret, TLS/HSTS).
   assertProductionReadiness();
+  // Garbage-collect the durable auth stores (GAP-01). In-memory stores sweep
+  // themselves inline, so the scheduler only matters under Postgres.
+  if (hasDurableDatastore()) {
+    startMaintenanceScheduler();
+  }
 }

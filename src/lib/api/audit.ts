@@ -58,7 +58,8 @@ export type AuditAction =
   | 'WEARABLE_INGEST'
   | 'SANA_MESSAGE'
   | 'IPFS_STORE'
-  | 'MPC_COMPUTE';
+  | 'MPC_COMPUTE'
+  | 'SYSTEM_MAINTENANCE';
 
 export interface AuditEntry {
   timestamp: string;
