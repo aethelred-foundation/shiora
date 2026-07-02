@@ -59,7 +59,10 @@ export type AuditAction =
   | 'SANA_MESSAGE'
   | 'IPFS_STORE'
   | 'MPC_COMPUTE'
-  | 'SYSTEM_MAINTENANCE';
+  | 'SYSTEM_MAINTENANCE'
+  | 'WEBHOOK_CREATE'
+  | 'WEBHOOK_DELETE'
+  | 'WEBHOOK_TEST';
 
 export interface AuditEntry {
   timestamp: string;

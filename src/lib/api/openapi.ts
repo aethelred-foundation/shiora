@@ -76,6 +76,12 @@ export const ROUTE_MANIFEST: readonly RouteDoc[] = [
   // Audit
   { path: '/api/audit/export', method: 'get', summary: 'Export a signed WORM audit-chain segment (admin)', tags: ['System'], auth: true },
 
+  // Webhooks
+  { path: '/api/webhooks', method: 'get', summary: 'List webhook subscriptions', tags: ['Webhooks'], auth: true },
+  { path: '/api/webhooks', method: 'post', summary: 'Create a webhook subscription (returns the signing secret once)', tags: ['Webhooks'], auth: true },
+  { path: '/api/webhooks/{id}', method: 'delete', summary: 'Delete a webhook subscription', tags: ['Webhooks'], auth: true },
+  { path: '/api/webhooks/{id}/test', method: 'post', summary: 'Send a signed test delivery', tags: ['Webhooks'], auth: true },
+
   // System
   { path: '/api/health/live', method: 'get', summary: 'Liveness probe', tags: ['System'], auth: false },
   { path: '/api/health/ready', method: 'get', summary: 'Readiness probe (config + datastore)', tags: ['System'], auth: false },
@@ -97,6 +103,7 @@ const TAG_DESCRIPTIONS: Record<string, string> = {
   Consent: 'Consent records.',
   Transparency: 'Audit trails and access disclosure (GDPR Art. 15).',
   Notifications: 'In-app notifications.',
+  Webhooks: 'Signed outbound event delivery.',
   System: 'Operational and platform endpoints.',
 };
 
