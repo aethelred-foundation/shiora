@@ -268,4 +268,22 @@ describe('EncryptedRecordRepository', () => {
       expect(await repo.findByTag(OWNER, 'x')).toEqual([]);
     });
   });
+
+  describe('scanForReseal cursor resumption (GAP-14)', () => {
+    it('resumes after the cursor id, and restarts when that id no longer exists', async () => {
+      const { store, repo } = newRepo();
+      await repo.create(OWNER, makeRecord({ id: 'a' }));
+      await repo.create(OWNER, makeRecord({ id: 'b' }));
+      const { encodeCursor } = await import('@/lib/persistence/reseal-cursor');
+
+      // A cursor at an existing id resumes strictly after it (afterIndex → idx + 1).
+      const afterA = await store.scanForReseal(encodeCursor(['a']), 10);
+      expect(afterA.rows.map((r) => r.id)).toEqual(['b']);
+
+      // A cursor at an id purged since it was issued restarts from the top
+      // (afterIndex → 0) rather than silently skipping the remaining rows.
+      const afterGhost = await store.scanForReseal(encodeCursor(['zzz']), 10);
+      expect(afterGhost.rows.map((r) => r.id)).toEqual(['a', 'b']);
+    });
+  });
 });

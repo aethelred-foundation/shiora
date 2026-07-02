@@ -12,9 +12,13 @@ jest.mock('@/components/layout/Providers', () => ({
   ),
 }));
 
-import RootLayout, { metadata, viewport } from '@/app/layout';
+import RootLayout, { metadata, viewport, dynamic } from '@/app/layout';
 
 describe('RootLayout', () => {
+  it('forces per-request rendering so the CSP nonce always matches (audit M-01)', () => {
+    expect(dynamic).toBe('force-dynamic');
+  });
+
   it('renders children inside Providers', () => {
     const { container } = render(
       <RootLayout>

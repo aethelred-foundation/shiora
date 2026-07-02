@@ -6,6 +6,7 @@ jest.mock('@/lib/persistence/sql-client', () => ({ getPgClient: jest.fn() }));
 import {
   runKekReseal,
   runDurableKekReseal,
+  DEFAULT_RESEAL_BATCH,
 } from '@/lib/maintenance/kek-reseal';
 import { InMemoryDocumentStore, type StoredDocument } from '@/lib/persistence/document-store';
 import { InMemoryRecordStore, type StoredRecord } from '@/lib/persistence/record-store';
@@ -65,6 +66,10 @@ function rotateToV2(): void {
 }
 
 describe('runKekReseal', () => {
+  it('bounds each scan batch by a sane default', () => {
+    expect(DEFAULT_RESEAL_BATCH).toBe(200);
+  });
+
   it('re-seals every stale envelope under the current version, preserving plaintext', async () => {
     const documents = new InMemoryDocumentStore();
     const records = new InMemoryRecordStore();

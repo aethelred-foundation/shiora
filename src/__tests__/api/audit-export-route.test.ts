@@ -79,4 +79,9 @@ describe('GET /api/audit/export', () => {
     mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
     expect((await exportAudit(req('', createSessionToken(ADMIN).token))).status).toBe(429);
   });
+
+  it('re-throws an unexpected (non-validation) error from the audit log', async () => {
+    jest.spyOn(getAuditLog(), 'exportSegment').mockRejectedValueOnce(new Error('storage down'));
+    await expect(exportAudit(req('', createSessionToken(ADMIN).token))).rejects.toThrow('storage down');
+  });
 });

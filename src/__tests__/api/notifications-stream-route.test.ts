@@ -7,7 +7,7 @@ jest.mock('@/lib/api/middleware', () => {
 
 import { NextRequest, NextResponse } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
-import { GET as stream } from '@/app/api/notifications/stream/route';
+import { GET as stream, dynamic } from '@/app/api/notifications/stream/route';
 import { createSessionToken } from '@/lib/api/session';
 import { __resetNotificationsForTests } from '@/lib/api/notification-service';
 import { seededAddress } from '@/lib/utils';
@@ -27,6 +27,10 @@ function authed(): NextRequest {
 }
 
 describe('GET /api/notifications/stream', () => {
+  it('is rendered per-request (never prerendered/cached)', () => {
+    expect(dynamic).toBe('force-dynamic');
+  });
+
   it('opens an SSE stream for an authenticated caller', async () => {
     const res = await stream(authed());
     expect(res.status).toBe(200);

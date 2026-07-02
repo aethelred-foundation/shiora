@@ -81,6 +81,14 @@ describe('PgDocumentStore', () => {
     expect(await new PgDocumentStore(client).findById(COLLECTION, OWNER, 'nope')).toBeUndefined();
   });
 
+  it('omits deletedAt when the row was never soft-deleted (deleted_at null)', async () => {
+    const client = new FakeSqlClient();
+    client.enqueue([{ ...docRow(), deleted: false, deleted_at: null }]);
+    const found = await new PgDocumentStore(client).findById(COLLECTION, OWNER, 'doc-1');
+    expect(found).toBeDefined();
+    expect(found?.deletedAt).toBeUndefined();
+  });
+
   it('lists an owner\'s documents ordered by recency', async () => {
     const client = new FakeSqlClient();
     client.enqueue([docRow(), { ...docRow(), id: 'doc-2' }]);

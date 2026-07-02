@@ -96,6 +96,16 @@ describe('PersistentAuditLog', () => {
     expect(third.nextCursor).toBeNull();
   });
 
+  it('returns a single default-limit page when called with no arguments', async () => {
+    const log = new PersistentAuditLog(new InMemoryAuditStore());
+    for (let i = 0; i < 3; i++) {
+      await log.record(entry('RECORD_CREATE', 'aeth1a', 'record'));
+    }
+    const page = await log.listPage(); // exercises the default filter/limit params
+    expect(page.items).toHaveLength(3);
+    expect(page.nextCursor).toBeNull();
+  });
+
   it('exposes a process-wide singleton that resets for tests', async () => {
     delete process.env.DATABASE_URL;
     __resetAuditLogForTests();

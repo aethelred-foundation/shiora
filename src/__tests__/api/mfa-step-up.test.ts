@@ -102,4 +102,15 @@ describe('POST /api/mfa/step-up', () => {
     const res = await stepUp(post({ code: '123456' }));
     expect(res.status).toBe(429);
   });
+
+  it('re-throws an unexpected (non-validation) error', async () => {
+    // A malformed JSON body makes request.json() throw a SyntaxError — not a
+    // ZodError — so the handler surfaces it rather than masking it as a 4xx.
+    const bad = new NextRequest(URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', authorization: `Bearer ${TOKEN}` },
+      body: '{ not json',
+    });
+    await expect(stepUp(bad)).rejects.toThrow();
+  });
 });
