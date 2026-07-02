@@ -1,5 +1,4 @@
 /** @type {import('next').NextConfig} */
-const isDev = process.env.NODE_ENV === 'development';
 const enableHsts = process.env.SHIORA_ENABLE_HSTS === 'true';
 
 const nextConfig = {
@@ -72,22 +71,9 @@ const nextConfig = {
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
           { key: 'Cross-Origin-Resource-Policy', value: 'same-site' },
           { key: 'Origin-Agent-Cluster', value: '?1' },
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              `default-src 'self'`,
-              `base-uri 'self'`,
-              `frame-ancestors 'none'`,
-              `object-src 'none'`,
-              `worker-src 'self' blob:`,
-              `img-src 'self' data: https:`,
-              `font-src 'self' data: https:`,
-              `style-src 'self' 'unsafe-inline'`,
-              `script-src 'self'${isDev ? " 'unsafe-eval'" : ''} 'unsafe-inline'`,
-              `connect-src 'self' https: wss:`,
-              `form-action 'self'`,
-            ].join('; '),
-          },
+          // Content-Security-Policy is set per-request in src/middleware.ts with a
+          // script nonce (audit M-01); defining it here too would make browsers
+          // enforce the intersection of both policies.
           ...(enableHsts ? [{
             key: 'Strict-Transport-Security',
             value: 'max-age=31536000; includeSubDomains',

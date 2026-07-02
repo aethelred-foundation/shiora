@@ -35,6 +35,11 @@ export const viewport: Viewport = {
   themeColor: '#8B1538',
 };
 
+// Render every page per-request: the CSP script nonce is generated in
+// middleware for each request (audit M-01), so prerendered HTML — whose inline
+// bootstrap scripts would carry no matching nonce — must never be served.
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: {
