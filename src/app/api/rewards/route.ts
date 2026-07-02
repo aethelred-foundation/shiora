@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { runMiddleware } from '@/lib/api/middleware';
 
 import type {
   RewardEntry,
@@ -66,6 +67,9 @@ const rewards = generateRewards();
 // ---------------------------------------------------------------------------
 
 export async function GET(request: NextRequest) {
+  const blocked = await runMiddleware(request);
+  if (blocked) return blocked;
+
   const { searchParams } = request.nextUrl;
   const action = searchParams.get('action') as RewardAction | null;
   const claimed = searchParams.get('claimed');

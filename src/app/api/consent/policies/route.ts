@@ -4,7 +4,8 @@
  * GET /api/consent/policies — List all consent policy templates
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { runMiddleware } from '@/lib/api/middleware';
 
 import type { ConsentPolicy, ConsentScope, ApiResponse } from '@/types';
 
@@ -72,7 +73,10 @@ const policies: ConsentPolicy[] = [
 // GET /api/consent/policies
 // ---------------------------------------------------------------------------
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const blocked = await runMiddleware(request);
+  if (blocked) return blocked;
+
   const body: ApiResponse<ConsentPolicy[]> = {
     success: true,
     data: policies,

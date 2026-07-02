@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { runMiddleware } from '@/lib/api/middleware';
 
 import type {
   ResearchStudy,
@@ -100,6 +101,9 @@ const contributions: DataContribution[] = [];
 // ---------------------------------------------------------------------------
 
 export async function GET(request: NextRequest) {
+  const blocked = await runMiddleware(request);
+  if (blocked) return blocked;
+
   const { searchParams } = request.nextUrl;
   const status = searchParams.get('status') as StudyStatus | null;
   const search = searchParams.get('search');
@@ -156,6 +160,9 @@ export async function GET(request: NextRequest) {
 // ---------------------------------------------------------------------------
 
 export async function POST(request: NextRequest) {
+  const blocked = await runMiddleware(request);
+  if (blocked) return blocked;
+
   try {
     const { studyId, dataTypes } = await request.json();
 

@@ -1,9 +1,54 @@
 /** @jest-environment node */
 
-import { NextRequest } from 'next/server';
+jest.mock('@/lib/api/middleware', () => {
+  const actual = jest.requireActual('@/lib/api/middleware');
+  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+});
+
+import { NextRequest, NextResponse } from 'next/server';
+import { runMiddleware } from '@/lib/api/middleware';
 import { GET as getProvider, POST as postReview } from '@/app/api/providers/[address]/route';
 import { GET as getReputation } from '@/app/api/providers/reputation/route';
 import { seededAddress } from '@/lib/utils';
+
+const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
+
+afterEach(() => {
+  mockedRunMiddleware.mockImplementation((...args: unknown[]) => {
+    const actual = jest.requireActual('@/lib/api/middleware');
+    return actual.runMiddleware(...args);
+  });
+});
+
+function blockedOnce(): void {
+  mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
+}
+
+describe('middleware guards', () => {
+  it('GET /providers/[address] returns the middleware error when blocked', async () => {
+    blockedOnce();
+    const res = await getProvider(
+      new NextRequest('http://localhost:3000/api/providers/x'),
+      { params: Promise.resolve({ address: 'x' }) },
+    );
+    expect(res.status).toBe(429);
+  });
+
+  it('POST /providers/[address] returns the middleware error when blocked', async () => {
+    blockedOnce();
+    const res = await postReview(
+      new NextRequest('http://localhost:3000/api/providers/x', { method: 'POST' }),
+      { params: Promise.resolve({ address: 'x' }) },
+    );
+    expect(res.status).toBe(429);
+  });
+
+  it('GET /providers/reputation returns the middleware error when blocked', async () => {
+    blockedOnce();
+    const res = await getReputation(new NextRequest('http://localhost:3000/api/providers/reputation'));
+    expect(res.status).toBe(429);
+  });
+});
 
 describe('/api/providers/[address]', () => {
   const knownAddr = seededAddress(1800);

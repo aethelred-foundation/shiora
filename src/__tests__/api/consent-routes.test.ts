@@ -300,12 +300,18 @@ describe('/api/consent/[id] detail, modify, revoke', () => {
 
 describe('/api/consent/policies', () => {
   it('lists the consent policy templates', async () => {
-    const res = await listPolicies();
+    const res = await listPolicies(new NextRequest('http://localhost:3000/api/consent/policies'));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
     expect(body.data.length).toBeGreaterThanOrEqual(5);
     expect(body.data[0]).toHaveProperty('maxDurationDays');
+  });
+
+  it('returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
+    const res = await listPolicies(new NextRequest('http://localhost:3000/api/consent/policies'));
+    expect(res.status).toBe(429);
   });
 });
 

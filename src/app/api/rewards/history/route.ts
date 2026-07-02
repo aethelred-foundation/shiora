@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { runMiddleware } from '@/lib/api/middleware';
 
 import type {
   RewardEntry,
@@ -26,7 +27,10 @@ const claimedRewards: RewardEntry[] = [];
 // GET /api/rewards/history
 // ---------------------------------------------------------------------------
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const blocked = await runMiddleware(request);
+  if (blocked) return blocked;
+
   const body: ApiResponse<RewardEntry[]> = {
     success: true,
     data: claimedRewards,
@@ -41,6 +45,9 @@ export async function GET() {
 // ---------------------------------------------------------------------------
 
 export async function POST(request: NextRequest) {
+  const blocked = await runMiddleware(request);
+  if (blocked) return blocked;
+
   try {
     const { id, action, description, amount } = await request.json();
 

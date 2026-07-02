@@ -1,5 +1,10 @@
 /** @jest-environment node */
 
+jest.mock('@/lib/api/middleware', () => {
+  const actual = jest.requireActual('@/lib/api/middleware');
+  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+});
+
 jest.mock('@/lib/constants', () => ({
   ...jest.requireActual('@/lib/constants'),
   REWARD_ACTIONS: [
@@ -8,9 +13,40 @@ jest.mock('@/lib/constants', () => ({
   ],
 }));
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { runMiddleware } from '@/lib/api/middleware';
 import { GET as getRewards } from '@/app/api/rewards/route';
 import { GET as getHistory, POST as claimReward } from '@/app/api/rewards/history/route';
+
+const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
+
+afterEach(() => {
+  mockedRunMiddleware.mockImplementation((...args: unknown[]) => {
+    const actual = jest.requireActual('@/lib/api/middleware');
+    return actual.runMiddleware(...args);
+  });
+});
+
+function blockedOnce(): void {
+  mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
+}
+
+describe('middleware guards', () => {
+  it('GET /rewards returns the middleware error when blocked', async () => {
+    blockedOnce();
+    expect((await getRewards(new NextRequest('http://localhost:3000/api/rewards'))).status).toBe(429);
+  });
+
+  it('GET /rewards/history returns the middleware error when blocked', async () => {
+    blockedOnce();
+    expect((await getHistory(new NextRequest('http://localhost:3000/api/rewards/history'))).status).toBe(429);
+  });
+
+  it('POST /rewards/history returns the middleware error when blocked', async () => {
+    blockedOnce();
+    expect((await claimReward(new NextRequest('http://localhost:3000/api/rewards/history', { method: 'POST' }))).status).toBe(429);
+  });
+});
 
 describe('/api/rewards', () => {
   it('GET returns rewards list', async () => {
@@ -65,7 +101,7 @@ describe('/api/rewards', () => {
 
 describe('/api/rewards/history', () => {
   it('GET returns rewards history', async () => {
-    const res = await getHistory();
+    const res = await getHistory(new NextRequest('http://localhost:3000/api/rewards/history'));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);

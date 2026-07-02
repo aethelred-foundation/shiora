@@ -8,6 +8,10 @@
 // Unauthenticated/unthrottled, like the liveness probe.
 // ============================================================
 
+// NOTE: readiness probes intentionally bypass runMiddleware — infrastructure
+// health checks must stay cheap and must not depend on the rate limiter or
+// its datastore. They serve no user data.
+
 import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
 import { checkProductionReadiness, hasDurableDatastore } from '@/lib/api/preflight';
 import { getPgClient } from '@/lib/persistence/sql-client';

@@ -6,6 +6,10 @@
 // orchestrator can restart an unhealthy pod without being rate limited.
 // ============================================================
 
+// NOTE: liveness probes intentionally bypass runMiddleware — infrastructure
+// health checks must stay cheap and must not depend on the rate limiter or
+// its datastore. They serve no user data.
+
 import { successResponse } from '@/lib/api/responses';
 
 export async function GET() {
