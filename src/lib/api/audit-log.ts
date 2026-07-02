@@ -23,10 +23,13 @@ import { PgAuditStore } from '@/lib/persistence/pg-audit-store';
 import { getPgClient } from '@/lib/persistence/sql-client';
 import type { AuditAction, AuditEntry } from '@/lib/api/audit';
 import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
+import { pageByCursor, type CursorPage } from '@/lib/api/cursor-pagination';
 
 export interface AuditFilter {
   actor?: string;
   subject?: string; // the data subject the action concerns (e.g. the patient)
+  /** Exclude entries by this actor (e.g. the subject's own actions in an access log). */
+  excludeActor?: string;
   action?: AuditAction;
   resource?: string;
   since?: string;
@@ -47,12 +50,35 @@ export class PersistentAuditLog implements AuditRecorder {
 
   /** Query the trail (most recent first), with optional filters. */
   async list(filter: AuditFilter = {}): Promise<ChainedAuditEntry[]> {
+    const entries = await this.filtered(filter);
+    return entries.slice(0, filter.limit ?? 100);
+  }
+
+  /**
+   * Cursor-paginated query (GAP-20). Pages by the append-only `seq` so results
+   * stay consistent as the log grows. Returns the page plus an opaque
+   * `nextCursor` (null when exhausted).
+   */
+  async listPage(
+    filter: AuditFilter = {},
+    cursor?: string,
+    limit = 100,
+  ): Promise<CursorPage<ChainedAuditEntry>> {
+    const entries = await this.filtered(filter);
+    return pageByCursor(entries, (entry) => entry.seq, limit, cursor);
+  }
+
+  /** Apply every filter and return the matches most-recent-first (by seq). */
+  private async filtered(filter: AuditFilter): Promise<ChainedAuditEntry[]> {
     let entries = await this.store.list();
     if (filter.actor) {
       entries = entries.filter((entry) => entry.actor === filter.actor);
     }
     if (filter.subject) {
       entries = entries.filter((entry) => entry.subject === filter.subject);
+    }
+    if (filter.excludeActor) {
+      entries = entries.filter((entry) => entry.actor !== filter.excludeActor);
     }
     if (filter.action) {
       entries = entries.filter((entry) => entry.action === filter.action);
@@ -64,8 +90,8 @@ export class PersistentAuditLog implements AuditRecorder {
       const since = new Date(filter.since).getTime();
       entries = entries.filter((entry) => new Date(entry.timestamp).getTime() >= since);
     }
-    entries.reverse();
-    return entries.slice(0, filter.limit ?? 100);
+    entries.reverse(); // most recent (highest seq) first
+    return entries;
   }
 
   /** Verify the persisted chain has not been tampered with. */

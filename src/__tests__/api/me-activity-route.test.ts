@@ -82,7 +82,7 @@ describe('GET /api/me/activity', () => {
   });
 
   it('re-throws a non-Zod error from the audit log', async () => {
-    const spy = jest.spyOn(getAuditLog(), 'list').mockRejectedValueOnce(new Error('audit store down'));
+    const spy = jest.spyOn(getAuditLog(), 'listPage').mockRejectedValueOnce(new Error('audit store down'));
     await expect(GET(authed(URL))).rejects.toThrow('audit store down');
     spy.mockRestore();
   });

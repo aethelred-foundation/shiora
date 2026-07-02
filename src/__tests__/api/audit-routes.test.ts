@@ -92,7 +92,7 @@ describe('GET /api/audit', () => {
 
   it('re-throws a non-Zod error from the audit log', async () => {
     mockedGetAuditLog.mockReturnValueOnce({
-      list: jest.fn().mockRejectedValue(new Error('audit store down')),
+      listPage: jest.fn().mockRejectedValue(new Error('audit store down')),
       verify: jest.fn(),
     } as unknown as ReturnType<typeof getAuditLog>);
     await expect(getAudit(req('http://localhost:3001/api/audit', adminToken))).rejects.toThrow('audit store down');

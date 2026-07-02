@@ -21,6 +21,7 @@ const ActivityQuerySchema = z.object({
   action: z.string().max(64).optional(),
   since: z.string().max(40).optional(),
   limit: z.coerce.number().int().min(1).max(500).default(100),
+  cursor: z.string().max(64).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -33,12 +34,15 @@ export async function GET(request: NextRequest) {
   try {
     const query = parseSearchParams(ActivityQuerySchema, request.nextUrl.searchParams);
 
-    const entries = await getAuditLog().list({
-      actor: auth.walletAddress!, // self-scoped — never user-supplied
-      action: query.action as AuditAction | undefined,
-      since: query.since,
-      limit: query.limit,
-    });
+    const { items: entries, nextCursor } = await getAuditLog().listPage(
+      {
+        actor: auth.walletAddress!, // self-scoped — never user-supplied
+        action: query.action as AuditAction | undefined,
+        since: query.since,
+      },
+      query.cursor,
+      query.limit,
+    );
 
     const activity = entries.map((entry) => ({
       seq: entry.seq,
@@ -49,7 +53,7 @@ export async function GET(request: NextRequest) {
       success: entry.success,
     }));
 
-    return successResponse({ total: activity.length, activity });
+    return successResponse({ total: activity.length, activity, nextCursor });
   } catch (err) {
     if (err instanceof ZodError) return validationError(err);
     throw err;

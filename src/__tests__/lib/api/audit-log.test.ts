@@ -69,6 +69,31 @@ describe('PersistentAuditLog', () => {
     expect(await log.list({ resource: 'role' })).toHaveLength(1);
     expect(await log.list({ since: '2026-02-15T00:00:00.000Z' })).toHaveLength(1);
     expect(await log.list({ limit: 1 })).toHaveLength(1);
+    // excludeActor drops one actor's entries (used by the access log).
+    expect(await log.list({ excludeActor: 'aeth1a' })).toHaveLength(1);
+  });
+
+  it('cursor-paginates by seq, most-recent-first, stable across appends (GAP-20)', async () => {
+    const log = new PersistentAuditLog(new InMemoryAuditStore());
+    for (let i = 0; i < 5; i++) {
+      await log.record(entry('RECORD_CREATE', 'aeth1a', 'record'));
+    }
+    // Ground truth: the seqs newest-first.
+    const seqs = (await log.list()).map((e) => e.seq); // e.g. [4,3,2,1,0]
+    expect(seqs).toHaveLength(5);
+
+    const first = await log.listPage({}, undefined, 2);
+    expect(first.items.map((e) => e.seq)).toEqual(seqs.slice(0, 2));
+    expect(first.nextCursor).not.toBeNull();
+
+    // A new append after the first page must not shift or duplicate the walk.
+    await log.record(entry('RECORD_CREATE', 'aeth1a', 'record'));
+    const second = await log.listPage({}, first.nextCursor ?? undefined, 2);
+    expect(second.items.map((e) => e.seq)).toEqual(seqs.slice(2, 4));
+
+    const third = await log.listPage({}, second.nextCursor ?? undefined, 2);
+    expect(third.items.map((e) => e.seq)).toEqual(seqs.slice(4));
+    expect(third.nextCursor).toBeNull();
   });
 
   it('exposes a process-wide singleton that resets for tests', async () => {

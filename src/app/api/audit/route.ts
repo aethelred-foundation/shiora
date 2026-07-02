@@ -19,6 +19,7 @@ const AuditQuerySchema = z.object({
   resource: z.string().max(64).optional(),
   since: z.string().max(40).optional(),
   limit: z.coerce.number().int().min(1).max(1000).default(100),
+  cursor: z.string().max(64).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -32,16 +33,19 @@ export async function GET(request: NextRequest) {
     const query = parseSearchParams(AuditQuerySchema, request.nextUrl.searchParams);
     const log = getAuditLog();
 
-    const entries = await log.list({
-      actor: query.actor,
-      action: query.action as AuditAction | undefined,
-      resource: query.resource,
-      since: query.since,
-      limit: query.limit,
-    });
+    const { items: entries, nextCursor } = await log.listPage(
+      {
+        actor: query.actor,
+        action: query.action as AuditAction | undefined,
+        resource: query.resource,
+        since: query.since,
+      },
+      query.cursor,
+      query.limit,
+    );
     const verification = await log.verify();
 
-    return successResponse({ entries, verification });
+    return successResponse({ entries, nextCursor, verification });
   } catch (err) {
     if (err instanceof ZodError) return validationError(err);
     throw err;

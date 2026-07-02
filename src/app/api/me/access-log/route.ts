@@ -22,6 +22,7 @@ import { getAuditLog } from '@/lib/api/audit-log';
 const AccessLogQuerySchema = z.object({
   since: z.string().max(40).optional(),
   limit: z.coerce.number().int().min(1).max(500).default(100),
+  cursor: z.string().max(64).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -35,24 +36,27 @@ export async function GET(request: NextRequest) {
     const query = parseSearchParams(AccessLogQuerySchema, request.nextUrl.searchParams);
     const self = auth.walletAddress!;
 
-    const entries = await getAuditLog().list({
-      subject: self, // subject-scoped — never user-supplied
-      since: query.since,
-      limit: query.limit,
-    });
+    // excludeActor is applied IN the query so pages stay stable (a caller's own
+    // actions are not disclosures and are dropped before pagination).
+    const { items: entries, nextCursor } = await getAuditLog().listPage(
+      {
+        subject: self, // subject-scoped — never user-supplied
+        excludeActor: self,
+        since: query.since,
+      },
+      query.cursor,
+      query.limit,
+    );
 
-    // Only third-party actions — the caller's own actions are not disclosures.
-    const accesses = entries
-      .filter((entry) => entry.actor !== self)
-      .map((entry) => ({
-        by: entry.actor,
-        timestamp: entry.timestamp,
-        action: entry.action,
-        resource: entry.resource,
-        success: entry.success,
-      }));
+    const accesses = entries.map((entry) => ({
+      by: entry.actor,
+      timestamp: entry.timestamp,
+      action: entry.action,
+      resource: entry.resource,
+      success: entry.success,
+    }));
 
-    return successResponse({ total: accesses.length, accesses });
+    return successResponse({ total: accesses.length, accesses, nextCursor });
   } catch (err) {
     if (err instanceof ZodError) return validationError(err);
     throw err;
