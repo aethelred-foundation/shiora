@@ -5,19 +5,24 @@
 // controls and integrity requirements of HIPAA Security Rule §164.312(b)
 // (audit controls) and §164.312(c)(1) (integrity).
 //
-// Each entry carries the SHA-256 hash of (previous entry's hash ‖ this
-// entry's canonical content). Because every link commits to the entire
-// history before it, ANY retroactive edit, deletion, or reordering changes
-// the recomputed hash and is detected by `verifyAuditChain`. This is the same
-// cryptographic primitive a blockchain uses for integrity — a hash chain —
-// without the distributed-consensus layer. It is therefore described honestly
-// as "tamper-evident," not "on-chain." Anchoring the chain head periodically
-// to the Aethelred L1 (so a single operator cannot rewrite history wholesale)
-// is the planned next step — see docs/COMPLIANCE.md → control C-AUD-3.
+// Each entry carries an HMAC-SHA256 over (previous entry's hash ‖ seq ‖ this
+// entry's canonical content), keyed by a dedicated audit key derived from the
+// root secret (config/Vault — never the application database). Because every
+// link commits to the entire history before it AND is authenticated under a
+// key held outside the datastore, ANY retroactive edit, deletion, or
+// reordering is detected by `verifyAuditChain`, and — critically — an actor
+// with write access to the audit tables cannot forge or recompute a valid
+// chain without also holding the audit key. This closes the "privileged
+// insider rewrites history" gap of an unkeyed hash chain (audit M-02).
+//
+// It is described honestly as "tamper-evident," not "on-chain." Periodically
+// anchoring the head to the Aethelred L1 (defence in depth against loss of the
+// audit key itself) remains the planned next step — docs/COMPLIANCE.md C-AUD-3.
 // ============================================================
 
 import crypto from 'node:crypto';
 
+import { auditChainKey } from '@/lib/crypto/derived-secrets';
 import type { AuditAction, AuditEntry } from '@/lib/api/audit';
 
 /** The all-zero hash that seeds the genesis link of a fresh chain. */
@@ -69,14 +74,19 @@ function stableStringify(value: unknown): string {
   return `{${body}}`;
 }
 
-/** Compute the hash that links `entry` (at `seq`) onto `prevHash`. */
+/**
+ * Compute the keyed link that binds `entry` (at `seq`) onto `prevHash`.
+ * HMAC-SHA256 under the audit key means the linkage is not just tamper-evident
+ * but tamper-*resistant to a party who can write the store but does not hold
+ * the key — they cannot produce a matching MAC for altered content.
+ */
 export function computeEntryHash(
   prevHash: string,
   seq: number,
   entry: AuditEntry,
 ): string {
   return crypto
-    .createHash('sha256')
+    .createHmac('sha256', auditChainKey())
     .update(`${prevHash}|${seq}|${canonicalize(entry)}`)
     .digest('hex');
 }

@@ -114,6 +114,21 @@ describe('tamper-evident audit chain', () => {
     expect(h1).toHaveLength(64);
   });
 
+  it('is keyed (HMAC), not a bare hash — forgery requires the audit key', () => {
+    // A party who can compute plain SHA-256 over the preimage but does not hold
+    // the audit key cannot reproduce the link.
+    const crypto = require('node:crypto');
+    const entry = { action: 'RECORD_READ', actor: 'aeth1x', success: true, timestamp: 't' } as const;
+    const keyed = computeEntryHash(GENESIS_HASH, 0, entry);
+    const canonical = JSON.stringify({ action: 'RECORD_READ', actor: 'aeth1x', success: true, timestamp: 't' });
+    // Reconstruct the exact canonical form the chain uses (sorted keys).
+    const preimageHashOnly = crypto
+      .createHash('sha256')
+      .update(`${GENESIS_HASH}|0|${canonical}`)
+      .digest('hex');
+    expect(keyed).not.toBe(preimageHashOnly);
+  });
+
   it('canonicalizes array and undefined metadata values deterministically', () => {
     const chain = new AuditChain();
     const entry = chain.append({
