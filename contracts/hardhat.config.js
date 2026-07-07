@@ -25,6 +25,12 @@ module.exports = {
       url: process.env.RPC_URL || 'http://127.0.0.1:8545',
       chainId: 7332,
       accounts: process.env.DEPLOYER_KEY ? [process.env.DEPLOYER_KEY] : [],
+      // Aethelred's cosmos/evm EVM charges max(actualGas, gasLimit/2) — a refund
+      // above half the limit is capped — so an over-large fixed limit overpays.
+      // Its eth_estimateGas is accurate, so keep estimation on (do NOT pin a
+      // fixed `gas`) and add 2x headroom: the fee stays at the true cost while
+      // a disallowed call still reverts at estimate time.
+      gasMultiplier: 2,
     },
   },
 };
