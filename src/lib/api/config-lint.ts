@@ -1,0 +1,119 @@
+// ============================================================
+// Shiora on Aethelred — Production configuration linter (consultant P0)
+//
+// Pure, dependency-free checks over an environment map, shared by three
+// consumers: the boot preflight (hard-fails a production start), the release
+// gate CLI (scripts/prod-config-lint.mjs), and the test suite. It catches the
+// classes of misconfiguration that turn a correct build into an unsafe
+// deployment: wildcard or plaintext origins, debug modes, placeholder
+// secrets, non-TLS backends, and — until the Aethelred mainnet gate clears —
+// any mainnet anchoring dependency.
+//
+// Deliberately standalone (no '@/' imports, erasable-types-only) so Node can
+// run it directly via type stripping without a build step.
+// ============================================================
+
+export interface ConfigLintProblem {
+  code: string;
+  message: string;
+}
+
+/**
+ * Anchoring targets Shiora may point at before the Aethelred mainnet gate
+ * (external audit) clears: the Aethelred EVM testnets only. Anything else —
+ * including any URL that names mainnet — is a release blocker by policy.
+ */
+export const ALLOWED_ANCHOR_CHAIN_IDS: readonly string[] = ['7331', '7332'];
+
+function isLocalhost(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Lint a production environment map. Returns an empty array when the
+ * configuration is releasable. Callers decide enforcement (the preflight
+ * enforces only when NODE_ENV=production; the CLI always enforces).
+ */
+export function lintProductionConfig(env: Record<string, string | undefined>): ConfigLintProblem[] {
+  const problems: ConfigLintProblem[] = [];
+
+  // -- Origins ---------------------------------------------------------------
+  const origins = (env.SHIORA_ALLOWED_ORIGINS ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  if (origins.some((origin) => origin === '*' || origin === 'null' || origin.includes('*'))) {
+    problems.push({
+      code: 'WILDCARD_ORIGIN',
+      message: 'SHIORA_ALLOWED_ORIGINS must list exact origins; wildcard or null origins are prohibited.',
+    });
+  }
+  if (origins.some((origin) => origin.startsWith('http://') && !isLocalhost(origin))) {
+    problems.push({
+      code: 'INSECURE_ORIGIN',
+      message: 'SHIORA_ALLOWED_ORIGINS contains a plaintext http:// origin. Production origins must be https.',
+    });
+  }
+
+  // -- Debug modes -----------------------------------------------------------
+  if ((env.NODE_OPTIONS ?? '').includes('--inspect')) {
+    problems.push({
+      code: 'DEBUG_INSPECTOR_ENABLED',
+      message: 'NODE_OPTIONS enables the inspector. Remote debugging must be off in production.',
+    });
+  }
+  if (env.SHIORA_LOG_LEVEL === 'debug') {
+    problems.push({
+      code: 'DEBUG_LOGGING_ENABLED',
+      message: 'SHIORA_LOG_LEVEL=debug can write sensitive detail to logs. Use info or above in production.',
+    });
+  }
+
+  // -- Placeholder secrets ---------------------------------------------------
+  const placeholderPattern = /replace-with|changeme|example|dummy/i;
+  for (const key of ['SHIORA_SESSION_SECRET', 'SHIORA_DATA_ENCRYPTION_KEY', 'SHIORA_METRICS_TOKEN'] as const) {
+    const value = env[key];
+    if (value && placeholderPattern.test(value)) {
+      problems.push({
+        code: 'PLACEHOLDER_SECRET',
+        message: `${key} looks like a placeholder value. Generate a real secret.`,
+      });
+    }
+  }
+
+  // -- Backend transport -----------------------------------------------------
+  for (const key of ['SHIORA_VAULT_ADDR', 'SHIORA_L1_RPC_URL'] as const) {
+    const value = env[key];
+    if (value && value.startsWith('http://') && !isLocalhost(value)) {
+      problems.push({
+        code: 'NON_TLS_BACKEND',
+        message: `${key} uses plaintext http:// to a non-local host. Backends must be reached over TLS.`,
+      });
+    }
+  }
+
+  // -- Aethelred mainnet gate ------------------------------------------------
+  if (/mainnet/i.test(env.SHIORA_L1_RPC_URL ?? '')) {
+    problems.push({
+      code: 'MAINNET_TARGET_PROHIBITED',
+      message:
+        'SHIORA_L1_RPC_URL names a mainnet endpoint. Shiora must not carry a mainnet '
+        + 'dependency until the Aethelred mainnet gate (external audit) has cleared.',
+    });
+  }
+  if (env.SHIORA_L1_CHAIN_ID && !ALLOWED_ANCHOR_CHAIN_IDS.includes(env.SHIORA_L1_CHAIN_ID)) {
+    problems.push({
+      code: 'CHAIN_ID_NOT_ALLOWED',
+      message:
+        `SHIORA_L1_CHAIN_ID=${env.SHIORA_L1_CHAIN_ID} is not an approved anchoring target `
+        + `(allowed: ${ALLOWED_ANCHOR_CHAIN_IDS.join(', ')}).`,
+    });
+  }
+
+  return problems;
+}

@@ -9,7 +9,10 @@
 //   - the PHI data-encryption key is set to a real (non-default) value,
 //   - the session-signing secret is set,
 //   - transport is hardened (HSTS enabled behind TLS),
-//   - the insecure wallet-address header bypass is disabled.
+//   - the insecure wallet-address header bypass is disabled,
+//   - plus the configuration-linter classes (config-lint.ts): wildcard or
+//     plaintext origins, debug modes, placeholder secrets, non-TLS backends,
+//     and any mainnet anchoring dependency before the Aethelred gate clears.
 //
 // `checkProductionReadiness()` is pure and side-effect free, so it backs the
 // GET /api/health/ready probe; `assertProductionReadiness()` throws and is for
@@ -17,6 +20,7 @@
 // ============================================================
 
 import { serverEnv } from './env';
+import { lintProductionConfig } from './config-lint';
 import { hasConfiguredDataKey } from '@/lib/crypto/key-provider';
 
 export interface ReadinessProblem {
@@ -91,6 +95,8 @@ export function checkProductionReadiness(): ReadinessReport {
         + 'production so identity is established only by a signed session.',
     });
   }
+
+  problems.push(...lintProductionConfig(process.env));
 
   return {
     ok: serverEnv.isProduction ? problems.length === 0 : true,
