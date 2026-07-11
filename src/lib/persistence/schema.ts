@@ -103,6 +103,26 @@ CREATE INDEX IF NOT EXISTS idx_used_nonces_expiry
   ON used_nonces (expires_at);
 `.trim();
 
+// Pending WebAuthn ceremony challenges: one slot per (owner, ceremony), shared
+// across replicas so a ceremony started on one instance can finish on another
+// and survives process restarts. Consumption is an atomic DELETE ... RETURNING
+// (single-use even under concurrent racers).
+export const WEBAUTHN_CHALLENGES_DDL = `
+CREATE TABLE IF NOT EXISTS webauthn_challenges (
+  owner_key  text   NOT NULL,
+  ceremony   text   NOT NULL,
+  challenge  text   NOT NULL,
+  expires_at bigint NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (owner_key, ceremony)
+);
+`.trim();
+
+export const WEBAUTHN_CHALLENGES_EXPIRY_INDEX_DDL = `
+CREATE INDEX IF NOT EXISTS idx_webauthn_challenges_expiry
+  ON webauthn_challenges (expires_at);
+`.trim();
+
 // Explicitly revoked session tokens (logout / "this device"). A row exists only
 // for a jti that has been revoked; it is kept until the token would expire
 // anyway, then pruned.
@@ -215,4 +235,6 @@ export const MIGRATIONS: readonly string[] = [
   HEALTH_RECORDS_DELETED_AT_DDL,
   DOCUMENTS_DELETED_AT_DDL,
   HEALTH_RECORDS_BLIND_TAGS_DDL,
+  WEBAUTHN_CHALLENGES_DDL,
+  WEBAUTHN_CHALLENGES_EXPIRY_INDEX_DDL,
 ];

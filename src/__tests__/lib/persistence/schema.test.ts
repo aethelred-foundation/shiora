@@ -25,6 +25,8 @@ import {
   DOCUMENTS_DELETED_AT_DDL,
   HEALTH_RECORDS_BLIND_TAGS_DDL,
   MIGRATIONS,
+  WEBAUTHN_CHALLENGES_DDL,
+  WEBAUTHN_CHALLENGES_EXPIRY_INDEX_DDL,
 } from '@/lib/persistence/schema';
 
 describe('persistence schema', () => {
@@ -83,6 +85,8 @@ describe('persistence schema', () => {
       HEALTH_RECORDS_DELETED_AT_DDL,
       DOCUMENTS_DELETED_AT_DDL,
       HEALTH_RECORDS_BLIND_TAGS_DDL,
+      WEBAUTHN_CHALLENGES_DDL,
+      WEBAUTHN_CHALLENGES_EXPIRY_INDEX_DDL,
     ]);
   });
 

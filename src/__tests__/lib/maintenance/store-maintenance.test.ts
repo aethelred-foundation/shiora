@@ -6,6 +6,7 @@ jest.mock('@/lib/api/rate-limiter', () => ({ getRateLimiter: jest.fn() }));
 jest.mock('@/lib/persistence/session-index-store', () => ({ getSessionIndexStore: jest.fn() }));
 jest.mock('@/lib/persistence/idempotency-store', () => ({ getIdempotencyStore: jest.fn() }));
 jest.mock('@/lib/persistence/login-attempt-store', () => ({ getLoginAttemptStore: jest.fn() }));
+jest.mock('@/lib/persistence/challenge-store', () => ({ getChallengeStore: jest.fn() }));
 jest.mock('@/lib/maintenance/retention', () => ({
   runDurableRetention: jest.fn(async () => ({ durable: true, retentionDays: null, documentsPurged: 0, recordsPurged: 0, ranAt: 0 })),
 }));
@@ -24,6 +25,7 @@ import { getRateLimiter } from '@/lib/api/rate-limiter';
 import { getSessionIndexStore } from '@/lib/persistence/session-index-store';
 import { getIdempotencyStore } from '@/lib/persistence/idempotency-store';
 import { getLoginAttemptStore } from '@/lib/persistence/login-attempt-store';
+import { getChallengeStore } from '@/lib/persistence/challenge-store';
 import { hasDurableDatastore } from '@/lib/api/preflight';
 
 const mockNonces = getNonceStore as jest.Mock;
@@ -32,6 +34,7 @@ const mockLimiter = getRateLimiter as jest.Mock;
 const mockSessions = getSessionIndexStore as jest.Mock;
 const mockIdempotency = getIdempotencyStore as jest.Mock;
 const mockLogin = getLoginAttemptStore as jest.Mock;
+const mockChallenges = getChallengeStore as jest.Mock;
 const mockDurable = hasDurableDatastore as jest.Mock;
 
 let logSpy: jest.SpyInstance;
@@ -58,12 +61,14 @@ describe('runStoreMaintenance', () => {
     const sessionPrune = jest.fn(async () => 9);
     const idemPrune = jest.fn(async () => 11);
     const loginPrune = jest.fn(async () => 13);
+    const challengePrune = jest.fn(async () => 17);
     mockNonces.mockReturnValue({ prune: noncePrune });
     mockRevocations.mockReturnValue({ prune: revocationPrune });
     mockLimiter.mockReturnValue({ prune: limiterPrune });
     mockSessions.mockReturnValue({ prune: sessionPrune });
     mockIdempotency.mockReturnValue({ prune: idemPrune });
     mockLogin.mockReturnValue({ prune: loginPrune });
+    mockChallenges.mockReturnValue({ prune: challengePrune });
 
     const report = await runStoreMaintenance(1_000_000);
 
@@ -75,6 +80,7 @@ describe('runStoreMaintenance', () => {
       prunedSessions: 9,
       prunedIdempotencyKeys: 11,
       prunedLoginAttempts: 13,
+      prunedWebauthnChallenges: 17,
       ranAt: 1_000_000,
     });
     expect(noncePrune).toHaveBeenCalledWith(1_000_000);
@@ -82,6 +88,7 @@ describe('runStoreMaintenance', () => {
     expect(sessionPrune).toHaveBeenCalledWith(1_000_000);
     expect(idemPrune).toHaveBeenCalledWith(1_000_000);
     expect(loginPrune).toHaveBeenCalledWith(1_000_000);
+    expect(challengePrune).toHaveBeenCalledWith(1_000_000);
     // The rate limiter prunes by retention window, not "now".
     expect(limiterPrune).toHaveBeenCalledWith(RATE_LIMIT_RETENTION_MS);
     // Structured completion log emitted.
@@ -96,6 +103,7 @@ describe('runStoreMaintenance', () => {
     mockSessions.mockReturnValue({});
     mockIdempotency.mockReturnValue({});
     mockLogin.mockReturnValue({});
+    mockChallenges.mockReturnValue({});
 
     const report = await runStoreMaintenance();
 
@@ -106,6 +114,7 @@ describe('runStoreMaintenance', () => {
     expect(report.prunedSessions).toBe(0);
     expect(report.prunedIdempotencyKeys).toBe(0);
     expect(report.prunedLoginAttempts).toBe(0);
+    expect(report.prunedWebauthnChallenges).toBe(0);
     expect(typeof report.ranAt).toBe('number');
   });
 });
@@ -120,6 +129,7 @@ describe('maintenance scheduler', () => {
     mockSessions.mockReturnValue({});
     mockIdempotency.mockReturnValue({});
     mockLogin.mockReturnValue({});
+    mockChallenges.mockReturnValue({});
     mockDurable.mockReturnValue(true);
 
     expect(startMaintenanceScheduler(1000)).toBe(true);
@@ -139,6 +149,7 @@ describe('maintenance scheduler', () => {
     mockSessions.mockReturnValue({});
     mockIdempotency.mockReturnValue({});
     mockLogin.mockReturnValue({});
+    mockChallenges.mockReturnValue({});
     mockDurable.mockReturnValue(true);
 
     startMaintenanceScheduler(1000);

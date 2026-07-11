@@ -9,5 +9,5 @@ export async function POST(request: NextRequest) {
   if (blocked) return blocked;
   const auth = requireAuth(request);
   if ('status' in auth) return auth;
-  return successResponse(startRegistration(auth.walletAddress!));
+  return successResponse(await startRegistration(auth.walletAddress!));
 }

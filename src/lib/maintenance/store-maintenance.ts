@@ -15,6 +15,7 @@ import { getRateLimiter } from '@/lib/api/rate-limiter';
 import { getSessionIndexStore } from '@/lib/persistence/session-index-store';
 import { getIdempotencyStore } from '@/lib/persistence/idempotency-store';
 import { getLoginAttemptStore } from '@/lib/persistence/login-attempt-store';
+import { getChallengeStore } from '@/lib/persistence/challenge-store';
 import { runDurableRetention, type RetentionReport } from '@/lib/maintenance/retention';
 import { hasDurableDatastore } from '@/lib/api/preflight';
 import { createLogger } from '@/lib/observability/logger';
@@ -51,6 +52,7 @@ export interface MaintenanceReport {
   prunedSessions: number;
   prunedIdempotencyKeys: number;
   prunedLoginAttempts: number;
+  prunedWebauthnChallenges: number;
   /** Retention purge outcome (crypto-shred of expired soft-deletes, GAP-16). */
   retention: RetentionReport;
   ranAt: number;
@@ -69,6 +71,7 @@ export async function runStoreMaintenance(now: number = Date.now()): Promise<Mai
     prunedSessions: 0,
     prunedIdempotencyKeys: 0,
     prunedLoginAttempts: 0,
+    prunedWebauthnChallenges: 0,
     retention: { durable: hasDurableDatastore(), retentionDays: null, documentsPurged: 0, recordsPurged: 0, ranAt: now },
     ranAt: now,
   };
@@ -107,6 +110,12 @@ export async function runStoreMaintenance(now: number = Date.now()): Promise<Mai
   if (typeof loginAttempts.prune === 'function') {
     report.prunedLoginAttempts = await loginAttempts.prune(now);
     prunedTotal.inc({ store: 'login_attempts' }, report.prunedLoginAttempts);
+  }
+
+  const challenges = getChallengeStore() as Prunable;
+  if (typeof challenges.prune === 'function') {
+    report.prunedWebauthnChallenges = await challenges.prune(now);
+    prunedTotal.inc({ store: 'webauthn_challenges' }, report.prunedWebauthnChallenges);
   }
 
   // Enforce storage limitation: crypto-shred rows soft-deleted past the

@@ -2,14 +2,11 @@
 // Shiora on Aethelred — WebAuthn ceremony service (GAP-12)
 //
 // Ties the verification core to storage: registered credentials live in an
-// owner-scoped encrypted collection, and per-ceremony challenges are held
-// briefly in memory keyed by owner (a passkey ceremony is a two-request
-// round-trip within one authenticated session). The relying-party id/origin
-// come from configuration.
-//
-// HONEST SCOPE: the challenge cache is per-instance. A multi-replica deployment
-// behind a load balancer needs sticky sessions or a shared challenge store —
-// noted as the production step; the verification itself is fully enforced.
+// owner-scoped encrypted collection, and per-ceremony challenges live in the
+// shared challenge store (Postgres under DATABASE_URL) — single-use, TTL'd,
+// and consumable on a different replica than the one that minted them, so a
+// restart or failover mid-ceremony cannot break or weaken the flow. The
+// relying-party id/origin come from configuration.
 // ============================================================
 
 import { EncryptedDocumentRepository } from '@/lib/persistence/encrypted-documents';
@@ -17,6 +14,7 @@ import { InMemoryDocumentStore, type DocumentStorePort } from '@/lib/persistence
 import { PgDocumentStore } from '@/lib/persistence/pg-document-store';
 import { getPgClient } from '@/lib/persistence/sql-client';
 import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
+import { getChallengeStore, __resetChallengeStoreForTests, type CeremonyKind } from '@/lib/persistence/challenge-store';
 import { getAuditLog } from '@/lib/api/audit-log';
 import { serverEnv } from '@/lib/api/env';
 import {
@@ -59,22 +57,16 @@ function repo(): EncryptedDocumentRepository<StoredCredential> {
   return repository;
 }
 
-// Per-owner pending challenge (registration or authentication).
-const challenges = new Map<string, { challenge: string; expiresAt: number }>();
-
-function putChallenge(owner: string): string {
+// Pending challenges live in the shared store: one single-use slot per
+// (owner, ceremony), replaced when a new ceremony starts.
+async function putChallenge(owner: string, ceremony: CeremonyKind): Promise<string> {
   const challenge = generateWebAuthnChallenge();
-  challenges.set(owner, { challenge, expiresAt: Date.now() + CHALLENGE_TTL_MS });
+  await getChallengeStore().put(owner, ceremony, challenge, Date.now() + CHALLENGE_TTL_MS);
   return challenge;
 }
 
-function takeChallenge(owner: string): string | null {
-  const entry = challenges.get(owner);
-  challenges.delete(owner); // single-use
-  if (!entry || entry.expiresAt <= Date.now()) {
-    return null;
-  }
-  return entry.challenge;
+function takeChallenge(owner: string, ceremony: CeremonyKind): Promise<string | null> {
+  return getChallengeStore().take(owner, ceremony);
 }
 
 // ── Registration ────────────────────────────────────────────────────────────
@@ -87,8 +79,8 @@ export interface RegistrationOptions {
   timeout: number;
 }
 
-export function startRegistration(owner: string): RegistrationOptions {
-  const challenge = putChallenge(owner);
+export async function startRegistration(owner: string): Promise<RegistrationOptions> {
+  const challenge = await putChallenge(owner, 'registration');
   const { rpId } = relyingParty();
   return {
     challenge,
@@ -103,7 +95,7 @@ export async function finishRegistration(
   owner: string,
   response: { attestationObject: string; clientDataJSON: string },
 ): Promise<CredentialView> {
-  const challenge = takeChallenge(owner);
+  const challenge = await takeChallenge(owner, 'registration');
   if (!challenge) {
     throw new Error('No pending registration challenge (expired or missing).');
   }
@@ -135,7 +127,7 @@ export interface AuthenticationOptions {
 }
 
 export async function startAuthentication(owner: string): Promise<AuthenticationOptions> {
-  const challenge = putChallenge(owner);
+  const challenge = await putChallenge(owner, 'authentication');
   const { rpId } = relyingParty();
   const credentials = await repo().list(owner);
   return {
@@ -150,7 +142,7 @@ export async function finishAuthentication(
   owner: string,
   response: { credentialId: string; authenticatorData: string; clientDataJSON: string; signature: string },
 ): Promise<{ verified: true }> {
-  const challenge = takeChallenge(owner);
+  const challenge = await takeChallenge(owner, 'authentication');
   if (!challenge) {
     throw new Error('No pending authentication challenge (expired or missing).');
   }
@@ -183,5 +175,5 @@ export async function deleteCredential(owner: string, id: string): Promise<boole
 
 export function __resetWebAuthnForTests(): void {
   repository = null;
-  challenges.clear();
+  __resetChallengeStoreForTests();
 }

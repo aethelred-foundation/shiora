@@ -42,7 +42,7 @@ describe('webauthn-service', () => {
   it('registers, then authenticates a passkey across two counter-advancing logins', async () => {
     const device = makeAuthenticator(rpId, origin);
 
-    const regOpts = startRegistration(OWNER);
+    const regOpts = await startRegistration(OWNER);
     expect(regOpts.rp.id).toBe(rpId);
     expect(regOpts.rp.name).toBe('Shiora on Aethelred');
     expect(regOpts.user.name).toBe(OWNER);
@@ -79,6 +79,16 @@ describe('webauthn-service', () => {
       .rejects.toThrow(/No pending registration challenge/);
   });
 
+  it('scopes challenges by ceremony: a registration challenge cannot finish authentication', async () => {
+    const device = makeAuthenticator(rpId, origin);
+    const regOpts = await startRegistration(OWNER);
+    await expect(finishAuthentication(OWNER, device.assertion(1, regOpts.challenge)))
+      .rejects.toThrow(/No pending authentication challenge/);
+    // The registration slot is untouched by the failed authentication attempt.
+    const cred = await finishRegistration(OWNER, device.registration(regOpts.challenge));
+    expect(cred.id).toBe(device.credentialId);
+  });
+
   it('rejects authentication when no challenge is pending', async () => {
     const device = makeAuthenticator(rpId, origin);
     await expect(finishAuthentication(OWNER, device.assertion(1, 'unsolicited')))
@@ -94,7 +104,7 @@ describe('webauthn-service', () => {
 
   it('treats an expired challenge as missing (single-use TTL)', async () => {
     const device = makeAuthenticator(rpId, origin);
-    const regOpts = startRegistration(OWNER);
+    const regOpts = await startRegistration(OWNER);
     const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 6 * 60 * 1000);
     await expect(finishRegistration(OWNER, device.registration(regOpts.challenge)))
       .rejects.toThrow(/No pending registration challenge/);
@@ -103,7 +113,7 @@ describe('webauthn-service', () => {
 
   it('deletes a registered passkey and reports a missing one', async () => {
     const device = makeAuthenticator(rpId, origin);
-    const regOpts = startRegistration(OWNER);
+    const regOpts = await startRegistration(OWNER);
     await finishRegistration(OWNER, device.registration(regOpts.challenge));
 
     expect(await deleteCredential(OWNER, device.credentialId)).toBe(true);
