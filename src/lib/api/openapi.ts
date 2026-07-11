@@ -94,6 +94,7 @@ export const ROUTE_MANIFEST: readonly RouteDoc[] = [
   { path: '/api/health/live', method: 'get', summary: 'Liveness probe', tags: ['System'], auth: false },
   { path: '/api/health/ready', method: 'get', summary: 'Readiness probe (config + datastore)', tags: ['System'], auth: false },
   { path: '/api/system/status', method: 'get', summary: 'Production readiness and feature maturity', tags: ['System'], auth: false },
+  { path: '/api/system/release', method: 'get', summary: 'Release provenance manifest (version, git SHA, contract hashes)', tags: ['System'], auth: false },
   { path: '/api/system/metrics', method: 'get', summary: 'Prometheus metrics (scraper token or admin)', tags: ['System'], auth: true },
   { path: '/api/system/maintenance', method: 'post', summary: 'Run durable-store garbage collection (admin)', tags: ['System'], auth: true },
   { path: '/api/system/kek-reseal', method: 'post', summary: 'Re-seal envelopes under the current KEK (admin)', tags: ['System'], auth: true },

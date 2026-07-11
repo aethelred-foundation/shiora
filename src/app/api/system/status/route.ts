@@ -13,6 +13,7 @@ import { successResponse } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
 import { featureList, maturitySummary } from '@/lib/api/maturity';
 import { checkProductionReadiness } from '@/lib/api/preflight';
+import { RELEASE_VERSION } from '@/lib/api/release';
 
 export async function GET(request: NextRequest) {
   const blocked = await runMiddleware(request);
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
   return successResponse(
     {
       service: 'Shiora on Aethelred',
-      version: '1.0.0',
+      version: RELEASE_VERSION,
       maturity: maturitySummary(),
       features: featureList(),
       readiness: {

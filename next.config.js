@@ -1,7 +1,28 @@
 /** @type {import('next').NextConfig} */
 const enableHsts = process.env.SHIORA_ENABLE_HSTS === 'true';
 
+// Release provenance (docs/RELEASE_PROCESS.md): stamp the exact commit and
+// build time into the bundle so GET /api/system/release can self-report them.
+// CI may override via SHIORA_GIT_SHA; outside a git checkout we stamp 'unknown'
+// rather than fail the build.
+function resolveGitSha() {
+  if (process.env.SHIORA_GIT_SHA) return process.env.SHIORA_GIT_SHA;
+  try {
+    return require('node:child_process')
+      .execFileSync('git', ['rev-parse', 'HEAD'], { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim();
+  } catch {
+    return 'unknown';
+  }
+}
+
 const nextConfig = {
+  env: {
+    SHIORA_GIT_SHA: resolveGitSha(),
+    SHIORA_BUILD_TIME: new Date().toISOString(),
+  },
+
   output: 'standalone',
   reactStrictMode: true,
   poweredByHeader: false,
