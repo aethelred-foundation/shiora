@@ -100,4 +100,40 @@ describe('buildNotificationStream (GAP-22)', () => {
     await readUntil(reader, (all) => all.includes('event: unread'));
     await expect(reader.cancel()).resolves.toBeUndefined();
   });
+
+  describe('reconnect replay (Last-Event-ID)', () => {
+    it('replays only the notifications newer than the acknowledged event', async () => {
+      const first = await notify(ADDR, { type: 'consent', title: 'Delivered', body: 'seen' });
+      await new Promise((r) => setTimeout(r, 3));
+      await notify(ADDR, { type: 'consent', title: 'MissedOne', body: 'while offline' });
+      await new Promise((r) => setTimeout(r, 3));
+      await notify(ADDR, { type: 'consent', title: 'MissedTwo', body: 'while offline' });
+
+      const stream = buildNotificationStream(ADDR, {
+        pollMs: 10_000, heartbeatMs: 10_000, lastEventId: first!.id,
+      });
+      const reader = stream.getReader();
+      const text = await readUntil(reader, (all) => all.includes('MissedTwo'));
+
+      expect(text).toContain('MissedOne');
+      expect(text).toContain('MissedTwo');
+      expect(text).not.toContain('"title":"Delivered"'); // already acknowledged
+      expect(text.indexOf('MissedOne')).toBeLessThan(text.indexOf('MissedTwo')); // oldest-first
+
+      await reader.cancel();
+    });
+
+    it('replays the full history when the acknowledged id is unknown (at-least-once)', async () => {
+      await notify(ADDR, { type: 'consent', title: 'Everything', body: 'replayed' });
+
+      const stream = buildNotificationStream(ADDR, {
+        pollMs: 10_000, heartbeatMs: 10_000, lastEventId: 'no-such-event',
+      });
+      const reader = stream.getReader();
+      const text = await readUntil(reader, (all) => all.includes('Everything'));
+      expect(text).toContain('"title":"Everything"');
+
+      await reader.cancel();
+    });
+  });
 });

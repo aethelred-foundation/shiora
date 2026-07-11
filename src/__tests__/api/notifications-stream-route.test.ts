@@ -31,6 +31,33 @@ describe('GET /api/notifications/stream', () => {
     expect(dynamic).toBe('force-dynamic');
   });
 
+  it('replays missed notifications when the client reconnects with Last-Event-ID', async () => {
+    const { notify } = jest.requireActual('@/lib/api/notification-service');
+    const first = await notify(ADDR, { type: 'consent', title: 'Seen', body: 'ack' });
+    await new Promise((r) => setTimeout(r, 3));
+    await notify(ADDR, { type: 'consent', title: 'MissedWhileOffline', body: 'replay me' });
+
+    const res = await stream(new NextRequest(URL, {
+      headers: {
+        authorization: `Bearer ${createSessionToken(ADDR).token}`,
+        'last-event-id': first!.id,
+      },
+    }));
+    expect(res.status).toBe(200);
+
+    const reader = res.body!.getReader();
+    let acc = '';
+    const deadline = Date.now() + 2000;
+    while (Date.now() < deadline && !acc.includes('MissedWhileOffline')) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      acc += new TextDecoder().decode(value);
+    }
+    expect(acc).toContain('MissedWhileOffline');
+    expect(acc).not.toContain('"title":"Seen"');
+    await reader.cancel();
+  });
+
   it('opens an SSE stream for an authenticated caller', async () => {
     const res = await stream(authed());
     expect(res.status).toBe(200);

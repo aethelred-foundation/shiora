@@ -3,7 +3,9 @@
 // GET /api/notifications/stream — real-time notifications over SSE
 //
 // The browser's EventSource holds this connection open and reconnects
-// automatically. Per-request rendering; the response never buffers.
+// automatically, echoing the last delivered event id as Last-Event-ID — the
+// stream replays anything newer from the durable store, so reconnects are
+// lossless. Per-request rendering; the response never buffers.
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -21,7 +23,9 @@ export async function GET(request: NextRequest) {
   const auth = requireAuth(request);
   if ('status' in auth) return auth;
 
-  return new NextResponse(buildNotificationStream(auth.walletAddress!), {
+  const lastEventId = request.headers.get('last-event-id') ?? undefined;
+
+  return new NextResponse(buildNotificationStream(auth.walletAddress!, { lastEventId }), {
     status: 200,
     headers: SSE_HEADERS,
   });
