@@ -14,6 +14,7 @@ import { runMiddleware } from '@/lib/api/middleware';
 import { featureList, maturitySummary } from '@/lib/api/maturity';
 import { checkProductionReadiness } from '@/lib/api/preflight';
 import { RELEASE_VERSION } from '@/lib/api/release';
+import { activeProfile } from '@/lib/api/feature-flags';
 
 export async function GET(request: NextRequest) {
   const blocked = await runMiddleware(request);
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
     {
       service: 'Shiora on Aethelred',
       version: RELEASE_VERSION,
+      profile: activeProfile(),
       maturity: maturitySummary(),
       features: featureList(),
       readiness: {

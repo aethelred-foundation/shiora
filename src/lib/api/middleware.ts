@@ -8,6 +8,7 @@ import { errorResponse, HTTP } from './responses';
 import { getCorsHeaders, hasDisallowedOrigin, isMutatingMethod } from './origin';
 import { extractSessionToken, verifySessionToken } from './session';
 import { isSessionRevoked } from './session-revocation';
+import { featureDisabledReason } from './feature-flags';
 import { createLogger } from '@/lib/observability/logger';
 import { counter, normalizeRoute } from '@/lib/observability/metrics';
 import { getRateLimiter } from './rate-limiter';
@@ -263,6 +264,14 @@ export async function runMiddlewareWithOptions(
   options: MiddlewareOptions = {},
 ): Promise<NextResponse | null> {
   logRequest(request);
+
+  // Server-side scope freeze: under the pilot profile, deferred surfaces are
+  // refused here — before auth, rate limiting, or any handler logic runs.
+  const disabledReason = featureDisabledReason(request.nextUrl.pathname);
+  if (disabledReason) {
+    blockedTotal.inc({ reason: 'feature_disabled' });
+    return errorResponse('FEATURE_DISABLED', disabledReason, HTTP.SERVICE_UNAVAILABLE);
+  }
 
   if (isMutatingMethod(request.method) && hasDisallowedOrigin(request)) {
     blockedTotal.inc({ reason: 'origin' });
