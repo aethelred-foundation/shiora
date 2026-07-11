@@ -57,3 +57,6 @@ contracts/typechain-types/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Legacy synthetic dev-state (removed; never load in any environment)
+/.shiora-data/
