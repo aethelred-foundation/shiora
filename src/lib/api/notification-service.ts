@@ -25,7 +25,13 @@ export type NotificationType =
   | 'consent'
   | 'clinical_note'
   | 'wellness'
-  | 'system';
+  | 'system'
+  | 'emergency_access';
+
+// Safety-critical notices a recipient must always receive. The preferences API
+// never offers these as mutable; this set guards the invariant in depth should
+// a stored muted list ever contain one.
+const NON_MUTABLE_TYPES: ReadonlySet<NotificationType> = new Set<NotificationType>(['emergency_access']);
 
 export interface Notification {
   id: string;
@@ -110,13 +116,13 @@ export async function setMutedNotificationTypes(
   return { mutedTypes };
 }
 
-/** Emit a notification, unless the recipient has muted its type. */
+/** Emit a notification, unless the recipient has muted its (mutable) type. */
 export async function notify(
   ownerAddress: string,
   input: NotificationInput,
 ): Promise<Notification | null> {
   const { mutedTypes } = await getNotificationPreferences(ownerAddress);
-  if (mutedTypes.includes(input.type)) {
+  if (mutedTypes.includes(input.type) && !NON_MUTABLE_TYPES.has(input.type)) {
     return null;
   }
   const notification: Notification = {

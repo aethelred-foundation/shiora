@@ -105,4 +105,12 @@ describe('notification preferences', () => {
     expect(await notify(USER, { type: 'system', title: 'Y', body: 'b' })).not.toBeNull(); // unmuted
     expect(await listNotifications(USER)).toHaveLength(1);
   });
+
+  it('always delivers emergency_access notices, even when muted (safety-critical)', async () => {
+    // The preferences API never accepts emergency_access as mutable; this
+    // guards the deeper invariant should a muted list ever contain it.
+    await setMutedNotificationTypes(USER, ['emergency_access']);
+    expect(await notify(USER, { type: 'emergency_access', title: 'E', body: 'b' })).not.toBeNull();
+    expect(await listNotifications(USER)).toHaveLength(1);
+  });
 });

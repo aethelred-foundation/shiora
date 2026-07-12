@@ -8,12 +8,15 @@
 //
 //   full  — every implemented surface enabled (development default; unchanged
 //           behavior for local work and the test suite).
-//   pilot — ONLY the pilot corridor is served: onboarding/auth + recovery,
-//           FHIR ingestion, encrypted records, consent, verified provider
-//           access + clinical notes, patient-visible access history,
-//           export/erasure, operational notifications, and optional fail-soft
-//           anchoring. Everything else answers 503 FEATURE_DISABLED at the
-//           middleware, before any handler logic runs.
+//   pilot — ONLY the pilot corridor is served: onboarding/auth + account
+//           recovery codes (/api/me/recovery), FHIR ingestion, encrypted
+//           records, consent, verified provider access + clinical notes,
+//           break-glass emergency access with retrospective review
+//           (/api/break-glass — deliberately IN the corridor: a care pilot
+//           cannot ship without an emergency path), patient-visible access
+//           history, export/erasure, operational notifications, and optional
+//           fail-soft anchoring. Everything else answers 503 FEATURE_DISABLED
+//           at the middleware, before any handler logic runs.
 //
 // The profile is read from SHIORA_PROFILE at request time (not module load) so
 // operators can verify it via GET /api/system/status. Anything not explicitly
@@ -48,6 +51,9 @@ export const PILOT_DISABLED_SEGMENTS: Readonly<Record<string, string>> = {
   clinical: 'Clinical decision support is deferred pending a regulatory pathway.',
   genomics: 'Genomics is deferred from the pilot scope.',
   twin: 'The digital twin is deferred from the pilot scope.',
+  // The simulated emergency-response feature stays deferred. Break-glass
+  // emergency ACCESS (/api/break-glass) is a different, real surface and is
+  // deliberately part of the corridor.
   emergency: 'Emergency response is deferred from the pilot scope.',
   xai: 'Explainable AI is deferred from the pilot scope.',
   wearables: 'Wearables are deferred unless the signed pilot use case requires them.',

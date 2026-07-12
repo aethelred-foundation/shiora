@@ -127,6 +127,24 @@ describe('MFA routes — lifecycle', () => {
     expect((await disable(authed(MFA, { ...body({ code: totpCode(secret) }), method: 'DELETE' }, token))).status).toBe(400);
   });
 
+  it('re-enrolment with MFA enabled demands a fresh step-up assertion', async () => {
+    // Without this gate a stolen session could silently neutralize MFA by
+    // restarting enrolment (which replaces the secret and disables the factor).
+    const secret = await enrolAndGetSecret();
+    await verify(authed(VERIFY, body({ code: totpCode(secret) }), token));
+
+    const denied = await enroll(authed(ENROLL, { method: 'POST' }, token));
+    expect(denied.status).toBe(403);
+    expect((await denied.json()).error.code).toBe('STEP_UP_REQUIRED');
+
+    const { mintStepUpAssertion, STEP_UP_HEADER } = jest.requireActual('@/lib/api/step-up');
+    const { assertion } = mintStepUpAssertion(seededAddress(910));
+    const allowed = await enroll(
+      authed(ENROLL, { method: 'POST', headers: { [STEP_UP_HEADER]: assertion } }, token),
+    );
+    expect(allowed.status).toBe(201);
+  });
+
   it('verify throws on an invalid JSON body (non-Zod error)', async () => {
     await enrolAndGetSecret();
     await expect(verify(authed(VERIFY, body('not-json'), token))).rejects.toThrow();

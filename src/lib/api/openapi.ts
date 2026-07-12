@@ -36,6 +36,11 @@ export const ROUTE_MANIFEST: readonly RouteDoc[] = [
   { path: '/api/mfa/verify', method: 'post', summary: 'Confirm TOTP enrolment with a code', tags: ['MFA'], auth: true },
   { path: '/api/mfa/step-up', method: 'post', summary: 'Exchange a TOTP code for a short-lived step-up assertion', tags: ['MFA'], auth: true },
 
+  // Account recovery
+  { path: '/api/me/recovery/codes', method: 'get', summary: 'Recovery-code batch status (never the codes themselves)', tags: ['Recovery'], auth: true },
+  { path: '/api/me/recovery/codes', method: 'post', summary: 'Generate a fresh batch of one-time recovery codes (invalidates the prior batch)', tags: ['Recovery'], auth: true },
+  { path: '/api/me/recovery/consume', method: 'post', summary: 'Consume a one-time recovery code for a step-up assertion', tags: ['Recovery'], auth: true },
+
   // Sessions
   { path: '/api/me/sessions', method: 'get', summary: 'List the caller\'s active sessions', tags: ['Sessions'], auth: true },
   { path: '/api/me/sessions/{jti}', method: 'delete', summary: 'Revoke a single session (device)', tags: ['Sessions'], auth: true },
@@ -57,6 +62,12 @@ export const ROUTE_MANIFEST: readonly RouteDoc[] = [
   { path: '/api/access', method: 'get', summary: 'List access grants', tags: ['Access'], auth: true },
   { path: '/api/access', method: 'post', summary: 'Grant a provider access', tags: ['Access'], auth: true },
   { path: '/api/access/{id}', method: 'delete', summary: 'Revoke an access grant', tags: ['Access'], auth: true },
+
+  // Break-glass emergency access
+  { path: '/api/break-glass', method: 'post', summary: 'Declare break-glass emergency access to a patient\'s records (provider, fresh MFA step-up)', tags: ['Break-glass'], auth: true },
+  { path: '/api/break-glass/review', method: 'get', summary: 'List break-glass uses for retrospective review (admin)', tags: ['Break-glass'], auth: true },
+  { path: '/api/break-glass/{id}/records', method: 'get', summary: 'Read patient records under an active break-glass grant (read-only, ≤1h)', tags: ['Break-glass'], auth: true },
+  { path: '/api/break-glass/{id}/review', method: 'post', summary: 'Record the retrospective verdict on a break-glass use (admin)', tags: ['Break-glass'], auth: true },
 
   // Consent
   { path: '/api/consent', method: 'get', summary: 'List consents', tags: ['Consent'], auth: true },
@@ -105,6 +116,8 @@ export const ROUTE_MANIFEST: readonly RouteDoc[] = [
 const TAG_DESCRIPTIONS: Record<string, string> = {
   Authentication: 'Wallet challenge/response authentication.',
   MFA: 'TOTP multi-factor enrolment and step-up.',
+  Recovery: 'One-time recovery codes: the lockout escape hatch for a lost second factor.',
+  'Break-glass': 'Declared, audited, time-boxed emergency access with retrospective review.',
   Passkeys: 'WebAuthn/FIDO2 passkey enrolment and assertion.',
   Sessions: 'Session inventory and revocation.',
   Identity: 'Caller identity, roles, and profile.',

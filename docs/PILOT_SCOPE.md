@@ -9,16 +9,23 @@ The active profile is auditable at `GET /api/system/status`.
 ## The corridor (enabled under `pilot`)
 
 1. **Patient onboarding & authentication** — wallet auth, passkeys, TOTP MFA,
-   session management (`/api/wallet`, `/api/webauthn`, `/api/mfa`, `/api/me`).
+   one-time account-recovery codes, session management (`/api/wallet`,
+   `/api/webauthn`, `/api/mfa`, `/api/me`, `/api/me/recovery`).
 2. **FHIR ingestion** from the named partner (`/api/fhir`).
 3. **Encrypted record storage** with provenance (`/api/records`).
 4. **Granular, time-bound consent** (`/api/consent`).
 5. **Verified provider access** + patient directory (`/api/provider`, `/api/providers`, `/api/access`).
 6. **Append-only clinical notes** with attributed amendments (under `/api/provider/patients/*/notes`, `/api/me/clinical-notes`).
-7. **Patient-visible access history** (`/api/me/access-log`, `/api/me/activity`).
-8. **Export, correction and erasure** (`/api/privacy`, record PATCH).
-9. **Operational notifications** (`/api/notifications`).
-10. **Optional, asynchronous, fail-soft anchoring** of audit-segment roots
+7. **Break-glass emergency access** — declared reason + patient context, fresh
+   MFA step-up, ≤1h read-only grant, immediate patient notification, and an
+   admin retrospective-review queue (`/api/break-glass`). Deliberately in the
+   corridor: a care pilot cannot ship without an emergency path. Distinct from
+   the *simulated* emergency-response feature (`emergency` segment), which
+   stays deferred.
+8. **Patient-visible access history** (`/api/me/access-log`, `/api/me/activity`).
+9. **Export, correction and erasure** (`/api/privacy`, record PATCH).
+10. **Operational notifications** (`/api/notifications`).
+11. **Optional, asynchronous, fail-soft anchoring** of audit-segment roots
     (`/api/anchors`, `/api/audit/export`) — never a dependency for care.
 
 Plus the operational plane: `/api/health/*`, `/api/system/*`, `/api/openapi`,
