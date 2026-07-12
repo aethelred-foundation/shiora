@@ -185,6 +185,7 @@ export class InMemoryAnchorOutboxStore implements AnchorOutboxStore {
   async markDead(id: string, error: string, now: number): Promise<void> {
     this.update(id, (job) => {
       job.state = 'dead';
+      job.attempts += 1; // the fatal attempt is still an attempt
       job.lastError = error;
     }, now);
   }

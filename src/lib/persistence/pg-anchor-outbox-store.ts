@@ -164,7 +164,8 @@ export class PgAnchorOutboxStore implements AnchorOutboxStore {
   async markDead(id: string, error: string, now: number): Promise<void> {
     await this.client.query(
       `UPDATE anchor_outbox
-          SET state = 'dead', last_error = $2, lease_until = 0, updated_at = $3
+          SET state = 'dead', attempts = attempts + 1, last_error = $2,
+              lease_until = 0, updated_at = $3
         WHERE id = $1`,
       [id, error, now],
     );
