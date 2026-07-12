@@ -26,8 +26,17 @@
 import crypto from 'node:crypto';
 
 import { getKeyProvider } from './key-provider';
+import { counter } from '@/lib/observability/metrics';
 
 export type WrapBackend = 'local-kek' | 'vault-transit';
+
+// New DEK wraps by custody backend. In production this must show ZERO
+// local-kek wraps (all new writes go through Vault Transit, consultant §7);
+// a non-zero local-kek count in production is a custody regression.
+const dekWrapTotal = counter(
+  'shiora_dek_wrap_total',
+  'DEK wrap operations, by custody backend',
+);
 
 export interface WrappedDek {
   /** Backend-opaque ciphertext of the DEK. */
@@ -60,6 +69,7 @@ export class LocalKekDekWrapper implements DekWrapper {
   readonly backend: WrapBackend = 'local-kek';
 
   async wrap(dek: Buffer): Promise<WrappedDek> {
+    dekWrapTotal.inc({ backend: this.backend });
     const provider = getKeyProvider();
     const version = provider.currentVersion();
     const iv = crypto.randomBytes(GCM_IV_BYTES);
@@ -166,6 +176,7 @@ export class VaultTransitDekWrapper implements DekWrapper {
   }
 
   async wrap(dek: Buffer): Promise<WrappedDek> {
+    dekWrapTotal.inc({ backend: this.backend });
     const data = await this.post('encrypt', { plaintext: dek.toString('base64') });
     if (typeof data.ciphertext !== 'string') {
       throw new Error('Vault Transit encrypt returned no ciphertext.');

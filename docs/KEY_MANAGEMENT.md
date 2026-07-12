@@ -41,6 +41,16 @@ never enters application memory**. Implemented and fully tested
 fail-closed on every transport/status/shape surprise). AWS KMS / GCP KMS
 `Encrypt`/`Decrypt` are drop-in behind the same interface.
 
+**Production enforcement (consultant §7).** A production boot **fails closed**
+without Vault Transit: the preflight adds `KEY_CUSTODY_NOT_TRANSIT` when
+`SHIORA_TRANSIT_KEY_NAME` (+ `SHIORA_VAULT_ADDR`/`TOKEN`) is unset, so production
+can never silently custody PHI DEKs with the in-process local KEK — a
+"reversible cutover" cannot become a silent downgrade. Every DEK wrap is metered
+by backend (`shiora_dek_wrap_total{backend}`); in production the `local-kek`
+count must stay **zero** (all new writes go through Transit), and a non-zero
+value is a custody regression to alert on. The stock of not-yet-migrated legacy
+envelopes is drained to zero by the re-seal job after a cut-over (§Rotation).
+
 **Adoption status: ADOPTED.** The PHI envelope path is async end to end and
 wraps/unwraps every DEK through `getDekWrapper()`: `envelope.ts` → both
 encrypted repositories (`encrypted-documents.ts`, `encrypted-records.ts`) →

@@ -22,6 +22,7 @@
 import { serverEnv } from './env';
 import { lintProductionConfig } from './config-lint';
 import { hasConfiguredDataKey } from '@/lib/crypto/key-provider';
+import { isTransitConfigured } from '@/lib/crypto/dek-wrapper';
 
 export interface ReadinessProblem {
   /** Stable identifier for the failing check. */
@@ -56,6 +57,17 @@ export function checkProductionReadiness(): ReadinessReport {
       message:
         'DATABASE_URL is not set. Production must use the Postgres datastore; '
         + 'the in-memory store is not durable and must not hold PHI.',
+    });
+  }
+
+  if (!isTransitConfigured()) {
+    problems.push({
+      code: 'KEY_CUSTODY_NOT_TRANSIT',
+      message:
+        'Vault Transit DEK custody is not configured (SHIORA_TRANSIT_KEY_NAME + '
+        + 'SHIORA_VAULT_ADDR/TOKEN). Production must wrap every DEK through a KMS/Vault '
+        + 'so the master key never enters application memory; the in-process local KEK '
+        + 'is a development backend only and must not custody production PHI keys.',
     });
   }
 

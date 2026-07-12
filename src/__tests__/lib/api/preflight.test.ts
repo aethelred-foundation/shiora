@@ -25,15 +25,20 @@ const mockServerEnv = serverEnv as unknown as {
   enableHsts: boolean;
 };
 const mockHasKey = hasConfiguredDataKey as jest.Mock;
-const originalDatabaseUrl = process.env.DATABASE_URL;
+const MANAGED_ENVS = ['DATABASE_URL', 'SHIORA_TRANSIT_KEY_NAME', 'SHIORA_VAULT_ADDR', 'SHIORA_VAULT_TOKEN'] as const;
+const savedEnv: Record<string, string | undefined> = {};
 
 function codes(): string[] {
   return checkProductionReadiness().problems.map((p) => p.code);
 }
 
 beforeEach(() => {
+  for (const key of MANAGED_ENVS) savedEnv[key] = process.env[key];
   // A fully-configured production baseline that passes every check.
   process.env.DATABASE_URL = 'postgres://localhost/shiora';
+  process.env.SHIORA_TRANSIT_KEY_NAME = 'shiora-kek';
+  process.env.SHIORA_VAULT_ADDR = 'https://vault.internal:8200';
+  process.env.SHIORA_VAULT_TOKEN = 's.token';
   mockServerEnv.isProduction = true;
   mockServerEnv.hasConfiguredSessionSecret = true;
   mockServerEnv.allowInsecureWalletHeader = false;
@@ -42,8 +47,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  if (originalDatabaseUrl === undefined) delete process.env.DATABASE_URL;
-  else process.env.DATABASE_URL = originalDatabaseUrl;
+  for (const key of MANAGED_ENVS) {
+    if (savedEnv[key] === undefined) delete process.env[key]; else process.env[key] = savedEnv[key];
+  }
 });
 
 describe('hasDurableDatastore', () => {
@@ -71,6 +77,12 @@ describe('checkProductionReadiness', () => {
   it('flags the default data-encryption key', () => {
     mockHasKey.mockReturnValue(false);
     expect(codes()).toContain('DATA_KEY_DEFAULT');
+  });
+
+  it('flags production key custody that is not Vault Transit (§7)', () => {
+    delete process.env.SHIORA_TRANSIT_KEY_NAME;
+    expect(codes()).toContain('KEY_CUSTODY_NOT_TRANSIT');
+    expect(checkProductionReadiness().ok).toBe(false);
   });
 
   it('flags a missing session secret', () => {
