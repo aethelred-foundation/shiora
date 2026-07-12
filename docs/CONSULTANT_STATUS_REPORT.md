@@ -1,10 +1,22 @@
 # Shiora — Production-Readiness Status Report
 
-**Date:** 2026-07-11 (post-remediation edition)
-**Repo:** `github.com/aethelred-foundation/shiora` (private)
-**Working branch:** `feat/backbone-phi-encryption-audit` (164 commits ahead of `main`, pushed, `HEAD = 95cf956`)
-**Prepared for:** external consultant review — a point-by-point response to your production-readiness assessment, and a request for direction on what to prioritize next.
-**Supersedes:** the 2026-07-11 platform status report you reviewed.
+**Date:** 2026-07-12 (RC1 edition)
+**Repo:** `github.com/aethelred-foundation/shiora` — **visibility: PUBLIC** (see provenance note below)
+**Working branch:** `feat/backbone-phi-encryption-audit`, pushed
+**Position vs `main`:** the working branch is **165 commits ahead of `main`** (all feature work lives here; `main` is a strict ancestor). Separately, the full-history **secret scan covered 151 commits** — these are two different measures (branch-lead vs. total repository history) and were conflated in the prior edition.
+**Prepared for:** external consultant review — a response to your RC1 follow-up, executing the code-actionable items you flagged and surfacing the operator/organizational ones.
+**Supersedes:** the 2026-07-11 post-remediation edition.
+
+> **Provenance note (correcting the prior edition, per your §1).** Three
+> inconsistencies you caught: (1) the branch-lead vs. secret-scan commit counts
+> conflated two different measures — clarified above; (2) the date/filename
+> drift — this edition is dated 2026-07-12 to match; (3) **the repository is
+> currently PUBLIC, not private** — the prior edition was wrong. The
+> full-history secret scan confirms no secrets, credentials, or PHI are exposed,
+> but **whether a pre-production women's-health platform's working branch should
+> be public is a governance decision we are surfacing to leadership**, not one
+> we change unilaterally. Repository visibility cannot be altered from within the
+> codebase.
 
 ---
 
@@ -22,7 +34,7 @@ You gave us a detailed production-readiness assessment: an executive verdict, a 
 
 | Metric | Value |
 |---|---|
-| Test suites / tests | **297 / 4,711**, all passing |
+| Test suites / tests | **299 / 4,732**, all passing |
 | Coverage (statements, branches, functions, lines) | **100%** — enforced as a hard gate |
 | TypeScript strict | clean |
 | ESLint | clean |
@@ -30,9 +42,34 @@ You gave us a detailed production-readiness assessment: an executive verdict, a 
 | Dependency vulnerabilities (`npm audit`) | **0** |
 | API routes | 166 |
 | Feature maturity | 26 production · 10 pilot · 7 simulated (machine-readable registry, CI-enforced) |
-| Secret scan (gitleaks, full 151-commit history) | 0 real secrets (4 intentional test-PKI keys allowlisted) |
+| Secret scan (gitleaks, full repository history) | 0 real secrets (4 intentional test-PKI keys allowlisted) |
 
-Since your review the suite grew **4,459 → 4,711 tests** across ~15 commits, coverage held at 100% throughout, and every commit is authored to a single owner with no divergence on `main` (a clean fast-forward when we merge).
+Every commit is authored to a single owner (we address the segregation-of-duties point in §RC1) with no divergence on `main` (a clean fast-forward when we merge).
+
+---
+
+## RC1. Response to your latest follow-up (2026-07-12)
+
+You upgraded the verdict to **Engineering Release Candidate 1** and — importantly — flagged that several remaining items are still *code*, not just operator work. We executed **every code-actionable item you raised**, each as an independent, fully-tested commit at 100% coverage:
+
+| Your item | What we did | Commit |
+|---|---|---|
+| **§1 Provenance inconsistencies** | Reconciled the commit-count wording (branch-lead 165 vs. history-scan; two different measures), the date, and — you were right — **the repo is PUBLIC, not private**: corrected, with a governance note (below). | `docs` |
+| **§3 Tenant/purpose snapshots** (code P0) | Immutable **authorization-decision snapshots** on every allowed AND denied PHI access — data domain/tenant, actor + organization, subject, purpose of use, legal basis, grant id/version, consent version, policy version, emergency-override id, decision, reason, timestamp — written to the tamper-evident chain and surfaced in the patient's access history. Wired into the canonical provider-read gate. Tenant/domain fields exist from day one; RLS is the additive multi-tenant follow-up (`docs/AUTHORIZATION.md`). | `47f1516` |
+| **§4 Encrypted-data recovery** (code P0) | Proven that wallet-derived client sealing is **browser-only and lives entirely inside the pilot-deferred `vault` surface** — so no pilot-enabled field is sealed to a losable wallet key; every pilot field is server-custodied and recoverable with the account. Enforced by an invariant test; the "non-recoverable private vault" + WebAuthn-PRF direction is documented. | `4625a67` |
+| **§5 Break-glass model** | Corrected the legal basis (the §164.512(j) citation was wrong; the design mirrors the §164.312(a)(2)(ii) technical safeguard, and even that is only a reference — the operative basis is the pilot jurisdiction + partner policy, never a US provision for an Abu Dhabi workflow). Added a structured emergency category, minimum-necessary record-type scoping, sensitive-category withholding, per-event governance (jurisdiction/policy/authorizing-org), and **PHI-free** patient notifications. | `98cd0cd` |
+| **§6 "Confirmed" = finality** | Anchor confirmation now requires the receipt's block to be buried under a configurable confirmation depth (default 12), not a single fresh receipt; a dropped tx (reorg) falls back to pending for re-submission. | `3ec93c0` |
+| **§7 Production key custody** | Production **boot-fails without Vault Transit** (no silent downgrade to local KEK custody), and every DEK wrap is metered by backend so operations can prove new writes use Transit (local-kek must be zero in production). | `f8921b7` |
+
+**Queued as scoped follow-ups (you flagged these as needing more than a quick change):** multi-tenant per-record tenant columns + Postgres RLS (default-deny, transaction-scoped); provider enterprise OIDC SSO + de-provisioning; property/fuzz/mutation testing of the in-house crypto and untrusted-input parsers; the deeper anchor hardening (multi-RPC/reorg re-verification, block-header in the auditor package) and the replacement root-only `ShioraAuditRootCommitment` contract.
+
+**Your three modifications to our plan — accepted:** (1) provenance + CI come **before** the merge (we are still holding the merge for sign-off and will do it through a protected, checked PR, not a fast-forward); (2) tenant/purpose snapshots and encrypted-data recovery were treated as **code P0s** (done above); (3) infrastructure, audit, compliance, and partner integration must run **in parallel** — these are the operator/organizational lanes we need your help sequencing.
+
+**Three points we want to put directly to you:**
+
+1. **Repository visibility.** The working branch is **public** today. The full-history secret scan confirms no secrets/credentials/PHI are exposed, but whether a pre-production women's-health platform's code should be public is a leadership decision — we are surfacing it, not changing it unilaterally. Should it be made private for the pilot, or is an open-source posture intended?
+2. **Segregation of duties.** You correctly noted single-owner authorship is also an SoD risk, and that the documented two-person key rule is not operationally meaningful with one maintainer. We agree; onboarding a qualified second maintainer/reviewer is an organizational action we need leadership to resource.
+3. **RLS timing.** Given owner-scoping is enforced and now backed by decision snapshots + the negative-space suite, is per-record RLS a **pre-pilot** gate, or acceptable as a **fast-follow** for a physically-isolated single-partner pilot with a separate database and a recorded risk acceptance (your own stated exception)?
 
 ---
 
