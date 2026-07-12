@@ -1,0 +1,98 @@
+# Shiora → Aethelred Testnet Integration Handoff
+
+**Date:** 2026-07-12
+**From:** Shiora app team
+**To:** Aethelred testnet team (US)
+**Purpose:** hand off Shiora's consensus-anchored seal tier for deployment to the Aethelred public testnet (chain 7332), on-chain validation, and independent testing.
+
+**Branch:** `feat/backbone-phi-encryption-audit` @ `163c67b` (open as PR #9; pull the latest tip)
+**Bottom line:** Shiora is a healthcare SaaS that **anchors to** the chain rather than living on it. Exactly **one** contract deploys: `ShioraSealAttestation`. It is proven against the real ISeal precompile in the chain repo and 100%-covered locally. Everything else in `contracts/` is explicitly out of scope (§2).
+
+---
+
+## 1. Canonical protocol identity (single source of truth: aethelred repo `ecosystem/manifest.json` v2.0.0)
+
+- EVM chain id **7332** (testnet; devnet shares it), **7331** reserved for mainnet.
+- Native token **AETHEL** (18 EVM decimals), base denom `uaethel`, bech32 prefix `aethel`.
+- ISeal precompile at **`0x0900`** (IVerify `0x0901`, IPoUW `0x0902` reserved).
+- Purpose strings are canonical **lowercase hex**.
+- **Chain-side prerequisite:** the ISeal precompile exists only on chain builds cut from `release/public-testnet-pqc` (aethelred PR #153). Neither `main` nor `release/testnet-v1.0` contains it as of this date. Build the node binary from that branch (or its merged successor) or seal-anchored attestation will fail (fail-closed, by design).
+- RPC endpoint: provided by the US team. The ecosystem docs currently disagree on hostname convention (`evm-rpc-testnet.aethelred.network` vs `rpc.testnet.aethelred.io`); neither resolves yet — please pick one and update the manifest.
+
+## 2. Scope — deploy exactly one contract
+
+The `contracts/` Hardhat project deliberately scopes compilation to `sources: "./seal"`:
+
+- **IN scope:** `contracts/seal/ShioraSealAttestation.sol` (+ vendored `ISeal` interface). Tested (21/21, 100% statement coverage of the seal tier) and proven against the real precompile in the chain repo.
+- **OUT of scope:** everything under `contracts/core`, `contracts/privacy`, `contracts/defi`. These are **design artifacts** — they compile (verified) but are untested and unwired. **Do not deploy them.** The project's green status vouches only for the seal tier; we will not claim otherwise.
+
+## 3. What `ShioraSealAttestation` does
+
+The consensus-anchored assurance tier for Shiora's health-data attestations. Elsewhere in the repo, `ShioraConsentManager` stores an unverified caller-supplied hash and `ShioraTEEVerifier` records self-signed enclave attestations — both bottom out in "trust this key." This contract replaces that trust with a **Digital Seal minted by the Aethelred validator quorum**:
+
+- An attestation binds a **(subject address, scope hash)** pair — e.g. `keccak256("clinical:cycle_prediction")` — plus a pointer to the backing seal. **No PHI ever touches the chain.**
+- A seal admits the attestation only if it is **ACTIVE**, its PoUW job purpose is `shiora:0x<subject>:0x<scope>` (the contract's `expectedPurpose(subject, scope)` returns the exact string), and it satisfies the governance-set **CEAP compliance policy** — all checked in-EVM via ISeal.
+- **Anchoring is permissionless** (`attest` callable by anyone): the seal is self-authorizing because its purpose binds the exact (subject, scope).
+- `isAttested` / `requireAttested` **re-check the seal's live ACTIVE status** on every read — a seal revoked on-chain (consent withdrawn, model decertified, jurisdiction change) invalidates the attestation instantly, with no transaction.
+- **One (subject, scope), one attestation, forever** (`AlreadyAttested`): a governance revocation cannot be undone through the permissionless path by a second bound seal.
+- Deliberately **non-upgradeable** — the attestation of record must not be admin-mutable. Governance surface is `Ownable2Step`; local `revoke(subject, scope)` is callable by the subject or the owner; `pause()` halts anchoring while verification reads stay live.
+
+## 4. Deployment & validation (integration checklist)
+
+Prereqs: node built from the precompile branch (§1), funded deployer key, `aethelredd` CLI access for PoUW job submission.
+
+1. **Run the operator playbook** — it deploys, configures, proves fail-closed behavior, and completes the attestation:
+   ```
+   RPC_URL=<testnet-evm-rpc> DEPLOYER_KEY=<funded-key> \
+   [REGISTRY_ADDRESS=0x…] [SUBJECT=0x…] [SCOPE=<label>] [JOB_ID=<sealed-job>] \
+   npx hardhat run scripts/devnet-seal-attestation-e2e.js --network aethelredDevnet
+   ```
+   (run from `contracts/`; the `aethelredDevnet` network entry targets chain id 7332 and reads `RPC_URL`/`DEPLOYER_KEY` from the environment)
+   - Deploys `ShioraSealAttestation(governance)` (or reuses `REGISTRY_ADDRESS`), sets a CEAP policy via `setCompliancePolicy(allowedBackends, minVerification, allowedPlatforms, requireVendorRoot, dataResidency)`.
+   - Proves `isAttested(subject, scope) === false` with no seal (**no-seal-no-attestation**), then prints the exact `aethelredd` PoUW commands — embedding the contract's own `expectedPurpose()` — for your operators to mint the seal.
+   - Re-run with `JOB_ID` once the quorum has sealed the job: it calls `attest(subject, scope, jobId)` and confirms `isAttested` flips true.
+2. **Gas/fee note (already encoded in `hardhat.config.js`):** Aethelred's EVM charges `max(actualGas, gasLimit/2)`, so do **not** pin a fixed `gas` — estimation is accurate; the config uses `gasMultiplier: 2` for headroom without overpaying.
+3. **Record enforcement attestations** (§6) and report back (§7).
+
+## 5. Enforced invariants you will observe on-chain
+
+| Area | Invariant | Revert / effect |
+|---|---|---|
+| Anchoring | No seal → no attestation (fail-closed) | revert from `attest` |
+| Anchoring | Seal purpose must bind **this exact** (subject, scope) | revert (purpose mismatch) |
+| Anchoring | Seal must satisfy the live CEAP policy | `PolicyNotSatisfied(reason)` |
+| Permanence | One (subject, scope), one attestation, forever | `AlreadyAttested` |
+| Live seal check | `isAttested` re-checks ACTIVE via ISeal — on-chain revocation invalidates instantly | — |
+| Local revocation | `revoke` callable by subject or owner only | `NotSubjectOrOwner` |
+| Ops | `pause()` halts anchoring; verification reads stay live | `Pausable` |
+| Privacy | Only (address, hash) pairs on-chain — no PHI | — |
+
+## 6. Deployment manifest — enforcement attestations (record from live chain reads)
+
+```
+registry.address                  = <deployed ShioraSealAttestation>
+registry.owner                    = governance (Ownable2Step accepted)
+registry.compliancePolicy         = compliancePolicy()
+chain.eth_chainId                 = 7332
+chain.isealPrecompileVerified     = playbook fail-closed + attest() round-trip
+firstAttestation                  = (subject, scope, sealId, JOB_ID)
+```
+
+## 7. App-side anchoring (config only — the US team provides values, Shiora hosts the app)
+
+The SaaS anchors audit roots to L1 through a node-held account (server-side `eth_sendTransaction`; **no client-side key handling**). The US team supplies:
+
+```
+SHIORA_L1_RPC_URL      = <testnet EVM RPC>
+SHIORA_L1_CHAIN_ID     = 7332
+SHIORA_L1_ANCHOR_FROM  = <node-held funded account>
+SHIORA_L1_ANCHOR_TO    = <anchor target / deployed registry>
+```
+
+Everything else (Postgres, Vault Transit key custody, the Next.js app) is hosted by the Shiora team and is **not** in the US team's scope.
+
+## 8. Test evidence & report-back
+
+- **Definitive seal-binding proof (chain repo):** `internal/evmhost/shiora_test.go` — this exact bytecode against the **real ISeal precompile + real seal keeper**, incl. live revocation and re-attest permanence (on `release/public-testnet-pqc`).
+- **This repo:** seal tier 21/21 tests, 100% statement coverage (`cd contracts && npx hardhat test`); app suites green at branch tip (250+ suites, 4,100+ tests).
+- **Report back:** deployed address, `eth_chainId`, the §6 manifest, the sealed `JOB_ID`, and any behavioral deltas vs §5.
