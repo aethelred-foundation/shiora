@@ -86,14 +86,21 @@ describe('records-service', () => {
       __resetAuditLogForTests();
     });
 
-    it('returns null when the provider holds no active grant', async () => {
+    it('returns null and records a DENY authorization-decision snapshot when no active grant', async () => {
       await createRecord(OWNER, sampleRecord());
       expect(await listRecordsForProvider(PROVIDER, OWNER)).toBeNull();
+
+      const decisions = await getAuditLog().list({ action: 'AUTHZ_DECISION' });
+      expect(decisions).toHaveLength(1);
+      expect(decisions[0]).toMatchObject({
+        actor: PROVIDER, subject: OWNER, success: false,
+        metadata: { decision: 'deny', reason: 'no_active_grant', purposeOfUse: 'care_coordination' },
+      });
     });
 
-    it('returns the shared records and audits the access when a grant is active', async () => {
+    it('returns records, records an ALLOW snapshot with the grant, and audits the read', async () => {
       await createRecord(OWNER, sampleRecord());
-      await createAccessGrant(OWNER, grant());
+      const created = await createAccessGrant(OWNER, grant());
 
       const records = await listRecordsForProvider(PROVIDER, OWNER);
       expect(records).toHaveLength(1);
@@ -103,6 +110,13 @@ describe('records-service', () => {
       expect(reads).toHaveLength(1);
       expect(reads[0].resourceId).toBe(OWNER);
       expect(reads[0].subject).toBe(OWNER); // the patient is the data subject of the read
+
+      const decisions = await getAuditLog().list({ action: 'AUTHZ_DECISION' });
+      expect(decisions).toHaveLength(1);
+      expect(decisions[0]).toMatchObject({
+        actor: PROVIDER, subject: OWNER, success: true,
+        metadata: { decision: 'allow', reason: 'active_grant', legalBasis: 'consent', grantId: created.id },
+      });
     });
 
     it('returns null for an expired grant even if it was viewable', async () => {

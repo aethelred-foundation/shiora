@@ -64,6 +64,7 @@ export type AuditAction =
   | 'SANA_MESSAGE'
   | 'IPFS_STORE'
   | 'MPC_COMPUTE'
+  | 'AUTHZ_DECISION'
   | 'SYSTEM_MAINTENANCE'
   | 'WEBHOOK_CREATE'
   | 'WEBHOOK_DELETE'

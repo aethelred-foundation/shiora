@@ -21,7 +21,8 @@ import { PgRecordStore } from '@/lib/persistence/pg-record-store';
 import { getPgClient } from '@/lib/persistence/sql-client';
 import type { MockHealthRecord } from '@/lib/api/mock-data';
 import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
-import { providerHasActiveGrant } from '@/lib/api/access-service';
+import { activeGrantForProvider } from '@/lib/api/access-service';
+import { recordAuthorizationDecision } from '@/lib/api/authz-decision';
 
 let repository: EncryptedRecordRepository | null = null;
 
@@ -55,9 +56,35 @@ export async function listRecordsForProvider(
   providerAddress: string,
   patientAddress: string,
 ): Promise<MockHealthRecord[] | null> {
-  if (!(await providerHasActiveGrant(providerAddress, patientAddress))) {
+  const grant = await activeGrantForProvider(providerAddress, patientAddress);
+
+  // An immutable authorization-decision snapshot on both allow and deny (§3):
+  // it captures why access was (dis)allowed at this instant, for the auditor.
+  if (!grant) {
+    await recordAuthorizationDecision({
+      actor: providerAddress,
+      subject: patientAddress,
+      resource: 'health_records',
+      resourceId: patientAddress,
+      purposeOfUse: 'care_coordination',
+      decision: 'deny',
+      reason: 'no_active_grant',
+    });
     return null;
   }
+
+  await recordAuthorizationDecision({
+    actor: providerAddress,
+    subject: patientAddress,
+    resource: 'health_records',
+    resourceId: patientAddress,
+    purposeOfUse: 'care_coordination',
+    decision: 'allow',
+    reason: 'active_grant',
+    legalBasis: 'consent',
+    grantId: grant.id,
+  });
+
   await getAuditLog().record({
     action: 'RECORD_READ',
     actor: providerAddress,

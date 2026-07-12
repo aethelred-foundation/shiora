@@ -54,6 +54,27 @@ export async function listGrantsForProvider(providerAddress: string): Promise<Mo
 }
 
 /**
+ * The active, viewable grant `provider` holds from `patient`, or null. The
+ * single source of the grant decision — callers that need the grant identity
+ * for an authorization-decision snapshot use this; a boolean predicate would
+ * discard exactly what the snapshot must record.
+ */
+export async function activeGrantForProvider(
+  providerAddress: string,
+  patientAddress: string,
+  now: number = Date.now(),
+): Promise<MockAccessGrant | null> {
+  const grants = await listGrantsForProvider(providerAddress);
+  return grants.find(
+    (grant) =>
+      grant.ownerAddress === patientAddress
+      && grant.status === 'Active'
+      && grant.canView
+      && now <= grant.expiresAt, // an expired grant no longer permits access
+  ) ?? null;
+}
+
+/**
  * Whether `provider` currently holds an active, viewable grant from `patient`.
  * Used to gate provider clinical actions on a specific patient's record.
  */
@@ -62,14 +83,7 @@ export async function providerHasActiveGrant(
   patientAddress: string,
   now: number = Date.now(),
 ): Promise<boolean> {
-  const grants = await listGrantsForProvider(providerAddress);
-  return grants.some(
-    (grant) =>
-      grant.ownerAddress === patientAddress
-      && grant.status === 'Active'
-      && grant.canView
-      && now <= grant.expiresAt, // an expired grant no longer permits access
-  );
+  return (await activeGrantForProvider(providerAddress, patientAddress, now)) !== null;
 }
 
 export function getAccessGrant(
