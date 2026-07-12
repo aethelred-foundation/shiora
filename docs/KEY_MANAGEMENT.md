@@ -122,17 +122,37 @@ key-metadata read rights (see §Environments & separation).
 - After a restore, run the audit chain `verify()` and compare the release
   manifest before serving traffic (see `docs/RELEASE_PROCESS.md`).
 
-## Client sealing (wallet-derived) — production caveat
+## Client sealing (wallet-derived) — excluded from the pilot (consultant §4)
 
-The on-device field-sealing key is currently derived from a wallet signature
-(HKDF). The consultant review flags the operational risk: wallet loss means
-data loss, and signature-encoding differences across wallets can break
-derivation. Production direction: bind the client sealing key to a passkey/
-device-held key (WebAuthn PRF where available) with an explicit, documented
-recovery design, keeping the wallet as an account-binding and consent-signing
-mechanism — not the sole root of health-data decryption. Until that lands,
-client sealing remains limited to the vault's optional free-text field, with
-the loss consequence stated in the UI.
+The on-device field-sealing key is derived from a wallet signature (HKDF,
+`useFieldKey` → `client-field-encryption.ts`). The review flagged the risk that
+account recovery may restore the *account* without restoring *data* sealed to a
+lost wallet.
+
+**Resolution for the pilot — the risk does not reach the pilot corridor:**
+
+- Wallet-derived client sealing is used in **exactly one place**: the optional
+  free-text field of the **cycle/symptom vault** (`VaultComponents.tsx`). It is
+  **browser-only** — no server route reads or writes a client-sealed value.
+- The `vault` surface is **deferred under `SHIORA_PROFILE=pilot`** (it answers
+  `503 FEATURE_DISABLED`, `docs/PILOT_SCOPE.md`). So **no pilot-enabled field is
+  sealed to a wallet-derived key**, and there is nothing a lost wallet can make
+  unrecoverable in the pilot. Enforced by an invariant test
+  (`src/__tests__/security/client-sealing-pilot-exclusion.test.ts`).
+- Every **pilot-enabled** encrypted field (records, consent, clinical notes,
+  profile, notifications, recovery codes) uses **server-custodied envelope
+  encryption** (DEK wrapped by the KEK/Transit, §Custody), owner-scoped by the
+  authenticated identity — recoverable for as long as the account identity is
+  recoverable, independent of any single wallet key.
+
+**When the vault is later enabled**, the wallet-derived mode is offered only as
+an explicitly-disclosed **"non-recoverable private vault"** (the loss
+consequence stated before use) and kept **out of any clinical or emergency
+workflow** (break-glass reads server-custodied records only). The production
+direction remains: bind the client key to a random data key wrapped to multiple
+authorized passkeys/devices (WebAuthn PRF), or a designed recovery key that can
+rewrap it — keeping the wallet as an identity/consent-signing mechanism, not the
+sole root of health-data decryption.
 
 ## Algorithm agility
 
