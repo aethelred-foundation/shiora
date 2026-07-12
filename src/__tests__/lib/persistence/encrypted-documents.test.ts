@@ -48,7 +48,7 @@ describe('EncryptedDocumentRepository', () => {
     // Inject a pre-deleted document directly into the store.
     await store.put({
       collection: COLLECTION, ownerKey: OWNER, id: 'd3',
-      sealed: sealJson({ id: 'd3', secret: 's3', count: 3 }, aad('d3')), deleted: true,
+      sealed: await sealJson({ id: 'd3', secret: 's3', count: 3 }, aad('d3')), deleted: true,
     });
 
     const ids = (await repo.list(OWNER)).map((d) => d.id);
@@ -61,7 +61,7 @@ describe('EncryptedDocumentRepository', () => {
 
     await store.put({
       collection: COLLECTION, ownerKey: OWNER, id: 'dead',
-      sealed: sealJson({ id: 'dead', secret: 'x', count: 0 }, aad('dead')), deleted: true,
+      sealed: await sealJson({ id: 'dead', secret: 'x', count: 0 }, aad('dead')), deleted: true,
     });
     expect(await repo.get(OWNER, 'dead')).toBeUndefined();
   });
@@ -83,7 +83,7 @@ describe('EncryptedDocumentRepository', () => {
 
     await store.put({
       collection: COLLECTION, ownerKey: OWNER, id: 'dead',
-      sealed: sealJson({ id: 'dead', secret: 'x', count: 0 }, aad('dead')), deleted: true,
+      sealed: await sealJson({ id: 'dead', secret: 'x', count: 0 }, aad('dead')), deleted: true,
     });
     expect(await repo.update(OWNER, 'dead', { count: 2 })).toBeUndefined();
   });
@@ -161,7 +161,7 @@ describe('EncryptedDocumentRepository', () => {
     const { store, repo } = newRepo();
     await repo.create(OWNER, { id: 'd1', secret: 's', count: 1 });
     // A document sealed under a different owner cannot be read as this owner.
-    const otherSealed = sealJson({ id: 'd1', secret: 's', count: 1 }, `${COLLECTION}:attacker:d1`);
+    const otherSealed = await sealJson({ id: 'd1', secret: 's', count: 1 }, `${COLLECTION}:attacker:d1`);
     await store.put({ collection: COLLECTION, ownerKey: OWNER, id: 'd1', sealed: otherSealed, deleted: false });
     await expect(repo.get(OWNER, 'd1')).rejects.toThrow();
   });
@@ -173,7 +173,7 @@ describe('EncryptedDocumentRepository', () => {
     // A pre-deleted document is excluded.
     await store.put({
       collection: COLLECTION, ownerKey: OWNER, id: 'd3',
-      sealed: sealJson({ id: 'd3', secret: 'x', count: 0 }, `${COLLECTION}:${OWNER}:d3`), deleted: true,
+      sealed: await sealJson({ id: 'd3', secret: 'x', count: 0 }, `${COLLECTION}:${OWNER}:d3`), deleted: true,
     });
 
     const all = await repo.listAll();
@@ -219,7 +219,7 @@ describe('EncryptedDocumentRepository', () => {
       const { store, repo } = newRepo();
       await store.put({ // no version field
         collection: COLLECTION, ownerKey: OWNER, id: 'legacy',
-        sealed: sealJson({ id: 'legacy', secret: 'x', count: 0 }, aad('legacy')), deleted: false,
+        sealed: await sealJson({ id: 'legacy', secret: 'x', count: 0 }, aad('legacy')), deleted: false,
       });
       expect((await repo.getVersioned(OWNER, 'legacy'))!.version).toBe(1);
       await expect(repo.update(OWNER, 'legacy', { count: 1 }, OWNER, 2)).rejects.toMatchObject({ actual: 1 });

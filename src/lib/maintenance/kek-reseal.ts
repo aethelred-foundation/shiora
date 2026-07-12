@@ -1,12 +1,14 @@
 // ============================================================
 // Shiora on Aethelred — KEK re-sealing maintenance (GAP-14)
 //
-// Versioned rotation lets new writes adopt a fresh KEK immediately, but the
-// old key can only be retired once NO stored ciphertext still depends on it.
-// This operation walks every sealed row in batches, and for any value still
-// sealed under a superseded KEK version, decrypts it under its old key and
-// re-seals it under the current one — preserving the exact plaintext and its
-// AAD binding. Shredded tombstones are skipped (nothing to re-seal).
+// Versioned rotation lets new writes adopt a fresh wrapping key immediately,
+// but the old key can only be retired once NO stored ciphertext still depends
+// on it. This operation walks every sealed row in batches, and for any value
+// still sealed under superseded custody — an older key version, a different
+// custody backend (e.g. local KEK rows after a Vault Transit cut-over), or the
+// legacy pre-DekWrapper envelope format — decrypts it under its old custody
+// and re-seals it under the current one, preserving the exact plaintext and
+// its AAD binding. Shredded tombstones are skipped (nothing to re-seal).
 //
 // Like store GC (GAP-01) this is a DURABLE-datastore operation: under Postgres
 // every service shares the `documents`/`health_records` tables, so a single
@@ -22,8 +24,10 @@ import { getPgClient } from '@/lib/persistence/sql-client';
 import { documentAad } from '@/lib/persistence/encrypted-documents';
 import { recordPhiAad } from '@/lib/persistence/encrypted-records';
 import { hasDurableDatastore } from '@/lib/api/preflight';
-import { needsReseal, resealString, isShredded } from '@/lib/crypto/envelope';
-import { getKeyProvider } from '@/lib/crypto/key-provider';
+import {
+  currentSealCustody, needsReseal, resealString, isShredded, type SealCustody,
+} from '@/lib/crypto/envelope';
+import type { WrapBackend } from '@/lib/crypto/dek-wrapper';
 import { createLogger } from '@/lib/observability/logger';
 import { counter } from '@/lib/observability/metrics';
 
@@ -45,7 +49,9 @@ export interface ResealStores {
 export interface ResealReport {
   /** Whether a durable datastore was present (else the run is a no-op). */
   durable: boolean;
-  /** KEK version everything was re-sealed up to. */
+  /** Custody backend everything was re-sealed into. */
+  backend: WrapBackend;
+  /** Wrapping-key version everything was re-sealed up to. */
   currentVersion: number;
   documentsScanned: number;
   documentsResealed: number;
@@ -54,7 +60,11 @@ export interface ResealReport {
   ranAt: number;
 }
 
-async function resealDocuments(store: DocumentStorePort, batch: number): Promise<[number, number]> {
+async function resealDocuments(
+  store: DocumentStorePort,
+  batch: number,
+  custody: SealCustody,
+): Promise<[number, number]> {
   let cursor: string | null = null;
   let scanned = 0;
   let resealed = 0;
@@ -62,8 +72,8 @@ async function resealDocuments(store: DocumentStorePort, batch: number): Promise
     const page = await store.scanForReseal(cursor, batch);
     for (const row of page.rows) {
       scanned += 1;
-      if (!isShredded(row.sealed) && needsReseal(row.sealed)) {
-        const fresh = resealString(row.sealed, documentAad(row.collection, row.ownerKey, row.id));
+      if (!isShredded(row.sealed) && needsReseal(row.sealed, custody)) {
+        const fresh = await resealString(row.sealed, documentAad(row.collection, row.ownerKey, row.id));
         await store.put({ ...row, sealed: fresh });
         resealed += 1;
       }
@@ -73,7 +83,11 @@ async function resealDocuments(store: DocumentStorePort, batch: number): Promise
   return [scanned, resealed];
 }
 
-async function resealRecords(store: RecordStorePort, batch: number): Promise<[number, number]> {
+async function resealRecords(
+  store: RecordStorePort,
+  batch: number,
+  custody: SealCustody,
+): Promise<[number, number]> {
   let cursor: string | null = null;
   let scanned = 0;
   let resealed = 0;
@@ -81,8 +95,8 @@ async function resealRecords(store: RecordStorePort, batch: number): Promise<[nu
     const page = await store.scanForReseal(cursor, batch);
     for (const row of page.rows) {
       scanned += 1;
-      if (!isShredded(row.sealedPhi) && needsReseal(row.sealedPhi)) {
-        const fresh = resealString(row.sealedPhi, recordPhiAad(row.ownerAddress, row.id));
+      if (!isShredded(row.sealedPhi) && needsReseal(row.sealedPhi, custody)) {
+        const fresh = await resealString(row.sealedPhi, recordPhiAad(row.ownerAddress, row.id));
         await store.put({ ...row, sealedPhi: fresh });
         resealed += 1;
       }
@@ -100,15 +114,19 @@ export async function runKekReseal(
   stores: ResealStores,
   batch: number = DEFAULT_RESEAL_BATCH,
 ): Promise<ResealReport> {
-  const [documentsScanned, documentsResealed] = await resealDocuments(stores.documents, batch);
-  const [recordsScanned, recordsResealed] = await resealRecords(stores.records, batch);
+  // One custody snapshot per run: every row is compared against — and
+  // re-sealed into — the same backend and key version.
+  const custody = await currentSealCustody();
+  const [documentsScanned, documentsResealed] = await resealDocuments(stores.documents, batch, custody);
+  const [recordsScanned, recordsResealed] = await resealRecords(stores.records, batch, custody);
 
   resealedTotal.inc({ store: 'documents' }, documentsResealed);
   resealedTotal.inc({ store: 'records' }, recordsResealed);
 
   const report: ResealReport = {
     durable: true,
-    currentVersion: getKeyProvider().currentVersion(),
+    backend: custody.backend,
+    currentVersion: custody.keyVersion,
     documentsScanned,
     documentsResealed,
     recordsScanned,
@@ -126,9 +144,11 @@ export async function runKekReseal(
  */
 export async function runDurableKekReseal(batch: number = DEFAULT_RESEAL_BATCH): Promise<ResealReport> {
   if (!hasDurableDatastore()) {
+    const custody = await currentSealCustody();
     return {
       durable: false,
-      currentVersion: getKeyProvider().currentVersion(),
+      backend: custody.backend,
+      currentVersion: custody.keyVersion,
       documentsScanned: 0,
       documentsResealed: 0,
       recordsScanned: 0,

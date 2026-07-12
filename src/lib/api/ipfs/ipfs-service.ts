@@ -73,7 +73,7 @@ export async function storeObject(
   filename: string,
   contentType: string,
 ): Promise<IpfsObject> {
-  const sealed = sealString(Buffer.from(content).toString('base64'), aad(ownerAddress));
+  const sealed = await sealString(Buffer.from(content).toString('base64'), aad(ownerAddress));
   const ciphertext = new TextEncoder().encode(JSON.stringify(sealed));
   const cid = await getIPFSStore().put(ciphertext);
 
@@ -116,7 +116,7 @@ export async function resolveObject(
   }
 
   const sealed = JSON.parse(new TextDecoder().decode(ciphertext)) as SealedEnvelope;
-  const content = openString(sealed, aad(ownerAddress));
+  const content = await openString(sealed, aad(ownerAddress));
   return { object, integrityVerified: true, content };
 }
 

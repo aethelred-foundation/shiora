@@ -69,7 +69,7 @@ export class EncryptedRecordRepository {
       ipfsNodes: record.ipfsNodes,
       blockHeight: record.blockHeight,
       encryption: 'AES-256-GCM',
-      sealedPhi: this.sealPhi(ownerAddress, record.id, {
+      sealedPhi: await this.sealPhi(ownerAddress, record.id, {
         label: record.label,
         description: record.description,
         tags: record.tags,
@@ -106,7 +106,7 @@ export class EncryptedRecordRepository {
   /** List an owner's non-deleted records, decrypting each. */
   async list(ownerAddress: string): Promise<MockHealthRecord[]> {
     const rows = await this.store.findByOwner(ownerAddress);
-    return rows.filter((row) => !row.deleted).map((row) => this.toRecord(row));
+    return Promise.all(rows.filter((row) => !row.deleted).map((row) => this.toRecord(row)));
   }
 
   /**
@@ -145,9 +145,9 @@ export class EncryptedRecordRepository {
       || updates.tags !== undefined;
 
     if (phiChanged) {
-      const current = this.openPhi(existing);
+      const current = await this.openPhi(existing);
       const tags = updates.tags ?? current.tags;
-      next.sealedPhi = this.sealPhi(ownerAddress, id, {
+      next.sealedPhi = await this.sealPhi(ownerAddress, id, {
         label: updates.label ?? current.label,
         description: updates.description ?? current.description,
         tags,
@@ -170,9 +170,9 @@ export class EncryptedRecordRepository {
   async findByTag(ownerAddress: string, tag: string): Promise<MockHealthRecord[]> {
     const token = blindIndex(tag, TAG_INDEX_DOMAIN);
     const rows = await this.store.findByOwner(ownerAddress);
-    return rows
+    return Promise.all(rows
       .filter((row) => !row.deleted && (row.blindTags ?? []).includes(token))
-      .map((row) => this.toRecord(row));
+      .map((row) => this.toRecord(row)));
   }
 
   /** Soft-delete a record (retained, but excluded from reads). */
@@ -206,11 +206,11 @@ export class EncryptedRecordRepository {
 
   // -- internals -----------------------------------------------------------
 
-  private sealPhi(ownerAddress: string, id: string, phi: SealedPhiPayload) {
+  private async sealPhi(ownerAddress: string, id: string, phi: SealedPhiPayload) {
     return sealJson<SealedPhiPayload>(phi, phiAad(ownerAddress, id));
   }
 
-  private openPhi(row: StoredRecord): SealedPhiPayload {
+  private async openPhi(row: StoredRecord): Promise<SealedPhiPayload> {
     if (isShredded(row.sealedPhi)) {
       throw new Error('Record PHI has been crypto-shredded and cannot be read.');
     }
@@ -221,8 +221,8 @@ export class EncryptedRecordRepository {
     await this.audit.record({ action, actor, resource: 'record', resourceId, success: true });
   }
 
-  private toRecord(row: StoredRecord): MockHealthRecord {
-    const phi = this.openPhi(row);
+  private async toRecord(row: StoredRecord): Promise<MockHealthRecord> {
+    const phi = await this.openPhi(row);
     return {
       id: row.id,
       type: row.type,

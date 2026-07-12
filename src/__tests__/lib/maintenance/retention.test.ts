@@ -27,19 +27,19 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-function doc(id: string, over: Partial<StoredDocument> = {}): StoredDocument {
+async function doc(id: string, over: Partial<StoredDocument> = {}): Promise<StoredDocument> {
   return {
     collection: 'consent', ownerKey: 'aeth1a', id,
-    sealed: sealJson({ id, secret: 's' }, documentAad('consent', 'aeth1a', id)),
+    sealed: await sealJson({ id, secret: 's' }, documentAad('consent', 'aeth1a', id)),
     deleted: false, ...over,
   };
 }
-function rec(id: string, over: Partial<StoredRecord> = {}): StoredRecord {
+async function rec(id: string, over: Partial<StoredRecord> = {}): Promise<StoredRecord> {
   return {
     id, ownerAddress: 'aeth1a', type: 'lab', date: 1, uploadDate: 1, cid: '', txHash: '',
     attestation: '', size: 1, provider: 'p', status: 'Verified', ipfsNodes: 1, blockHeight: 1,
     encryption: 'AES-256-GCM',
-    sealedPhi: sealJson({ label: 'L', description: '', tags: [] }, recordPhiAad('aeth1a', id)),
+    sealedPhi: await sealJson({ label: 'L', description: '', tags: [] }, recordPhiAad('aeth1a', id)),
     deleted: false, ...over,
   };
 }
@@ -62,15 +62,15 @@ describe('runRetention', () => {
     const documents = new InMemoryDocumentStore();
     const records = new InMemoryRecordStore();
 
-    await documents.put(doc('old', { deleted: true, deletedAt: NOW - 100 * DAY })); // purge
-    await documents.put(doc('recent', { deleted: true, deletedAt: NOW - 10 * DAY })); // keep (within window)
-    await documents.put(doc('live')); // not deleted → keep
-    await documents.put(doc('already', { deleted: true, deletedAt: NOW - 100 * DAY, sealed: shredEnvelope() })); // already shredded
-    await records.put(rec('old-rec', { deleted: true, deletedAt: NOW - 100 * DAY })); // purge
-    await records.put(rec('recent-rec', { deleted: true, deletedAt: NOW - 5 * DAY })); // keep
-    await records.put(rec('live-rec')); // not deleted → keep
-    await records.put(rec('legacy-rec', { deleted: true })); // no deletedAt → keep
-    await records.put(rec('shredded-rec', { deleted: true, deletedAt: NOW - 100 * DAY, sealedPhi: shredEnvelope() }));
+    await documents.put(await doc('old', { deleted: true, deletedAt: NOW - 100 * DAY })); // purge
+    await documents.put(await doc('recent', { deleted: true, deletedAt: NOW - 10 * DAY })); // keep (within window)
+    await documents.put(await doc('live')); // not deleted → keep
+    await documents.put(await doc('already', { deleted: true, deletedAt: NOW - 100 * DAY, sealed: shredEnvelope() })); // already shredded
+    await records.put(await rec('old-rec', { deleted: true, deletedAt: NOW - 100 * DAY })); // purge
+    await records.put(await rec('recent-rec', { deleted: true, deletedAt: NOW - 5 * DAY })); // keep
+    await records.put(await rec('live-rec')); // not deleted → keep
+    await records.put(await rec('legacy-rec', { deleted: true })); // no deletedAt → keep
+    await records.put(await rec('shredded-rec', { deleted: true, deletedAt: NOW - 100 * DAY, sealedPhi: shredEnvelope() }));
 
     const report = await runRetention({ documents, records }, 90, NOW);
 
@@ -84,7 +84,7 @@ describe('runRetention', () => {
   it('defaults the window from SHIORA_RETENTION_DAYS when not passed', async () => {
     const documents = new InMemoryDocumentStore();
     const records = new InMemoryRecordStore();
-    await documents.put(doc('old', { deleted: true, deletedAt: 1 })); // ancient
+    await documents.put(await doc('old', { deleted: true, deletedAt: 1 })); // ancient
     process.env.SHIORA_RETENTION_DAYS = '30';
     const report = await runRetention({ documents, records }); // days/now/batch default
     expect(report.retentionDays).toBe(30);
@@ -94,7 +94,7 @@ describe('runRetention', () => {
   it('is a no-op when retention is disabled (days null)', async () => {
     const documents = new InMemoryDocumentStore();
     const records = new InMemoryRecordStore();
-    await documents.put(doc('old', { deleted: true, deletedAt: NOW - 999 * DAY }));
+    await documents.put(await doc('old', { deleted: true, deletedAt: NOW - 999 * DAY }));
 
     const report = await runRetention({ documents, records }, null, NOW);
     expect(report).toMatchObject({ retentionDays: null, documentsPurged: 0, recordsPurged: 0 });
@@ -104,7 +104,7 @@ describe('runRetention', () => {
   it('skips soft-deleted rows with no deletedAt (legacy)', async () => {
     const documents = new InMemoryDocumentStore();
     const records = new InMemoryRecordStore();
-    await documents.put(doc('legacy', { deleted: true })); // no deletedAt
+    await documents.put(await doc('legacy', { deleted: true })); // no deletedAt
 
     const report = await runRetention({ documents, records }, 1, NOW);
     expect(report.documentsPurged).toBe(0);

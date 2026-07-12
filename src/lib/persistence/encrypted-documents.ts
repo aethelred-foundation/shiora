@@ -59,13 +59,13 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
     if (!row || row.deleted) {
       return undefined;
     }
-    return { document: this.open(ownerKey, row), version: versionOf(row) };
+    return { document: await this.open(ownerKey, row), version: versionOf(row) };
   }
 
   /** List and decrypt all of an owner's non-deleted documents. */
   async list(ownerKey: string): Promise<T[]> {
     const rows = await this.store.findByOwner(this.collection, ownerKey);
-    return rows.filter((row) => !row.deleted).map((row) => this.open(ownerKey, row));
+    return Promise.all(rows.filter((row) => !row.deleted).map((row) => this.open(ownerKey, row)));
   }
 
   /**
@@ -74,7 +74,7 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
    */
   async listAll(): Promise<T[]> {
     const rows = await this.store.listAll(this.collection);
-    return rows.filter((row) => !row.deleted).map((row) => this.open(row.ownerKey, row));
+    return Promise.all(rows.filter((row) => !row.deleted).map((row) => this.open(row.ownerKey, row)));
   }
 
   /**
@@ -100,7 +100,7 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
       throw new OptimisticLockError(expectedVersion, currentVersion);
     }
 
-    const current = this.open(ownerKey, row);
+    const current = await this.open(ownerKey, row);
     const next = { ...current, ...patch, id: current.id } as T;
     await this.persist(ownerKey, next, currentVersion + 1);
     await this.record(this.actions.update, actor, id, ownerKey);
@@ -146,7 +146,7 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
   }
 
   private async persist(ownerKey: string, document: T, version: number): Promise<void> {
-    const sealed = sealJson<T>(document, this.aad(ownerKey, document.id));
+    const sealed = await sealJson<T>(document, this.aad(ownerKey, document.id));
     await this.store.put({
       collection: this.collection,
       ownerKey,
@@ -157,7 +157,7 @@ export class EncryptedDocumentRepository<T extends { id: string }> {
     });
   }
 
-  private open(ownerKey: string, row: StoredDocument): T {
+  private async open(ownerKey: string, row: StoredDocument): Promise<T> {
     if (isShredded(row.sealed)) {
       throw new Error('Document has been crypto-shredded and cannot be read.');
     }

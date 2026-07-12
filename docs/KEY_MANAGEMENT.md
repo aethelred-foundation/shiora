@@ -41,12 +41,38 @@ never enters application memory**. Implemented and fully tested
 fail-closed on every transport/status/shape surprise). AWS KMS / GCP KMS
 `Encrypt`/`Decrypt` are drop-in behind the same interface.
 
-**Adoption status (honest):** the PHI envelope read/write path
-(`envelope.ts` → encrypted repositories) still wraps DEKs with the in-process
-KEK synchronously. Re-plumbing it onto the async `DekWrapper` seam (making
-seal/open async through both repositories, the re-seal job, and the IPFS
-service) is the tracked next engineering step and a pilot go/no-go gate — the
-custody backend is ready; the plumbing is the remaining work.
+**Adoption status: ADOPTED.** The PHI envelope path is async end to end and
+wraps/unwraps every DEK through `getDekWrapper()`: `envelope.ts` → both
+encrypted repositories (`encrypted-documents.ts`, `encrypted-records.ts`) →
+the re-seal job (`kek-reseal.ts`) → the IPFS object service. Configuring
+Transit switches the entire PHI write path onto Vault custody with no code
+change; the local KEK remains the development/single-tenant backend behind
+the same seam. See §Envelope wire format for how mixed-custody reads work
+during (and after) a cut-over.
+
+### Envelope wire format & mixed-custody reads
+
+Sealed values record which custody wrapped their DEK:
+
+- `sealed.v` — the wrapping-key version (unchanged semantics): the local KEK
+  version, or the Transit key version parsed from the `vault:v<N>:...`
+  ciphertext.
+- `sealed.wrap` — the custody backend, `local-kek` or `vault-transit`.
+  Envelopes sealed **before** this adoption carry no `wrap` field and keep the
+  legacy inline local-KEK wrap (base64url `iv:tag:ciphertext`, AAD-bound to
+  the `shiora/dek-wrap/v1` domain); they remain readable until re-sealed.
+
+Every envelope opens through the backend it names, so reads are
+mixed-custody safe throughout a migration: after a Transit cut-over,
+historical local-KEK and legacy envelopes still open through the local path,
+while a Transit-wrapped envelope opens ONLY through Vault and fails closed
+when Transit is not configured. The re-seal job migrates custody as well as
+key versions — an envelope is rewritten when its backend differs from the
+active one (the legacy format included) or its version is superseded — so one
+completed run after a cut-over leaves the whole corpus under the new custody
+and retires the legacy format. The job learns the current Transit key version
+by wrapping a throwaway probe DEK, because its token deliberately lacks
+key-metadata read rights (see §Environments & separation).
 
 ## Environments & separation
 

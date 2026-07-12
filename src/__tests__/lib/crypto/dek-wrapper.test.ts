@@ -11,7 +11,7 @@ import {
   __resetDekWrapperForTests,
   type WrappedDek,
 } from '@/lib/crypto/dek-wrapper';
-import { __resetKeyProviderForTests } from '@/lib/crypto/key-provider';
+import { getKeyProvider, __resetKeyProviderForTests } from '@/lib/crypto/key-provider';
 
 const TRANSIT_ENVS = ['SHIORA_VAULT_ADDR', 'SHIORA_VAULT_TOKEN', 'SHIORA_TRANSIT_KEY_NAME'] as const;
 const saved: Record<string, string | undefined> = {};
@@ -59,6 +59,21 @@ describe('LocalKekDekWrapper', () => {
     raw[raw.length - 1] ^= 0xff;
     await expect(wrapperImpl.unwrap({ ...wrapped, ciphertext: raw.toString('base64') }))
       .rejects.toThrow();
+  });
+
+  it('binds the wrap to the DEK-wrap domain (a ciphertext produced without the AAD fails)', async () => {
+    // A well-formed GCM ciphertext under the same KEK, but not AAD-bound to
+    // the DEK-wrap domain, must not be accepted as a wrapped DEK.
+    const provider = getKeyProvider();
+    const version = provider.currentVersion();
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', provider.keyForVersion(version), iv);
+    const body = Buffer.concat([cipher.update(crypto.randomBytes(32)), cipher.final()]);
+    const unbound = Buffer.concat([iv, cipher.getAuthTag(), body]).toString('base64');
+
+    await expect(new LocalKekDekWrapper().unwrap({
+      ciphertext: unbound, keyVersion: version, backend: 'local-kek',
+    })).rejects.toThrow();
   });
 });
 

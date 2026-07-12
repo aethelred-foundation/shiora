@@ -22,7 +22,7 @@ class FakeSqlClient implements SqlClient {
 
 const OWNER = 'aeth1owner000000000000000000000000000000';
 
-function sealedRow() {
+async function sealedRow() {
   // Postgres returns bigint columns as strings; mirror that to exercise Number().
   return {
     id: 'rec-1',
@@ -39,14 +39,14 @@ function sealedRow() {
     ipfs_nodes: 3,
     block_height: '2847400',
     encryption: 'AES-256-GCM',
-    sealed_phi: sealJson({ label: 'BRCA1', description: 'd', tags: ['g'] }, `${OWNER}:rec-1`),
+    sealed_phi: await sealJson({ label: 'BRCA1', description: 'd', tags: ['g'] }, `${OWNER}:rec-1`),
     deleted: false,
     deleted_at: 1700000000000,
     blind_tags: ['tok1', 'tok2'],
   };
 }
 
-function storedRecord(): StoredRecord {
+async function storedRecord(): Promise<StoredRecord> {
   return {
     id: 'rec-1',
     ownerAddress: OWNER,
@@ -62,7 +62,7 @@ function storedRecord(): StoredRecord {
     ipfsNodes: 3,
     blockHeight: 2_847_400,
     encryption: 'AES-256-GCM',
-    sealedPhi: sealJson({ label: 'BRCA1', description: 'd', tags: ['g'] }, `${OWNER}:rec-1`),
+    sealedPhi: await sealJson({ label: 'BRCA1', description: 'd', tags: ['g'] }, `${OWNER}:rec-1`),
     deleted: false,
   };
 }
@@ -77,7 +77,7 @@ describe('PgRecordStore', () => {
 
   it('upserts a record with the PHI serialized as JSON', async () => {
     const client = new FakeSqlClient();
-    await new PgRecordStore(client).put(storedRecord());
+    await new PgRecordStore(client).put(await storedRecord());
 
     expect(client.calls).toHaveLength(1);
     const { text, params } = client.calls[0];
@@ -94,7 +94,7 @@ describe('PgRecordStore', () => {
 
   it('finds a record by id and maps bigint columns to numbers', async () => {
     const client = new FakeSqlClient();
-    client.enqueue([sealedRow()]);
+    client.enqueue([await sealedRow()]);
 
     const row = await new PgRecordStore(client).findById(OWNER, 'rec-1');
     expect(row?.id).toBe('rec-1');
@@ -108,7 +108,7 @@ describe('PgRecordStore', () => {
 
   it('omits deletedAt when deleted_at is null', async () => {
     const client = new FakeSqlClient();
-    client.enqueue([{ ...sealedRow(), deleted_at: null, blind_tags: null }]);
+    client.enqueue([{ ...await sealedRow(), deleted_at: null, blind_tags: null }]);
     const row = await new PgRecordStore(client).findById(OWNER, 'rec-1');
     expect(row?.deletedAt).toBeUndefined();
     expect(row?.blindTags).toBeUndefined();
@@ -122,7 +122,7 @@ describe('PgRecordStore', () => {
 
   it('lists an owner\'s records ordered by the query', async () => {
     const client = new FakeSqlClient();
-    client.enqueue([sealedRow(), { ...sealedRow(), id: 'rec-2' }]);
+    client.enqueue([await sealedRow(), { ...await sealedRow(), id: 'rec-2' }]);
 
     const rows = await new PgRecordStore(client).findByOwner(OWNER);
     expect(rows.map((r) => r.id)).toEqual(['rec-1', 'rec-2']);
@@ -133,7 +133,7 @@ describe('PgRecordStore', () => {
     it('scans from the start and reports a next cursor when the page is full', async () => {
       const client = new FakeSqlClient();
       const store = new PgRecordStore(client);
-      client.enqueue([sealedRow(), { ...sealedRow(), id: 'rec-2' }]);
+      client.enqueue([await sealedRow(), { ...await sealedRow(), id: 'rec-2' }]);
 
       const page = await store.scanForReseal(null, 2);
       expect(page.rows.map((r) => r.id)).toEqual(['rec-1', 'rec-2']);
@@ -146,7 +146,7 @@ describe('PgRecordStore', () => {
       const client = new FakeSqlClient();
       const store = new PgRecordStore(client);
       const { encodeCursor } = await import('@/lib/persistence/reseal-cursor');
-      client.enqueue([sealedRow()]);
+      client.enqueue([await sealedRow()]);
 
       const page = await store.scanForReseal(encodeCursor(['rec-0']), 5);
       expect(page.rows).toHaveLength(1);

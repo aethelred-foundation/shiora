@@ -16,11 +16,11 @@
 //                          revocation is deleting the app's token/policy.
 //
 // Selection: Transit when SHIORA_TRANSIT_KEY_NAME (+ Vault addr/token) is
-// configured, else the local KEK. Migration status (honest): the envelope
-// read/write path still uses the synchronous local KEK; re-plumbing it onto
-// this async seam is the tracked next step (docs/KEY_MANAGEMENT.md §Adoption).
-// Everything here is fail-closed: any transport, status, or shape surprise
-// throws rather than degrading.
+// configured, else the local KEK. Adopted: the PHI envelope path
+// (src/lib/crypto/envelope.ts) wraps and unwraps every DEK through
+// getDekWrapper(), so this seam IS the production custody path
+// (docs/KEY_MANAGEMENT.md §Adoption). Everything here is fail-closed: any
+// transport, status, or shape surprise throws rather than degrading.
 // ============================================================
 
 import crypto from 'node:crypto';
@@ -47,7 +47,15 @@ export interface DekWrapper {
 
 const GCM_IV_BYTES = 12;
 
-/** AES-256-GCM DEK wrapping under the KeyProvider KEK (today's custody). */
+/**
+ * Domain separator (AAD) binding a local-KEK DEK wrap to its purpose: a GCM
+ * ciphertext produced under the same KEK for any other purpose cannot be
+ * presented as a wrapped DEK. The same domain string has bound the envelope's
+ * inline DEK wrap since v1, so legacy envelopes unwrap under this constant too.
+ */
+export const DEK_WRAP_AAD = 'shiora/dek-wrap/v1';
+
+/** AES-256-GCM DEK wrapping under the KeyProvider KEK (in-process custody). */
 export class LocalKekDekWrapper implements DekWrapper {
   readonly backend: WrapBackend = 'local-kek';
 
@@ -56,6 +64,7 @@ export class LocalKekDekWrapper implements DekWrapper {
     const version = provider.currentVersion();
     const iv = crypto.randomBytes(GCM_IV_BYTES);
     const cipher = crypto.createCipheriv('aes-256-gcm', provider.keyForVersion(version), iv);
+    cipher.setAAD(Buffer.from(DEK_WRAP_AAD, 'utf8'));
     const wrapped = Buffer.concat([cipher.update(dek), cipher.final()]);
     const tag = cipher.getAuthTag();
     return {
@@ -72,6 +81,7 @@ export class LocalKekDekWrapper implements DekWrapper {
     const body = raw.subarray(GCM_IV_BYTES + 16);
     const key = getKeyProvider().keyForVersion(wrapped.keyVersion);
     const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAAD(Buffer.from(DEK_WRAP_AAD, 'utf8'));
     decipher.setAuthTag(tag);
     return Buffer.concat([decipher.update(body), decipher.final()]);
   }

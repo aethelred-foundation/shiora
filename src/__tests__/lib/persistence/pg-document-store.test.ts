@@ -22,23 +22,23 @@ class FakeSqlClient implements SqlClient {
 const COLLECTION = 'access-grant';
 const OWNER = 'aeth1owner';
 
-function storedDoc(): StoredDocument {
+async function storedDoc(): Promise<StoredDocument> {
   // No version field → put() must fall back to version 1.
   return {
     collection: COLLECTION,
     ownerKey: OWNER,
     id: 'doc-1',
-    sealed: sealJson({ id: 'doc-1', v: 1 }, `${COLLECTION}:${OWNER}:doc-1`),
+    sealed: await sealJson({ id: 'doc-1', v: 1 }, `${COLLECTION}:${OWNER}:doc-1`),
     deleted: false,
   };
 }
 
-function docRow() {
+async function docRow() {
   return {
     collection: COLLECTION,
     owner_key: OWNER,
     id: 'doc-1',
-    sealed: sealJson({ id: 'doc-1', v: 1 }, `${COLLECTION}:${OWNER}:doc-1`),
+    sealed: await sealJson({ id: 'doc-1', v: 1 }, `${COLLECTION}:${OWNER}:doc-1`),
     deleted: true,
     version: 1,
     deleted_at: 1700000000000,
@@ -56,7 +56,7 @@ describe('PgDocumentStore', () => {
 
   it('upserts a document with the sealed payload serialized as JSON', async () => {
     const client = new FakeSqlClient();
-    await new PgDocumentStore(client).put(storedDoc());
+    await new PgDocumentStore(client).put(await storedDoc());
     const { text, params } = client.calls[0];
     expect(text).toContain('INSERT INTO documents');
     expect(text).toContain('ON CONFLICT (collection, id) DO UPDATE SET');
@@ -68,7 +68,7 @@ describe('PgDocumentStore', () => {
 
   it('finds a document by collection, owner, and id', async () => {
     const client = new FakeSqlClient();
-    client.enqueue([docRow()]);
+    client.enqueue([await docRow()]);
     const found = await new PgDocumentStore(client).findById(COLLECTION, OWNER, 'doc-1');
     expect(found?.id).toBe('doc-1');
     expect(found?.ownerKey).toBe(OWNER);
@@ -83,7 +83,7 @@ describe('PgDocumentStore', () => {
 
   it('omits deletedAt when the row was never soft-deleted (deleted_at null)', async () => {
     const client = new FakeSqlClient();
-    client.enqueue([{ ...docRow(), deleted: false, deleted_at: null }]);
+    client.enqueue([{ ...await docRow(), deleted: false, deleted_at: null }]);
     const found = await new PgDocumentStore(client).findById(COLLECTION, OWNER, 'doc-1');
     expect(found).toBeDefined();
     expect(found?.deletedAt).toBeUndefined();
@@ -91,7 +91,7 @@ describe('PgDocumentStore', () => {
 
   it('lists an owner\'s documents ordered by recency', async () => {
     const client = new FakeSqlClient();
-    client.enqueue([docRow(), { ...docRow(), id: 'doc-2' }]);
+    client.enqueue([await docRow(), { ...await docRow(), id: 'doc-2' }]);
     const docs = await new PgDocumentStore(client).findByOwner(COLLECTION, OWNER);
     expect(docs.map((d) => d.id)).toEqual(['doc-1', 'doc-2']);
     expect(client.calls[0].text).toContain('ORDER BY created_at DESC');
@@ -99,7 +99,7 @@ describe('PgDocumentStore', () => {
 
   it('listAll returns every document in a collection across owners', async () => {
     const client = new FakeSqlClient();
-    client.enqueue([docRow(), { ...docRow(), owner_key: 'other', id: 'doc-2' }]);
+    client.enqueue([await docRow(), { ...await docRow(), owner_key: 'other', id: 'doc-2' }]);
     const docs = await new PgDocumentStore(client).listAll(COLLECTION);
     expect(docs.map((d) => d.id)).toEqual(['doc-1', 'doc-2']);
     expect(client.calls[0].params).toEqual([COLLECTION]);
@@ -110,10 +110,10 @@ describe('PgDocumentStore', () => {
     it('scans from the start with no cursor and reports a next cursor when full', async () => {
       const client = new FakeSqlClient();
       const store = new PgDocumentStore(client);
-      const rows = Array.from({ length: 2 }, (_, i) => ({
+      const rows = await Promise.all(Array.from({ length: 2 }, async (_, i) => ({
         collection: 'c', owner_key: OWNER, id: `d${i}`,
-        sealed: sealJson({ id: `d${i}` }, `c:${OWNER}:d${i}`), deleted: false,
-      }));
+        sealed: await sealJson({ id: `d${i}` }, `c:${OWNER}:d${i}`), deleted: false,
+      })));
       client.enqueue(rows);
 
       const page = await store.scanForReseal(null, 2);
@@ -130,7 +130,7 @@ describe('PgDocumentStore', () => {
       const { encodeCursor } = await import('@/lib/persistence/reseal-cursor');
       client.enqueue([{
         collection: 'c', owner_key: OWNER, id: 'last',
-        sealed: sealJson({ id: 'last' }, `c:${OWNER}:last`), deleted: false,
+        sealed: await sealJson({ id: 'last' }, `c:${OWNER}:last`), deleted: false,
       }]);
 
       const page = await store.scanForReseal(encodeCursor(['c', 'd0']), 5);
