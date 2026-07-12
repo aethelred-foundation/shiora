@@ -24,9 +24,18 @@ export interface AnchorReceipt {
   submittedAt: number;
 }
 
+/**
+ * The observed finality of a submitted anchor. 'pending' means the network has
+ * not yet included the transaction — an anchor must never be reported as
+ * anchored while pending.
+ */
+export type AnchorConfirmation = 'confirmed' | 'pending' | 'failed';
+
 export interface AnchorClient {
   /** Broadcast (or locally record) an anchor for the given payload hash. */
   submit(payloadHash: string): Promise<AnchorReceipt>;
+  /** Check whether a previously submitted anchor is final on the target. */
+  confirm(ref: string): Promise<AnchorConfirmation>;
 }
 
 /** True when an L1 JSON-RPC endpoint is configured for real on-chain anchoring. */
@@ -52,6 +61,11 @@ export class LocalAnchorClient implements AnchorClient {
       submittedAt: Date.now(),
     };
   }
+
+  /** A local record is durable the moment it is written — nothing to await. */
+  async confirm(): Promise<AnchorConfirmation> {
+    return 'confirmed';
+  }
 }
 
 interface JsonRpcError {
@@ -59,9 +73,14 @@ interface JsonRpcError {
   message: string;
 }
 
-interface JsonRpcResponse {
-  result?: string;
+interface JsonRpcResponse<T> {
+  result?: T;
   error?: JsonRpcError;
+}
+
+/** The subset of an EVM transaction receipt the anchor pipeline reads. */
+interface TransactionReceipt {
+  status?: string;
 }
 
 /**
@@ -78,17 +97,41 @@ export class JsonRpcAnchorClient implements AnchorClient {
   ) {}
 
   async submit(payloadHash: string): Promise<AnchorReceipt> {
+    const txHash = await this.rpc<string>('eth_sendTransaction', [
+      { from: this.from, to: this.to, data: `0x${payloadHash}` },
+    ]);
+    if (!txHash) {
+      throw new Error('L1 RPC returned no transaction hash.');
+    }
+    return {
+      ref: txHash,
+      status: 'on-chain',
+      target: this.rpcUrl,
+      submittedAt: Date.now(),
+    };
+  }
+
+  /**
+   * Look up the transaction receipt. No receipt yet means the transaction is
+   * still pending; a receipt with a non-success status means it reverted.
+   * Transport failures throw so the caller can distinguish "the network says
+   * pending" from "we could not ask the network".
+   */
+  async confirm(ref: string): Promise<AnchorConfirmation> {
+    const receipt = await this.rpc<TransactionReceipt | null>('eth_getTransactionReceipt', [ref]);
+    if (!receipt) {
+      return 'pending';
+    }
+    return receipt.status === '0x1' ? 'confirmed' : 'failed';
+  }
+
+  private async rpc<T>(method: string, params: unknown[]): Promise<T | undefined> {
     let res: Awaited<ReturnType<typeof fetch>>;
     try {
       res = await fetch(this.rpcUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'eth_sendTransaction',
-          params: [{ from: this.from, to: this.to, data: `0x${payloadHash}` }],
-        }),
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
       });
     } catch {
       throw new Error(`L1 RPC at ${this.rpcUrl} is unreachable.`);
@@ -96,19 +139,11 @@ export class JsonRpcAnchorClient implements AnchorClient {
     if (!res.ok) {
       throw new Error(`L1 RPC returned HTTP ${res.status}.`);
     }
-    const body = (await res.json()) as JsonRpcResponse;
+    const body = (await res.json()) as JsonRpcResponse<T>;
     if (body.error) {
       throw new Error(`L1 RPC error ${body.error.code}: ${body.error.message}`);
     }
-    if (!body.result) {
-      throw new Error('L1 RPC returned no transaction hash.');
-    }
-    return {
-      ref: body.result,
-      status: 'on-chain',
-      target: this.rpcUrl,
-      submittedAt: Date.now(),
-    };
+    return body.result;
   }
 }
 

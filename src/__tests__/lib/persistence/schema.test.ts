@@ -27,6 +27,9 @@ import {
   MIGRATIONS,
   WEBAUTHN_CHALLENGES_DDL,
   WEBAUTHN_CHALLENGES_EXPIRY_INDEX_DDL,
+  ANCHOR_OUTBOX_DDL,
+  ANCHOR_OUTBOX_DUE_INDEX_DDL,
+  ANCHOR_OUTBOX_SEGMENT_INDEX_DDL,
 } from '@/lib/persistence/schema';
 
 describe('persistence schema', () => {
@@ -87,7 +90,18 @@ describe('persistence schema', () => {
       HEALTH_RECORDS_BLIND_TAGS_DDL,
       WEBAUTHN_CHALLENGES_DDL,
       WEBAUTHN_CHALLENGES_EXPIRY_INDEX_DDL,
+      ANCHOR_OUTBOX_DDL,
+      ANCHOR_OUTBOX_DUE_INDEX_DDL,
+      ANCHOR_OUTBOX_SEGMENT_INDEX_DDL,
     ]);
+  });
+
+  it('anchor outbox DDL keeps the salt off-chain and enforces one job per segment start', () => {
+    expect(ANCHOR_OUTBOX_DDL).toContain('CREATE TABLE IF NOT EXISTS anchor_outbox');
+    expect(ANCHOR_OUTBOX_DDL).toContain('salt            text    NOT NULL');
+    expect(ANCHOR_OUTBOX_DDL).toContain('state           text    NOT NULL');
+    expect(ANCHOR_OUTBOX_DUE_INDEX_DDL).toContain('idx_anchor_outbox_due');
+    expect(ANCHOR_OUTBOX_SEGMENT_INDEX_DDL).toContain('CREATE UNIQUE INDEX IF NOT EXISTS idx_anchor_outbox_from_seq');
   });
 
   it('revocation DDL defines token denylist + per-subject sign-out cutoff', () => {

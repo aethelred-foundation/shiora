@@ -45,6 +45,10 @@ describe('LocalAnchorClient', () => {
     expect(receipt.target).toBe('local');
     expect(typeof receipt.submittedAt).toBe('number');
   });
+
+  it('confirms immediately — a local record is final as soon as it is written', async () => {
+    expect(await new LocalAnchorClient().confirm('local:abc123')).toBe('confirmed');
+  });
 });
 
 describe('JsonRpcAnchorClient', () => {
@@ -90,6 +94,68 @@ describe('JsonRpcAnchorClient', () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({}) });
     await expect(client().submit('x')).rejects.toThrow(/no transaction hash/);
   });
+
+  describe('confirm', () => {
+    it('asks the node for the transaction receipt', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ result: { status: '0x1' } }),
+      });
+      await client().confirm('0xtxhash');
+
+      const [, init] = (global.fetch as jest.Mock).mock.calls[0];
+      const sent = JSON.parse((init as { body: string }).body);
+      expect(sent.method).toBe('eth_getTransactionReceipt');
+      expect(sent.params).toEqual(['0xtxhash']);
+    });
+
+    it('reports confirmed once the receipt shows success', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ result: { status: '0x1' } }),
+      });
+      expect(await client().confirm('0xtxhash')).toBe('confirmed');
+    });
+
+    it('reports pending while the transaction has no receipt yet', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ result: null }),
+      });
+      expect(await client().confirm('0xtxhash')).toBe('pending');
+    });
+
+    it('reports failed when the transaction reverted', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ result: { status: '0x0' } }),
+      });
+      expect(await client().confirm('0xtxhash')).toBe('failed');
+    });
+
+    it('throws when the RPC is unreachable — the caller decides how to retry', async () => {
+      global.fetch = jest.fn().mockRejectedValue(new Error('ECONNREFUSED'));
+      await expect(client().confirm('0xtxhash')).rejects.toThrow(/unreachable/);
+    });
+
+    it('throws on a non-2xx response', async () => {
+      global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 502, json: () => Promise.resolve({}) });
+      await expect(client().confirm('0xtxhash')).rejects.toThrow(/HTTP 502/);
+    });
+
+    it('throws on a JSON-RPC error', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ error: { code: -32001, message: 'nope' } }),
+      });
+      await expect(client().confirm('0xtxhash')).rejects.toThrow(/-32001: nope/);
+    });
+  });
 });
 
 describe('getAnchorClient selection', () => {
@@ -100,5 +166,9 @@ describe('getAnchorClient selection', () => {
 
   it('returns a LocalAnchorClient otherwise', () => {
     expect(getAnchorClient()).toBeInstanceOf(LocalAnchorClient);
+  });
+
+  it('caches the selected client for the process', () => {
+    expect(getAnchorClient()).toBe(getAnchorClient());
   });
 });

@@ -211,6 +211,46 @@ CREATE TABLE IF NOT EXISTS login_attempts (
 export const LOGIN_ATTEMPTS_INDEX_DDL = `
 CREATE INDEX IF NOT EXISTS login_attempts_last_failure_idx ON login_attempts (last_failure)`.trim();
 
+// Transactional outbox for audit-segment anchoring (consultant pre-pilot).
+// Each row IS the segment cut: creating it fixes [from_seq, to_seq] and the
+// off-chain salt in the same logical operation, and the unique index on
+// from_seq makes the first replica to cut a segment win. Rows are never
+// pruned — the salt is the only way to open the on-chain commitment
+// (sha256(salt || merkle_root)), so the table doubles as the auditor's
+// off-chain record. Lifecycle: queued → submitted → confirmed, with bounded
+// retries through failed and a terminal dead letter state.
+export const ANCHOR_OUTBOX_DDL = `
+CREATE TABLE IF NOT EXISTS anchor_outbox (
+  id              text    PRIMARY KEY,
+  from_seq        bigint  NOT NULL,
+  to_seq          bigint  NOT NULL,
+  salt            text    NOT NULL,
+  merkle_root     text,
+  commitment      text,
+  state           text    NOT NULL,
+  attempts        integer NOT NULL DEFAULT 0,
+  next_attempt_at bigint  NOT NULL,
+  lease_until     bigint  NOT NULL DEFAULT 0,
+  submitted_at    bigint,
+  tx_ref          text,
+  anchor_target   text,
+  anchor_status   text,
+  last_error      text,
+  created_at      bigint  NOT NULL,
+  updated_at      bigint  NOT NULL
+);
+`.trim();
+
+export const ANCHOR_OUTBOX_DUE_INDEX_DDL = `
+CREATE INDEX IF NOT EXISTS idx_anchor_outbox_due
+  ON anchor_outbox (state, next_attempt_at);
+`.trim();
+
+export const ANCHOR_OUTBOX_SEGMENT_INDEX_DDL = `
+CREATE UNIQUE INDEX IF NOT EXISTS idx_anchor_outbox_from_seq
+  ON anchor_outbox (from_seq);
+`.trim();
+
 export const MIGRATIONS: readonly string[] = [
   HEALTH_RECORDS_DDL,
   HEALTH_RECORDS_OWNER_INDEX_DDL,
@@ -237,4 +277,7 @@ export const MIGRATIONS: readonly string[] = [
   HEALTH_RECORDS_BLIND_TAGS_DDL,
   WEBAUTHN_CHALLENGES_DDL,
   WEBAUTHN_CHALLENGES_EXPIRY_INDEX_DDL,
+  ANCHOR_OUTBOX_DDL,
+  ANCHOR_OUTBOX_DUE_INDEX_DDL,
+  ANCHOR_OUTBOX_SEGMENT_INDEX_DDL,
 ];
