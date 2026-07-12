@@ -11,6 +11,11 @@ jest.mock('@/lib/maintenance/retention', () => ({
   runDurableRetention: jest.fn(async () => ({ durable: true, retentionDays: null, documentsPurged: 0, recordsPurged: 0, ranAt: 0 })),
 }));
 jest.mock('@/lib/api/preflight', () => ({ hasDurableDatastore: jest.fn(() => false) }));
+jest.mock('@/lib/api/anchoring/anchor-outbox', () => ({
+  runAnchorOutbox: jest.fn(async () => ({
+    cut: 1, processed: 1, submitted: 0, confirmed: 1, pending: 0, retried: 0, dead: 0, errors: 0,
+  })),
+}));
 
 import {
   runStoreMaintenance,
@@ -27,6 +32,7 @@ import { getIdempotencyStore } from '@/lib/persistence/idempotency-store';
 import { getLoginAttemptStore } from '@/lib/persistence/login-attempt-store';
 import { getChallengeStore } from '@/lib/persistence/challenge-store';
 import { hasDurableDatastore } from '@/lib/api/preflight';
+import { runAnchorOutbox } from '@/lib/api/anchoring/anchor-outbox';
 
 const mockNonces = getNonceStore as jest.Mock;
 const mockRevocations = getRevocationStore as jest.Mock;
@@ -36,6 +42,7 @@ const mockIdempotency = getIdempotencyStore as jest.Mock;
 const mockLogin = getLoginAttemptStore as jest.Mock;
 const mockChallenges = getChallengeStore as jest.Mock;
 const mockDurable = hasDurableDatastore as jest.Mock;
+const mockOutbox = runAnchorOutbox as jest.Mock;
 
 let logSpy: jest.SpyInstance;
 let errorSpy: jest.SpyInstance;
@@ -81,8 +88,12 @@ describe('runStoreMaintenance', () => {
       prunedIdempotencyKeys: 11,
       prunedLoginAttempts: 13,
       prunedWebauthnChallenges: 17,
+      anchorOutbox: {
+        cut: 1, processed: 1, submitted: 0, confirmed: 1, pending: 0, retried: 0, dead: 0, errors: 0,
+      },
       ranAt: 1_000_000,
     });
+    expect(mockOutbox).toHaveBeenCalledWith(1_000_000);
     expect(noncePrune).toHaveBeenCalledWith(1_000_000);
     expect(revocationPrune).toHaveBeenCalledWith(1_000_000);
     expect(sessionPrune).toHaveBeenCalledWith(1_000_000);
@@ -116,6 +127,12 @@ describe('runStoreMaintenance', () => {
     expect(report.prunedLoginAttempts).toBe(0);
     expect(report.prunedWebauthnChallenges).toBe(0);
     expect(typeof report.ranAt).toBe('number');
+    // The anchor outbox runs regardless of datastore mode — an in-memory
+    // deployment still cuts and locally records its segments.
+    expect(mockOutbox).toHaveBeenCalled();
+    expect(report.anchorOutbox).toEqual({
+      cut: 1, processed: 1, submitted: 0, confirmed: 1, pending: 0, retried: 0, dead: 0, errors: 0,
+    });
   });
 });
 

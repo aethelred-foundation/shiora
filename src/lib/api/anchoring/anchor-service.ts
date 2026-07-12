@@ -1,16 +1,22 @@
 // ============================================================
-// Shiora on Aethelred — Anchor service (audit Finding F5)
+// Shiora on Aethelred — Anchor record service (audit Finding F5)
 //
-// Periodically commits the tamper-evident audit head to an external anchor so a
-// single operator can no longer rewrite history wholesale undetected. Each call:
-//   1. reads the current audit-chain head (hash + length),
-//   2. builds an AnchorRecord linked to the previous anchor (its own WORM chain),
-//   3. broadcasts the anchor hash through the AnchorClient seam (L1 when
-//      configured, else recorded locally), and
-//   4. persists the record append-only (never updated/deleted -> WORM).
+// The WORM, hash-linked series of anchors that have actually completed.
+// Direct (synchronous) anchoring used to live here; it is replaced by the
+// transactional outbox (anchor-outbox.ts), which now owns building,
+// submitting, and confirming anchors. This service keeps two duties:
 //
-// Anchors are a single global series (the audit chain is platform-wide), stored
-// under one global key, and independently verifiable via verifyAnchors().
+//   1. recordConfirmedAnchor() — the outbox's final step. Once a submission
+//      is confirmed (or honestly recorded as local-only), the segment
+//      commitment is appended here, hash-linked to the previous anchor, and
+//      never updated or deleted (WORM).
+//   2. listAnchors() / verifyAnchors() — the admin/auditor read path, which
+//      re-verifies the series' internal linkage on every read.
+//
+// Payloads are versioned: version 1 records (pre-outbox) committed the raw
+// audit head; version 2 records commit a salted segment commitment
+// (sha256(salt || merkleRoot), see segment-commitment.ts) so nothing
+// linkable ever reaches the chain. Both versions verify.
 // ============================================================
 
 import crypto from 'node:crypto';
@@ -23,21 +29,36 @@ import { InMemoryDocumentStore, type DocumentStorePort } from '@/lib/persistence
 import { PgDocumentStore } from '@/lib/persistence/pg-document-store';
 import { getPgClient } from '@/lib/persistence/sql-client';
 import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
-import { getAnchorClient, type AnchorReceipt } from './anchor-client';
+import type { AnchorReceipt } from './anchor-client';
 
 const COLLECTION = 'anchor';
 /** Single global series: the audit chain anchored is platform-wide, not per-owner. */
 const GLOBAL_KEY = '__global__';
 
-/** What an anchor commits to. Versioned so the structure can evolve. */
-export interface AnchorPayload {
-  /** The audit-chain head hash being anchored. */
+/** Pre-outbox payload: committed the raw audit head. Kept verifiable. */
+export interface AuditHeadPayload {
+  /** The audit-chain head hash that was anchored. */
   auditHead: string;
-  /** Number of entries the head covers. */
+  /** Number of entries the head covered. */
   auditLength: number;
   createdAt: number;
   version: 1;
 }
+
+/** Outbox payload: commits a salted segment commitment, nothing linkable. */
+export interface SegmentAnchorPayload {
+  /** sha256(salt || merkleRoot) — the only value that reached the chain. */
+  commitment: string;
+  /** First audit-chain seq the segment covers (inclusive). */
+  fromSeq: number;
+  /** Last audit-chain seq the segment covers (inclusive). */
+  toSeq: number;
+  createdAt: number;
+  version: 2;
+}
+
+/** What an anchor commits to. Versioned so the structure can evolve. */
+export type AnchorPayload = AuditHeadPayload | SegmentAnchorPayload;
 
 /** A WORM, hash-linked anchor record. */
 export interface AnchorRecord {
@@ -50,6 +71,14 @@ export interface AnchorRecord {
   hash: string;
   payload: AnchorPayload;
   /** Where/how the anchor was submitted (on-chain or local). */
+  receipt: AnchorReceipt;
+}
+
+/** What the outbox hands over once a submission is confirmed. */
+export interface ConfirmedAnchorInput {
+  commitment: string;
+  fromSeq: number;
+  toSeq: number;
   receipt: AnchorReceipt;
 }
 
@@ -83,14 +112,10 @@ function repo(): EncryptedDocumentRepository<AnchorRecord> {
 }
 
 function anchorHash(prevHash: string, seq: number, payload: AnchorPayload): string {
-  const preimage = [
-    prevHash,
-    seq,
-    payload.auditHead,
-    payload.auditLength,
-    payload.createdAt,
-    payload.version,
-  ].join('|');
+  const fields = payload.version === 1
+    ? [payload.auditHead, payload.auditLength]
+    : [payload.commitment, payload.fromSeq, payload.toSeq];
+  const preimage = [prevHash, seq, ...fields, payload.createdAt, payload.version].join('|');
   return crypto.createHash('sha256').update(preimage).digest('hex');
 }
 
@@ -100,7 +125,7 @@ async function anchorsAsc(): Promise<AnchorRecord[]> {
   return all.sort((a, b) => a.seq - b.seq);
 }
 
-/** The most recent anchor, or null when none have been created. */
+/** The most recent anchor, or null when none have been recorded. */
 export async function getLatestAnchor(): Promise<AnchorRecord | null> {
   const all = await anchorsAsc();
   return all.length === 0 ? null : all[all.length - 1];
@@ -113,25 +138,32 @@ export async function listAnchors(): Promise<AnchorRecord[]> {
 }
 
 /**
- * Create the next anchor over the current audit head and submit it through the
- * configured AnchorClient. `now` is injectable for deterministic tests.
+ * Append the WORM record for a confirmed anchor — the outbox's final step,
+ * called only after the network confirmed the submission (or for an honest
+ * local-only receipt). `now` is injectable for deterministic tests.
  */
-export async function createAnchor(now: number = Date.now()): Promise<AnchorRecord> {
-  const head = await getAuditLog().head();
+export async function recordConfirmedAnchor(
+  input: ConfirmedAnchorInput,
+  now: number = Date.now(),
+): Promise<AnchorRecord> {
   const latest = await getLatestAnchor();
-
   const seq = latest ? latest.seq + 1 : 0;
   const prevHash = latest ? latest.hash : GENESIS_HASH;
-  const payload: AnchorPayload = {
-    auditHead: head.hash,
-    auditLength: head.length,
+  const payload: SegmentAnchorPayload = {
+    commitment: input.commitment,
+    fromSeq: input.fromSeq,
+    toSeq: input.toSeq,
     createdAt: now,
-    version: 1,
+    version: 2,
   };
-  const hash = anchorHash(prevHash, seq, payload);
-  const receipt = await getAnchorClient().submit(hash);
-
-  const record: AnchorRecord = { id: randomUUID(), seq, prevHash, hash, payload, receipt };
+  const record: AnchorRecord = {
+    id: randomUUID(),
+    seq,
+    prevHash,
+    hash: anchorHash(prevHash, seq, payload),
+    payload,
+    receipt: input.receipt,
+  };
   await repo().create(GLOBAL_KEY, record);
   return record;
 }

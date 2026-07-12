@@ -16,6 +16,7 @@ import { getSessionIndexStore } from '@/lib/persistence/session-index-store';
 import { getIdempotencyStore } from '@/lib/persistence/idempotency-store';
 import { getLoginAttemptStore } from '@/lib/persistence/login-attempt-store';
 import { getChallengeStore } from '@/lib/persistence/challenge-store';
+import { runAnchorOutbox, type AnchorOutboxRunReport } from '@/lib/api/anchoring/anchor-outbox';
 import { runDurableRetention, type RetentionReport } from '@/lib/maintenance/retention';
 import { hasDurableDatastore } from '@/lib/api/preflight';
 import { createLogger } from '@/lib/observability/logger';
@@ -55,6 +56,8 @@ export interface MaintenanceReport {
   prunedWebauthnChallenges: number;
   /** Retention purge outcome (crypto-shred of expired soft-deletes, GAP-16). */
   retention: RetentionReport;
+  /** Anchor outbox pass outcome (consultant pre-pilot). Always fail-soft. */
+  anchorOutbox: AnchorOutboxRunReport;
   ranAt: number;
 }
 
@@ -73,6 +76,7 @@ export async function runStoreMaintenance(now: number = Date.now()): Promise<Mai
     prunedLoginAttempts: 0,
     prunedWebauthnChallenges: 0,
     retention: { durable: hasDurableDatastore(), retentionDays: null, documentsPurged: 0, recordsPurged: 0, ranAt: now },
+    anchorOutbox: { cut: 0, processed: 0, submitted: 0, confirmed: 0, pending: 0, retried: 0, dead: 0, errors: 0 },
     ranAt: now,
   };
 
@@ -121,6 +125,11 @@ export async function runStoreMaintenance(now: number = Date.now()): Promise<Mai
   // Enforce storage limitation: crypto-shred rows soft-deleted past the
   // retention window (GAP-16). No-op unless SHIORA_RETENTION_DAYS is set.
   report.retention = await runDurableRetention();
+
+  // Drive the anchor outbox: cut the next audit segment and work due jobs.
+  // runAnchorOutbox never throws (strictly fail-soft), so an L1 outage can
+  // degrade only this report — never the sweep, never a healthcare operation.
+  report.anchorOutbox = await runAnchorOutbox(now);
 
   runsTotal.inc({ outcome: 'ok' });
   log.info('store maintenance completed', { ...report });

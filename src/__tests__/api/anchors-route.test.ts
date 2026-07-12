@@ -8,9 +8,10 @@ jest.mock('@/lib/api/middleware', () => {
 import { NextRequest, NextResponse } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
 import { GET, POST } from '@/app/api/anchors/route';
-import { __resetAuditLogForTests } from '@/lib/api/audit-log';
+import { getAuditLog, __resetAuditLogForTests } from '@/lib/api/audit-log';
 import { __resetAnchorRepositoryForTests } from '@/lib/api/anchoring/anchor-service';
 import { __resetAnchorClientForTests } from '@/lib/api/anchoring/anchor-client';
+import { __resetAnchorOutboxStoreForTests } from '@/lib/persistence/anchor-outbox-store';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
 
@@ -29,11 +30,18 @@ function req(token?: string): NextRequest {
   return new NextRequest(URL, { headers });
 }
 
+async function seedAudit(): Promise<void> {
+  await getAuditLog().record({
+    action: 'RECORD_CREATE', actor: ADMIN, resource: 'record', resourceId: 'r1', success: true,
+  });
+}
+
 beforeEach(() => {
   process.env.SHIORA_ADMIN_ADDRESSES = ADMIN;
   __resetAuditLogForTests();
   __resetAnchorRepositoryForTests();
   __resetAnchorClientForTests();
+  __resetAnchorOutboxStoreForTests();
 });
 
 afterEach(() => {
@@ -55,12 +63,22 @@ describe('GET /api/anchors', () => {
     expect((await GET(req(userToken))).status).toBe(403);
   });
 
-  it('lists anchors and verifies the series for an admin', async () => {
-    await POST(req(adminToken)); // seed one anchor
+  it('lists outbox jobs plus the WORM anchor series, re-verified, for an admin', async () => {
+    await seedAudit();
+    await POST(req(adminToken)); // run one outbox pass (local client → confirmed)
+
     const res = await GET(req(adminToken));
     expect(res.status).toBe(200);
     const body = await res.json();
+    expect(body.data.jobs).toHaveLength(1);
+    expect(body.data.jobs[0]).toMatchObject({ state: 'confirmed', anchorStatus: 'local' });
     expect(body.data.anchors).toHaveLength(1);
+    expect(body.data.anchors[0].payload).toMatchObject({
+      version: 2,
+      commitment: body.data.jobs[0].commitment,
+      fromSeq: body.data.jobs[0].fromSeq,
+      toSeq: body.data.jobs[0].toSeq,
+    });
     expect(body.data.verification).toEqual({ valid: true, length: 1 });
   });
 });
@@ -75,11 +93,23 @@ describe('POST /api/anchors', () => {
     expect((await POST(req(userToken))).status).toBe(403);
   });
 
-  it('creates an anchor for an admin', async () => {
+  it('runs an outbox pass and answers 202 with the report — anchoring is asynchronous', async () => {
+    await seedAudit();
     const res = await POST(req(adminToken));
-    expect(res.status).toBe(201);
+    expect(res.status).toBe(202);
+
     const body = await res.json();
-    expect(body.data.seq).toBe(0);
-    expect(body.data.receipt.status).toBe('local');
+    expect(body.data.report).toMatchObject({ cut: 1, processed: 1, confirmed: 1, errors: 0 });
+    expect(body.data.jobs[0]).toMatchObject({ state: 'confirmed', anchorStatus: 'local' });
+    // The local receipt is honest: the ref names the commitment, no tx hash is invented.
+    expect(body.data.jobs[0].txRef).toBe(`local:${body.data.jobs[0].commitment}`);
+  });
+
+  it('answers 202 with a zero report when there is nothing to anchor', async () => {
+    const res = await POST(req(adminToken));
+    expect(res.status).toBe(202);
+    const body = await res.json();
+    expect(body.data.report).toMatchObject({ cut: 0, processed: 0 });
+    expect(body.data.jobs).toEqual([]);
   });
 });

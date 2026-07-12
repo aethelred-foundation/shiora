@@ -2,6 +2,7 @@
 
 import { getAuditLog, PersistentAuditLog, __resetAuditLogForTests } from '@/lib/api/audit-log';
 import { __resetAnchorClientForTests } from '@/lib/api/anchoring/anchor-client';
+import { listAnchors, __resetAnchorRepositoryForTests } from '@/lib/api/anchoring/anchor-service';
 import {
   ANCHOR_BATCH_LIMIT,
   ANCHOR_CONFIRMATION_POLL_MS,
@@ -80,6 +81,7 @@ afterEach(() => {
   __resetAuditLogForTests();
   __resetAnchorOutboxStoreForTests();
   __resetAnchorClientForTests();
+  __resetAnchorRepositoryForTests();
   __resetDerivedSecretsForTests();
   jest.restoreAllMocks();
 });
@@ -125,6 +127,15 @@ describe('runAnchorOutbox with the local client (no L1 configured)', () => {
     expect(job.anchorStatus).toBe('local');
     expect(job.anchorTarget).toBe('local');
     expect(job.txRef).toBe(`local:${job.commitment}`);
+
+    // Confirmation also lands in the WORM anchor series (audit finding F5).
+    const [anchor] = await listAnchors();
+    expect(anchor.payload).toMatchObject({
+      version: 2,
+      commitment: job.commitment,
+      fromSeq: job.fromSeq,
+      toSeq: job.toSeq,
+    });
   });
 
   it('anchors the salted commitment of the segment Merkle root — never the root itself', async () => {
@@ -175,7 +186,22 @@ describe('runAnchorOutbox against a JSON-RPC L1', () => {
     node.receipt.value = { status: '0x1' };
     const report = await runAnchorOutbox(T0 + ANCHOR_CONFIRMATION_POLL_MS);
     expect(report).toMatchObject({ processed: 1, confirmed: 1 });
-    expect((await listAnchorJobs())[0].state).toBe('confirmed');
+
+    const [job] = await listAnchorJobs();
+    expect(job.state).toBe('confirmed');
+
+    // Only now — with the receipt in hand — does the WORM series record it.
+    const [anchor] = await listAnchors();
+    expect(anchor.payload).toMatchObject({ version: 2, commitment: job.commitment });
+    expect(anchor.receipt).toMatchObject({ ref: '0xtx1', status: 'on-chain' });
+  });
+
+  it('records nothing in the WORM series while a submission is unconfirmed', async () => {
+    configureL1();
+    mockL1Node();
+    await seedAudit(2);
+    await runAnchorOutbox(T0);
+    expect(await listAnchors()).toEqual([]);
   });
 
   it('keeps polling an unconfirmed submission without consuming attempts', async () => {
@@ -396,13 +422,15 @@ describe('verifyAnchorJob (auditor helper)', () => {
 });
 
 describe('listAnchorJobs', () => {
-  it('returns jobs most-recent segment first', async () => {
+  it('returns jobs most-recent segment first; segments stay contiguous across passes', async () => {
     await seedAudit(2);
-    await runAnchorOutbox(T0);
-    await seedAudit(2);
+    await runAnchorOutbox(T0); // covers seqs 0-1; confirming appends the ANCHOR_CREATE entry at seq 2
+    await seedAudit(2); // seqs 3-4
     await runAnchorOutbox(T0 + 1);
 
     const jobs = await listAnchorJobs();
-    expect(jobs.map((job) => [job.fromSeq, job.toSeq])).toEqual([[2, 3], [0, 1]]);
+    // The second segment picks up exactly where the first ended — including
+    // the anchoring pipeline's own audit entry, which is part of the chain.
+    expect(jobs.map((job) => [job.fromSeq, job.toSeq])).toEqual([[2, 4], [0, 1]]);
   });
 });

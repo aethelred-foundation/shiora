@@ -29,6 +29,7 @@ import { randomUUID } from 'node:crypto';
 
 import { getAuditLog } from '@/lib/api/audit-log';
 import { getAnchorClient, type AnchorConfirmation } from '@/lib/api/anchoring/anchor-client';
+import { recordConfirmedAnchor } from '@/lib/api/anchoring/anchor-service';
 import {
   merkleRootOfHashes,
   newAnchorSalt,
@@ -187,6 +188,9 @@ async function buildAndSubmit(
   if (receipt.status === 'local') {
     // Recorded locally, not broadcast — final immediately, and honestly
     // labelled 'local' so it is never mistaken for an on-chain anchor.
+    // The WORM record lands before the state flips: a job only reads
+    // 'confirmed' once its durable anchor record exists.
+    await recordConfirmedAnchor({ commitment, fromSeq: job.fromSeq, toSeq: job.toSeq, receipt }, now);
     await store.markConfirmed(job.id, now);
     report.confirmed += 1;
     outcomesTotal.inc({ outcome: 'confirmed_local' });
@@ -213,6 +217,20 @@ async function checkConfirmation(
   }
 
   if (confirmation === 'confirmed') {
+    // WORM record first, then the state flip — see the local path above. A
+    // crash in between re-runs this branch; a duplicated series entry is
+    // harmless, a confirmed job without its record would not be.
+    await recordConfirmedAnchor({
+      commitment: String(job.commitment),
+      fromSeq: job.fromSeq,
+      toSeq: job.toSeq,
+      receipt: {
+        ref: String(job.txRef),
+        status: 'on-chain',
+        target: String(job.anchorTarget),
+        submittedAt: Number(job.submittedAt),
+      },
+    }, now);
     await store.markConfirmed(job.id, now);
     report.confirmed += 1;
     outcomesTotal.inc({ outcome: 'confirmed' });

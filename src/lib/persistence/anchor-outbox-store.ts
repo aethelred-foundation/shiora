@@ -107,10 +107,12 @@ export class InMemoryAnchorOutboxStore implements AnchorOutboxStore {
   private readonly jobs = new Map<string, AnchorJob>();
 
   async enqueue(job: NewAnchorJob, now: number): Promise<AnchorJob | null> {
-    for (const existing of this.jobs.values()) {
-      if (existing.fromSeq === job.fromSeq) {
-        return null;
-      }
+    let duplicate = false;
+    this.jobs.forEach((existing) => {
+      if (existing.fromSeq === job.fromSeq) duplicate = true;
+    });
+    if (duplicate) {
+      return null;
     }
     const created: AnchorJob = {
       ...job,
@@ -134,23 +136,23 @@ export class InMemoryAnchorOutboxStore implements AnchorOutboxStore {
 
   async lastCoveredSeq(): Promise<number | null> {
     let last: number | null = null;
-    for (const job of this.jobs.values()) {
+    this.jobs.forEach((job) => {
       if (last === null || job.toSeq > last) {
         last = job.toSeq;
       }
-    }
+    });
     return last;
   }
 
   async claimDue(now: number, leaseUntil: number, limit: number): Promise<AnchorJob[]> {
-    const due = [...this.jobs.values()]
+    const due = this.all()
       .filter((job) => CLAIMABLE_STATES.includes(job.state) && job.nextAttemptAt <= now && job.leaseUntil <= now)
       .sort((a, b) => a.fromSeq - b.fromSeq)
       .slice(0, limit);
-    for (const job of due) {
+    due.forEach((job) => {
       job.leaseUntil = leaseUntil;
       job.updatedAt = now;
-    }
+    });
     return due.map((job) => ({ ...job }));
   }
 
@@ -202,10 +204,16 @@ export class InMemoryAnchorOutboxStore implements AnchorOutboxStore {
   }
 
   async list(limit = 50): Promise<AnchorJob[]> {
-    return [...this.jobs.values()]
+    return this.all()
       .sort((a, b) => b.fromSeq - a.fromSeq)
       .slice(0, limit)
       .map((job) => ({ ...job }));
+  }
+
+  private all(): AnchorJob[] {
+    const jobs: AnchorJob[] = [];
+    this.jobs.forEach((job) => jobs.push(job));
+    return jobs;
   }
 
   private update(id: string, apply: (job: AnchorJob) => void, now: number): void {
