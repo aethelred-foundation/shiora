@@ -81,6 +81,22 @@ interface JsonRpcResponse<T> {
 /** The subset of an EVM transaction receipt the anchor pipeline reads. */
 interface TransactionReceipt {
   status?: string;
+  /** Block the transaction was mined into (hex), for the finality-depth check. */
+  blockNumber?: string;
+}
+
+/** Default confirmation depth an anchor must reach before it is reported final. */
+const DEFAULT_FINALITY_CONFIRMATIONS = 12;
+
+/**
+ * How many confirmations an anchor must accumulate before `confirm()` reports it
+ * final (consultant §6). A receipt alone is inclusion, not finality — a shallow
+ * block can still be reorged out — so the pipeline waits for depth. Configurable
+ * per network's documented finality rule via SHIORA_L1_FINALITY_CONFIRMATIONS.
+ */
+export function finalityConfirmations(): number {
+  const raw = Number(process.env.SHIORA_L1_FINALITY_CONFIRMATIONS);
+  return Number.isInteger(raw) && raw > 0 ? raw : DEFAULT_FINALITY_CONFIRMATIONS;
 }
 
 /**
@@ -112,8 +128,12 @@ export class JsonRpcAnchorClient implements AnchorClient {
   }
 
   /**
-   * Look up the transaction receipt. No receipt yet means the transaction is
-   * still pending; a receipt with a non-success status means it reverted.
+   * Report finality, not mere inclusion (consultant §6). No receipt yet means
+   * still pending; a non-success receipt means it reverted. A SUCCESS receipt is
+   * reported 'confirmed' only once its block is buried under the configured
+   * confirmation depth — until then it stays 'pending', because a shallow block
+   * can be reorged out (and if a reorg drops the tx entirely, the receipt
+   * disappears and we correctly fall back to 'pending' for re-submission).
    * Transport failures throw so the caller can distinguish "the network says
    * pending" from "we could not ask the network".
    */
@@ -122,7 +142,20 @@ export class JsonRpcAnchorClient implements AnchorClient {
     if (!receipt) {
       return 'pending';
     }
-    return receipt.status === '0x1' ? 'confirmed' : 'failed';
+    if (receipt.status !== '0x1') {
+      return 'failed';
+    }
+    if (!receipt.blockNumber) {
+      return 'pending';
+    }
+    const head = await this.rpc<string>('eth_blockNumber', []);
+    if (!head) {
+      return 'pending';
+    }
+    // confirmations = (head - includedBlock) + 1; a tx block ahead of head
+    // (a transient reorg anomaly) yields <= 0 and stays pending.
+    const confirmations = Number(BigInt(head) - BigInt(receipt.blockNumber)) + 1;
+    return confirmations >= finalityConfirmations() ? 'confirmed' : 'pending';
   }
 
   private async rpc<T>(method: string, params: unknown[]): Promise<T | undefined> {

@@ -50,8 +50,10 @@ async function seedAudit(n: number): Promise<void> {
  * An L1 node double: answers eth_sendTransaction with sequential hashes and
  * eth_getTransactionReceipt from a settable receipt.
  */
-function mockL1Node(): { receipt: { value: unknown }; sent: string[] } {
-  const state = { receipt: { value: null as unknown }, sent: [] as string[] };
+function mockL1Node(): { receipt: { value: unknown }; head: { value: string }; sent: string[] } {
+  // head defaults deep enough that any success receipt at block 1 clears the
+  // finality-confirmation depth (§6); tests that need a shallow tx lower it.
+  const state = { receipt: { value: null as unknown }, head: { value: '0x100' }, sent: [] as string[] };
   let txCounter = 0;
   global.fetch = jest.fn(async (_url, init) => {
     const request = JSON.parse((init as { body: string }).body);
@@ -59,6 +61,9 @@ function mockL1Node(): { receipt: { value: unknown }; sent: string[] } {
       state.sent.push(request.params[0].data);
       txCounter += 1;
       return { ok: true, status: 200, json: async () => ({ result: `0xtx${txCounter}` }) };
+    }
+    if (request.method === 'eth_blockNumber') {
+      return { ok: true, status: 200, json: async () => ({ result: state.head.value }) };
     }
     return { ok: true, status: 200, json: async () => ({ result: state.receipt.value }) };
   }) as unknown as typeof fetch;
@@ -183,7 +188,7 @@ describe('runAnchorOutbox against a JSON-RPC L1', () => {
     await seedAudit(2);
     await runAnchorOutbox(T0);
 
-    node.receipt.value = { status: '0x1' };
+    node.receipt.value = { status: '0x1', blockNumber: '0x1' };
     const report = await runAnchorOutbox(T0 + ANCHOR_CONFIRMATION_POLL_MS);
     expect(report).toMatchObject({ processed: 1, confirmed: 1 });
 

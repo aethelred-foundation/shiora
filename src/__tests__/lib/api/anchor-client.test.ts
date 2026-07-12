@@ -5,6 +5,7 @@ import {
   JsonRpcAnchorClient,
   getAnchorClient,
   isOnChainAnchoringConfigured,
+  finalityConfirmations,
   __resetAnchorClientForTests,
 } from '@/lib/api/anchoring/anchor-client';
 
@@ -18,7 +19,7 @@ function configureL1(): void {
 }
 
 afterEach(() => {
-  L1_ENVS.forEach((k) => delete process.env[k]);
+  [...L1_ENVS, 'SHIORA_L1_FINALITY_CONFIRMATIONS'].forEach((k) => delete process.env[k]);
   global.fetch = realFetch;
   __resetAnchorClientForTests();
   jest.clearAllMocks();
@@ -34,6 +35,18 @@ describe('isOnChainAnchoringConfigured', () => {
     configureL1();
     delete process.env[missing];
     expect(isOnChainAnchoringConfigured()).toBe(false);
+  });
+});
+
+describe('finalityConfirmations', () => {
+  it('defaults to 12 and rejects non-positive / non-integer overrides', () => {
+    expect(finalityConfirmations()).toBe(12);
+    process.env.SHIORA_L1_FINALITY_CONFIRMATIONS = '0';
+    expect(finalityConfirmations()).toBe(12);
+    process.env.SHIORA_L1_FINALITY_CONFIRMATIONS = 'abc';
+    expect(finalityConfirmations()).toBe(12);
+    process.env.SHIORA_L1_FINALITY_CONFIRMATIONS = '30';
+    expect(finalityConfirmations()).toBe(30);
   });
 });
 
@@ -110,13 +123,43 @@ describe('JsonRpcAnchorClient', () => {
       expect(sent.params).toEqual(['0xtxhash']);
     });
 
-    it('reports confirmed once the receipt shows success', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({ result: { status: '0x1' } }),
-      });
+    it('reports confirmed only once the success receipt is buried under the finality depth', async () => {
+      global.fetch = jest.fn()
+        .mockResolvedValueOnce({ ok: true, status: 200, json: () => Promise.resolve({ result: { status: '0x1', blockNumber: '0x64' } }) })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: () => Promise.resolve({ result: '0x71' }) }); // head 113 → 14 confirmations ≥ 12
       expect(await client().confirm('0xtxhash')).toBe('confirmed');
+      // Two calls: the receipt lookup, then the chain head for the depth check.
+      expect((global.fetch as jest.Mock).mock.calls[1][1].body).toContain('eth_blockNumber');
+    });
+
+    it('reports pending while a success receipt is not yet deep enough (reorg-safe)', async () => {
+      global.fetch = jest.fn()
+        .mockResolvedValueOnce({ ok: true, status: 200, json: () => Promise.resolve({ result: { status: '0x1', blockNumber: '0x64' } }) })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: () => Promise.resolve({ result: '0x66' }) }); // head 102 → 3 confirmations < 12
+      expect(await client().confirm('0xtxhash')).toBe('pending');
+    });
+
+    it('reports pending when the success receipt carries no block number yet', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true, status: 200, json: () => Promise.resolve({ result: { status: '0x1' } }),
+      });
+      expect(await client().confirm('0xtxhash')).toBe('pending');
+    });
+
+    it('reports pending when the chain head is unavailable', async () => {
+      global.fetch = jest.fn()
+        .mockResolvedValueOnce({ ok: true, status: 200, json: () => Promise.resolve({ result: { status: '0x1', blockNumber: '0x64' } }) })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: () => Promise.resolve({}) }); // no head result
+      expect(await client().confirm('0xtxhash')).toBe('pending');
+    });
+
+    it('honors a configured finality depth', async () => {
+      process.env.SHIORA_L1_FINALITY_CONFIRMATIONS = '2';
+      global.fetch = jest.fn()
+        .mockResolvedValueOnce({ ok: true, status: 200, json: () => Promise.resolve({ result: { status: '0x1', blockNumber: '0x64' } }) })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: () => Promise.resolve({ result: '0x65' }) }); // head 101 → 2 confirmations ≥ 2
+      expect(await client().confirm('0xtxhash')).toBe('confirmed');
+      delete process.env.SHIORA_L1_FINALITY_CONFIRMATIONS;
     });
 
     it('reports pending while the transaction has no receipt yet', async () => {
