@@ -16,12 +16,17 @@ The active profile is auditable at `GET /api/system/status`.
 4. **Granular, time-bound consent** (`/api/consent`).
 5. **Verified provider access** + patient directory (`/api/provider`, `/api/providers`, `/api/access`).
 6. **Append-only clinical notes** with attributed amendments (under `/api/provider/patients/*/notes`, `/api/me/clinical-notes`).
-7. **Break-glass emergency access** — declared reason + patient context, fresh
-   MFA step-up, ≤1h read-only grant, immediate patient notification, and an
-   admin retrospective-review queue (`/api/break-glass`). Deliberately in the
-   corridor: a care pilot cannot ship without an emergency path. Distinct from
-   the *simulated* emergency-response feature (`emergency` segment), which
-   stays deferred.
+7. **Break-glass clinical emergency access** — a structured emergency category
+   (clinical-emergency / continuity-of-care), declared reason, **minimum-necessary
+   record types**, fresh MFA step-up, ≤1h read-only grant, **PHI-free** immediate
+   patient notification, per-event governance (jurisdiction / policy version /
+   authorizing organization), sensitive-category withholding unless explicitly
+   acknowledged, and an admin retrospective-review queue (`/api/break-glass`).
+   Deliberately in the corridor: a care pilot cannot ship without an emergency
+   path. Legal basis is the pilot jurisdiction + partner policy (counsel-confirmed),
+   not a US HIPAA provision. Distinct from the *simulated* emergency-response
+   feature (`emergency` segment), which stays deferred, and from system-continuity
+   operational access, which is a separate admin concern (no patient PHI).
 8. **Patient-visible access history** (`/api/me/access-log`, `/api/me/activity`).
 9. **Export, correction and erasure** (`/api/privacy`, record PATCH).
 10. **Operational notifications** (`/api/notifications`).

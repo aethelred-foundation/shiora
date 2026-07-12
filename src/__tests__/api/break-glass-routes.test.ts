@@ -43,8 +43,10 @@ const ADMIN_TOKEN = createSessionToken(ADMIN).token;
 
 const DECLARATION = {
   patientAddress: PATIENT,
+  category: 'clinical_emergency',
   reason: 'Patient presented unconscious in the emergency department',
   patientContext: 'ED encounter, City General Hospital',
+  recordTypes: ['lab'],
 };
 
 const originalAdmins = process.env.SHIORA_ADMIN_ADDRESSES;
@@ -214,6 +216,17 @@ describe('GET /api/break-glass/{id}/records', () => {
     expect(data.grant.id).toBe(grant.id);
     expect(data.records).toHaveLength(1);
     expect(data.records[0].id).toBe('rec-1');
+    expect(data.sensitiveWithheld).toBe(0);
+  });
+
+  it('applies minimum-necessary scoping: an undeclared record type is not returned', async () => {
+    await createRecord(PATIENT, record('rec-1', PATIENT)); // type 'lab' — declared
+    await createRecord(PATIENT, { ...record('rec-img', PATIENT), type: 'imaging' }); // not declared
+    const grant = await declareGrant();
+
+    const res = await readRecords(request(`${BASE}/${grant.id}/records`, 'GET'), ctx(grant.id));
+    const { data } = await res.json();
+    expect(data.records.map((r: MockHealthRecord) => r.id)).toEqual(['rec-1']);
   });
 
   it('denies a provider who did not declare the grant', async () => {

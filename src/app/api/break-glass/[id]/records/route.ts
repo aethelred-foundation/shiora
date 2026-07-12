@@ -49,5 +49,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return errorResponse(denial.code, denial.message, HTTP.FORBIDDEN);
   }
 
-  return successResponse({ grant: result.grant, records: result.records });
+  return successResponse({
+    grant: result.grant,
+    records: result.records,
+    sensitiveWithheld: result.sensitiveWithheld,
+  });
 }

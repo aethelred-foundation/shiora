@@ -14,14 +14,20 @@ import { AUTH_RATE_LIMIT, runMiddleware } from '@/lib/api/middleware';
 import { requireRole } from '@/lib/api/rbac';
 import { requireStepUp } from '@/lib/api/step-up';
 import { getMfaStatus } from '@/lib/api/mfa-service';
-import { declareBreakGlass } from '@/lib/api/break-glass-service';
+import { declareBreakGlass, EMERGENCY_CATEGORIES } from '@/lib/api/break-glass-service';
 import { AethelredAddressSchema } from '@/lib/api/validation';
 
 const DeclarationSchema = z.object({
   patientAddress: AethelredAddressSchema,
+  // A structured emergency category, not free-text alone (consultant §5).
+  category: z.enum(EMERGENCY_CATEGORIES),
   // A justification a reviewer can act on, not a checkbox.
   reason: z.string().trim().min(10).max(500),
   patientContext: z.string().trim().min(3).max(300),
+  // Minimum necessary: the record types this emergency actually requires.
+  recordTypes: z.array(z.string().trim().min(1).max(60)).min(1).max(20),
+  // Affirmative extra step to reach especially-sensitive records.
+  sensitiveAcknowledged: z.boolean().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -53,8 +59,11 @@ export async function POST(request: NextRequest) {
     const declaration = DeclarationSchema.parse(await request.json());
     const grant = await declareBreakGlass(requester, {
       patient: declaration.patientAddress,
+      category: declaration.category,
       reason: declaration.reason,
       patientContext: declaration.patientContext,
+      recordTypes: declaration.recordTypes,
+      sensitiveAcknowledged: declaration.sensitiveAcknowledged,
     });
 
     if (!grant) {
