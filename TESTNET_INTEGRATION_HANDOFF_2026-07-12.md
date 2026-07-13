@@ -41,13 +41,35 @@ The consensus-anchored assurance tier for Shiora's health-data attestations. Els
 
 Prereqs: node built from the precompile branch (§1), funded deployer key, `aethelredd` CLI access for PoUW job submission.
 
-1. **Run the operator playbook** — it deploys, configures, proves fail-closed behavior, and completes the attestation:
-   ```
-   RPC_URL=<testnet-evm-rpc> DEPLOYER_KEY=<funded-key> \
-   [REGISTRY_ADDRESS=0x…] [SUBJECT=0x…] [SCOPE=<label>] [JOB_ID=<sealed-job>] \
-   npx hardhat run scripts/devnet-seal-attestation-e2e.js --network aethelredDevnet
-   ```
-   (run from `contracts/`; the `aethelredDevnet` network entry targets chain id 7332 and reads `RPC_URL`/`DEPLOYER_KEY` from the environment)
+### 4.1 Deployment command
+
+The operator playbook **is** the deployment command — it deploys the contract,
+sets the CEAP policy, proves fail-closed behavior, and (once a seal exists)
+completes the first attestation. From the `contracts/` directory (`npm ci`
+once; compilation happens automatically):
+
+```
+cd contracts
+RPC_URL=<testnet-evm-rpc> \
+DEPLOYER_KEY=0x<funded-64-hex-key> \
+npx hardhat run scripts/devnet-seal-attestation-e2e.js --network aethelredDevnet
+```
+
+The `aethelredDevnet` network entry is pinned to chain id 7332 (testnet and
+devnet share it) and reads both variables from the environment. Parameters:
+
+| Env var | Default | Meaning |
+|---|---|---|
+| `DEPLOYER_KEY` | — (required) | 0x-prefixed funded key; the deployer becomes **governance/owner** (Ownable2Step — transfer + accept later to move it) |
+| `RPC_URL` | `http://127.0.0.1:8545` | EVM JSON-RPC of your testnet node |
+| `REGISTRY_ADDRESS` | — | Reuse an already-deployed `ShioraSealAttestation` instead of deploying (idempotent re-runs) |
+| `SUBJECT` | deployer | The subject address for the demonstration attestation |
+| `SCOPE` | `clinical:cycle_prediction` | Scope label; the script hashes it (`keccak256`) |
+| `JOB_ID` | — | A sealed PoUW job id; without it the run stops after proving no-seal-no-attestation and prints the exact `aethelredd` mint commands |
+
+There are no constructor parameters beyond governance, and no proxy — the
+contract is deliberately non-upgradeable. Record the printed address as
+`registry.address` in the §6 manifest.
    - Deploys `ShioraSealAttestation(governance)` (or reuses `REGISTRY_ADDRESS`), sets a CEAP policy via `setCompliancePolicy(allowedBackends, minVerification, allowedPlatforms, requireVendorRoot, dataResidency)`.
    - Proves `isAttested(subject, scope) === false` with no seal (**no-seal-no-attestation**), then prints the exact `aethelredd` PoUW commands — embedding the contract's own `expectedPurpose()` — for your operators to mint the seal.
    - Re-run with `JOB_ID` once the quorum has sealed the job: it calls `attest(subject, scope, jobId)` and confirms `isAttested` flips true.
