@@ -118,3 +118,69 @@ Everything else (Postgres, Vault Transit key custody, the Next.js app) is hosted
 - **Definitive seal-binding proof (chain repo):** `internal/evmhost/shiora_test.go` — this exact bytecode against the **real ISeal precompile + real seal keeper**, incl. live revocation and re-attest permanence (on `release/public-testnet-pqc`).
 - **This repo:** seal tier 21/21 tests, 100% statement coverage (`cd contracts && npx hardhat test`); app suites green at branch tip (250+ suites, 4,100+ tests).
 - **Report back:** deployed address, `eth_chainId`, the §6 manifest, the sealed `JOB_ID`, and any behavioral deltas vs §5.
+
+## 9. App-side setup & wallet testing (added 2026-07-15)
+
+The app now authenticates exclusively with the **Aethelred Wallet** (EIP-1193
+injected provider, EIP-191 `personal_sign` challenge). Keplr/Leap are gone —
+one wallet across the whole ecosystem. This lives on branch
+`feat/unify-aethelred-wallet` (PR #10) — test from that branch until it merges.
+
+### 9.1 Prerequisites
+
+- Node.js 20+, npm
+- Postgres 15+ (optional for a smoke test — without `DATABASE_URL` an
+  in-memory store is used and data does not survive a restart; set it for any
+  real testing. Tables are created automatically on first boot.)
+- The Aethelred Wallet browser extension (any injected EIP-1193 wallet works;
+  auth is a signed challenge, no network switch required)
+
+### 9.2 Setup
+
+```bash
+git fetch origin && git checkout feat/unify-aethelred-wallet
+npm ci
+cp .env.example .env.local
+```
+
+Minimum `.env.local` for testnet testing:
+
+```bash
+SHIORA_SESSION_SECRET=$(openssl rand -base64 48)
+SHIORA_ALLOWED_ORIGINS=http://localhost:3001
+DATABASE_URL=postgres://shiora:***@localhost:5432/shiora   # recommended
+SHIORA_DATA_ENCRYPTION_KEY=$(openssl rand -base64 32)       # PHI KEK (dev tier)
+```
+
+Leave the Vault, profile, tenancy, and L1-anchoring blocks unset for now.
+(`SHIORA_L1_RPC_URL`/`SHIORA_L1_CHAIN_ID=7332` only make sense once you decide
+which node-held account funds anchors; until then anchor receipts are honestly
+reported `status: local`.)
+
+```bash
+npm run build && npm start        # serves on :3001
+```
+
+### 9.3 HTTPS caveat — read before testing on the VPS
+
+Production builds set session cookies with the `Secure` flag. A browser will
+NOT store them over plain `http://<VPS-IP>:3001`, so wallet login would appear
+to succeed and immediately drop. Two supported paths:
+
+1. **SSH tunnel (fastest):** `ssh -L 3001:localhost:3001 <vps>` and open
+   `http://localhost:3001` — browsers treat localhost as a secure context, so
+   auth works unmodified.
+2. **TLS reverse proxy (shared testing):** put Caddy/nginx with a certificate
+   in front and add the https origin to `SHIORA_ALLOWED_ORIGINS`.
+
+### 9.4 What to verify
+
+```bash
+npx tsc --noEmit && npx jest --silent   # expect 299 suites / 4713 tests green
+curl -s http://localhost:3001/api/system/release | head -c 400
+```
+
+In the browser: Connect Wallet → Aethelred Wallet prompt → EIP-191 signature →
+session established; Vault / Records / Access pages start empty (by design —
+no seeded theater) and fill as you create records. Access-page audit entries
+are served from the real audit chain.
