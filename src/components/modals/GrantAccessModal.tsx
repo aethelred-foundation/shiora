@@ -112,8 +112,8 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
       setAddressError('Provider address is required');
       return false;
     }
-    if (!addr.startsWith('aeth1') || addr.length < 20) {
-      setAddressError('Invalid Aethelred address (must start with aeth1)');
+    if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) {
+      setAddressError('Invalid Aethelred address (must be a 0x EVM address)');
       return false;
     }
     setAddressError('');
@@ -335,7 +335,7 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
                   type="text"
                   value={providerAddress}
                   onChange={(e) => { setProviderAddress(e.target.value); setAddressError(''); }}
-                  placeholder="aeth1..."
+                  placeholder="0x..."
                   className="w-full pl-9 pr-4 py-2 text-sm font-mono border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 />
               </div>

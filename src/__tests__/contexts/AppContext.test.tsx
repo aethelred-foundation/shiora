@@ -159,7 +159,7 @@ describe('Wallet operations', () => {
 
     expect(screen.getByTestId('connected').textContent).toBe('true');
     expect(screen.getByTestId('address').textContent).not.toBe('');
-    expect(screen.getByTestId('address').textContent).toMatch(/^aeth1/);
+    expect(screen.getByTestId('address').textContent).toMatch(/^0x/);
     // Balance is unknown (null) until a real chain source exists — never fabricated.
     expect(screen.getByTestId('aethel-balance').textContent).toBe('');
   });
@@ -254,7 +254,7 @@ describe('Session revalidation', () => {
     // Pre-populate localStorage with a connected wallet
     const storedWallet = JSON.stringify({
       connected: true,
-      address: 'aeth1validaddr',
+      address: '0x000000000000000000000000000000000000a1b2',
       aethelBalance: 1000,
     });
     (localStorage.getItem as jest.Mock).mockReturnValue(storedWallet);
@@ -269,7 +269,7 @@ describe('Session revalidation', () => {
           ok: true,
           status: 200,
           headers: { get: () => 'application/json' },
-          json: async () => ({ success: true, data: { address: 'aeth1validaddr', authenticated: true } }),
+          json: async () => ({ success: true, data: { address: '0x000000000000000000000000000000000000a1b2', authenticated: true } }),
           text: async () => '{}',
           clone: function () { return this; },
         };
@@ -292,7 +292,7 @@ describe('Session revalidation', () => {
     });
 
     expect(screen.getByTestId('connected').textContent).toBe('true');
-    expect(screen.getByTestId('address').textContent).toBe('aeth1validaddr');
+    expect(screen.getByTestId('address').textContent).toBe('0x000000000000000000000000000000000000a1b2');
 
     // Restore
     if (originalImpl) fetchMock.mockImplementation(originalImpl);
@@ -302,7 +302,7 @@ describe('Session revalidation', () => {
     // localStorage says wallet A, but server session belongs to wallet B
     const storedWallet = JSON.stringify({
       connected: true,
-      address: 'aeth1walletA',
+      address: '0x000000000000000000000000000000000000a001',
       aethelBalance: 1000,
     });
     (localStorage.getItem as jest.Mock).mockReturnValue(storedWallet);
@@ -316,7 +316,7 @@ describe('Session revalidation', () => {
           ok: true,
           status: 200,
           headers: { get: () => 'application/json' },
-          json: async () => ({ success: true, data: { address: 'aeth1walletB', authenticated: true } }),
+          json: async () => ({ success: true, data: { address: '0x000000000000000000000000000000000000a002', authenticated: true } }),
           text: async () => '{}',
           clone: function () { return this; },
         };
@@ -347,7 +347,7 @@ describe('Session revalidation', () => {
   it('auto-disconnects when server session is expired', async () => {
     const storedWallet = JSON.stringify({
       connected: true,
-      address: 'aeth1expiredaddr',
+      address: '0x0000000000000000000000000000000000e001',
       aethelBalance: 500,
     });
     (localStorage.getItem as jest.Mock).mockReturnValue(storedWallet);
@@ -551,13 +551,13 @@ describe('connectWalletWithData', () => {
           <span data-testid="cwd-chainId">{ctx.wallet.chainId ?? 'none'}</span>
           <button
             data-testid="cwd-btn"
-            onClick={() => ctx.connectWalletWithData('aeth1xyz', 999, 'leap', 'aethelred-1')}
+            onClick={() => ctx.connectWalletWithData('0x0000000000000000000000000000000000000001', 999, 'aethelred', '7332')}
           >
             Connect With Data
           </button>
           <button
             data-testid="cwd-btn-no-extras"
-            onClick={() => ctx.connectWalletWithData('aeth1abc', 500)}
+            onClick={() => ctx.connectWalletWithData('0x0000000000000000000000000000000000000abc', 500)}
           >
             Connect No Extras
           </button>
@@ -576,10 +576,10 @@ describe('connectWalletWithData', () => {
     });
 
     expect(screen.getByTestId('cwd-connected').textContent).toBe('true');
-    expect(screen.getByTestId('cwd-address').textContent).toBe('aeth1xyz');
+    expect(screen.getByTestId('cwd-address').textContent).toBe('0x0000000000000000000000000000000000000001');
     expect(screen.getByTestId('cwd-balance').textContent).toBe('999');
-    expect(screen.getByTestId('cwd-provider').textContent).toBe('leap');
-    expect(screen.getByTestId('cwd-chainId').textContent).toBe('aethelred-1');
+    expect(screen.getByTestId('cwd-provider').textContent).toBe('aethelred');
+    expect(screen.getByTestId('cwd-chainId').textContent).toBe('7332');
   });
 
   it('defaults provider and chainId to null', () => {
@@ -591,7 +591,7 @@ describe('connectWalletWithData', () => {
           <span data-testid="ne-chainId">{String(ctx.wallet.chainId)}</span>
           <button
             data-testid="ne-btn"
-            onClick={() => ctx.connectWalletWithData('aeth1abc', 500)}
+            onClick={() => ctx.connectWalletWithData('0x0000000000000000000000000000000000000abc', 500)}
           >
             Connect
           </button>
@@ -747,7 +747,7 @@ describe('Session revalidation network error', () => {
   it('keeps local state on network error during session check', async () => {
     const storedWallet = JSON.stringify({
       connected: true,
-      address: 'aeth1networkfail',
+      address: '0x000000000000000000000000000000006e747770',
       aethelBalance: 777,
     });
     (localStorage.getItem as jest.Mock).mockReturnValue(storedWallet);
@@ -777,7 +777,7 @@ describe('Session revalidation network error', () => {
 
     // Should keep the wallet connected on network error
     expect(screen.getByTestId('connected').textContent).toBe('true');
-    expect(screen.getByTestId('address').textContent).toBe('aeth1networkfail');
+    expect(screen.getByTestId('address').textContent).toBe('0x000000000000000000000000000000006e747770');
 
     if (originalImpl) fetchMock.mockImplementation(originalImpl);
   });
@@ -819,7 +819,7 @@ describe('Session revalidation network error', () => {
   it('handles session check returning ok with no data.address', async () => {
     const storedWallet = JSON.stringify({
       connected: true,
-      address: 'aeth1noserveraddr',
+      address: '0x000000000000000000000000000000006e6f7376',
       aethelBalance: 500,
     });
     (localStorage.getItem as jest.Mock).mockReturnValue(storedWallet);
@@ -863,7 +863,7 @@ describe('Session revalidation network error', () => {
   it('handles session check returning ok with json parse error', async () => {
     const storedWallet = JSON.stringify({
       connected: true,
-      address: 'aeth1parsefail',
+      address: '0x0000000000000000000000000000000070617273',
       aethelBalance: 500,
     });
     (localStorage.getItem as jest.Mock).mockReturnValue(storedWallet);

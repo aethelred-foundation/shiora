@@ -88,12 +88,19 @@ const routes: Array<{ method: string; pattern: RegExp; handler: Handler }> = [
   {
     method: 'POST',
     pattern: /\/api\/wallet\/connect/,
-    handler: () => ok({
-      address: 'aeth1mockaddress',
-      expiresAt: Date.now() + 86400000,
-      expiresIn: '24h',
-      session: { transport: 'httpOnly-cookie', cookieName: 'shiora_session' },
-    }),
+    handler: (_url, init) => {
+      let address = '0x00000000000000000000000000000000000a1b2c';
+      try {
+        const body = init?.body ? JSON.parse(String(init.body)) : null;
+        if (body?.address) address = String(body.address).toLowerCase();
+      } catch { /* keep default */ }
+      return ok({
+        address,
+        expiresAt: Date.now() + 86400000,
+        expiresIn: '24h',
+        session: { transport: 'httpOnly-cookie', cookieName: 'shiora_session' },
+      });
+    },
   },
   {
     method: 'DELETE',
@@ -103,7 +110,7 @@ const routes: Array<{ method: string; pattern: RegExp; handler: Handler }> = [
   {
     method: 'GET',
     pattern: /\/api\/wallet\/connect/,
-    handler: () => ok({ address: 'aeth1mock', expiresAt: Date.now() + 86400000 }),
+    handler: () => ok({ address: '0x00000000000000000000000000000000000a1b2c', expiresAt: Date.now() + 86400000 }),
   },
 
   // ── Records ─────────────────────────────────────────────────────────────
@@ -1543,7 +1550,7 @@ const routes: Array<{ method: string; pattern: RegExp; handler: Handler }> = [
   {
     method: 'GET',
     pattern: /\/api\/wallet\/connect$/,
-    handler: () => ok({ address: 'aeth1mock', authenticated: true }),
+    handler: () => ok({ address: '0x00000000000000000000000000000000000a1b2c', authenticated: true }),
   },
   {
     method: 'DELETE',

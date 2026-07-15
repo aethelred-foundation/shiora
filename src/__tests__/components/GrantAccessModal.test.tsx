@@ -32,7 +32,7 @@ describe('GrantAccessModal', () => {
 
   it('renders manual address input', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    expect(screen.getByPlaceholderText('aeth1...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('0x...')).toBeInTheDocument();
   });
 
   it('shows error when Next is clicked without selecting provider', () => {
@@ -43,7 +43,7 @@ describe('GrantAccessModal', () => {
 
   it('shows address validation error for invalid address', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    const addressInput = screen.getByPlaceholderText('aeth1...');
+    const addressInput = screen.getByPlaceholderText('0x...');
     fireEvent.change(addressInput, { target: { value: 'invalid' } });
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByText(/Invalid Aethelred address/)).toBeInTheDocument();
@@ -148,9 +148,9 @@ describe('GrantAccessModal', () => {
     expect(screen.getByText('Please select a provider or enter an address')).toBeInTheDocument();
   });
 
-  it('validates address that starts with aeth1 but is too short', () => {
+  it('rejects a malformed/too-short address', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    const addressInput = screen.getByPlaceholderText('aeth1...');
+    const addressInput = screen.getByPlaceholderText('0x...');
     fireEvent.change(addressInput, { target: { value: 'aeth1short' } });
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByText(/Invalid Aethelred address/)).toBeInTheDocument();
@@ -158,8 +158,8 @@ describe('GrantAccessModal', () => {
 
   it('accepts valid address and proceeds', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    const addressInput = screen.getByPlaceholderText('aeth1...');
-    fireEvent.change(addressInput, { target: { value: 'aeth1abcdefghijklmnopqrstuvwxyz12345678' } });
+    const addressInput = screen.getByPlaceholderText('0x...');
+    fireEvent.change(addressInput, { target: { value: '0x1234567890abcdef1234567890abcdef12345678' } });
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByText('Set Permissions')).toBeInTheDocument();
   });
@@ -168,7 +168,7 @@ describe('GrantAccessModal', () => {
 
   it('clears address error when user types', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    const addressInput = screen.getByPlaceholderText('aeth1...');
+    const addressInput = screen.getByPlaceholderText('0x...');
     fireEvent.change(addressInput, { target: { value: 'bad' } });
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByText(/Invalid Aethelred address/)).toBeInTheDocument();
@@ -327,8 +327,8 @@ describe('GrantAccessModal', () => {
 
   it('shows Custom Address in review when manual address is used', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    const addressInput = screen.getByPlaceholderText('aeth1...');
-    fireEvent.change(addressInput, { target: { value: 'aeth1abcdefghijklmnopqrstuvwxyz12345678' } });
+    const addressInput = screen.getByPlaceholderText('0x...');
+    fireEvent.change(addressInput, { target: { value: '0x1234567890abcdef1234567890abcdef12345678' } });
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Review'));
     expect(screen.getByText('Custom Address')).toBeInTheDocument();
@@ -400,7 +400,7 @@ describe('GrantAccessModal', () => {
 
   it('validates address on goToPermissions when address is provided but invalid', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    const addressInput = screen.getByPlaceholderText('aeth1...');
+    const addressInput = screen.getByPlaceholderText('0x...');
     fireEvent.change(addressInput, { target: { value: 'aeth1abc' } }); // too short
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByText(/Invalid Aethelred address/)).toBeInTheDocument();

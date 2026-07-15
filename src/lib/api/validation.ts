@@ -229,10 +229,11 @@ export const AttestationListQuerySchema = PaginationSchema.extend({
 
 export const WalletConnectSchema = z.object({
   address: AethelredAddressSchema,
-  // EIP-191 personal_sign signature: 0x-prefixed 65 bytes (r‖s‖v) = 132 hex.
-  signature: z
-    .string()
-    .regex(/^0x[0-9a-fA-F]{130}$/, 'Invalid EIP-191 signature'),
+  // EIP-191 personal_sign signature (0x-prefixed 65 bytes). Kept loose at the
+  // schema layer so a malformed signature reaches verifyWalletSignature and
+  // counts as a failed attempt for the brute-force lockout (audit GAP-09);
+  // the verifier fails closed on any non-conforming input.
+  signature: z.string().min(1).max(200),
   // EVM chain id (7332 testnet/devnet, 7331 mainnet); recorded on the session.
   chainId: z.string().min(1).max(50).default('7331'),
   // Challenge fields for HMAC verification

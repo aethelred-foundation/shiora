@@ -92,8 +92,8 @@ describe('WalletConnect - disconnected state', () => {
       </TestWrapper>
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
-    expect(screen.getByText('Keplr')).toBeInTheDocument();
-    expect(screen.getByText('Leap')).toBeInTheDocument();
+    expect(screen.getByText('Aethelred Wallet')).toBeInTheDocument();
+    expect(screen.getByText('Aethelred Wallet')).toBeInTheDocument();
   });
 
   it('shows network selector in connect modal', () => {
@@ -147,8 +147,8 @@ describe('WalletConnect - disconnected state', () => {
       </TestWrapper>
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
-    const descriptions = screen.getAllByText('Cosmos ecosystem wallet');
-    expect(descriptions.length).toBe(2);
+    const descriptions = screen.getAllByText('The one wallet for the Aethelred ecosystem');
+    expect(descriptions.length).toBe(1);
   });
 
   it('closes connect modal when onClose is triggered', () => {
@@ -158,31 +158,31 @@ describe('WalletConnect - disconnected state', () => {
       </TestWrapper>
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
-    expect(screen.getByText('Keplr')).toBeInTheDocument();
+    expect(screen.getByText('Aethelred Wallet')).toBeInTheDocument();
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByText('Choose your preferred wallet to connect to Shiora')).not.toBeInTheDocument();
   });
 
-  it('attempts to connect when Keplr is clicked', async () => {
+  it('attempts to connect when the Aethelred Wallet is clicked', async () => {
     render(
       <TestWrapper>
         <WalletConnect />
       </TestWrapper>
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
-    fireEvent.click(screen.getByText('Keplr'));
-    expect(mockConnect).toHaveBeenCalledWith('keplr', 'mainnet');
+    fireEvent.click(screen.getByText('Aethelred Wallet'));
+    expect(mockConnect).toHaveBeenCalledWith('aethelred', 'mainnet');
   });
 
-  it('attempts to connect when Leap is clicked', async () => {
+  it('invokes connect with the selected network', async () => {
     render(
       <TestWrapper>
         <WalletConnect />
       </TestWrapper>
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
-    fireEvent.click(screen.getByText('Leap'));
-    expect(mockConnect).toHaveBeenCalledWith('leap', 'mainnet');
+    fireEvent.click(screen.getByText('Aethelred Wallet'));
+    expect(mockConnect).toHaveBeenCalledWith('aethelred', 'mainnet');
   });
 
   // ─── handleConnect error (line 113, 115) ───
@@ -196,7 +196,7 @@ describe('WalletConnect - disconnected state', () => {
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     await act(async () => {
-      fireEvent.click(screen.getByText('Keplr'));
+      fireEvent.click(screen.getByText('Aethelred Wallet'));
     });
     await waitFor(() => {
       expect(screen.getByText('Connection rejected')).toBeInTheDocument();
@@ -212,7 +212,7 @@ describe('WalletConnect - disconnected state', () => {
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     await act(async () => {
-      fireEvent.click(screen.getByText('Keplr'));
+      fireEvent.click(screen.getByText('Aethelred Wallet'));
     });
     await waitFor(() => {
       expect(screen.getByText('Connection failed')).toBeInTheDocument();
@@ -242,8 +242,8 @@ describe('WalletConnect - disconnected state', () => {
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     fireEvent.click(screen.getByText('Testnet'));
-    fireEvent.click(screen.getByText('Keplr'));
-    expect(mockConnect).toHaveBeenCalledWith('keplr', 'testnet');
+    fireEvent.click(screen.getByText('Aethelred Wallet'));
+    expect(mockConnect).toHaveBeenCalledWith('aethelred', 'testnet');
   });
 
   // ─── Modal closes after successful connection (line 113) ───
@@ -257,7 +257,7 @@ describe('WalletConnect - disconnected state', () => {
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     await act(async () => {
-      fireEvent.click(screen.getByText('Keplr'));
+      fireEvent.click(screen.getByText('Aethelred Wallet'));
     });
     // Modal should close after connect succeeds
     await waitFor(() => {
@@ -434,7 +434,7 @@ describe('WalletConnect — loading state', () => {
     fireEvent.click(screen.getByText('Connect Wallet'));
 
     // Wallet options should be visible and disabled
-    const keplrButton = screen.getByText('Keplr').closest('button');
-    expect(keplrButton).toBeDisabled();
+    const walletButton = screen.getByText('Aethelred Wallet').closest('button');
+    expect(walletButton).toBeDisabled();
   });
 });

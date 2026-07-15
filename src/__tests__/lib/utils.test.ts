@@ -119,19 +119,19 @@ describe('seededHex', () => {
 // seededAddress
 // ---------------------------------------------------------------------------
 describe('seededAddress', () => {
-  it('generates addresses starting with aeth1', () => {
+  it('generates 0x EVM addresses', () => {
     const addr = seededAddress(42);
-    expect(addr.startsWith('aeth1')).toBe(true);
+    expect(addr.startsWith('0x')).toBe(true);
   });
 
-  it('generates 43-character addresses (aeth1 + 38 chars)', () => {
+  it('generates 42-character addresses (0x + 40 hex)', () => {
     const addr = seededAddress(1);
-    expect(addr).toHaveLength(43);
+    expect(addr).toHaveLength(42);
   });
 
-  it('only contains valid characters', () => {
+  it('only contains valid hex characters', () => {
     const addr = seededAddress(7);
-    expect(addr).toMatch(/^aeth1[a-z0-9]{38}$/);
+    expect(addr).toMatch(/^0x[0-9a-f]{40}$/);
   });
 
   it('is deterministic', () => {
