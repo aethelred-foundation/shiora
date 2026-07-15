@@ -19,6 +19,7 @@ import React, {
 } from 'react';
 
 import { seededRandom, seededAddress } from '@/lib/utils';
+import type { WalletProvider } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -30,7 +31,7 @@ export interface WalletState {
   /** AETHEL balance, or null while unknown (no live chain query). */
   aethelBalance: number | null;
   /** Which wallet extension was used to connect (persisted for re-enable on reload). */
-  provider?: 'keplr' | 'leap' | null;
+  provider?: WalletProvider | null;
   /** Chain ID used during authentication (persisted for signing after reload). */
   chainId?: string | null;
 }
@@ -118,7 +119,7 @@ export interface RewardsState {
 export interface AppContextValue {
   wallet: WalletState;
   connectWallet: () => void;
-  connectWalletWithData: (address: string, balance: number | null, provider?: 'keplr' | 'leap' | null, chainId?: string | null) => void;
+  connectWalletWithData: (address: string, balance: number | null, provider?: WalletProvider | null, chainId?: string | null) => void;
   disconnectWallet: () => void;
   healthData: HealthDataState;
   teeState: TEEState;
@@ -301,7 +302,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const connectWalletWithData = useCallback((
     address: string,
     balance: number | null,
-    provider?: 'keplr' | 'leap' | null,
+    provider?: WalletProvider | null,
     chainId?: string | null,
   ) => {
     persistWallet({

@@ -42,10 +42,10 @@ export function seededHex(seed: number, length: number): string {
  * Generate an Aethelred-style address from a seed.
  */
 export function seededAddress(seed: number): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let addr = 'aeth1';
-  for (let i = 0; i < 38; i++) {
-    addr += chars[Math.floor(seededRandom(seed + i + 1) * chars.length)];
+  const hex = '0123456789abcdef';
+  let addr = '0x';
+  for (let i = 0; i < 40; i++) {
+    addr += hex[Math.floor(seededRandom(seed + i + 1) * hex.length)];
   }
   return addr;
 }

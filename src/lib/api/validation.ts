@@ -18,10 +18,18 @@ export const PaginationSchema = z.object({
 /** Sort direction */
 export const SortOrderSchema = z.enum(['asc', 'desc']).default('desc');
 
-/** Aethelred-style address (aeth1...) */
+/**
+ * Aethelred account address — the 0x EVM account (cosmos/evm, ethsecp256k1).
+ *
+ * This is the canonical identity across the whole ecosystem: the Aethelred
+ * Wallet returns it, the chain accounts are keccak-derived to it, and Shiora's
+ * own on-chain seal contract binds it as `subject`. Case-insensitive: wallets
+ * may return checksummed or lowercase; we accept both and store lowercase.
+ */
 export const AethelredAddressSchema = z
   .string()
-  .regex(/^aeth1[a-z0-9]{38}$/, 'Invalid Aethelred address');
+  .regex(/^0x[0-9a-fA-F]{40}$/, 'Invalid Aethelred (0x) address')
+  .transform((addr) => addr.toLowerCase());
 
 /** IPFS CID: CIDv0 (Qm…, base58) or CIDv1 multibase base32 (b…, e.g. bafkrei…). */
 export const CIDSchema = z
@@ -221,8 +229,12 @@ export const AttestationListQuerySchema = PaginationSchema.extend({
 
 export const WalletConnectSchema = z.object({
   address: AethelredAddressSchema,
-  signature: z.string().min(1).max(500),
-  chainId: z.string().min(1).max(50).default('aethelred-1'),
+  // EIP-191 personal_sign signature: 0x-prefixed 65 bytes (r‖s‖v) = 132 hex.
+  signature: z
+    .string()
+    .regex(/^0x[0-9a-fA-F]{130}$/, 'Invalid EIP-191 signature'),
+  // EVM chain id (7332 testnet/devnet, 7331 mainnet); recorded on the session.
+  chainId: z.string().min(1).max(50).default('7331'),
   // Challenge fields for HMAC verification
   nonce: z.string().min(1).max(128),
   issuedAt: z.number().int().positive(),

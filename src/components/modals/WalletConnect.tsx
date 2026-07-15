@@ -9,9 +9,9 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import {
-  Wallet, Globe, ChevronRight, ChevronDown,
+  Wallet, ChevronRight, ChevronDown,
   LogOut, ArrowDownLeft, ArrowUpRight, Clock, Shield,
-  FileSignature, Compass,
+  FileSignature,
 } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
@@ -24,7 +24,7 @@ import { formatNumber, truncateAddress, seededHex, seededRandom, formatDate, gen
 // Types
 // ============================================================
 
-type WalletType = 'keplr' | 'leap';
+type WalletType = 'aethelred';
 type NetworkType = 'mainnet' | 'testnet';
 
 interface WalletOption {
@@ -53,18 +53,11 @@ interface Transaction {
 
 const WALLET_OPTIONS: WalletOption[] = [
   {
-    id: 'keplr',
-    name: 'Keplr',
-    description: 'Cosmos ecosystem wallet',
-    icon: <Globe className="w-5 h-5 text-orange-600" />,
-    color: 'bg-orange-100',
-  },
-  {
-    id: 'leap',
-    name: 'Leap',
-    description: 'Cosmos ecosystem wallet',
-    icon: <Compass className="w-5 h-5 text-emerald-600" />,
-    color: 'bg-emerald-100',
+    id: 'aethelred',
+    name: 'Aethelred Wallet',
+    description: 'The one wallet for the Aethelred ecosystem',
+    icon: <Shield className="w-5 h-5 text-rose-600" />,
+    color: 'bg-rose-100',
   },
 ];
 

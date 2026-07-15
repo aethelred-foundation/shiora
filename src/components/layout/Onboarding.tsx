@@ -12,9 +12,9 @@ import {
   Heart, Wallet, Key, Cpu, Upload, CheckCircle,
   ChevronRight, ChevronLeft, Shield, ShieldCheck,
   Lock, ArrowRight, Sparkles, Fingerprint,
-  Globe, Compass,
 } from 'lucide-react';
 
+import type { WalletProvider } from '@/types';
 import { useApp } from '@/contexts/AppContext';
 import { useWallet } from '@/hooks/useWallet';
 import { Badge } from '@/components/ui/SharedComponents';
@@ -87,7 +87,7 @@ function StepWelcome() {
   );
 }
 
-function StepConnectWallet({ wallet, connectWallet }: { wallet: { connected: boolean; address: string }; connectWallet: (provider?: 'keplr' | 'leap') => void | Promise<void> }) {
+function StepConnectWallet({ wallet, connectWallet }: { wallet: { connected: boolean; address: string }; connectWallet: (provider?: WalletProvider) => void | Promise<void> }) {
   return (
     <div className="text-center">
       <div className="w-16 h-16 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto mb-6">
@@ -116,29 +116,15 @@ function StepConnectWallet({ wallet, connectWallet }: { wallet: { connected: boo
         return (
         <div className="max-w-sm mx-auto space-y-3">
           <button
-            onClick={() => { connectWallet('keplr')?.catch(() => { /* error handled by useWallet */ }); }}
+            onClick={() => { connectWallet('aethelred')?.catch(() => { /* error handled by useWallet */ }); }}
             className="w-full flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-brand-300 hover:bg-brand-50 transition-colors text-left"
           >
-            <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
-              <Globe className="w-5 h-5 text-orange-600" />
+            <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
+              <Shield className="w-5 h-5 text-rose-600" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-900">Keplr Wallet</p>
-              <p className="text-xs text-slate-500">Cosmos ecosystem wallet</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-400 ml-auto" />
-          </button>
-
-          <button
-            onClick={() => { connectWallet('leap')?.catch(() => { /* error handled by useWallet */ }); }}
-            className="w-full flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-brand-300 hover:bg-brand-50 transition-colors text-left"
-          >
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
-              <Compass className="w-5 h-5 text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-900">Leap Wallet</p>
-              <p className="text-xs text-slate-500">Cosmos ecosystem wallet</p>
+              <p className="text-sm font-semibold text-slate-900">Aethelred Wallet</p>
+              <p className="text-xs text-slate-500">The one wallet for the Aethelred ecosystem</p>
             </div>
             <ChevronRight className="w-4 h-4 text-slate-400 ml-auto" />
           </button>

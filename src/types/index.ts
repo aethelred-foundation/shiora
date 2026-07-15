@@ -294,8 +294,12 @@ export interface CyclePrediction {
 // Wallet
 // ============================================================
 
-/** Supported wallet providers. */
-export type WalletProvider = 'keplr' | 'metamask' | 'walletconnect' | 'leap';
+/**
+ * Supported wallet providers. The whole ecosystem standardises on the
+ * Aethelred Wallet (EIP-1193); the others remain typed for interop/back-compat
+ * but the app connects via 'aethelred'.
+ */
+export type WalletProvider = 'aethelred' | 'metamask' | 'walletconnect';
 
 /**
  * Current state of the connected blockchain wallet.
@@ -303,12 +307,12 @@ export type WalletProvider = 'keplr' | 'metamask' | 'walletconnect' | 'leap';
 export interface WalletState {
   /** Whether a wallet is currently connected. */
   connected: boolean;
-  /** Aethelred wallet address (e.g. `aeth1...`). */
+  /** Aethelred account address — the 0x EVM account (e.g. `0x1234…`). */
   address: string;
   /** AETHEL token balance, or null while unknown (Shiora does not query the chain). */
   aethelBalance: number | null;
-  /** Which wallet extension was used to connect (persisted for re-enable on reload). */
-  provider?: 'keplr' | 'leap' | null;
+  /** Which wallet was used to connect (persisted for re-enable on reload). */
+  provider?: WalletProvider | null;
   /** Chain ID used during authentication (persisted for signing after reload). */
   chainId?: string | null;
 }

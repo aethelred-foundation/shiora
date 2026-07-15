@@ -13,29 +13,21 @@ import type {
 } from '@/types';
 
 // ---------------------------------------------------------------------------
-// Keplr / MetaMask window type augmentations
+// Aethelred Wallet (EIP-1193) provider type
 // ---------------------------------------------------------------------------
+//
+// The whole Aethelred ecosystem authenticates against ONE wallet: the
+// Aethelred Wallet injects an EIP-1193 provider at `window.ethereum` (with
+// `isAethelred: true`, and announced via EIP-6963). Shiora connects the same
+// way Cruzible, ZeroID, TerraQura and NoblePay do — no Keplr/Leap fork.
 
-/** Minimal Keplr-like provider interface for type-safe window access. */
-export interface KeplrProvider {
-  enable: (chainId: string) => Promise<void>;
-  getKey: (chainId: string) => Promise<{
-    name: string;
-    algo: string;
-    pubKey: Uint8Array;
-    address: Uint8Array;
-    bech32Address: string;
-  }>;
-  signArbitrary: (
-    chainId: string,
-    signer: string,
-    data: string,
-  ) => Promise<{ signature: string; pub_key: { value: string } }>;
+/** Minimal EIP-1193 provider surface Shiora needs. */
+export interface Eip1193Provider {
+  request: (args: { method: string; params?: unknown[] | object }) => Promise<unknown>;
+  isAethelred?: boolean;
+  on?: (event: string, handler: (...args: unknown[]) => void) => void;
+  removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
 }
-
-// ---------------------------------------------------------------------------
-// Challenge response type (mirrors server response shape)
-// ---------------------------------------------------------------------------
 
 interface ChallengeResponse {
   message: string;
@@ -45,92 +37,49 @@ interface ChallengeResponse {
   hmac: string;
 }
 
-// ---------------------------------------------------------------------------
-// Connect response type (mirrors server response shape)
-// ---------------------------------------------------------------------------
-
 interface ConnectResponse {
   address: string;
   expiresAt: number;
   expiresIn: string;
 }
 
-// ---------------------------------------------------------------------------
-// Return type
-// ---------------------------------------------------------------------------
-
 export interface UseWalletReturn {
-  /** Current wallet connection state. */
   wallet: WalletState;
-  /** Whether the wallet is currently connected. */
   isConnected: boolean;
-  /** Truncated address for UI display. */
   displayAddress: string;
-  /** Connect a wallet (optionally specifying provider and network). */
   connect: (provider?: WalletProvider, network?: string) => Promise<void>;
-  /** Disconnect the current wallet. */
   disconnect: () => void;
-  /** Sign an arbitrary message. Returns the signature. */
   signMessage: (params: SignMessageParams) => Promise<SignMessageResult>;
-  /** Sign and broadcast a transaction. Returns a mock tx hash. */
   signTransaction: (tx: Omit<Transaction, 'hash' | 'status' | 'timestamp'>) => Promise<string>;
-  /** Check if a specific wallet provider is available in the browser. */
   isProviderAvailable: (provider: WalletProvider) => boolean;
-  /** The currently active provider, if any. */
   activeProvider: WalletProvider | null;
-  /** Whether a wallet operation is in progress. */
   isLoading: boolean;
-  /** Last wallet error, if any. */
   error: string | null;
 }
 
 // ---------------------------------------------------------------------------
-// Wallet provider helpers
+// Aethelred EVM chain ids (cosmos/evm). Testnet and local devnet share 7332;
+// mainnet is 7331. Passed through to the session record; the challenge HMAC
+// does not depend on it.
 // ---------------------------------------------------------------------------
 
 const CHAIN_IDS: Record<string, string> = {
-  mainnet: 'aethelred-1',
-  testnet: 'aethelred-testnet-1',
+  mainnet: '7331',
+  testnet: '7332',
 };
 
-function getKeplr(): KeplrProvider | null {
-  /* istanbul ignore next -- @preserve SSR guard, untestable in jsdom */
-  if (typeof window === 'undefined') return null;
-  return (window as unknown as { keplr?: KeplrProvider }).keplr ?? null;
-}
-
-function getLeap(): KeplrProvider | null {
-  /* istanbul ignore next -- @preserve SSR guard, untestable in jsdom */
-  if (typeof window === 'undefined') return null;
-  // Leap exposes the same API shape as Keplr
-  return (window as unknown as { leap?: KeplrProvider }).leap ?? null;
-}
-
-function getCosmosProvider(provider: WalletProvider): KeplrProvider | null {
-  switch (provider) {
-    case 'keplr': return getKeplr();
-    case 'leap': return getLeap();
-    default: return null;
-  }
-}
-
 /**
- * Convert a base64-encoded byte string to hex.
- * Used for Keplr/Leap pub_key.value (base64 of 33-byte compressed key)
- * and signature (base64 of 64-byte raw r||s).
+ * Resolve the Aethelred Wallet's injected EIP-1193 provider. Prefers a
+ * provider that self-identifies as Aethelred; falls back to any injected
+ * `window.ethereum` so the flow still works while the Aethelred Wallet is the
+ * only extension a tester has installed.
  */
-function base64ToHex(b64: string): string {
-  const raw = atob(b64);
-  let hex = '';
-  for (let i = 0; i < raw.length; i++) {
-    hex += raw.charCodeAt(i).toString(16).padStart(2, '0');
-  }
-  return hex;
+function getAethelredProvider(): Eip1193Provider | null {
+  /* istanbul ignore next -- @preserve SSR guard, untestable in jsdom */
+  if (typeof window === 'undefined') return null;
+  const injected = (window as unknown as { ethereum?: Eip1193Provider }).ethereum;
+  return injected ?? null;
 }
-
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
 
 export function useWallet(): UseWalletReturn {
   const {
@@ -143,102 +92,78 @@ export function useWallet(): UseWalletReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialise provider/chain from persisted wallet state so signing works
-  // after a page reload without requiring a full reconnect.
   const [activeProvider, setActiveProvider] = useState<WalletProvider | null>(
     (wallet.provider as WalletProvider | null) ?? null,
   );
   const [activeChainId, setActiveChainId] = useState<string>(
     wallet.chainId ?? CHAIN_IDS.mainnet,
   );
-  const [providerRestored, setProviderRestored] = useState(false);
 
-  // Ref to track the latest sign seed for mock tx hashes
+  // Ref to seed dev tx hashes deterministically after each connect/sign.
   const seedRef = useRef(Date.now());
 
-  // On mount, if we have a persisted provider, silently re-enable the wallet
-  // extension so that signArbitrary is available without a full reconnect.
-  useEffect(() => {
-    if (providerRestored || !wallet.connected || !activeProvider) return;
-    setProviderRestored(true);
-
-    const cosmosProvider = getCosmosProvider(activeProvider);
-    if (!cosmosProvider) return;
-
-    // Best-effort re-enable; if the extension rejects we still keep the session.
-    cosmosProvider.enable(activeChainId).catch(() => {
-      // Extension not available or user rejected — signing will show a clear error.
-    });
-  }, [wallet.connected, activeProvider, activeChainId, providerRestored]);
-
-  /** Check whether a wallet extension is injected into the window. */
+  /** Check whether the Aethelred Wallet (or any EIP-1193 wallet) is injected. */
   const isProviderAvailable = useCallback((provider: WalletProvider): boolean => {
     /* istanbul ignore next -- @preserve SSR guard, untestable in jsdom */
     if (typeof window === 'undefined') return false;
-    switch (provider) {
-      case 'keplr':
-        return 'keplr' in window;
-      case 'leap':
-        return 'leap' in window;
-      default:
-        return false;
+    if (provider === 'aethelred') {
+      return getAethelredProvider() !== null;
     }
+    return false;
   }, []);
 
-  /** Truncated address for display (e.g. `aeth1ab3c...x9z0`). */
+  /** Truncated address for display (e.g. `0x1234…cdef`). */
   const displayAddress = useMemo(() => {
     if (!wallet.address) return '';
-    if (wallet.address.length <= 16) return wallet.address;
-    return `${wallet.address.slice(0, 10)}...${wallet.address.slice(-6)}`;
+    if (wallet.address.length <= 12) return wallet.address;
+    return `${wallet.address.slice(0, 6)}…${wallet.address.slice(-4)}`;
   }, [wallet.address]);
 
   /**
-   * Connect to a wallet provider using challenge-response auth flow.
-   * 1. Enable the wallet extension and get address + pubkey
-   * 2. GET /api/wallet/challenge?address=<addr> -> challenge
-   * 3. Sign the challenge message with the wallet (signArbitrary)
-   * 4. POST /api/wallet/connect with <pubKeyHex>.<sigHex> + challenge data
+   * Connect via the Aethelred Wallet using the challenge-response auth flow.
+   * 1. eth_requestAccounts -> the 0x account
+   * 2. GET /api/wallet/challenge?address=<addr> -> HMAC-bound challenge
+   * 3. personal_sign the challenge message (EIP-191)
+   * 4. POST /api/wallet/connect with the 0x signature + challenge data
    */
   const connect = useCallback(
-    async (provider: WalletProvider = 'keplr', network: string = 'mainnet') => {
+    async (provider: WalletProvider = 'aethelred', network: string = 'mainnet') => {
       setIsLoading(true);
       setError(null);
       try {
-        const cosmosProvider = getCosmosProvider(provider);
-        if (!cosmosProvider) {
+        const eip1193 = getAethelredProvider();
+        if (!eip1193) {
           throw new Error(
-            `${provider} wallet is not supported. Please use Keplr or Leap.`,
+            'Aethelred Wallet not found. Install the Aethelred Wallet extension to continue.',
           );
         }
 
         const chainId = CHAIN_IDS[network] ?? CHAIN_IDS.mainnet;
 
-        // Step 1: Enable the wallet and get the key info
-        await cosmosProvider.enable(chainId);
-        const key = await cosmosProvider.getKey(chainId);
-        const address = key.bech32Address;
+        // Step 1: request the account.
+        const accounts = (await eip1193.request({
+          method: 'eth_requestAccounts',
+        })) as string[];
+        const address = accounts?.[0]?.toLowerCase();
+        if (!address) {
+          throw new Error('No account was authorised in the wallet.');
+        }
 
-        // Step 2: Request a challenge from the server
+        // Step 2: server-issued challenge (nonce + HMAC + expiry).
         const challenge = await api.get<ChallengeResponse>('/api/wallet/challenge', {
           address,
         });
 
-        // Step 3: Sign the challenge message with the wallet extension
-        const signResult = await cosmosProvider.signArbitrary(
-          chainId,
-          address,
-          challenge.message,
-        );
+        // Step 3: personal_sign (EIP-191) the exact challenge message.
+        const signature = (await eip1193.request({
+          method: 'personal_sign',
+          params: [challenge.message, address],
+        })) as string;
 
-        // Convert base64 pub_key and signature to hex for the backend
-        const pubKeyHex = base64ToHex(signResult.pub_key.value);
-        const sigHex = base64ToHex(signResult.signature);
-
-        // Step 4: Submit signed challenge to authenticate
-        // Backend expects signature in "<compressedPubKeyHex>.<signatureHex>" format
+        // Step 4: submit the signature to authenticate.
         const connectResult = await api.post<ConnectResponse>('/api/wallet/connect', {
           address,
-          signature: `${pubKeyHex}.${sigHex}`,
+          signature,
           chainId,
           nonce: challenge.nonce,
           issuedAt: challenge.issuedAt,
@@ -246,21 +171,14 @@ export function useWallet(): UseWalletReturn {
           hmac: challenge.hmac,
         });
 
-        // Step 5: Update local state with server-confirmed data
-        // Persist provider & chainId so signing survives page reloads.
         // Balance stays null (unknown): the server authenticates the wallet but
         // does not know chain balances, and we never display an invented number.
-        connectWalletWithData(
-          connectResult.address,
-          null,
-          provider as 'keplr' | 'leap',
-          chainId,
-        );
+        connectWalletWithData(connectResult.address, null, provider, chainId);
 
         setActiveProvider(provider);
         setActiveChainId(chainId);
         seedRef.current = Date.now();
-        addNotification('success', 'Wallet Connected', `Connected via ${provider}`);
+        addNotification('success', 'Wallet Connected', 'Connected via Aethelred Wallet');
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to connect wallet';
         setError(message);
@@ -273,11 +191,10 @@ export function useWallet(): UseWalletReturn {
     [connectWalletWithData, addNotification],
   );
 
-  /** Disconnect the wallet and clear server session. */
+  /** Disconnect the wallet and clear the server session. */
   const disconnect = useCallback(() => {
-    // Best-effort server-side disconnect
     api.delete('/api/wallet/connect').catch(() => {
-      // Ignore errors — local state is cleared regardless
+      // Ignore errors — local state is cleared regardless.
     });
     disconnectWallet();
     setActiveProvider(null);
@@ -285,7 +202,7 @@ export function useWallet(): UseWalletReturn {
     addNotification('info', 'Wallet Disconnected', 'Your wallet has been disconnected');
   }, [disconnectWallet, addNotification]);
 
-  /** Sign an arbitrary string message using the active wallet provider. */
+  /** Sign an arbitrary string message with personal_sign (EIP-191). */
   const signMessage = useCallback(
     async (params: SignMessageParams): Promise<SignMessageResult> => {
       if (!wallet.connected) {
@@ -293,30 +210,30 @@ export function useWallet(): UseWalletReturn {
       }
       setIsLoading(true);
       try {
-        const cosmosProvider = activeProvider ? getCosmosProvider(activeProvider) : null;
-        if (!cosmosProvider) {
+        const eip1193 = getAethelredProvider();
+        if (!eip1193) {
           throw new Error('No wallet provider available for signing');
         }
 
-        const result = await cosmosProvider.signArbitrary(
-          activeChainId,
-          params.signer ?? wallet.address,
-          params.message,
-        );
+        const signer = (params.signer ?? wallet.address).toLowerCase();
+        const signature = (await eip1193.request({
+          method: 'personal_sign',
+          params: [params.message, signer],
+        })) as string;
 
         return {
           message: params.message,
-          signature: result.signature,
-          publicKey: result.pub_key.value,
+          signature,
+          publicKey: '', // EIP-191 recovers the key server-side; not exposed here.
         };
       } finally {
         setIsLoading(false);
       }
     },
-    [wallet.connected, wallet.address, activeProvider, activeChainId],
+    [wallet.connected, wallet.address],
   );
 
-  /** Sign and broadcast a transaction (mock for dev). Returns a tx hash. */
+  /** Sign and broadcast a transaction (dev stub). Returns a tx hash. */
   const signTransaction = useCallback(
     async (tx: Omit<Transaction, 'hash' | 'status' | 'timestamp'>): Promise<string> => {
       if (!wallet.connected) {
@@ -336,6 +253,13 @@ export function useWallet(): UseWalletReturn {
     },
     [wallet.connected, addNotification],
   );
+
+  // Keep the session's chain id in sync when it is restored from storage.
+  useEffect(() => {
+    if (wallet.chainId && wallet.chainId !== activeChainId) {
+      setActiveChainId(wallet.chainId);
+    }
+  }, [wallet.chainId, activeChainId]);
 
   return {
     wallet,
