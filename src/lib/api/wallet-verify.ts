@@ -1,27 +1,48 @@
 // ============================================================
 // Shiora on Aethelred — Wallet Signature Verification
-// secp256k1 ECDSA signature verification for Cosmos-style wallets
+// EIP-191 personal_sign verification for the Aethelred Wallet
+// (and any EIP-1193 / EVM wallet on the Aethelred network).
 // ============================================================
+//
+// The whole Aethelred ecosystem — Wallet, Cruzible, ZeroID, TerraQura,
+// NoblePay and now Shiora — authenticates against ONE wallet: the Aethelred
+// Wallet, which injects an EIP-1193 provider (window.ethereum, isAethelred).
+// Users prove control of their account by signing the server-issued challenge
+// with `personal_sign` (EIP-191). The recovered address is the same 0x account
+// the chain uses and that Shiora's own on-chain seal contract binds as its
+// `subject`, so the app identity, the on-chain identity, and the seal subject
+// are finally one and the same.
+//
+// Ported from the previous Cosmos ADR-36 (secp256k1/bech32) verifier. The
+// security properties are preserved 1:1:
+//   1. Proof of private-key control over the exact challenge message.
+//   2. The recovered account must equal the expected address (binding).
+//   3. Canonical low-S enforcement (EIP-2 / BIP-62) — ECDSA is malleable, so a
+//      third party could otherwise mint a second "distinct" signature over the
+//      same challenge. Rejecting high-S loses no legitimate logins (every
+//      mainstream wallet emits low-S) while pinning one signature per
+//      (key, message).
+//
+// Recovery + keccak come from @noble/curves and @noble/hashes — the audited
+// primitives viem and ethers use internally. We never hand-roll ecrecover.
 
-import crypto from 'node:crypto';
+import { secp256k1 } from '@noble/curves/secp256k1';
+import { keccak_256 } from '@noble/hashes/sha3';
+
+const SECP256K1_N = secp256k1.CURVE.n;
+const SECP256K1_HALF_N = SECP256K1_N / BigInt(2);
 
 /**
- * Verify a secp256k1 ECDSA signature produced by a Cosmos/Aethelred wallet.
+ * Verify an EIP-191 `personal_sign` signature over `message`.
  *
- * The wallet signs the SHA-256 hash of the challenge message using its
- * private key. The signature is submitted as a hex-encoded DER or
- * raw (r‖s) byte string.  We recover the public key from the address
- * derivation chain:  pubkey → SHA-256 → RIPEMD-160 → bech32("aeth").
+ * @param message         the exact challenge string the wallet signed
+ * @param signatureField  0x-prefixed 65-byte signature (r‖s‖v), as returned
+ *                        by `personal_sign`
+ * @param expectedAddress the 0x account the signature must recover to
+ *                        (comparison is case-insensitive)
  *
- * Because we cannot recover the public key from the bech32 address alone
- * (it is a hash), the client must attach the compressed public key in the
- * `signature` field using the format `<hex-pubkey>.<hex-signature>`.
- *
- * Returns true only when:
- *   1. The public key is a valid 33-byte compressed secp256k1 point.
- *   2. The signature's s scalar is canonical low-S (0 < s ≤ n/2).
- *   3. The ECDSA signature over SHA-256(message) verifies against the key.
- *   4. The bech32 address derived from the key matches `expectedAddress`.
+ * Returns true only when the signature is well-formed, canonical low-S, and
+ * recovers exactly to `expectedAddress`. Fails closed on any malformed input.
  */
 export function verifyWalletSignature(
   message: string,
@@ -29,207 +50,108 @@ export function verifyWalletSignature(
   expectedAddress: string,
 ): boolean {
   try {
-    // Expect format: <compressedPubKeyHex>.<signatureHex>
-    const dotIndex = signatureField.indexOf('.');
-    if (dotIndex === -1) {
+    if (!isHexAddress(expectedAddress)) {
       return false;
     }
 
-    const pubKeyHex = signatureField.slice(0, dotIndex);
-    const sigHex = signatureField.slice(dotIndex + 1);
-
-    if (!pubKeyHex || !sigHex) {
+    const sigBytes = hexToBytes(signatureField);
+    // 65 bytes: r (32) ‖ s (32) ‖ v (1).
+    if (sigBytes.length !== 65) {
       return false;
     }
 
-    // Validate public key format (33-byte compressed secp256k1)
-    const pubKeyBytes = Buffer.from(pubKeyHex, 'hex');
-    if (pubKeyBytes.length !== 33 || (pubKeyBytes[0] !== 0x02 && pubKeyBytes[0] !== 0x03)) {
+    const r = bytesToBigInt(sigBytes.subarray(0, 32));
+    const s = bytesToBigInt(sigBytes.subarray(32, 64));
+    const recovery = normalizeRecoveryId(sigBytes[64]);
+    if (recovery === null) {
       return false;
     }
 
-    // Derive address from public key and verify it matches
-    const derivedAddress = deriveAethelredAddress(pubKeyBytes);
-    if (derivedAddress !== expectedAddress) {
+    // Reject out-of-range scalars (fail closed).
+    if (r <= BigInt(0) || r >= SECP256K1_N || s <= BigInt(0) || s >= SECP256K1_N) {
       return false;
     }
 
-    // Verify ECDSA signature over SHA-256(message)
-    const messageHash = crypto.createHash('sha256').update(message).digest();
-
-    // Convert raw (r || s) signature to DER if needed
-    const sigBytes = Buffer.from(sigHex, 'hex');
-    const derSig = sigBytes.length === 64
-      ? rawToDer(sigBytes)
-      : sigBytes;
-
-    // Enforce canonical low-S (audit L-02). ECDSA is malleable: for any valid
-    // (r, s) the twin (r, n − s) also verifies, so a third party could mint a
-    // second "distinct" signature over the same challenge. Cosmos wallets
-    // (cosmjs) always emit low-S, so rejecting high-S loses no legitimate
-    // logins while pinning one canonical signature per (key, message).
-    const sScalar = extractS(sigBytes);
-    if (sScalar === null || !isLowS(sScalar)) {
+    // Canonical low-S (audit L-02, preserved from the Cosmos verifier).
+    if (s > SECP256K1_HALF_N) {
       return false;
     }
 
-    // Build SPKI DER for compressed secp256k1 key:
-    // SEQUENCE { SEQUENCE { OID ecPublicKey, OID secp256k1 }, BIT STRING { compressed key } }
-    const spkiPrefix = Buffer.from(
-      '3036301006072a8648ce3d020106052b8104000a032200',
-      'hex',
-    );
-    const keyObject = crypto.createPublicKey({
-      key: Buffer.concat([spkiPrefix, pubKeyBytes]),
-      format: 'der',
-      type: 'spki',
-    });
+    const digest = hashPersonalMessage(message);
 
-    return crypto.verify(
-      null, // signature is over raw hash, not a digest algorithm
-      messageHash,
-      { key: keyObject, dsaEncoding: 'der' },
-      derSig,
-    );
+    const signature = new secp256k1.Signature(r, s).addRecoveryBit(recovery);
+    const publicKey = signature.recoverPublicKey(digest); // throws on failure
+    const uncompressed = publicKey.toRawBytes(false); // 65 bytes, 0x04 ‖ X ‖ Y
+
+    const recovered = deriveEvmAddress(uncompressed);
+    return recovered.toLowerCase() === expectedAddress.toLowerCase();
   } catch {
     return false;
   }
 }
 
 /**
- * Derive an Aethelred bech32 address from a compressed secp256k1 public key.
- * Address = bech32("aeth", RIPEMD160(SHA256(pubkey)))
+ * EIP-191 personal_sign digest:
+ *   keccak256("\x19Ethereum Signed Message:\n" + len(bytes) + message)
+ * where `len(bytes)` is the decimal byte length of the UTF-8 message.
  */
-function deriveAethelredAddress(compressedPubKey: Buffer): string {
-  const sha256Hash = crypto.createHash('sha256').update(compressedPubKey).digest();
-  const ripemd160Hash = crypto.createHash('ripemd160').update(sha256Hash).digest();
-  return bech32Encode('aeth', ripemd160Hash);
+export function hashPersonalMessage(message: string): Uint8Array {
+  const messageBytes = new TextEncoder().encode(message);
+  const prefix = new TextEncoder().encode(
+    `\x19Ethereum Signed Message:\n${messageBytes.length}`,
+  );
+  const prefixed = new Uint8Array(prefix.length + messageBytes.length);
+  prefixed.set(prefix, 0);
+  prefixed.set(messageBytes, prefix.length);
+  return keccak_256(prefixed);
 }
 
 /**
- * Minimal bech32 encoder (BIP-173) for address derivation.
+ * Derive the EVM (0x) address from an uncompressed secp256k1 public key:
+ *   address = "0x" + keccak256(pubkey[1:])[-20:]
+ * Returns a lowercase (non-checksummed) address; callers compare
+ * case-insensitively.
  */
-function bech32Encode(hrp: string, data: Buffer): string {
-  const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
-
-  // Convert 8-bit groups to 5-bit groups
-  const words: number[] = [];
-  let acc = 0;
-  let bits = 0;
-  for (let i = 0; i < data.length; i++) {
-    acc = (acc << 8) | data[i];
-    bits += 8;
-    while (bits >= 5) {
-      bits -= 5;
-      words.push((acc >> bits) & 0x1f);
-    }
-  }
-  /* istanbul ignore next -- RIPEMD-160 is always 20 bytes; 160/5=0 remainder */
-  if (bits > 0) { words.push((acc << (5 - bits)) & 0x1f); }
-
-  // Compute checksum
-  const values = [...hrpExpand(hrp), ...words, 0, 0, 0, 0, 0, 0];
-  const polymod = bech32Polymod(values) ^ 1;
-  const checksum: number[] = [];
-  for (let i = 0; i < 6; i++) {
-    checksum.push((polymod >> (5 * (5 - i))) & 0x1f);
-  }
-
-  return hrp + '1' + [...words, ...checksum].map((d) => CHARSET[d]).join('');
+export function deriveEvmAddress(uncompressedPubKey: Uint8Array): string {
+  // Strip the 0x04 uncompressed prefix; hash the 64-byte X‖Y.
+  const hash = keccak_256(uncompressedPubKey.subarray(1));
+  const addressBytes = hash.subarray(hash.length - 20);
+  return '0x' + bytesToHex(addressBytes);
 }
 
-function hrpExpand(hrp: string): number[] {
-  const result: number[] = [];
-  for (const c of hrp) {
-    result.push(c.charCodeAt(0) >> 5);
-  }
-  result.push(0);
-  for (const c of hrp) {
-    result.push(c.charCodeAt(0) & 0x1f);
-  }
-  return result;
+// ── helpers ────────────────────────────────────────────────
+
+function isHexAddress(value: string): boolean {
+  return /^0x[0-9a-fA-F]{40}$/.test(value);
 }
 
-function bech32Polymod(values: number[]): number {
-  const GEN = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
-  let chk = 1;
-  for (const v of values) {
-    const top = chk >> 25;
-    chk = ((chk & 0x1ffffff) << 5) ^ v;
-    for (let i = 0; i < 5; i++) {
-      if ((top >> i) & 1) {
-        chk ^= GEN[i];
-      }
-    }
-  }
-  return chk;
+/** personal_sign v is 27/28 (or legacy 0/1). Map to a 0/1 recovery id. */
+function normalizeRecoveryId(v: number): 0 | 1 | null {
+  if (v === 27 || v === 0) return 0;
+  if (v === 28 || v === 1) return 1;
+  return null;
 }
 
-// secp256k1 group order n and its half, for canonical low-S enforcement
-// (BIP-62 / Cosmos SDK convention).
-const SECP256K1_N = BigInt(
-  '0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141',
-);
-const SECP256K1_HALF_N = SECP256K1_N / BigInt(2);
-
-/**
- * Extract the s scalar bytes from a raw (r‖s) or DER-encoded ECDSA signature.
- * Returns null when the DER structure is malformed (fail closed).
- */
-function extractS(sig: Buffer): Buffer | null {
-  if (sig.length === 64) {
-    return sig.subarray(32);
+function hexToBytes(hex: string): Uint8Array {
+  const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
+  if (clean.length % 2 !== 0 || !/^[0-9a-fA-F]*$/.test(clean)) {
+    throw new Error('invalid hex');
   }
-
-  // DER: SEQUENCE(0x30, len) { INTEGER(0x02, rLen) r, INTEGER(0x02, sLen) s }
-  // Signatures are < 128 bytes, so only short-form lengths are legitimate.
-  if (sig.length < 8 || sig[0] !== 0x30 || sig[1] !== sig.length - 2) {
-    return null;
+  const out = new Uint8Array(clean.length / 2);
+  for (let i = 0; i < out.length; i++) {
+    out[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
   }
-  if (sig[2] !== 0x02) {
-    return null;
-  }
-  const rLen = sig[3];
-  const sTagOffset = 4 + rLen;
-  if (sTagOffset + 2 > sig.length || sig[sTagOffset] !== 0x02) {
-    return null;
-  }
-  const sLen = sig[sTagOffset + 1];
-  const sStart = sTagOffset + 2;
-  if (sLen === 0 || sStart + sLen !== sig.length) {
-    return null;
-  }
-  return sig.subarray(sStart, sStart + sLen);
+  return out;
 }
 
-/** Canonical low-S check: 0 < s ≤ n/2. */
-function isLowS(sBytes: Buffer): boolean {
-  const s = BigInt(`0x${sBytes.toString('hex')}`);
-  return s > BigInt(0) && s <= SECP256K1_HALF_N;
-}
-
-/**
- * Convert a raw 64-byte (r || s) ECDSA signature to DER encoding.
- */
-function rawToDer(raw: Buffer): Buffer {
-  const r = raw.subarray(0, 32);
-  const s = raw.subarray(32, 64);
-
-  function encodeInteger(value: Buffer): Buffer {
-    // Strip leading zeros but keep one if high bit is set
-    let start = 0;
-    // istanbul ignore next -- loop body only runs for multi-byte leading zeros
-    while (start < value.length - 1 && value[start] === 0) start++;
-    let trimmed = value.subarray(start);
-    // Prepend 0x00 if high bit is set (to keep it positive)
-    if (trimmed[0] & 0x80) {
-      trimmed = Buffer.concat([Buffer.from([0x00]), trimmed]);
-    }
-    return Buffer.concat([Buffer.from([0x02, trimmed.length]), trimmed]);
+function bytesToHex(bytes: Uint8Array): string {
+  let hex = '';
+  for (let i = 0; i < bytes.length; i++) {
+    hex += bytes[i].toString(16).padStart(2, '0');
   }
-
-  const rDer = encodeInteger(r);
-  const sDer = encodeInteger(s);
-  return Buffer.concat([Buffer.from([0x30, rDer.length + sDer.length]), rDer, sDer]);
+  return hex;
 }
 
+function bytesToBigInt(bytes: Uint8Array): bigint {
+  return BigInt('0x' + (bytesToHex(bytes) || '0'));
+}
