@@ -565,3 +565,31 @@ describe('runMiddleware honors server-side session revocation (audit M-03)', () 
     expect(await runMiddleware(req)).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Datastore-backed rate limiter failure — fail closed, not naked 500
+// (integration-style: a real PgRateLimiter pointed at an unreachable port)
+// ---------------------------------------------------------------------------
+describe('checkRateLimit with an unreachable durable limiter', () => {
+  const savedDb = process.env.DATABASE_URL;
+
+  afterEach(() => {
+    if (savedDb === undefined) delete process.env.DATABASE_URL;
+    else process.env.DATABASE_URL = savedDb;
+    require('@/lib/persistence/sql-client').__resetPgPoolForTests();
+    __resetRateLimiterForTests();
+  });
+
+  it('fails closed with a structured 503 DATASTORE_UNAVAILABLE', async () => {
+    process.env.DATABASE_URL = 'postgres://shiora:wrong@127.0.0.1:5499/shiora';
+    require('@/lib/persistence/sql-client').__resetPgPoolForTests();
+    __resetRateLimiterForTests();
+
+    const result = await checkRateLimit(makeReq('http://localhost:3000/api/test'), 10);
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe(503);
+    const body = await result!.json();
+    expect(body.error.code).toBe('DATASTORE_UNAVAILABLE');
+    expect(result!.headers.get('Retry-After')).toBe('5');
+  });
+});

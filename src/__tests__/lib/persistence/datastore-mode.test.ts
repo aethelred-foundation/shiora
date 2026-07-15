@@ -1,11 +1,14 @@
 /** @jest-environment node */
 
 jest.mock('@/lib/api/env', () => ({ serverEnv: { isProduction: false } }));
+jest.mock('@/lib/api/preflight', () => ({ preflightMode: jest.fn(() => 'development') }));
 
 import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
 import { serverEnv } from '@/lib/api/env';
+import { preflightMode } from '@/lib/api/preflight';
 
 const mockEnv = serverEnv as unknown as { isProduction: boolean };
+const mockMode = preflightMode as jest.Mock;
 const originalDatabaseUrl = process.env.DATABASE_URL;
 
 afterEach(() => {
@@ -36,5 +39,29 @@ describe('shouldUsePostgres', () => {
     process.env.DATABASE_URL = 'postgres://localhost/shiora';
     mockEnv.isProduction = true;
     expect(shouldUsePostgres()).toBe(true);
+  });
+});
+
+describe('shouldUsePostgres under the evaluation preflight mode', () => {
+  it('permits the in-memory store for an acknowledged evaluation deployment', () => {
+    delete process.env.DATABASE_URL;
+    mockEnv.isProduction = true;
+    mockMode.mockReturnValue('evaluation');
+    try {
+      expect(shouldUsePostgres()).toBe(false);
+    } finally {
+      mockMode.mockReturnValue('development');
+    }
+  });
+
+  it('still prefers Postgres in evaluation when DATABASE_URL is set', () => {
+    process.env.DATABASE_URL = 'postgres://localhost/shiora';
+    mockEnv.isProduction = true;
+    mockMode.mockReturnValue('evaluation');
+    try {
+      expect(shouldUsePostgres()).toBe(true);
+    } finally {
+      mockMode.mockReturnValue('development');
+    }
   });
 });

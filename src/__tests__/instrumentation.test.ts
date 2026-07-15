@@ -3,6 +3,13 @@
 jest.mock('@/lib/crypto/key-provider', () => ({ preloadKeyProvider: jest.fn() }));
 jest.mock('@/lib/api/preflight', () => ({
   assertProductionReadiness: jest.fn(),
+  checkProductionReadiness: jest.fn(() => ({
+    ok: true,
+    enforced: false,
+    mode: 'development',
+    problems: [],
+    acknowledged: [],
+  })),
   hasDurableDatastore: jest.fn(() => false),
 }));
 jest.mock('@/lib/maintenance/store-maintenance', () => ({ startMaintenanceScheduler: jest.fn() }));

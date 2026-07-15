@@ -127,3 +127,72 @@ describe('assertProductionReadiness', () => {
     expect(() => assertProductionReadiness()).not.toThrow();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Evaluation preflight mode (SHIORA_PREFLIGHT_MODE=evaluation)
+// ---------------------------------------------------------------------------
+describe('evaluation preflight mode', () => {
+  afterEach(() => {
+    delete process.env.SHIORA_PREFLIGHT_MODE;
+    delete process.env.SHIORA_L1_RPC_URL;
+  });
+
+  it('acknowledges the infrastructure gates instead of failing the boot', () => {
+    process.env.SHIORA_PREFLIGHT_MODE = 'evaluation';
+    delete process.env.SHIORA_TRANSIT_KEY_NAME; // KEY_CUSTODY_NOT_TRANSIT
+    mockServerEnv.enableHsts = false; // TRANSPORT_NOT_HARDENED
+    process.env.SHIORA_L1_RPC_URL = 'http://93.127.132.52:8545'; // NON_TLS_BACKEND
+
+    const report = checkProductionReadiness();
+    expect(report.mode).toBe('evaluation');
+    expect(report.enforced).toBe(true);
+    expect(report.ok).toBe(true);
+    expect(report.problems).toEqual([]);
+    expect(report.acknowledged.map((p) => p.code)).toEqual(
+      expect.arrayContaining([
+        'KEY_CUSTODY_NOT_TRANSIT',
+        'TRANSPORT_NOT_HARDENED',
+        'NON_TLS_BACKEND',
+      ]),
+    );
+    expect(() => assertProductionReadiness()).not.toThrow();
+  });
+
+  it('keeps dev-secret gates fatal even in evaluation', () => {
+    process.env.SHIORA_PREFLIGHT_MODE = 'evaluation';
+    mockServerEnv.hasConfiguredSessionSecret = false;
+
+    const report = checkProductionReadiness();
+    expect(report.ok).toBe(false);
+    expect(report.problems.map((p) => p.code)).toContain('SESSION_SECRET_DEFAULT');
+    expect(() => assertProductionReadiness()).toThrow(/SESSION_SECRET_DEFAULT/);
+  });
+
+  it('keeps the auth-bypass gate fatal even in evaluation', () => {
+    process.env.SHIORA_PREFLIGHT_MODE = 'evaluation';
+    mockServerEnv.allowInsecureWalletHeader = true;
+
+    const report = checkProductionReadiness();
+    expect(report.ok).toBe(false);
+    expect(report.problems.map((p) => p.code)).toContain('INSECURE_WALLET_HEADER_ENABLED');
+  });
+
+  it('reports mode=production (empty acknowledged) without the acknowledgment', () => {
+    const report = checkProductionReadiness();
+    expect(report.mode).toBe('production');
+    expect(report.acknowledged).toEqual([]);
+  });
+
+  it('reports mode=development outside production regardless of the env', () => {
+    mockServerEnv.isProduction = false;
+    process.env.SHIORA_PREFLIGHT_MODE = 'evaluation';
+    const report = checkProductionReadiness();
+    expect(report.mode).toBe('development');
+    expect(report.ok).toBe(true);
+  });
+
+  it('production mode failure suggests the evaluation acknowledgment', () => {
+    mockServerEnv.enableHsts = false;
+    expect(() => assertProductionReadiness()).toThrow(/SHIORA_PREFLIGHT_MODE=evaluation/);
+  });
+});

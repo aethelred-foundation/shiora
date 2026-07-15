@@ -158,8 +158,39 @@ which node-held account funds anchors; until then anchor receipts are honestly
 reported `status: local`.)
 
 ```bash
-npm run build && npm start        # serves on :3001
+npm run build                                    # assembles the standalone bundle
+SHIORA_PREFLIGHT_MODE=evaluation PORT=3001 npm run start:standalone
 ```
+
+Two things to know about production runs:
+
+- `next start` refuses `output: standalone` builds — use `npm run
+  start:standalone` (the build's postbuild step copies the static assets into
+  the standalone tree automatically).
+- Production boots are gated by a PHI-readiness preflight (Vault Transit
+  custody, HSTS/TLS, TLS backends, durable Postgres). A testnet evaluation
+  that does not custody real patient data acknowledges those infrastructure
+  gates with `SHIORA_PREFLIGHT_MODE=evaluation`; the acknowledged gaps are
+  printed at boot and visible on `GET /api/health/ready` (`config.mode:
+  "evaluation"`). Dev crypto keys, placeholder secrets, auth bypasses and
+  mainnet targets remain fatal even in evaluation — keep the session secret
+  and data key set to real random values.
+
+### 9.2.1 If every API returns 500 (incl. /api/wallet/challenge)
+
+When `DATABASE_URL` is set, rate limiting and the data stores run on
+Postgres for **every** request — an unreachable Postgres therefore breaks all
+endpoints at once. The app now answers a structured `503
+DATASTORE_UNAVAILABLE` (with `Retry-After`) in that state; if you see it,
+check Postgres from the app host:
+
+```bash
+psql "$DATABASE_URL" -c 'SELECT 1'
+```
+
+Either fix the connection or unset `DATABASE_URL` (evaluation mode then runs
+on the non-durable in-memory store — fine for wallet-flow testing, data is
+lost on restart).
 
 ### 9.3 HTTPS caveat — read before testing on the VPS
 

@@ -19,7 +19,13 @@ import { getPgClient } from '@/lib/persistence/sql-client';
 export async function GET() {
   const config = checkProductionReadiness();
   const checks: Record<string, unknown> = {
-    config: { ok: config.ok, enforced: config.enforced, problems: config.problems },
+    config: {
+      ok: config.ok,
+      enforced: config.enforced,
+      mode: config.mode,
+      problems: config.problems,
+      acknowledged: config.acknowledged,
+    },
   };
 
   if (hasDurableDatastore()) {

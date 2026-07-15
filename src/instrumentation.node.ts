@@ -8,7 +8,11 @@
 // ============================================================
 
 import { preloadKeyProvider } from '@/lib/crypto/key-provider';
-import { assertProductionReadiness, hasDurableDatastore } from '@/lib/api/preflight';
+import {
+  assertProductionReadiness,
+  checkProductionReadiness,
+  hasDurableDatastore,
+} from '@/lib/api/preflight';
 import { startMaintenanceScheduler } from '@/lib/maintenance/store-maintenance';
 
 export async function registerNode(): Promise<void> {
@@ -17,6 +21,21 @@ export async function registerNode(): Promise<void> {
   // In production, hard-fail a misconfigured boot (durable DB, key custody,
   // session secret, TLS/HSTS).
   assertProductionReadiness();
+  // An evaluation deployment boots, but never quietly: every acknowledged
+  // production gap is printed at startup and stays visible on
+  // GET /api/health/ready.
+  const report = checkProductionReadiness();
+  if (report.mode === 'evaluation' && report.acknowledged.length > 0) {
+    const lines = report.acknowledged.map((p) => `  - ${p.code}: ${p.message}`).join('\n');
+    console.warn(
+      '\n============================================================\n'
+      + 'SHIORA EVALUATION DEPLOYMENT — NOT PRODUCTION-PHI READY\n'
+      + 'SHIORA_PREFLIGHT_MODE=evaluation acknowledged these gaps:\n'
+      + `${lines}\n`
+      + 'This process must not custody real patient data.\n'
+      + '============================================================\n',
+    );
+  }
   // Garbage-collect the durable auth stores (GAP-01). In-memory stores sweep
   // themselves inline, so the scheduler only matters under Postgres.
   if (hasDurableDatastore()) {

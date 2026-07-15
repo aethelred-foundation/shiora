@@ -13,6 +13,7 @@ import { createLogger } from '@/lib/observability/logger';
 import { counter, normalizeRoute } from '@/lib/observability/metrics';
 import { getRateLimiter } from './rate-limiter';
 import { serverEnv } from './env';
+import { isDatastoreUnavailableError } from '@/lib/persistence/datastore-errors';
 
 // ────────────────────────────────────────────────────────────
 // Rate Limiting
@@ -37,11 +38,30 @@ export async function checkRateLimit(
   maxRequests: number = RATE_LIMIT_MAX_REQUESTS,
   windowMs: number = RATE_LIMIT_WINDOW_MS,
 ): Promise<NextResponse | null> {
-  const decision = await getRateLimiter().consume(
-    getClientFingerprint(request),
-    maxRequests,
-    windowMs,
-  );
+  let decision;
+  try {
+    decision = await getRateLimiter().consume(
+      getClientFingerprint(request),
+      maxRequests,
+      windowMs,
+    );
+  } catch (err) {
+    // The Postgres-backed limiter runs on EVERY request, so an unreachable
+    // datastore must not escape as a naked 500 from each endpoint. Fail
+    // CLOSED (503, the GAP-05 graceful-degradation contract) rather than
+    // open: skipping the limiter would drop brute-force protection on the
+    // auth endpoints exactly when the durable store is down.
+    if (isDatastoreUnavailableError(err)) {
+      return errorResponse(
+        'DATASTORE_UNAVAILABLE',
+        'The service is temporarily unable to reach its datastore. Please retry shortly.',
+        HTTP.SERVICE_UNAVAILABLE,
+        undefined,
+        { 'Retry-After': '5' },
+      );
+    }
+    throw err;
+  }
 
   if (!decision.allowed) {
     // Standard backoff headers (GAP-04): both fixed-window limiters reset at

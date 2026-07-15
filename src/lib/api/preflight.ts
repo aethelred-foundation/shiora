@@ -31,11 +31,48 @@ export interface ReadinessProblem {
   message: string;
 }
 
+/**
+ * How the preflight is being enforced for this process:
+ *  - development: NODE_ENV != production — checks are advisory only.
+ *  - production:  the full PHI-grade invariant set is fatal.
+ *  - evaluation:  NODE_ENV=production with SHIORA_PREFLIGHT_MODE=evaluation —
+ *    an explicit operator acknowledgment that this deployment is a
+ *    testnet/pilot evaluation that does NOT custody real PHI. A conservative
+ *    allowlist of infrastructure gates (Vault Transit, HSTS, TLS-to-backend,
+ *    durable datastore, https origins) is downgraded to acknowledged
+ *    warnings; everything else — dev crypto keys, placeholder secrets, auth
+ *    bypasses, wildcard origins, any mainnet target — remains fatal.
+ */
+export type PreflightMode = 'development' | 'evaluation' | 'production';
+
+/** Gates an evaluation deployment may acknowledge instead of satisfying. */
+const EVALUATION_ACKNOWLEDGEABLE = new Set([
+  'KEY_CUSTODY_NOT_TRANSIT',
+  'TRANSPORT_NOT_HARDENED',
+  'NON_TLS_BACKEND',
+  'DATASTORE_NOT_DURABLE',
+  'INSECURE_ORIGIN',
+]);
+
+export function preflightMode(): PreflightMode {
+  if (!serverEnv.isProduction) return 'development';
+  return process.env.SHIORA_PREFLIGHT_MODE === 'evaluation' ? 'evaluation' : 'production';
+}
+
 export interface ReadinessReport {
   ok: boolean;
   /** True only when running with NODE_ENV=production. */
   enforced: boolean;
+  /** Enforcement tier this report was evaluated under. */
+  mode: PreflightMode;
+  /** Blocking problems (fatal under the current mode). */
   problems: ReadinessProblem[];
+  /**
+   * Problems explicitly acknowledged by the evaluation profile — still real
+   * gaps against production-PHI readiness, surfaced so no deployment can
+   * quietly pass itself off as production-grade.
+   */
+  acknowledged: ReadinessProblem[];
 }
 
 /** Whether a durable (Postgres) datastore is configured. */
@@ -110,10 +147,26 @@ export function checkProductionReadiness(): ReadinessReport {
 
   problems.push(...lintProductionConfig(process.env));
 
+  const mode = preflightMode();
+
+  if (mode === 'evaluation') {
+    const acknowledged = problems.filter((p) => EVALUATION_ACKNOWLEDGEABLE.has(p.code));
+    const fatal = problems.filter((p) => !EVALUATION_ACKNOWLEDGEABLE.has(p.code));
+    return {
+      ok: fatal.length === 0,
+      enforced: true,
+      mode,
+      problems: fatal,
+      acknowledged,
+    };
+  }
+
   return {
     ok: serverEnv.isProduction ? problems.length === 0 : true,
     enforced: serverEnv.isProduction,
+    mode,
     problems,
+    acknowledged: [],
   };
 }
 
@@ -126,6 +179,14 @@ export function assertProductionReadiness(): void {
   const report = checkProductionReadiness();
   if (report.enforced && !report.ok) {
     const detail = report.problems.map((p) => `- ${p.code}: ${p.message}`).join('\n');
-    throw new Error(`Shiora production preflight failed:\n${detail}`);
+    const hint =
+      report.mode === 'production'
+        ? '\n\nFor a testnet/pilot deployment that does not custody real PHI, the '
+          + 'infrastructure gates (Vault Transit, HSTS, TLS backends, durable '
+          + 'datastore) can be explicitly acknowledged with '
+          + 'SHIORA_PREFLIGHT_MODE=evaluation. Dev crypto keys, placeholder '
+          + 'secrets, auth bypasses and mainnet targets are never acknowledgeable.'
+        : '';
+    throw new Error(`Shiora ${report.mode} preflight failed:\n${detail}${hint}`);
   }
 }
