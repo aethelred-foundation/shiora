@@ -13,16 +13,22 @@ jest.mock('@/lib/api/preflight', () => ({
   hasDurableDatastore: jest.fn(() => false),
 }));
 jest.mock('@/lib/maintenance/store-maintenance', () => ({ startMaintenanceScheduler: jest.fn() }));
+jest.mock('@/lib/persistence/migrator', () => ({
+  migrate: jest.fn(async () => ({ applied: [], alreadyApplied: 0 })),
+}));
+jest.mock('@/lib/persistence/sql-client', () => ({ getPgClient: jest.fn(() => ({})) }));
 
 import { register } from '@/instrumentation';
 import { preloadKeyProvider } from '@/lib/crypto/key-provider';
 import { assertProductionReadiness, hasDurableDatastore } from '@/lib/api/preflight';
 import { startMaintenanceScheduler } from '@/lib/maintenance/store-maintenance';
+import { migrate } from '@/lib/persistence/migrator';
 
 const mockPreload = preloadKeyProvider as jest.Mock;
 const mockAssert = assertProductionReadiness as jest.Mock;
 const mockDurable = hasDurableDatastore as jest.Mock;
 const mockStartScheduler = startMaintenanceScheduler as jest.Mock;
+const mockMigrate = migrate as jest.Mock;
 const originalRuntime = process.env.NEXT_RUNTIME;
 
 afterEach(() => {
@@ -53,5 +59,31 @@ describe('register (startup instrumentation)', () => {
     mockDurable.mockReturnValueOnce(true);
     await register();
     expect(mockStartScheduler).toHaveBeenCalledTimes(1);
+  });
+
+  it('applies pending schema migrations before serving durable deployments', async () => {
+    process.env.NEXT_RUNTIME = 'nodejs';
+    mockDurable.mockReturnValueOnce(true);
+    await register();
+    expect(mockMigrate).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips auto-migration when SHIORA_AUTO_MIGRATE=false (pipeline-owned)', async () => {
+    process.env.NEXT_RUNTIME = 'nodejs';
+    process.env.SHIORA_AUTO_MIGRATE = 'false';
+    mockDurable.mockReturnValueOnce(true);
+    try {
+      await register();
+      expect(mockMigrate).not.toHaveBeenCalled();
+      expect(mockStartScheduler).toHaveBeenCalledTimes(1);
+    } finally {
+      delete process.env.SHIORA_AUTO_MIGRATE;
+    }
+  });
+
+  it('does not touch the migrator on in-memory deployments', async () => {
+    process.env.NEXT_RUNTIME = 'nodejs';
+    await register();
+    expect(mockMigrate).not.toHaveBeenCalled();
   });
 });

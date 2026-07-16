@@ -39,6 +39,23 @@ export async function registerNode(): Promise<void> {
   // Garbage-collect the durable auth stores (GAP-01). In-memory stores sweep
   // themselves inline, so the scheduler only matters under Postgres.
   if (hasDurableDatastore()) {
+    // Apply pending schema migrations before serving. The migrator is
+    // forward-only, version-tracked and idempotent, so running it at every
+    // boot is safe; without it a fresh Postgres has no tables and every
+    // request dies (field report: `relation "rate_limits" does not exist`
+    // from the per-request Pg rate limiter). Opt out with
+    // SHIORA_AUTO_MIGRATE=false when a deploy pipeline owns migrations.
+    if (process.env.SHIORA_AUTO_MIGRATE !== 'false') {
+      const { migrate } = await import('@/lib/persistence/migrator');
+      const { getPgClient } = await import('@/lib/persistence/sql-client');
+      const result = await migrate(getPgClient());
+      if (result.applied.length > 0) {
+        console.log(
+          `[db] applied schema migrations: ${result.applied.join(', ')} `
+          + `(${result.alreadyApplied} already in place)`,
+        );
+      }
+    }
     startMaintenanceScheduler();
   }
 }

@@ -200,6 +200,12 @@ Either fix the connection or unset `DATABASE_URL` (evaluation mode then runs
 on the non-durable in-memory store — fine for wallet-flow testing, data is
 lost on restart).
 
+With a reachable Postgres, the schema is created/updated automatically at
+boot (forward-only, version-tracked migrations — the boot log prints
+`[db] applied schema migrations: …` on first run). No manual migration
+command is needed; a pipeline that wants to own migrations can set
+`SHIORA_AUTO_MIGRATE=false`.
+
 ### 9.3 HTTPS caveat — read before testing on the VPS
 
 Production builds set session cookies with the `Secure` flag. A browser will
