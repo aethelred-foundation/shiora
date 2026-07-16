@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import { type NextRequest, type NextResponse } from 'next/server';
 
 import { serverEnv } from './env';
+import { preflightMode } from './preflight';
 import { sessionSigningKey } from '@/lib/crypto/derived-secrets';
 
 export interface SessionClaims {
@@ -105,6 +106,19 @@ export function extractSessionToken(request: NextRequest): string | null {
   return request.cookies.get(SESSION_COOKIE_NAME)?.value ?? null;
 }
 
+/**
+ * Whether the session cookie carries the Secure attribute. Production PHI
+ * deployments always do. An acknowledged evaluation deployment has already
+ * accepted TRANSPORT_NOT_HARDENED (plain http) — and a Secure-only cookie on
+ * plain http is silently DROPPED by the browser, so wallet connect "succeeds"
+ * and every following request is 401 (hit twice in testnet field testing).
+ * The relaxation therefore follows the same explicit acknowledgment as the
+ * transport gate itself.
+ */
+function sessionCookieSecure(): boolean {
+  return serverEnv.isProduction && preflightMode() !== 'evaluation';
+}
+
 export function applySessionCookie(
   response: NextResponse,
   token: string,
@@ -115,7 +129,7 @@ export function applySessionCookie(
     value: token,
     httpOnly: true,
     sameSite: 'lax',
-    secure: serverEnv.isProduction,
+    secure: sessionCookieSecure(),
     path: '/',
     expires: new Date(expiresAt),
   });
@@ -127,7 +141,7 @@ export function clearSessionCookie(response: NextResponse): void {
     value: '',
     httpOnly: true,
     sameSite: 'lax',
-    secure: serverEnv.isProduction,
+    secure: sessionCookieSecure(),
     path: '/',
     expires: new Date(0),
   });

@@ -206,17 +206,38 @@ boot (forward-only, version-tracked migrations — the boot log prints
 command is needed; a pipeline that wants to own migrations can set
 `SHIORA_AUTO_MIGRATE=false`.
 
-### 9.3 HTTPS caveat — read before testing on the VPS
+### 9.3 Transport & session cookies
 
-Production builds set session cookies with the `Secure` flag. A browser will
-NOT store them over plain `http://<VPS-IP>:3001`, so wallet login would appear
-to succeed and immediately drop. Two supported paths:
+Session cookies follow the preflight tier: production builds set the `Secure`
+flag (browsers drop such cookies over plain `http://<VPS-IP>`, so login would
+appear to succeed and then every request stays 401 — the app now detects this
+and says so at connect time). Under `SHIORA_PREFLIGHT_MODE=evaluation` the
+Secure flag is relaxed along with the already-acknowledged transport gate, so
+wallet sessions work directly on a plain-HTTP VPS origin. For any
+non-evaluation deployment, TLS (or an SSH tunnel to localhost) remains
+mandatory.
 
-1. **SSH tunnel (fastest):** `ssh -L 3001:localhost:3001 <vps>` and open
-   `http://localhost:3001` — browsers treat localhost as a secure context, so
-   auth works unmodified.
-2. **TLS reverse proxy (shared testing):** put Caddy/nginx with a certificate
-   in front and add the https origin to `SHIORA_ALLOWED_ORIGINS`.
+Run on a different port with the env var — do not edit package.json (the
+prepare step in `start:standalone` must keep running):
+
+```bash
+SHIORA_PREFLIGHT_MODE=evaluation PORT=3008 npm run start:standalone
+```
+
+### 9.3.1 Suggested testing flow (evaluation deployment)
+
+1. **Connect:** Connect Wallet → Aethelred Wallet or MetaMask → sign the
+   EIP-191 challenge. The header shows your address; a dropped-session error
+   here means the tier/transport rules above were violated.
+2. **Vault:** Records → upload a health record (AES-256-GCM sealed at rest);
+   Vault → log a cycle/symptom entry.
+3. **Access:** Manage Access → grant a provider address view access → check
+   Access Activity shows the grant event.
+4. **Audit:** every read/write lands in the tamper-evident audit trail
+   (Access page); `GET /api/health/ready` shows overall config/datastore
+   status and the evaluation acknowledgments.
+5. Simulated surfaces (Attestation Tooling, clinical previews) are labeled
+   as such by design — they are not test failures.
 
 ### 9.4 What to verify
 

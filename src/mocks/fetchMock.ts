@@ -112,6 +112,17 @@ const routes: Array<{ method: string; pattern: RegExp; handler: Handler }> = [
     pattern: /\/api\/wallet\/connect/,
     handler: () => ok({ address: '0x00000000000000000000000000000000000a1b2c', expiresAt: Date.now() + 86400000 }),
   },
+  {
+    // Post-connect session probe (useWallet step 5): the session cookie held.
+    method: 'GET',
+    pattern: /\/api\/me$/,
+    handler: () =>
+      ok({
+        address: '0x00000000000000000000000000000000000a1b2c',
+        roles: ['patient'],
+        capabilities: [],
+      }),
+  },
 
   // ── Records ─────────────────────────────────────────────────────────────
   {

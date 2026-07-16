@@ -231,6 +231,22 @@ export function useWallet(): UseWalletReturn {
           hmac: challenge.hmac,
         });
 
+        // Step 5: prove the session actually took hold before declaring
+        // success. A Secure-only cookie on a plain-http origin is silently
+        // dropped by the browser — connect then "succeeds" while every
+        // authenticated request 401s. Fail loudly instead.
+        try {
+          await api.get('/api/me');
+        } catch {
+          throw new Error(
+            'Signed in, but the browser did not keep the session cookie — every '
+            + 'request would stay unauthorized. This happens on plain-HTTP '
+            + 'origins with a production (non-evaluation) server. Serve the app '
+            + 'with SHIORA_PREFLIGHT_MODE=evaluation, put it behind HTTPS, or '
+            + 'open it via http://localhost (SSH tunnel).',
+          );
+        }
+
         // Balance stays null (unknown): the server authenticates the wallet but
         // does not know chain balances, and we never display an invented number.
         connectWalletWithData(connectResult.address, null, provider, chainId);

@@ -110,6 +110,39 @@ describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
     expect(result.current.error).toMatch(/Aethelred Wallet not found/);
   });
 
+  it('fails loudly when the session cookie does not stick (post-connect probe)', async () => {
+    const wallet = createMockWallet();
+    injectWallet(wallet);
+    // Simulate a browser that dropped the Secure-only cookie: the probe 401s.
+    const realFetch = global.fetch;
+    global.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/api/me')) {
+        return new Response(
+          JSON.stringify({ success: false, error: { code: 'UNAUTHORIZED', message: 'no session' } }),
+          { status: 401, headers: { 'content-type': 'application/json' } },
+        );
+      }
+      return realFetch(input as RequestInfo, init);
+    }) as typeof fetch;
+
+    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
+    try {
+      let caught: Error | undefined;
+      await act(async () => {
+        try {
+          await result.current.connect('aethelred', 'testnet');
+        } catch (e) {
+          caught = e as Error;
+        }
+      });
+      expect(caught?.message).toMatch(/did not keep the session cookie/);
+      expect(result.current.isConnected).toBe(false);
+    } finally {
+      global.fetch = realFetch;
+    }
+  });
+
   it('connect succeeds via the Aethelred Wallet (requestAccounts + personal_sign)', async () => {
     const wallet = createMockWallet();
     injectWallet(wallet);
