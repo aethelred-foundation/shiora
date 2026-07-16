@@ -262,6 +262,31 @@ describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
     expect(result.current.error).toBeNull();
   });
 
+  it('disconnect clears local state even when the server sign-out fails', async () => {
+    injectWallet(createMockWallet());
+    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.connect('aethelred');
+    });
+    expect(result.current.isConnected).toBe(true);
+
+    // The DELETE /api/wallet/connect best-effort sign-out must never block a
+    // local disconnect — even with the network down.
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn().mockRejectedValue(new Error('network down'));
+    try {
+      await act(async () => {
+        result.current.disconnect();
+      });
+      expect(result.current.isConnected).toBe(false);
+      expect(result.current.activeProvider).toBeNull();
+      expect(result.current.error).toBeNull();
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
   it('displayAddress truncates a 0x address', () => {
     const { result } = renderHook(
       () => ({ wallet: useWallet(), app: useApp() }),

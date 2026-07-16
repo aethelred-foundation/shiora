@@ -153,5 +153,7 @@ function bytesToHex(bytes: Uint8Array): string {
 }
 
 function bytesToBigInt(bytes: Uint8Array): bigint {
-  return BigInt('0x' + (bytesToHex(bytes) || '0'));
+  // Guards BigInt('0x') throwing on empty input; both call sites pass 32-byte
+  // subarrays of a length-checked 65-byte signature, so it cannot trigger.
+  return BigInt('0x' + (bytesToHex(bytes) || /* istanbul ignore next -- @preserve unreachable: inputs are always 32 bytes */ '0'));
 }

@@ -14,6 +14,7 @@ import {
   checkProductionReadiness,
   assertProductionReadiness,
   hasDurableDatastore,
+  preflightMode,
 } from '@/lib/api/preflight';
 import { serverEnv } from '@/lib/api/env';
 import { hasConfiguredDataKey } from '@/lib/crypto/key-provider';
@@ -57,6 +58,27 @@ describe('hasDurableDatastore', () => {
     expect(hasDurableDatastore()).toBe(true);
     delete process.env.DATABASE_URL;
     expect(hasDurableDatastore()).toBe(false);
+  });
+});
+
+describe('preflightMode', () => {
+  afterEach(() => {
+    delete process.env.SHIORA_PREFLIGHT_MODE;
+  });
+
+  it('is production under NODE_ENV=production without the acknowledgment', () => {
+    expect(preflightMode()).toBe('production');
+  });
+
+  it('is evaluation only with the explicit SHIORA_PREFLIGHT_MODE acknowledgment', () => {
+    process.env.SHIORA_PREFLIGHT_MODE = 'evaluation';
+    expect(preflightMode()).toBe('evaluation');
+  });
+
+  it('is development outside production, regardless of the env acknowledgment', () => {
+    mockServerEnv.isProduction = false;
+    process.env.SHIORA_PREFLIGHT_MODE = 'evaluation';
+    expect(preflightMode()).toBe('development');
   });
 });
 

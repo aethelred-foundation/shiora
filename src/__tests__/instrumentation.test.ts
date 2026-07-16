@@ -16,11 +16,16 @@ jest.mock('@/lib/maintenance/store-maintenance', () => ({ startMaintenanceSchedu
 
 import { register } from '@/instrumentation';
 import { preloadKeyProvider } from '@/lib/crypto/key-provider';
-import { assertProductionReadiness, hasDurableDatastore } from '@/lib/api/preflight';
+import {
+  assertProductionReadiness,
+  checkProductionReadiness,
+  hasDurableDatastore,
+} from '@/lib/api/preflight';
 import { startMaintenanceScheduler } from '@/lib/maintenance/store-maintenance';
 
 const mockPreload = preloadKeyProvider as jest.Mock;
 const mockAssert = assertProductionReadiness as jest.Mock;
+const mockCheck = checkProductionReadiness as jest.Mock;
 const mockDurable = hasDurableDatastore as jest.Mock;
 const mockStartScheduler = startMaintenanceScheduler as jest.Mock;
 const originalRuntime = process.env.NEXT_RUNTIME;
@@ -53,5 +58,48 @@ describe('register (startup instrumentation)', () => {
     mockDurable.mockReturnValueOnce(true);
     await register();
     expect(mockStartScheduler).toHaveBeenCalledTimes(1);
+  });
+
+  it('prints the acknowledged-gaps banner on an evaluation deployment', async () => {
+    process.env.NEXT_RUNTIME = 'nodejs';
+    mockCheck.mockReturnValueOnce({
+      ok: true,
+      enforced: true,
+      mode: 'evaluation',
+      problems: [],
+      acknowledged: [
+        { code: 'TRANSPORT_NOT_HARDENED', message: 'SHIORA_ENABLE_HSTS is not enabled.' },
+        { code: 'DATASTORE_NOT_DURABLE', message: 'DATABASE_URL is not set.' },
+      ],
+    });
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      await register();
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      const banner = warnSpy.mock.calls[0][0] as string;
+      expect(banner).toContain('SHIORA EVALUATION DEPLOYMENT');
+      expect(banner).toContain('TRANSPORT_NOT_HARDENED');
+      expect(banner).toContain('DATASTORE_NOT_DURABLE');
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it('boots silently in evaluation mode when nothing is acknowledged', async () => {
+    process.env.NEXT_RUNTIME = 'nodejs';
+    mockCheck.mockReturnValueOnce({
+      ok: true,
+      enforced: true,
+      mode: 'evaluation',
+      problems: [],
+      acknowledged: [],
+    });
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      await register();
+      expect(warnSpy).not.toHaveBeenCalled();
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 });

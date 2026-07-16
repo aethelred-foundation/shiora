@@ -109,6 +109,19 @@ describe('verifyWalletSignature (EIP-191 personal_sign)', () => {
     expect(verifyWalletSignature('challenge', sig, addr)).toBe(false);
   });
 
+  // r and s must be in [1, n-1]. Out-of-range scalars are never produced by a
+  // real signer; accepting them would hand ecrecover degenerate inputs.
+  const scalar = (value: bigint) => value.toString(16).padStart(64, '0');
+  const VALID_S = scalar(BigInt(2)); // in-range low-S filler
+  it.each([
+    ['r = 0', '0x' + scalar(BigInt(0)) + VALID_S + '1b'],
+    ['r = n', '0x' + scalar(SECP256K1_N) + VALID_S + '1b'],
+    ['s = 0', '0x' + scalar(BigInt(2)) + scalar(BigInt(0)) + '1b'],
+    ['s = n', '0x' + scalar(BigInt(2)) + scalar(SECP256K1_N) + '1b'],
+  ])('fails closed on an out-of-range scalar: %s', (_label, sig) => {
+    expect(verifyWalletSignature('challenge', sig, KNOWN_ADDRESS)).toBe(false);
+  });
+
   it.each([
     ['not an address', 'aethel1notevm'],
     ['bech32 (old Cosmos format is no longer accepted)', 'aeth1qqq9m6qe0z6dp0v9phm5g0m6qe0z6dp0abcdef'],

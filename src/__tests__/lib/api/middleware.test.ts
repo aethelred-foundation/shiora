@@ -14,7 +14,7 @@ import {
 import { createSessionToken, verifySessionToken } from '@/lib/api/session';
 import { revokeSession } from '@/lib/api/session-revocation';
 import { __resetRevocationStoreForTests } from '@/lib/persistence/revocation-store';
-import { __resetRateLimiterForTests } from '@/lib/api/rate-limiter';
+import { getRateLimiter, __resetRateLimiterForTests } from '@/lib/api/rate-limiter';
 import { seededAddress } from '@/lib/utils';
 
 const TEST_ADDRESS = seededAddress(9876);
@@ -591,5 +591,24 @@ describe('checkRateLimit with an unreachable durable limiter', () => {
     const body = await result!.json();
     expect(body.error.code).toBe('DATASTORE_UNAVAILABLE');
     expect(result!.headers.get('Retry-After')).toBe('5');
+  });
+
+  it('rethrows limiter failures that are NOT availability errors (real bugs stay loud)', async () => {
+    __resetRateLimiterForTests();
+    // Grab the cached in-memory limiter and make it fail with a plain
+    // programming error. Must go through the top-level import (NOT a require):
+    // earlier tests call jest.resetModules(), so a fresh require would patch a
+    // different module-registry copy than the one checkRateLimit uses.
+    const limiter = getRateLimiter();
+    const originalConsume = limiter.consume;
+    limiter.consume = () => Promise.reject(new Error('undefined is not a function'));
+    try {
+      await expect(
+        checkRateLimit(makeReq('http://localhost:3000/api/test'), 10),
+      ).rejects.toThrow('undefined is not a function');
+    } finally {
+      limiter.consume = originalConsume;
+      __resetRateLimiterForTests();
+    }
   });
 });
