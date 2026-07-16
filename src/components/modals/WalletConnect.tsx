@@ -24,7 +24,7 @@ import { formatNumber, truncateAddress, seededHex, seededRandom, formatDate, gen
 // Types
 // ============================================================
 
-type WalletType = 'aethelred';
+type WalletType = 'aethelred' | 'metamask';
 type NetworkType = 'mainnet' | 'testnet';
 
 interface WalletOption {
@@ -33,6 +33,7 @@ interface WalletOption {
   description: string;
   icon: React.ReactNode;
   color: string;
+  recommended?: boolean;
 }
 
 interface Transaction {
@@ -58,6 +59,14 @@ const WALLET_OPTIONS: WalletOption[] = [
     description: 'The one wallet for the Aethelred ecosystem',
     icon: <Shield className="w-5 h-5 text-rose-600" />,
     color: 'bg-rose-100',
+    recommended: true,
+  },
+  {
+    id: 'metamask',
+    name: 'MetaMask',
+    description: 'Connect with the MetaMask browser extension',
+    icon: <Wallet className="w-5 h-5 text-amber-600" />,
+    color: 'bg-amber-100',
   },
 ];
 
@@ -187,7 +196,14 @@ export function WalletConnect() {
                   })()}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-slate-900">{opt.name}</p>
+                  <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                    {opt.name}
+                    {opt.recommended && (
+                      <span className="text-[10px] uppercase tracking-widest text-brand-600 font-semibold">
+                        Recommended
+                      </span>
+                    )}
+                  </p>
                   <p className="text-xs text-slate-500">{opt.description}</p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400" />

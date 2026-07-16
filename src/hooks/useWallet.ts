@@ -25,8 +25,41 @@ import type {
 export interface Eip1193Provider {
   request: (args: { method: string; params?: unknown[] | object }) => Promise<unknown>;
   isAethelred?: boolean;
+  isMetaMask?: boolean;
   on?: (event: string, handler: (...args: unknown[]) => void) => void;
   removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
+}
+
+// ---------------------------------------------------------------------------
+// EIP-6963 wallet discovery
+// ---------------------------------------------------------------------------
+//
+// window.ethereum is a single slot that installed extensions race for —
+// with MetaMask and the Aethelred Wallet both installed, MetaMask usually
+// wins it. EIP-6963 sidesteps the race: every wallet announces itself with
+// a stable rdns, and the dApp picks by identity instead of by slot. The
+// store below is module-level so discovery happens once per page, not per
+// hook instance.
+
+export const AETHELRED_WALLET_RDNS = 'org.aethelred.wallet';
+export const METAMASK_RDNS = 'io.metamask';
+
+interface Eip6963AnnounceDetail {
+  info?: { rdns?: string };
+  provider?: Eip1193Provider;
+}
+
+const discoveredProviders = new Map<string, Eip1193Provider>();
+
+/* istanbul ignore next -- @preserve SSR guard, untestable in jsdom */
+if (typeof window !== 'undefined') {
+  window.addEventListener('eip6963:announceProvider', (event) => {
+    const detail = (event as CustomEvent<Eip6963AnnounceDetail>).detail;
+    if (detail?.info?.rdns && detail.provider) {
+      discoveredProviders.set(detail.info.rdns, detail.provider);
+    }
+  });
+  window.dispatchEvent(new Event('eip6963:requestProvider'));
 }
 
 interface ChallengeResponse {
@@ -69,16 +102,44 @@ const CHAIN_IDS: Record<string, string> = {
 };
 
 /**
- * Resolve the Aethelred Wallet's injected EIP-1193 provider. Prefers a
- * provider that self-identifies as Aethelred; falls back to any injected
- * `window.ethereum` so the flow still works while the Aethelred Wallet is the
- * only extension a tester has installed.
+ * Resolve the injected EIP-1193 provider for a wallet choice, by identity:
+ *
+ *   aethelred → EIP-6963 announcement (org.aethelred.wallet)
+ *             → window.aethelred (extension-specific handle, present even
+ *               when another wallet owns window.ethereum)
+ *             → window.ethereum as a last resort, so the flow still works
+ *               on single-extension setups and older extension builds
+ *   metamask  → EIP-6963 announcement (io.metamask)
+ *             → window.ethereum only when it self-identifies as MetaMask
+ *
+ * Without the identity-first lookup, "Connect Aethelred Wallet" silently
+ * signed via whichever extension won the window.ethereum race.
  */
-function getAethelredProvider(): Eip1193Provider | null {
+function resolveProvider(kind: WalletProvider): Eip1193Provider | null {
   /* istanbul ignore next -- @preserve SSR guard, untestable in jsdom */
   if (typeof window === 'undefined') return null;
-  const injected = (window as unknown as { ethereum?: Eip1193Provider }).ethereum;
-  return injected ?? null;
+  const w = window as unknown as {
+    ethereum?: Eip1193Provider;
+    aethelred?: Eip1193Provider;
+  };
+
+  if (kind === 'metamask') {
+    const announced = discoveredProviders.get(METAMASK_RDNS);
+    if (announced) return announced;
+    return w.ethereum?.isMetaMask ? w.ethereum : null;
+  }
+
+  if (kind === 'aethelred') {
+    return (
+      discoveredProviders.get(AETHELRED_WALLET_RDNS) ??
+      w.aethelred ??
+      w.ethereum ??
+      null
+    );
+  }
+
+  // walletconnect (and any future kind) has no injected provider path yet.
+  return null;
 }
 
 export function useWallet(): UseWalletReturn {
@@ -102,14 +163,11 @@ export function useWallet(): UseWalletReturn {
   // Ref to seed dev tx hashes deterministically after each connect/sign.
   const seedRef = useRef(Date.now());
 
-  /** Check whether the Aethelred Wallet (or any EIP-1193 wallet) is injected. */
+  /** Check whether the requested wallet's EIP-1193 provider is injected. */
   const isProviderAvailable = useCallback((provider: WalletProvider): boolean => {
     /* istanbul ignore next -- @preserve SSR guard, untestable in jsdom */
     if (typeof window === 'undefined') return false;
-    if (provider === 'aethelred') {
-      return getAethelredProvider() !== null;
-    }
-    return false;
+    return resolveProvider(provider) !== null;
   }, []);
 
   /** Truncated address for display (e.g. `0x1234…cdef`). */
@@ -131,10 +189,12 @@ export function useWallet(): UseWalletReturn {
       setIsLoading(true);
       setError(null);
       try {
-        const eip1193 = getAethelredProvider();
+        const eip1193 = resolveProvider(provider);
         if (!eip1193) {
           throw new Error(
-            'Aethelred Wallet not found. Install the Aethelred Wallet extension to continue.',
+            provider === 'metamask'
+              ? 'MetaMask not found. Install the MetaMask extension to continue.'
+              : 'Aethelred Wallet not found. Install the Aethelred Wallet extension to continue.',
           );
         }
 
@@ -178,7 +238,11 @@ export function useWallet(): UseWalletReturn {
         setActiveProvider(provider);
         setActiveChainId(chainId);
         seedRef.current = Date.now();
-        addNotification('success', 'Wallet Connected', 'Connected via Aethelred Wallet');
+        addNotification(
+          'success',
+          'Wallet Connected',
+          provider === 'metamask' ? 'Connected via MetaMask' : 'Connected via Aethelred Wallet',
+        );
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to connect wallet';
         setError(message);
@@ -210,7 +274,9 @@ export function useWallet(): UseWalletReturn {
       }
       setIsLoading(true);
       try {
-        const eip1193 = getAethelredProvider();
+        // Sign with the SAME wallet the session was opened with — falling
+        // back to the Aethelred resolution order for restored sessions.
+        const eip1193 = resolveProvider(activeProvider ?? 'aethelred');
         if (!eip1193) {
           throw new Error('No wallet provider available for signing');
         }
@@ -230,7 +296,7 @@ export function useWallet(): UseWalletReturn {
         setIsLoading(false);
       }
     },
-    [wallet.connected, wallet.address],
+    [wallet.connected, wallet.address, activeProvider],
   );
 
   /** Sign and broadcast a transaction (dev stub). Returns a tx hash. */

@@ -174,6 +174,32 @@ describe('WalletConnect - disconnected state', () => {
     expect(mockConnect).toHaveBeenCalledWith('aethelred', 'mainnet');
   });
 
+  it('offers MetaMask as a second wallet option and connects with it', () => {
+    render(
+      <TestWrapper>
+        <WalletConnect />
+      </TestWrapper>
+    );
+    fireEvent.click(screen.getByText('Connect Wallet'));
+    expect(screen.getByText('MetaMask')).toBeInTheDocument();
+    expect(
+      screen.getByText('Connect with the MetaMask browser extension'),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('MetaMask'));
+    expect(mockConnect).toHaveBeenCalledWith('metamask', 'mainnet');
+  });
+
+  it('marks the Aethelred Wallet as the recommended option', () => {
+    render(
+      <TestWrapper>
+        <WalletConnect />
+      </TestWrapper>
+    );
+    fireEvent.click(screen.getByText('Connect Wallet'));
+    expect(screen.getByText('Recommended')).toBeInTheDocument();
+  });
+
   it('invokes connect with the selected network', async () => {
     render(
       <TestWrapper>
