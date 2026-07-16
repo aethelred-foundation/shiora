@@ -1,6 +1,9 @@
 const { expect } = require('chai');
-const { ethers, network } = require('hardhat');
+const { ethers, network, artifacts } = require('hardhat');
 const { loadFixture, setCode } = require('@nomicfoundation/hardhat-network-helpers');
+
+// ABI-level assertions for the §6.6 no-PHI checks below.
+const ShioraArtifact = artifacts.readArtifactSync('ShioraSealAttestation');
 
 /**
  * ShioraSealAttestation — consensus-anchored clinical/consent attestation.
@@ -291,6 +294,53 @@ describe('ShioraSealAttestation', function () {
       expect(policy[2]).to.deep.equal([]);
       expect(policy[3]).to.equal(false);
       expect(policy[4]).to.deep.equal([]);
+    });
+  });
+
+  // §6.6 "No PHI on-chain — verified by test, not by intent." These assertions
+  // prove the contract's ABI has NO channel to accept or store patient data:
+  // every input and every stored/emitted field is a subject ADDRESS, a scope
+  // HASH (bytes32 commitment), a seal/job identifier, a timestamp, or a bool.
+  describe('no PHI on-chain (§6.6)', function () {
+    it('attest() accepts only an address, a bytes32 scope hash, and a jobId — no PHI free-text', function () {
+      const fn = ShioraArtifact.abi.find((e) => e.name === 'attest' && e.type === 'function');
+      expect(fn, 'attest must exist').to.exist;
+      expect(fn.inputs.map((i) => i.type)).to.deep.equal(['address', 'bytes32', 'string']);
+      // The scope is a bytes32 commitment — a hash of the clinical scope label,
+      // not the label itself and never patient data. The only string is jobId.
+      expect(fn.inputs[1].name).to.equal('scope');
+      expect(fn.inputs[2].name).to.equal('jobId');
+    });
+
+    it('the stored Attestation record and getAttestation expose only ids/timestamps/flags', async function () {
+      const { registry, seal, subject } = await loadFixture(deployFixture);
+      await mintSeal(seal, subject, scope);
+      await registry.attest(subject.address, scope, JOB);
+
+      const rec = await registry.getAttestation(subject.address, scope);
+      // sealId (hex id), attestedAt (uint), exists (bool), revoked (bool).
+      expect(rec.sealId).to.match(/^[0-9a-fA-F]+$/); // an identifier, not text
+      expect(typeof rec.exists).to.equal('boolean');
+      expect(typeof rec.revoked).to.equal('boolean');
+      // No struct member carries free text beyond the seal identifier.
+      const getFn = ShioraArtifact.abi.find((e) => e.name === 'getAttestation');
+      const members = getFn.outputs[0].components.map((c) => `${c.name}:${c.type}`);
+      expect(members).to.deep.equal([
+        'sealId:string',
+        'attestedAt:uint64',
+        'exists:bool',
+        'revoked:bool',
+      ]);
+    });
+
+    it('AttestationAnchored emits only address/hash/identifier fields', async function () {
+      const ev = ShioraArtifact.abi.find((e) => e.type === 'event' && e.name === 'AttestationAnchored');
+      expect(ev.inputs.map((i) => `${i.name}:${i.type}`)).to.deep.equal([
+        'subject:address',
+        'scope:bytes32',
+        'sealId:string',
+        'jobId:string',
+      ]);
     });
   });
 });
