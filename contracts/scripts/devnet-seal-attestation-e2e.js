@@ -46,6 +46,17 @@ const SCOPE = ethers.keccak256(
   ethers.toUtf8Bytes(process.env.SCOPE ?? 'clinical:cycle_prediction'),
 );
 
+// CEAP policy for the run. Defaults state Shiora's production posture —
+// FHE compute, EU residency. The chain currently ships FHE as a
+// fail-closed research tier ("FHE runtime pending"), so a devnet proof of
+// the CONSENSUS mechanics (purpose binding, policy check, live ISeal
+// verification) needs a backend the network can actually attest today:
+// override with CONF_BACKEND=tee while keeping residency intact. The
+// printed mint command always mirrors whatever policy the run sets, so
+// the seal and the on-chain policy can never drift apart.
+const CONF_BACKEND = process.env.CONF_BACKEND ?? 'fhe';
+const CONF_RESIDENCY = process.env.CONF_RESIDENCY ?? 'EU';
+
 function step(msg) {
   console.log(`\n== ${msg}`);
 }
@@ -87,8 +98,10 @@ async function main() {
     console.log(`deployed at ${await registry.getAddress()}`);
   }
 
-  step('governance: set CEAP policy (fhe backend, EU residency)');
-  await (await registry.setCompliancePolicy(['fhe'], '', [], false, ['EU'])).wait();
+  step(`governance: set CEAP policy (${CONF_BACKEND} backend, ${CONF_RESIDENCY} residency)`);
+  await (
+    await registry.setCompliancePolicy([CONF_BACKEND], '', [], false, [CONF_RESIDENCY])
+  ).wait();
   const policy = await registry.compliancePolicy();
   console.log(
     `policy read-back: backends=${JSON.stringify(policy[0])} residency=${JSON.stringify(policy[4])}`,
@@ -114,7 +127,7 @@ async function main() {
     console.log(
       `  aethelredd tx pouw submit-job --model shiora-clinical-v1 --input subject-${SUBJECT.slice(2, 10)} \\\n` +
         `    --proof-type tee --purpose "${expected}" \\\n` +
-        `    --conf-backends fhe --conf-residency EU \\\n` +
+        `    --conf-backends ${CONF_BACKEND} --conf-residency ${CONF_RESIDENCY} \\\n` +
         `    --from validator --chain-id <id> --keyring-backend test --yes`,
     );
     console.log(
