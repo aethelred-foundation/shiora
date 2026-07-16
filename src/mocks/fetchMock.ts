@@ -377,23 +377,25 @@ const routes: Array<{ method: string; pattern: RegExp; handler: Handler }> = [
   {
     method: 'GET',
     pattern: /\/api\/vault\/cycle/,
-    handler: () => ok(Array.from({ length: 28 }, (_, i) => ({
+    // Real route shape: { entries, total, insights } (drift here previously
+    // masked a dashboard crash — keep this aligned with the route).
+    handler: () => ok({ entries: Array.from({ length: 28 }, (_, i) => ({
       id: `cycle-${i}`, date: Date.now() - (28 - i) * 86400000, day: i + 1,
       phase: i < 5 ? 'menstrual' : i < 13 ? 'follicular' : i < 16 ? 'ovulation' : 'luteal',
       temperature: parseFloat((97.0 + (i >= 14 ? 0.5 : 0) + Math.random() * 0.4).toFixed(1)),
       flow: i < 5 ? (['light', 'medium', 'heavy', 'medium', 'light'] as const)[i] : 'none',
       symptoms: [] as string[], fertilityScore: i >= 10 && i <= 16 ? 70 + (i - 10) * 5 : 20, notes: '',
-    }))),
+    })), total: 28, insights: { averageCycleLength: 28 } }),
   },
   {
     method: 'GET',
     pattern: /\/api\/vault\/symptoms/,
-    handler: () => ok(Array.from({ length: 5 }, (_, i) => ({
+    handler: () => ok({ symptoms: Array.from({ length: 5 }, (_, i) => ({
       id: `sym-${i}`, date: Date.now() - i * 86400000,
       category: ['pain', 'mood', 'energy', 'digestive', 'sleep'][i],
       symptom: ['Cramps', 'Fatigue', 'Low energy', 'Bloating', 'Insomnia'][i],
       severity: (i % 4 + 1), notes: '', tags: [] as string[],
-    }))),
+    })), total: 5 }),
   },
   // ── Consent ─────────────────────────────────────────────────────────────
   {
@@ -1454,10 +1456,8 @@ const routes: Array<{ method: string; pattern: RegExp; handler: Handler }> = [
         })));
       }
       if (url.searchParams.get('overview') === 'true') {
-        return ok({
-          compartments: 8, totalRecords: 342, storageUsed: 1.8 * 1024 * 1024 * 1024,
-          privacyScore: { overall: 92, encryptionScore: 98, accessControlScore: 90, jurisdictionScore: 85, dataMinimizationScore: 88 },
-        });
+        // Real route shape: { symptomCount, cycleEntryCount, insights }.
+        return ok({ symptomCount: 5, cycleEntryCount: 28, insights: { averageCycleLength: 28 } });
       }
       return ok({
         compartments: 8, totalRecords: 342, storageUsed: 1.8 * 1024 * 1024 * 1024,

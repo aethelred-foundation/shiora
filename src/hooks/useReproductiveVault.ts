@@ -22,7 +22,6 @@ const VAULT_KEY = 'reproductive-vault';
 const COMPARTMENTS_KEY = 'vault-compartments';
 const CYCLE_KEY = 'vault-cycle';
 const SYMPTOMS_KEY = 'vault-symptoms';
-const FERTILITY_KEY = 'vault-fertility';
 
 // ---------------------------------------------------------------------------
 // Return type
@@ -81,23 +80,24 @@ export function useReproductiveVault(): UseReproductiveVaultReturn {
     enabled: authed,
   });
 
+  // Real route shape: { entries, total, insights } — NOT a bare array. The
+  // hook previously typed this as CycleEntry[], and the object reached
+  // consumers' .filter()/.reduce() ("l.filter is not a function" in the
+  // field, crashing the dashboard behind the error boundary).
   const cycleQuery = useQuery({
     queryKey: [VAULT_KEY, CYCLE_KEY],
-    queryFn: () => api.get<CycleEntry[]>('/api/vault/cycle'),
+    queryFn: () =>
+      api.get<{ entries: CycleEntry[]; total: number; insights: unknown }>(
+        '/api/vault/cycle',
+      ),
     staleTime: 30_000,
     enabled: authed,
   });
 
   const symptomsQuery = useQuery({
     queryKey: [VAULT_KEY, SYMPTOMS_KEY],
-    queryFn: () => api.get<SymptomLog[]>('/api/vault/symptoms'),
-    staleTime: 30_000,
-    enabled: authed,
-  });
-
-  const fertilityQuery = useQuery({
-    queryKey: [VAULT_KEY, FERTILITY_KEY],
-    queryFn: () => api.get<FertilityMarker[]>('/api/vault', { type: 'fertility' }),
+    queryFn: () =>
+      api.get<{ symptoms: SymptomLog[]; total: number }>('/api/vault/symptoms'),
     staleTime: 30_000,
     enabled: authed,
   });
@@ -105,7 +105,10 @@ export function useReproductiveVault(): UseReproductiveVaultReturn {
   const vaultOverviewQuery = useQuery({
     queryKey: [VAULT_KEY, 'overview'],
     queryFn: () =>
-      api.get<{ privacyScore: VaultPrivacyScore }>('/api/vault', { overview: true }),
+      api.get<{ symptomCount: number; cycleEntryCount: number; insights: unknown }>(
+        '/api/vault',
+        { overview: true },
+      ),
     staleTime: 60_000,
     enabled: authed,
   });
@@ -138,7 +141,7 @@ export function useReproductiveVault(): UseReproductiveVaultReturn {
 
   // ---- Derived cycle data ----
 
-  const cycleEntries = useMemo(() => cycleQuery.data ?? [], [cycleQuery.data]);
+  const cycleEntries = useMemo(() => cycleQuery.data?.entries ?? [], [cycleQuery.data]);
 
   const currentCycleDay = useMemo(() => {
     if (cycleEntries.length === 0) return 1;
@@ -178,23 +181,22 @@ export function useReproductiveVault(): UseReproductiveVaultReturn {
   // ---- Loading / error ----
 
   const isLoading =
-    compartmentsQuery.isLoading ||
-    cycleQuery.isLoading ||
-    symptomsQuery.isLoading ||
-    fertilityQuery.isLoading;
+    compartmentsQuery.isLoading || cycleQuery.isLoading || symptomsQuery.isLoading;
 
   const error =
     (compartmentsQuery.error as Error | null) ??
     (cycleQuery.error as Error | null) ??
-    (symptomsQuery.error as Error | null) ??
-    (fertilityQuery.error as Error | null);
+    (symptomsQuery.error as Error | null);
 
   return {
     compartments: compartmentsQuery.data ?? [],
     cycleEntries,
-    symptoms: symptomsQuery.data ?? [],
-    fertilityMarkers: fertilityQuery.data ?? [],
-    privacyScore: vaultOverviewQuery.data?.privacyScore ?? DEFAULT_PRIVACY_SCORE,
+    symptoms: symptomsQuery.data?.symptoms ?? [],
+    // No vault route stores fertility markers yet ("type=fertility" is
+    // ignored server-side) — expose an honest empty list rather than
+    // fetching the overview object into an array-typed field.
+    fertilityMarkers: [] as FertilityMarker[],
+    privacyScore: DEFAULT_PRIVACY_SCORE,
     isLoading,
     error,
 

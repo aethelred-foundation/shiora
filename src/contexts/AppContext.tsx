@@ -250,8 +250,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const stored = localStorage.getItem('shiora_wallet');
       if (stored) {
-        const parsed = JSON.parse(stored) as WalletState;
-        if (parsed.connected) {
+        // Normalize instead of trusting the stored shape: state persisted by
+        // an OLDER build can miss fields (e.g. aethelBalance) and an
+        // undefined number crashed the connected header widget in the field.
+        const raw = JSON.parse(stored) as Partial<WalletState>;
+        const parsed: WalletState | null =
+          raw && raw.connected === true && typeof raw.address === 'string' && raw.address
+            ? {
+                connected: true,
+                address: raw.address,
+                aethelBalance:
+                  typeof raw.aethelBalance === 'number' ? raw.aethelBalance : null,
+                provider: raw.provider ?? null,
+                chainId: raw.chainId ?? null,
+              }
+            : null;
+        if (parsed) {
           setWallet(parsed);
 
           // Validate the server session is still valid and matches the

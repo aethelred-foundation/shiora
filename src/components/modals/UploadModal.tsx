@@ -37,7 +37,13 @@ type UploadStage = 'idle' | 'encrypting' | 'uploading' | 'registering' | 'verify
 interface UploadModalProps {
   open: boolean;
   onClose: () => void;
-  onUploadComplete?: (data: { recordType: string; provider: string; tags: string[] }) => void;
+  onUploadComplete?: (data: {
+    recordType: string;
+    provider: string;
+    tags: string[];
+    label: string;
+    date: string;
+  }) => void;
 }
 
 // ============================================================
@@ -234,8 +240,10 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
     }
 
     setStage('success');
-    onUploadComplete?.({ recordType, provider, tags });
-  }, [files, recordType, provider, tags, onUploadComplete]);
+    const label = files[0]?.file.name.replace(/\.[^./\\]+$/, '') || 'Health Record';
+    const date = recordDate || new Date().toISOString().slice(0, 10);
+    onUploadComplete?.({ recordType, provider, tags, label, date });
+  }, [files, recordType, provider, tags, recordDate, onUploadComplete]);
 
   // Success state
   if (stage === 'success') {

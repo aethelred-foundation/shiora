@@ -23,6 +23,8 @@ import {
 } from '@/components/ui/PagePrimitives';
 import { formatBytes, formatDate, formatDateTime } from '@/lib/utils';
 import { useHealthRecords } from '@/hooks/useHealthRecords';
+import { useApp } from '@/contexts/AppContext';
+import { UploadModal } from '@/components/modals/UploadModal';
 import type { HealthRecord } from '@/types';
 
 // ============================================================
@@ -125,7 +127,9 @@ export default function RecordsPage() {
   // Real, encrypted-at-rest records from the records API (GET /api/records).
   // Fetch a generous page so the client-side type counts / search / sort below
   // operate over the full set; degrades to an empty list with no wallet session.
-  const { records } = useHealthRecords({ pageSize: 100 });
+  const { records, upload } = useHealthRecords({ pageSize: 100 });
+  const { addNotification, wallet } = useApp();
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const totalSize = useMemo(
     () => records.reduce((sum, r) => sum + r.size, 0),
@@ -203,7 +207,20 @@ export default function RecordsPage() {
                 AES-256-GCM encrypted at rest, owner-scoped, with a tamper-evident audit trail
               </p>
             </div>
-            <button className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-500 text-white rounded-xl font-medium text-sm hover:bg-brand-600 transition-colors shadow-sm shrink-0">
+            <button
+              onClick={() => {
+                if (!wallet.connected) {
+                  addNotification(
+                    'error',
+                    'Connect your wallet',
+                    'Connect a wallet before uploading a health record.',
+                  );
+                  return;
+                }
+                setUploadOpen(true);
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-500 text-white rounded-xl font-medium text-sm hover:bg-brand-600 transition-colors shadow-sm shrink-0"
+            >
               <Upload className="w-4 h-4" />
               Upload Record
             </button>
@@ -400,6 +417,33 @@ export default function RecordsPage() {
 
       {/* Detail Modal */}
       <RecordDetailModal record={selectedRecord} open={detailOpen} onClose={() => setDetailOpen(false)} />
+
+      {/* Upload Modal — persists the record via the real POST /api/records */}
+      <UploadModal
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        onUploadComplete={async ({ recordType, provider, tags, label, date }) => {
+          try {
+            await upload.mutateAsync({
+              type: recordType as HealthRecord['type'],
+              label,
+              description: '',
+              provider,
+              date,
+              file: null,
+              tags,
+              encryption: 'AES-256-GCM',
+            });
+            addNotification('success', 'Record uploaded', `${label} was encrypted and saved.`);
+          } catch (err) {
+            addNotification(
+              'error',
+              'Upload failed',
+              err instanceof Error ? err.message : 'Could not save the record.',
+            );
+          }
+        }}
+      />
     </>
   );
 }

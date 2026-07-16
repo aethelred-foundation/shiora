@@ -14,8 +14,12 @@ const mockRecords = [
   { id: 'rec-4', type: 'vitals', label: 'Blood Pressure Reading', description: 'BP', date: Date.now() - 4 * 86400000, uploadDate: Date.now() - 4 * 86400000, encrypted: true, encryption: 'AES-256-GCM', cid: '', txHash: '', attestation: '', size: 256, provider: 'Clinic', status: 'Verified', ipfsNodes: 0, tags: ['monitoring'] },
   { id: 'rec-5', type: 'notes', label: 'Annual Exam Notes', description: 'Notes', date: Date.now() - 5 * 86400000, uploadDate: Date.now() - 5 * 86400000, encrypted: true, encryption: 'AES-256-GCM', cid: '', txHash: '', attestation: '', size: 2048, provider: 'Dr. Chen', status: 'Verified', ipfsNodes: 0, tags: ['annual', 'specialist'] },
 ];
+const mockMutateAsync = jest.fn(async () => ({}));
 jest.mock('@/hooks/useHealthRecords', () => ({
-  useHealthRecords: () => ({ records: mockRecords }),
+  useHealthRecords: () => ({
+    records: mockRecords,
+    upload: { mutate: jest.fn(), mutateAsync: mockMutateAsync, isLoading: false, error: null },
+  }),
 }));
 
 import React from 'react';
@@ -36,6 +40,19 @@ describe('RecordsPage', () => {
     );
     // "Health Records" appears in both the page heading and the nav
     expect(screen.getAllByText('Health Records').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('notifies (does not open the upload modal) when no wallet is connected', () => {
+    render(
+      <TestWrapper>
+        <RecordsPage />
+      </TestWrapper>
+    );
+    const uploadBtn = screen.getByRole('button', { name: /upload record/i });
+    fireEvent.click(uploadBtn);
+    // No wallet in a fresh AppProvider → guarded with a notification, no modal.
+    expect(screen.queryByText(/Drag|drop your files|Upload Health Record/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Connect your wallet/i)).toBeInTheDocument();
   });
 
   it('renders the page description', () => {

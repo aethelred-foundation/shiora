@@ -60,7 +60,11 @@ export function seededPick<T>(seed: number, items: readonly T[]): T {
 /**
  * Format a number with compact notation (K, M, B suffixes).
  */
-export function formatNumber(n: number, decimals = 0): string {
+export function formatNumber(n: number | null | undefined, decimals = 0): string {
+  // Display formatting must never crash the render tree: state persisted by
+  // an older build (schema drift) or an unknown balance can surface as
+  // null/undefined here — show the "unknown" glyph instead of throwing.
+  if (n === null || n === undefined || Number.isNaN(n)) return '—';
   if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(2)}B`;
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(decimals > 0 ? decimals : 1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(decimals > 0 ? decimals : 1)}K`;
