@@ -21,7 +21,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\" \"*.{js,mjs,json}\"",
     "validate": "npm run type-check && npm run lint && npm run format:check && npm run test",
     "postbuild": "node scripts/prepare-standalone.mjs",
-    "start:standalone": "node .next/standalone/server.js"
+    "start:standalone": "node scripts/prepare-standalone.mjs && node .next/standalone/server.js"
   },
   "dependencies": {
     "@noble/curves": "^1.9.7",

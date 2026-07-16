@@ -162,6 +162,14 @@ npm run build                                    # assembles the standalone bund
 SHIORA_PREFLIGHT_MODE=evaluation PORT=3001 npm run start:standalone
 ```
 
+Environment for standalone runs: the standalone server reads env files from
+its own directory, not the repo root — `start:standalone` therefore re-runs
+the prepare step, which copies your repo-root `.env`/`.env.local`/
+`.env.production` into `.next/standalone/` at every start. Keep your
+configuration in the repo-root `.env.local` as usual (SHIORA_SESSION_SECRET
+and SHIORA_DATA_ENCRYPTION_KEY are required in every production run —
+evaluation mode never waives them), or export the variables in the shell.
+
 Two things to know about production runs:
 
 - `next start` refuses `output: standalone` builds — use `npm run

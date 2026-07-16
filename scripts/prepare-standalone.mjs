@@ -38,4 +38,17 @@ if (existsSync(publicSrc)) {
   console.log('[standalone] copied public/');
 }
 
-console.log('[standalone] ready — run: PORT=3001 node .next/standalone/server.js');
+// The standalone server chdir()s into .next/standalone and loads env files
+// from THERE — a repo-root .env.local is silently ignored (verified: the
+// preflight then fails on SESSION_SECRET_DEFAULT/DATA_KEY_DEFAULT even with a
+// valid root .env.local). Copy the runtime env files so the standalone server
+// sees the same configuration `next dev`/`next start` would.
+for (const envFile of ['.env', '.env.production', '.env.local', '.env.production.local']) {
+  const src = join(root, envFile);
+  if (existsSync(src)) {
+    cpSync(src, join(standalone, envFile));
+    console.log(`[standalone] copied ${envFile}`);
+  }
+}
+
+console.log('[standalone] ready — run: PORT=3001 npm run start:standalone');
