@@ -16,7 +16,7 @@ jest.mock('@/lib/crypto/derived-secrets', () => ({
 }));
 
 import { NextResponse } from 'next/server';
-import { applySessionCookie } from '@/lib/api/session';
+import { applySessionCookie, sessionCookieName } from '@/lib/api/session';
 import { preflightMode } from '@/lib/api/preflight';
 import { serverEnv } from '@/lib/api/env';
 
@@ -53,5 +53,19 @@ describe('session cookie Secure attribute by preflight tier', () => {
   it('always stays HttpOnly regardless of tier', () => {
     mockMode.mockReturnValue('evaluation');
     expect(setCookieHeader()).toMatch(/HttpOnly/i);
+  });
+
+  // The __Host- prefix is browser-ENFORCED to require Secure: a Secure-less
+  // __Host- cookie is silently rejected by every browser (field-hit on the
+  // public testnet). The NAME must therefore follow the Secure decision.
+  it('uses the __Host- prefixed name only when Secure is set', () => {
+    expect(sessionCookieName()).toBe('__Host-shiora_session');
+    expect(setCookieHeader()).toContain('__Host-shiora_session=');
+
+    mockMode.mockReturnValue('evaluation');
+    expect(sessionCookieName()).toBe('shiora_session');
+    const header = setCookieHeader();
+    expect(header).toContain('shiora_session=');
+    expect(header).not.toContain('__Host-');
   });
 });

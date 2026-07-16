@@ -19,7 +19,7 @@ import {
   createSessionToken,
   extractSessionToken,
   verifySessionToken,
-  SESSION_COOKIE_NAME,
+  sessionCookieName,
 } from '@/lib/api/session';
 import { revokeSession } from '@/lib/api/session-revocation';
 import { recordIssuedSession } from '@/lib/api/session-inventory';
@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
         expiresIn: `${serverEnv.sessionTtlHours}h`,
         session: {
           transport: 'httpOnly-cookie',
-          cookieName: SESSION_COOKIE_NAME,
+          cookieName: sessionCookieName,
         },
       },
       HTTP.OK,

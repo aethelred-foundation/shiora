@@ -18,9 +18,24 @@ export interface SessionClaims {
 
 const TOKEN_VERSION = 1 as const;
 
+// The __Host- prefix is a browser-ENFORCED contract: such a cookie is
+// rejected outright unless it carries Secure (+ Path=/, no Domain). The name
+// must therefore travel with the Secure decision — an acknowledged evaluation
+// deployment on plain http sets a Secure-less cookie, and keeping the
+// __Host- name there means every browser silently discards it (field-hit:
+// connect succeeded, session never existed). Reads accept both names so a
+// tier change never strands live sessions.
+const HOST_PREFIXED_COOKIE_NAME = '__Host-shiora_session';
+const PLAIN_COOKIE_NAME = 'shiora_session';
+
+export function sessionCookieName(): string {
+  return sessionCookieSecure() ? HOST_PREFIXED_COOKIE_NAME : PLAIN_COOKIE_NAME;
+}
+
+/** @deprecated read-side compatibility export; prefer sessionCookieName(). */
 export const SESSION_COOKIE_NAME = serverEnv.isProduction
-  ? '__Host-shiora_session'
-  : 'shiora_session';
+  ? HOST_PREFIXED_COOKIE_NAME
+  : PLAIN_COOKIE_NAME;
 
 function encodeBase64Url(value: string): string {
   return Buffer.from(value, 'utf8').toString('base64url');
@@ -103,7 +118,11 @@ export function extractSessionToken(request: NextRequest): string | null {
     return authHeader.slice(7);
   }
 
-  return request.cookies.get(SESSION_COOKIE_NAME)?.value ?? null;
+  return (
+    request.cookies.get(HOST_PREFIXED_COOKIE_NAME)?.value
+    ?? request.cookies.get(PLAIN_COOKIE_NAME)?.value
+    ?? null
+  );
 }
 
 /**
@@ -125,7 +144,7 @@ export function applySessionCookie(
   expiresAt: number,
 ): void {
   response.cookies.set({
-    name: SESSION_COOKIE_NAME,
+    name: sessionCookieName(),
     value: token,
     httpOnly: true,
     sameSite: 'lax',
@@ -137,7 +156,7 @@ export function applySessionCookie(
 
 export function clearSessionCookie(response: NextResponse): void {
   response.cookies.set({
-    name: SESSION_COOKIE_NAME,
+    name: sessionCookieName(),
     value: '',
     httpOnly: true,
     sameSite: 'lax',
