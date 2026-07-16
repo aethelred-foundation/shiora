@@ -103,7 +103,7 @@ describe('failed-auth lockout (GAP-09)', () => {
 describe('auth rate-limit class (GAP-04)', () => {
   it('challenge issuance and connect verification run under the stricter budget', async () => {
     const { AUTH_RATE_LIMIT } = jest.requireActual('@/lib/api/middleware');
-    expect(AUTH_RATE_LIMIT).toEqual({ maxRequests: 20, windowMs: 60_000 });
+    expect(AUTH_RATE_LIMIT).toEqual({ maxRequests: 20, windowMs: 60_000, scope: 'auth' });
 
     await getChallenge(new NextRequest(`http://localhost:3000/api/wallet/challenge?address=${TEST_ADDRESS}`));
     expect(mockedRunMiddleware).toHaveBeenLastCalledWith(expect.anything(), AUTH_RATE_LIMIT);

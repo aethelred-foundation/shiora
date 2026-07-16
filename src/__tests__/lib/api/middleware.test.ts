@@ -593,3 +593,30 @@ describe('checkRateLimit with an unreachable durable limiter', () => {
     expect(result!.headers.get('Retry-After')).toBe('5');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Rate-limit bucket scoping — auth must never contend with general traffic
+// ---------------------------------------------------------------------------
+describe('checkRateLimit scoping', () => {
+  it('keeps auth and general buckets independent per client', async () => {
+    const ip = `scope-test-${Date.now()}`;
+    // Exhaust a small GENERAL budget for this client...
+    for (let i = 0; i < 5; i++) {
+      await checkRateLimit(makeReq('http://localhost:3000/api/records', { ip }), 5);
+    }
+    const generalBlocked = await checkRateLimit(
+      makeReq('http://localhost:3000/api/records', { ip }),
+      5,
+    );
+    expect(generalBlocked!.status).toBe(429);
+
+    // ...and the AUTH-scoped budget for the same client is untouched.
+    const authAllowed = await checkRateLimit(
+      makeReq('http://localhost:3000/api/wallet/challenge', { ip }),
+      5,
+      60_000,
+      'auth',
+    );
+    expect(authAllowed).toBeNull();
+  });
+});

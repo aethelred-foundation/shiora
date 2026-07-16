@@ -123,6 +123,9 @@ export function useAccessControl(): UseAccessControlReturn {
 
   // ---- Grants query ------------------------------------------------------
 
+  // Access data is empty-until-auth (see useReproductiveVault note).
+  const { wallet } = useApp();
+
   const grantsQuery = useQuery({
     queryKey: [GRANTS_KEY, statusFilter, search],
     queryFn: () =>
@@ -131,6 +134,7 @@ export function useAccessControl(): UseAccessControlReturn {
         q: search || undefined,
       }),
     staleTime: 30_000,
+    enabled: wallet.connected,
   });
 
   // ---- Audit log query ---------------------------------------------------
@@ -142,6 +146,7 @@ export function useAccessControl(): UseAccessControlReturn {
         type: auditTypeFilter,
       }),
     staleTime: 30_000,
+    enabled: wallet.connected,
   });
 
   // ---- Computed counts ---------------------------------------------------

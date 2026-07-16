@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useApp } from '@/contexts/AppContext';
 import { api } from '@/lib/api/client';
 
 import type {
@@ -65,6 +66,11 @@ const DEFAULT_PRIVACY_SCORE: VaultPrivacyScore = {
 
 export function useReproductiveVault(): UseReproductiveVaultReturn {
   const queryClient = useQueryClient();
+  // The vault is empty-until-auth by design: while logged out these queries
+  // would only produce 401 noise (and, per client fingerprint, eat into the
+  // shared rate-limit budget), so they stay disabled.
+  const { wallet } = useApp();
+  const authed = wallet.connected;
 
   // ---- Queries ----
 
@@ -72,24 +78,28 @@ export function useReproductiveVault(): UseReproductiveVaultReturn {
     queryKey: [VAULT_KEY, COMPARTMENTS_KEY],
     queryFn: () => api.get<VaultCompartment[]>('/api/vault/compartments'),
     staleTime: 30_000,
+    enabled: authed,
   });
 
   const cycleQuery = useQuery({
     queryKey: [VAULT_KEY, CYCLE_KEY],
     queryFn: () => api.get<CycleEntry[]>('/api/vault/cycle'),
     staleTime: 30_000,
+    enabled: authed,
   });
 
   const symptomsQuery = useQuery({
     queryKey: [VAULT_KEY, SYMPTOMS_KEY],
     queryFn: () => api.get<SymptomLog[]>('/api/vault/symptoms'),
     staleTime: 30_000,
+    enabled: authed,
   });
 
   const fertilityQuery = useQuery({
     queryKey: [VAULT_KEY, FERTILITY_KEY],
     queryFn: () => api.get<FertilityMarker[]>('/api/vault', { type: 'fertility' }),
     staleTime: 30_000,
+    enabled: authed,
   });
 
   const vaultOverviewQuery = useQuery({
@@ -97,6 +107,7 @@ export function useReproductiveVault(): UseReproductiveVaultReturn {
     queryFn: () =>
       api.get<{ privacyScore: VaultPrivacyScore }>('/api/vault', { overview: true }),
     staleTime: 60_000,
+    enabled: authed,
   });
 
   // ---- Mutations ----

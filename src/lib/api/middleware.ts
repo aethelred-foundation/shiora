@@ -25,7 +25,16 @@ const RATE_LIMIT_MAX_REQUESTS = 100;  // per window
 // Stricter class for credential-bearing endpoints (challenge issuance and
 // signature verification): brute-force surfaces get a fraction of the
 // default budget (GAP-04).
-export const AUTH_RATE_LIMIT = { maxRequests: 20, windowMs: RATE_LIMIT_WINDOW_MS };
+// Auth endpoints get their own BUCKET (scope), not just a lower threshold:
+// with a shared per-client counter, an unauthenticated dashboard's data
+// requests (8 per mount, all 401) exhaust the auth allowance before the user
+// ever clicks Connect — the field symptom was wallet challenges 429ing while
+// the auth endpoints themselves were barely used.
+export const AUTH_RATE_LIMIT = {
+  maxRequests: 20,
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  scope: 'auth',
+};
 
 /**
  * Fixed-window rate limit keyed by client fingerprint, enforced via the
@@ -37,11 +46,12 @@ export async function checkRateLimit(
   request: NextRequest,
   maxRequests: number = RATE_LIMIT_MAX_REQUESTS,
   windowMs: number = RATE_LIMIT_WINDOW_MS,
+  scope: string = 'general',
 ): Promise<NextResponse | null> {
   let decision;
   try {
     decision = await getRateLimiter().consume(
-      getClientFingerprint(request),
+      `${scope}:${getClientFingerprint(request)}`,
       maxRequests,
       windowMs,
     );
@@ -261,6 +271,8 @@ export function requireAuth(request: NextRequest): NextResponse | AuthContext {
 interface MiddlewareOptions {
   maxRequests?: number;
   windowMs?: number;
+  /** Rate-limit bucket class; limits with different scopes never contend. */
+  scope?: string;
   requireAuth?: boolean;
 }
 
@@ -308,6 +320,7 @@ export async function runMiddlewareWithOptions(
     request,
     options.maxRequests,
     options.windowMs,
+    options.scope,
   );
   if (rateLimited) {
     blockedTotal.inc({ reason: 'rate_limit' });
