@@ -29,7 +29,11 @@ function buildPageCsp(nonce: string): string {
     `font-src 'self' data: https:`,
     `style-src 'self' 'unsafe-inline'`,
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
-    `connect-src 'self' https: wss:`,
+    // Dev additionally allows plain-HTTP/WS localhost so the app can talk to
+    // a local devnet node and wallet tooling; production stays https/wss-only.
+    `connect-src 'self' https: wss:${
+      isDev ? ' http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*' : ''
+    }`,
     `form-action 'self'`,
     // Violations are reported, not silently swallowed (GAP-10). report-uri is
     // the universally-supported legacy channel; report-to (wired via the

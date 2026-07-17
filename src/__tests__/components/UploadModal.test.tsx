@@ -334,7 +334,7 @@ describe('UploadModal', () => {
 
     // Should show encrypting stage
     await waitFor(() => {
-      expect(screen.getByText('Uploading Health Record')).toBeInTheDocument();
+      expect(screen.getByText('Saving Health Record')).toBeInTheDocument();
     });
 
     // Advance through all stages
@@ -353,7 +353,7 @@ describe('UploadModal', () => {
 
     // Should show success
     await waitFor(() => {
-      expect(screen.getByText('Upload Successful')).toBeInTheDocument();
+      expect(screen.getByText('Record Saved')).toBeInTheDocument();
     });
 
     expect(onUploadComplete).toHaveBeenCalledWith(
@@ -377,7 +377,7 @@ describe('UploadModal', () => {
     }
 
     await waitFor(() => {
-      expect(screen.getByText('Upload Successful')).toBeInTheDocument();
+      expect(screen.getByText('Record Saved')).toBeInTheDocument();
     });
 
     // Click Done
@@ -463,13 +463,13 @@ describe('UploadModal', () => {
 
     // During encrypting stage
     await waitFor(() => {
-      expect(screen.getByText('Uploading Health Record')).toBeInTheDocument();
+      expect(screen.getByText('Saving Health Record')).toBeInTheDocument();
     });
 
     // Should display encryption notice
     expect(screen.getByText(/Your data is being encrypted/)).toBeInTheDocument();
     // 25% progress for encrypting
-    expect(screen.getByText('25%')).toBeInTheDocument();
+    expect(screen.getByText('40%')).toBeInTheDocument();
   });
 
   // ─── File input click via drop zone ───
@@ -527,7 +527,7 @@ describe('UploadModal', () => {
 
   // ─── Success state UI details ───
 
-  it('success state shows encryption, TEE, IPFS, and on-chain badges', async () => {
+  it('success state shows only honest encryption + storage + audit badges', async () => {
     render(<UploadModal open={true} onClose={jest.fn()} />);
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [createFile('test.pdf', 1024, 'application/pdf')] } });
@@ -539,15 +539,20 @@ describe('UploadModal', () => {
     }
 
     await waitFor(() => {
-      expect(screen.getByText('Upload Successful')).toBeInTheDocument();
+      expect(screen.getByText('Record Saved')).toBeInTheDocument();
     });
+    // Records are encrypted-at-rest with an audit trail. They are NOT pinned to
+    // IPFS, TEE-attested, or registered on-chain, so those claims must NOT
+    // appear (regression guard for the previous fabricated success screen).
     expect(screen.getByText('Encryption')).toBeInTheDocument();
-    expect(screen.getByText('TEE Verification')).toBeInTheDocument();
-    expect(screen.getByText('IPFS Status')).toBeInTheDocument();
-    expect(screen.getByText('On-chain')).toBeInTheDocument();
-    expect(screen.getByText('Verified')).toBeInTheDocument();
-    expect(screen.getByText('Pinned')).toBeInTheDocument();
-    expect(screen.getByText('Confirmed')).toBeInTheDocument();
+    expect(screen.getByText('Storage')).toBeInTheDocument();
+    expect(screen.getByText('Audit trail')).toBeInTheDocument();
+    expect(screen.getByText('AES-256-GCM')).toBeInTheDocument();
+    expect(screen.getByText('Encrypted at rest')).toBeInTheDocument();
+    expect(screen.getByText('Recorded')).toBeInTheDocument();
+    expect(screen.queryByText('TEE Verification')).not.toBeInTheDocument();
+    expect(screen.queryByText('IPFS Status')).not.toBeInTheDocument();
+    expect(screen.queryByText('On-chain')).not.toBeInTheDocument();
   });
 
   // ─── Multiple files ───

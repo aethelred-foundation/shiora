@@ -423,6 +423,9 @@ export default function RecordsPage() {
         open={uploadOpen}
         onClose={() => setUploadOpen(false)}
         onUploadComplete={async ({ recordType, provider, tags, label, date }) => {
+          // Let the create reject propagate: the modal awaits this and shows its
+          // real success / failure state from it. Swallowing the error here
+          // would let the modal declare success while the server rejected it.
           try {
             await upload.mutateAsync({
               type: recordType as HealthRecord['type'],
@@ -441,6 +444,7 @@ export default function RecordsPage() {
               'Upload failed',
               err instanceof Error ? err.message : 'Could not save the record.',
             );
+            throw err;
           }
         }}
       />
