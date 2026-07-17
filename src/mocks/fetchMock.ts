@@ -1600,8 +1600,19 @@ const routes: Array<{ method: string; pattern: RegExp; handler: Handler }> = [
   },
   {
     method: 'POST',
+    pattern: /\/api\/access\/challenge$/,
+    handler: () => ok({
+      message: 'Shiora on Aethelred — Authorize Access Grant\n\nMock grant intent',
+      nonce: 'mock-grant-nonce-123',
+      issuedAt: Date.now(),
+      expiresAt: Date.now() + 300000,
+      hmac: 'mock-grant-hmac',
+    }),
+  },
+  {
+    method: 'POST',
     pattern: /\/api\/access$/,
-    handler: () => ok({ id: `grant-${Date.now()}`, provider: 'Dr. New', providerName: 'Dr. New', status: 'Active', scope: 'Full Records', grantedAt: Date.now(), expiresAt: Date.now() + 90 * 86400000, txHash: `0x${'c'.repeat(64)}` }),
+    handler: () => ok({ id: `grant-${Date.now()}`, provider: 'Dr. New', status: 'Active', scope: 'Full Records', grantedAt: Date.now(), expiresAt: Date.now() + 90 * 86400000, txHash: '' }),
   },
   {
     method: 'PATCH',

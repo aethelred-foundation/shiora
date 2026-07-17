@@ -3,17 +3,30 @@
 // ============================================================
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { GrantAccessModal } from '@/components/modals/GrantAccessModal';
 
-describe('GrantAccessModal', () => {
-  beforeEach(() => {
-    jest.useFakeTimers();
-  });
-  afterEach(() => {
-    jest.useRealTimers();
-  });
+const PROVIDER = 'Dr. Sarah Chen, OB-GYN';
+const PROVIDER_ADDRESS = '0x1234567890abcdef1234567890abcdef12345678';
 
+function selectProviderWithAddress() {
+  fireEvent.click(screen.getByText(PROVIDER));
+  fireEvent.change(screen.getByPlaceholderText('0x...'), {
+    target: { value: PROVIDER_ADDRESS },
+  });
+}
+
+function dateFromToday(days: number) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + days);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+describe('GrantAccessModal', () => {
   it('does not render when open is false', () => {
     render(<GrantAccessModal open={false} onClose={jest.fn()} />);
     expect(screen.queryByText('Select Provider')).not.toBeInTheDocument();
@@ -35,10 +48,18 @@ describe('GrantAccessModal', () => {
     expect(screen.getByPlaceholderText('0x...')).toBeInTheDocument();
   });
 
-  it('shows error when Next is clicked without selecting provider', () => {
+  it('requires a provider address before continuing', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
     fireEvent.click(screen.getByText('Next'));
-    expect(screen.getByText('Please select a provider or enter an address')).toBeInTheDocument();
+    expect(screen.getByText('Provider address is required')).toBeInTheDocument();
+  });
+
+  it('does not auto-generate an address when a provider is selected', () => {
+    render(<GrantAccessModal open={true} onClose={jest.fn()} />);
+    fireEvent.click(screen.getByText(PROVIDER));
+    expect(screen.getByPlaceholderText('0x...')).toHaveValue('');
+    fireEvent.click(screen.getByText('Next'));
+    expect(screen.getByText('Provider address is required')).toBeInTheDocument();
   });
 
   it('shows address validation error for invalid address', () => {
@@ -57,14 +78,14 @@ describe('GrantAccessModal', () => {
 
   it('navigates to permissions step after selecting a provider', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByText('Set Permissions')).toBeInTheDocument();
   });
 
   it('renders permissions step with scope, permissions, and duration', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByText('Data Scope')).toBeInTheDocument();
     expect(screen.getByText('Permissions')).toBeInTheDocument();
@@ -73,7 +94,7 @@ describe('GrantAccessModal', () => {
 
   it('renders permission toggles on permissions step', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByText('View')).toBeInTheDocument();
     expect(screen.getByText('Download')).toBeInTheDocument();
@@ -82,7 +103,7 @@ describe('GrantAccessModal', () => {
 
   it('renders duration options on permissions step', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByText('7 Days')).toBeInTheDocument();
     expect(screen.getByText('30 Days')).toBeInTheDocument();
@@ -93,7 +114,7 @@ describe('GrantAccessModal', () => {
 
   it('navigates back from permissions to provider step', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByText('Set Permissions')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Back'));
@@ -102,7 +123,7 @@ describe('GrantAccessModal', () => {
 
   it('navigates to review step', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Review'));
     expect(screen.getByText('Review & Confirm')).toBeInTheDocument();
@@ -111,10 +132,10 @@ describe('GrantAccessModal', () => {
 
   it('shows Grant Access button on review step', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Review'));
-    expect(screen.getByText('Grant Access')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sign & Grant Access' })).toBeInTheDocument();
   });
 
   // ─── resetForm (lines 88-99) ───
@@ -123,7 +144,7 @@ describe('GrantAccessModal', () => {
     const onClose = jest.fn();
     render(<GrantAccessModal open={true} onClose={onClose} />);
     // Navigate to step 2
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
     // Close via escape
     fireEvent.keyDown(document, { key: 'Escape' });
@@ -145,7 +166,7 @@ describe('GrantAccessModal', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
     // Don't select provider, leave address empty
     fireEvent.click(screen.getByText('Next'));
-    expect(screen.getByText('Please select a provider or enter an address')).toBeInTheDocument();
+    expect(screen.getByText('Provider address is required')).toBeInTheDocument();
   });
 
   it('rejects a malformed/too-short address', () => {
@@ -159,7 +180,9 @@ describe('GrantAccessModal', () => {
   it('accepts valid address and proceeds', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
     const addressInput = screen.getByPlaceholderText('0x...');
-    fireEvent.change(addressInput, { target: { value: '0x1234567890abcdef1234567890abcdef12345678' } });
+    fireEvent.change(addressInput, {
+      target: { value: '0x1234567890abcdef1234567890abcdef12345678' },
+    });
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByText('Set Permissions')).toBeInTheDocument();
   });
@@ -186,14 +209,20 @@ describe('GrantAccessModal', () => {
     expect(screen.getByText('Dr. Sarah Chen, OB-GYN')).toBeInTheDocument();
   });
 
-  // ─── submitGrant (lines 142-150) ───
+  // ─── Async submission ───
 
-  it('submits grant and shows success state', async () => {
-    const onGrantComplete = jest.fn();
+  it('waits for the async grant, then shows success and the returned grant ID', async () => {
+    let resolveGrant!: (result: { id: string }) => void;
+    const onGrantComplete = jest.fn(
+      () =>
+        new Promise<{ id: string }>((resolve) => {
+          resolveGrant = resolve;
+        }),
+    );
     render(<GrantAccessModal open={true} onClose={jest.fn()} onGrantComplete={onGrantComplete} />);
 
     // Select provider
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
 
     // Set permissions
@@ -204,46 +233,58 @@ describe('GrantAccessModal', () => {
     fireEvent.click(screen.getByText('Review'));
 
     // Submit
-    fireEvent.click(screen.getByText('Grant Access'));
+    fireEvent.click(screen.getByRole('button', { name: 'Sign & Grant Access' }));
 
-    // Should show submitting state
-    await waitFor(() => {
-      expect(screen.getByText('Processing Transaction')).toBeInTheDocument();
-      expect(screen.getByText(/Simulating blockchain transaction/)).toBeInTheDocument();
-    });
+    expect(screen.getByText('Confirm Access Grant')).toBeInTheDocument();
+    expect(screen.getByText(/Approve the wallet signature request/)).toBeInTheDocument();
+    expect(screen.queryByText('Access Granted')).not.toBeInTheDocument();
 
-    // Advance timer
     await act(async () => {
-      jest.advanceTimersByTime(3000);
+      resolveGrant({ id: 'grant-real-123' });
     });
 
-    // Should show success state
-    await waitFor(() => {
-      expect(screen.getByText('Access Granted')).toBeInTheDocument();
-    });
+    expect(await screen.findByText('Access Granted')).toBeInTheDocument();
+    expect(screen.getByText('Grant ID')).toBeInTheDocument();
+    expect(screen.getByText('grant-real-123')).toBeInTheDocument();
 
     expect(onGrantComplete).toHaveBeenCalledWith(
       expect.objectContaining({
-        provider: 'Dr. Sarah Chen, OB-GYN',
-      })
+        provider: PROVIDER,
+        address: PROVIDER_ADDRESS,
+        permissions: { view: true, download: true, share: true },
+      }),
     );
+  });
+
+  it('shows the callback error and never reports success when granting fails', async () => {
+    const onGrantComplete = jest.fn().mockRejectedValue(new Error('Request validation failed'));
+    render(<GrantAccessModal open={true} onClose={jest.fn()} onGrantComplete={onGrantComplete} />);
+
+    selectProviderWithAddress();
+    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByText('Review'));
+    fireEvent.click(screen.getByRole('button', { name: 'Sign & Grant Access' }));
+
+    expect(await screen.findByText('Grant Failed')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Request validation failed');
+    expect(screen.queryByText('Access Granted')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Try Again'));
+    expect(screen.getByText('Review & Confirm')).toBeInTheDocument();
   });
 
   // ─── Success state Done button (line 224 area) ───
 
   it('closes modal from success state when Done is clicked', async () => {
     const onClose = jest.fn();
-    render(<GrantAccessModal open={true} onClose={onClose} />);
+    const onGrantComplete = jest.fn().mockResolvedValue({ id: 'grant-1' });
+    render(<GrantAccessModal open={true} onClose={onClose} onGrantComplete={onGrantComplete} />);
 
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Review'));
-    fireEvent.click(screen.getByText('Grant Access'));
-    await act(async () => { jest.advanceTimersByTime(3000); });
-
-    await waitFor(() => {
-      expect(screen.getByText('Access Granted')).toBeInTheDocument();
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Sign & Grant Access' }));
+    expect(await screen.findByText('Access Granted')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Done'));
     expect(onClose).toHaveBeenCalled();
@@ -253,7 +294,7 @@ describe('GrantAccessModal', () => {
 
   it('navigates back from review to permissions', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Review'));
     expect(screen.getByText('Review & Confirm')).toBeInTheDocument();
@@ -265,7 +306,7 @@ describe('GrantAccessModal', () => {
 
   it('shows date picker when Custom duration is selected', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Custom'));
     // Date input should appear
@@ -275,32 +316,74 @@ describe('GrantAccessModal', () => {
 
   it('sets custom expiry date', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Custom'));
     const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
-    fireEvent.change(dateInput, { target: { value: '2025-12-31' } });
-    expect(dateInput.value).toBe('2025-12-31');
+    const expiry = dateFromToday(30);
+    fireEvent.change(dateInput, { target: { value: expiry } });
+    expect(dateInput.value).toBe(expiry);
   });
 
   // ─── Custom expiry in review step ───
 
-  it('shows custom expiry date in review step', () => {
+  it('requires a custom expiry date and keeps the error visible', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
+    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByText('Custom'));
+    fireEvent.click(screen.getByText('Review'));
+
+    expect(screen.getByText('Set Permissions')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Choose an expiry date');
+    expect(document.querySelector('input[type="date"]')).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('rejects a custom expiry that is not in the future', () => {
+    render(<GrantAccessModal open={true} onClose={jest.fn()} />);
+    selectProviderWithAddress();
+    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByText('Custom'));
+    fireEvent.change(document.querySelector('input[type="date"]')!, {
+      target: { value: dateFromToday(0) },
+    });
+    fireEvent.click(screen.getByText('Review'));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Expiry date must be in the future');
+    expect(screen.queryByText('Review & Confirm')).not.toBeInTheDocument();
+  });
+
+  it('rejects a custom expiry more than 365 days away', () => {
+    render(<GrantAccessModal open={true} onClose={jest.fn()} />);
+    selectProviderWithAddress();
+    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByText('Custom'));
+    fireEvent.change(document.querySelector('input[type="date"]')!, {
+      target: { value: dateFromToday(366) },
+    });
+    fireEvent.click(screen.getByText('Review'));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Expiry date must be within 365 days');
+    expect(screen.queryByText('Review & Confirm')).not.toBeInTheDocument();
+  });
+
+  it('accepts a valid future custom expiry and shows it in review', () => {
+    render(<GrantAccessModal open={true} onClose={jest.fn()} />);
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Custom'));
     const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
-    fireEvent.change(dateInput, { target: { value: '2025-12-31' } });
+    const expiry = dateFromToday(30);
+    fireEvent.change(dateInput, { target: { value: expiry } });
     fireEvent.click(screen.getByText('Review'));
-    expect(screen.getByText('2025-12-31')).toBeInTheDocument();
+    expect(screen.getByText(expiry)).toBeInTheDocument();
   });
 
   // ─── Data scope selection (line 366) ───
 
   it('selects different data scopes', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Lab Results Only'));
     // Navigate to review to verify
@@ -310,64 +393,77 @@ describe('GrantAccessModal', () => {
 
   // ─── Permission toggles (line 388) ───
 
-  it('toggles view permission off and on', () => {
+  it('requires view permission before reviewing a grant', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
-    // View is on by default, click to toggle off
+
+    // An empty permission set cannot proceed.
     fireEvent.click(screen.getByText('View').closest('button')!);
-    // Then toggle download on
+    fireEvent.click(screen.getByText('Review'));
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Enable View permission to create an access grant',
+    );
+
+    // Download/share also require View, matching the server policy.
     fireEvent.click(screen.getByText('Download').closest('button')!);
-    // Go to review to verify
+    fireEvent.click(screen.getByText('Review'));
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'View permission is required before records can be downloaded or shared',
+    );
+
+    // Restoring View clears the validation error and allows review.
+    fireEvent.click(screen.getByText('View').closest('button')!);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('Review'));
     expect(screen.getByText('Download')).toBeInTheDocument();
   });
 
-  // ─── Review step shows provider name or "Custom Address" (line 294) ───
+  // ─── Review step custom-provider label ───
 
-  it('shows Custom Address in review when manual address is used', () => {
+  it('uses a nonempty Custom provider label when only an address is supplied', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
     const addressInput = screen.getByPlaceholderText('0x...');
-    fireEvent.change(addressInput, { target: { value: '0x1234567890abcdef1234567890abcdef12345678' } });
+    fireEvent.change(addressInput, { target: { value: PROVIDER_ADDRESS } });
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Review'));
-    expect(screen.getByText('Custom Address')).toBeInTheDocument();
+    expect(screen.getByText('Custom provider')).toBeInTheDocument();
   });
 
-  // ─── Blockchain notice on review step ───
+  // ─── Wallet-signature notice on review step ───
 
-  it('shows blockchain notice on review step', () => {
+  it('explains the wallet signature without transaction or gas claims', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Review'));
-    expect(screen.getByText(/This action will submit a transaction/)).toBeInTheDocument();
+    expect(screen.getByText(/wallet will ask you to sign this access grant/i)).toBeInTheDocument();
+    expect(screen.getByText(/no transaction is sent and no gas is charged/i)).toBeInTheDocument();
+    expect(screen.queryByText(/TEE smart contracts/i)).not.toBeInTheDocument();
   });
 
-  // ─── Success state shows transaction hash and details ───
+  // ─── Honest success details ───
 
-  it('success state shows provider, scope, expiry, and tx hash', async () => {
-    render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+  it('success state shows provider and scope without a fabricated transaction hash', async () => {
+    const onGrantComplete = jest.fn().mockResolvedValue(undefined);
+    render(<GrantAccessModal open={true} onClose={jest.fn()} onGrantComplete={onGrantComplete} />);
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Review'));
-    fireEvent.click(screen.getByText('Grant Access'));
-    await act(async () => { jest.advanceTimersByTime(3000); });
+    fireEvent.click(screen.getByRole('button', { name: 'Sign & Grant Access' }));
+    expect(await screen.findByText('Access Granted')).toBeInTheDocument();
 
-    await waitFor(() => {
-      expect(screen.getByText('Access Granted')).toBeInTheDocument();
-    });
-
-    expect(screen.getByText('Dr. Sarah Chen, OB-GYN')).toBeInTheDocument();
+    expect(screen.getByText(PROVIDER)).toBeInTheDocument();
     expect(screen.getByText('Full Records')).toBeInTheDocument();
-    expect(screen.getByText('Transaction Hash')).toBeInTheDocument();
+    expect(screen.queryByText('Transaction Hash')).not.toBeInTheDocument();
+    expect(screen.queryByText('Grant ID')).not.toBeInTheDocument();
   });
 
   // ─── Duration selection on permissions step ───
 
   it('selects different duration options', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('7 Days'));
     fireEvent.click(screen.getByText('90 Days'));
@@ -382,7 +478,7 @@ describe('GrantAccessModal', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
     const searchInput = screen.getByPlaceholderText('Search healthcare providers...');
     fireEvent.change(searchInput, { target: { value: 'sarah' } });
-    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    selectProviderWithAddress();
     // Search should be cleared
     expect((searchInput as HTMLInputElement).value).toBe('');
   });
@@ -393,7 +489,7 @@ describe('GrantAccessModal', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
     // With empty search, all providers should be shown
     expect(screen.getByText('Dr. Sarah Chen, OB-GYN')).toBeInTheDocument();
-    expect(screen.getByText('Metro Women\'s Health')).toBeInTheDocument();
+    expect(screen.getByText("Metro Women's Health")).toBeInTheDocument();
   });
 
   // ─── goToPermissions with provider address validation (line 133) ───
@@ -412,6 +508,6 @@ describe('GrantAccessModal', () => {
     render(<GrantAccessModal open={true} onClose={jest.fn()} />);
     // No provider selected, no address entered
     fireEvent.click(screen.getByText('Next'));
-    expect(screen.getByText('Please select a provider or enter an address')).toBeInTheDocument();
+    expect(screen.getByText('Provider address is required')).toBeInTheDocument();
   });
 });

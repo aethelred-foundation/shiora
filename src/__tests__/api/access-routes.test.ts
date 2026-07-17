@@ -14,6 +14,14 @@ jest.mock('@/lib/api/access-service', () => {
   };
 });
 
+jest.mock('@/lib/api/notification-service', () => {
+  const actual = jest.requireActual('@/lib/api/notification-service');
+  return {
+    ...actual,
+    notify: jest.fn((...args: unknown[]) => actual.notify(...args)),
+  };
+});
+
 import { NextRequest, NextResponse } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
@@ -23,18 +31,25 @@ import {
 } from '@/lib/api/access-service';
 
 import { GET as listGrants, POST as createGrant } from '@/app/api/access/route';
+import { POST as issueGrantChallenge } from '@/app/api/access/challenge/route';
 import { GET as getGrant, PATCH as patchGrant, DELETE as deleteGrant } from '@/app/api/access/[id]/route';
 import { GET as listAudit } from '@/app/api/access/audit/route';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
 import { getAuditLog } from '@/lib/api/audit-log';
-import { listNotifications, __resetNotificationsForTests } from '@/lib/api/notification-service';
+import { notify, listNotifications, __resetNotificationsForTests } from '@/lib/api/notification-service';
 import type { MockAccessGrant } from '@/lib/api/mock-data';
+import { evmAddress, personalSign, testPrivateKey } from '@/__tests__/helpers/evm-wallet';
+import { createGrantAuthorizationChallenge } from '@/lib/api/grant-authorization';
+import { GrantCreateSchema } from '@/lib/api/validation';
+import { __resetNonceStoreForTests } from '@/lib/persistence/nonce-store';
 
 const mockedList = svcList as jest.MockedFunction<typeof svcList>;
 const mockedUpdate = svcUpdate as jest.MockedFunction<typeof svcUpdate>;
 const actualService = jest.requireActual('@/lib/api/access-service');
+const actualNotifications = jest.requireActual('@/lib/api/notification-service');
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
+const mockedNotify = notify as jest.MockedFunction<typeof notify>;
 
 afterEach(() => {
   mockedRunMiddleware.mockImplementation((...args: unknown[]) => {
@@ -43,6 +58,8 @@ afterEach(() => {
   });
   mockedList.mockImplementation((...args: unknown[]) => actualService.listAccessGrants(...args));
   mockedUpdate.mockImplementation((...args: unknown[]) => actualService.updateAccessGrant(...args));
+  mockedNotify.mockImplementation((...args: Parameters<typeof notify>) => actualNotifications.notify(...args));
+  __resetNonceStoreForTests();
 });
 
 function authed(url: string, init: RequestInit, token: string): NextRequest {
@@ -60,13 +77,61 @@ interface GrantPayload {
   canShare?: boolean;
 }
 
-async function postGrant(token: string, payload: GrantPayload): Promise<{ id: string }> {
-  const res = await createGrant(
-    authed('http://localhost:3001/api/access', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+const privateKeysByToken = new Map<string, Uint8Array>();
+
+function walletSession(seed: number): {
+  owner: string;
+  token: string;
+  privateKey: Uint8Array;
+} {
+  const privateKey = testPrivateKey(seed);
+  const owner = evmAddress(privateKey);
+  const { token } = createSessionToken(owner);
+  privateKeysByToken.set(token, privateKey);
+  return { owner, token, privateKey };
+}
+
+async function authorizedGrantBody(
+  token: string,
+  payload: GrantPayload,
+  signingKey: Uint8Array = privateKeysByToken.get(token)!,
+): Promise<GrantPayload & { authorization: Record<string, string | number> }> {
+  if (!signingKey) throw new Error('No private key registered for test session');
+
+  const challengeResponse = await issueGrantChallenge(
+    authed('http://localhost:3001/api/access/challenge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     }, token),
   );
-  return (await res.json()).data;
+  const challengeBody = await challengeResponse.json();
+  if (challengeResponse.status !== 200) {
+    throw new Error(`Challenge failed: ${JSON.stringify(challengeBody)}`);
+  }
+
+  const { message, ...challenge } = challengeBody.data;
+  return {
+    ...payload,
+    authorization: {
+      ...challenge,
+      signature: personalSign(message, signingKey),
+    },
+  };
+}
+
+async function postGrant(token: string, payload: GrantPayload): Promise<{ id: string }> {
+  const body = await authorizedGrantBody(token, payload);
+  const res = await createGrant(
+    authed('http://localhost:3001/api/access', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }, token),
+  );
+  const responseBody = await res.json();
+  if (res.status !== 201) {
+    throw new Error(`Grant failed: ${JSON.stringify(responseBody)}`);
+  }
+  return responseBody.data;
 }
 
 describe('/api/access middleware and auth guards', () => {
@@ -80,6 +145,11 @@ describe('/api/access middleware and auth guards', () => {
   it('POST returns the middleware error when blocked', async () => {
     mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     expect((await createGrant(authed('http://localhost:3001/api/access', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }, token))).status).toBe(403);
+  });
+
+  it('POST challenge returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    expect((await issueGrantChallenge(new NextRequest('http://localhost:3001/api/access/challenge', { method: 'POST' }))).status).toBe(403);
   });
 
   it('GET [id] returns the middleware error when blocked', async () => {
@@ -107,6 +177,13 @@ describe('/api/access middleware and auth guards', () => {
     expect((await createGrant(new NextRequest('http://localhost:3001/api/access', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }))).status).toBe(401);
   });
 
+  it('POST challenge returns 401 when unauthenticated', async () => {
+    const res = await issueGrantChallenge(new NextRequest('http://localhost:3001/api/access/challenge', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+    }));
+    expect(res.status).toBe(401);
+  });
+
   it('GET [id] returns 401 when inner requireAuth runs unauthenticated', async () => {
     mockedRunMiddleware.mockResolvedValueOnce(null);
     expect((await getGrant(new NextRequest('http://localhost:3001/api/access/grant-x'), { params: Promise.resolve({ id: 'grant-x' }) })).status).toBe(401);
@@ -124,8 +201,7 @@ describe('/api/access middleware and auth guards', () => {
 });
 
 describe('/api/access list, filter, search', () => {
-  const owner = seededAddress(222);
-  const { token } = createSessionToken(owner);
+  const { owner, token } = walletSession(222);
 
   beforeAll(async () => {
     await postGrant(token, { provider: 'Rivera Clinic', specialty: 'Cardiology', address: seededAddress(901), scope: 'Full Records', durationDays: 365 });
@@ -190,21 +266,230 @@ describe('/api/access list, filter, search', () => {
 });
 
 describe('/api/access create', () => {
-  const owner = seededAddress(333);
-  const { token } = createSessionToken(owner);
+  const { owner, token } = walletSession(333);
 
   it('creates a grant (201, Active, no fabricated txHash)', async () => {
+    const body = await authorizedGrantBody(token, {
+      provider: 'Dr. Chen', specialty: 'OB-GYN', address: seededAddress(910),
+      scope: 'Full Records', durationDays: 90, canDownload: true,
+    });
     const res = await createGrant(
       authed('http://localhost:3001/api/access', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: 'Dr. Chen', specialty: 'OB-GYN', address: seededAddress(910), scope: 'Full Records', durationDays: 90, canDownload: true }),
+        body: JSON.stringify(body),
       }, token),
     );
     expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.data.status).toBe('Active');
-    expect(body.data.txHash).toBe('');
-    expect(body.data.canDownload).toBe(true);
+    const responseBody = await res.json();
+    expect(responseBody.data.status).toBe('Active');
+    expect(responseBody.data.txHash).toBe('');
+    expect(responseBody.data.canDownload).toBe(true);
+  });
+
+  it('requires a per-grant authorization even for an authenticated session', async () => {
+    const res = await createGrant(
+      authed('http://localhost:3001/api/access', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'Unsigned Clinic', specialty: 'Cardiology', address: seededAddress(915),
+          scope: 'Full Records', durationDays: 30,
+        }),
+      }, token),
+    );
+    expect(res.status).toBe(422);
+    const responseBody = await res.json();
+    expect(responseBody.error.code).toBe('VALIDATION_ERROR');
+    expect(responseBody.error.details.authorization).toBeDefined();
+  });
+
+  it('rejects a grant when any signed payload field is changed', async () => {
+    const signed = await authorizedGrantBody(token, {
+      provider: 'Payload Clinic', specialty: 'Cardiology', address: seededAddress(911),
+      scope: 'Full Records', durationDays: 30,
+    });
+    const res = await createGrant(
+      authed('http://localhost:3001/api/access', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...signed, scope: 'Lab Results Only' }),
+      }, token),
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()).error.code).toBe('INVALID_GRANT_AUTHORIZATION');
+  });
+
+  it('rejects a signature made by a different wallet', async () => {
+    const body = await authorizedGrantBody(token, {
+      provider: 'Wrong Signer Clinic', specialty: 'Cardiology', address: seededAddress(912),
+      scope: 'Full Records', durationDays: 30,
+    }, testPrivateKey(9876));
+    const res = await createGrant(
+      authed('http://localhost:3001/api/access', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      }, token),
+    );
+    expect(res.status).toBe(403);
+    expect((await res.json()).error.code).toBe('INVALID_GRANT_SIGNATURE');
+  });
+
+  it('atomically rejects replay of a valid signed grant', async () => {
+    const body = await authorizedGrantBody(token, {
+      provider: 'Replay Clinic', specialty: 'Cardiology', address: seededAddress(913),
+      scope: 'Full Records', durationDays: 30,
+    });
+    const request = () => createGrant(
+      authed('http://localhost:3001/api/access', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      }, token),
+    );
+
+    const responses = await Promise.all([request(), request()]);
+    expect(responses.map((response) => response.status).sort()).toEqual([201, 409]);
+    const replay = responses.find((response) => response.status === 409)!;
+    expect((await replay.json()).error.code).toBe('GRANT_AUTHORIZATION_ALREADY_USED');
+  });
+
+  it('rejects self-grants at challenge and redemption', async () => {
+    const payload: GrantPayload = {
+      provider: 'Self', specialty: 'Self', address: owner,
+      scope: 'Full Records', durationDays: 30,
+    };
+    const challengeResponse = await issueGrantChallenge(
+      authed('http://localhost:3001/api/access/challenge', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+      }, token),
+    );
+    expect(challengeResponse.status).toBe(422);
+    expect((await challengeResponse.json()).error.code).toBe('SELF_GRANT_NOT_ALLOWED');
+
+    // Defense in depth: even a correctly HMAC-bound and signed self-grant is
+    // rejected again by the redemption endpoint.
+    const normalized = GrantCreateSchema.parse(payload);
+    const challenge = createGrantAuthorizationChallenge(owner, normalized);
+    const { message, ...challengeFields } = challenge;
+    const finalResponse = await createGrant(
+      authed('http://localhost:3001/api/access', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...payload,
+          authorization: {
+            ...challengeFields,
+            signature: personalSign(message, privateKeysByToken.get(token)!),
+          },
+        }),
+      }, token),
+    );
+    expect(finalResponse.status).toBe(422);
+    expect((await finalResponse.json()).error.code).toBe('SELF_GRANT_NOT_ALLOWED');
+  });
+
+  it('rejects a grant with every permission disabled', async () => {
+    const res = await issueGrantChallenge(
+      authed('http://localhost:3001/api/access/challenge', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'No Access', specialty: 'None', address: seededAddress(914),
+          scope: 'Full Records', durationDays: 30,
+          canView: false, canDownload: false, canShare: false,
+        }),
+      }, token),
+    );
+    expect(res.status).toBe(422);
+    const responseBody = await res.json();
+    expect(responseBody.error.code).toBe('VALIDATION_ERROR');
+    expect(responseBody.error.details.canView).toContain('At least one access permission must be enabled.');
+  });
+
+  it.each([
+    ['download', { canView: false, canDownload: true, canShare: false }],
+    ['share', { canView: false, canDownload: false, canShare: true }],
+  ])('rejects %s permission without view permission', async (_label, permissions) => {
+    const res = await issueGrantChallenge(
+      authed('http://localhost:3001/api/access/challenge', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'Invalid Permissions', specialty: 'None', address: seededAddress(916),
+          scope: 'Full Records', durationDays: 30, ...permissions,
+        }),
+      }, token),
+    );
+    expect(res.status).toBe(422);
+    const responseBody = await res.json();
+    expect(responseBody.error.code).toBe('VALIDATION_ERROR');
+    expect(responseBody.error.details.canView).toContain(
+      'View permission must be enabled when download or share is enabled.',
+    );
+  });
+
+  it('rejects the zero provider address at challenge and redemption', async () => {
+    const zeroAddress = `0x${'0'.repeat(40)}`;
+    const payload: GrantPayload = {
+      provider: 'Zero Address', specialty: 'None', address: zeroAddress,
+      scope: 'Full Records', durationDays: 30,
+    };
+
+    const challengeResponse = await issueGrantChallenge(
+      authed('http://localhost:3001/api/access/challenge', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+      }, token),
+    );
+    expect(challengeResponse.status).toBe(422);
+    expect(await challengeResponse.json()).toMatchObject({
+      error: {
+        code: 'INVALID_PROVIDER_ADDRESS',
+        message: 'Provider wallet address cannot be the zero address.',
+      },
+    });
+
+    // Defense in depth: the final endpoint independently rejects the zero
+    // address even if given an otherwise authentic server challenge.
+    const normalized = GrantCreateSchema.parse(payload);
+    const challenge = createGrantAuthorizationChallenge(owner, normalized);
+    const { message, ...challengeFields } = challenge;
+    const finalResponse = await createGrant(
+      authed('http://localhost:3001/api/access', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...payload,
+          authorization: {
+            ...challengeFields,
+            signature: personalSign(message, privateKeysByToken.get(token)!),
+          },
+        }),
+      }, token),
+    );
+    expect(finalResponse.status).toBe(422);
+    expect(await finalResponse.json()).toMatchObject({
+      error: {
+        code: 'INVALID_PROVIDER_ADDRESS',
+        message: 'Provider wallet address cannot be the zero address.',
+      },
+    });
+  });
+
+  it('returns the durable grant when provider notification delivery fails', async () => {
+    const fresh = walletSession(334);
+    const payload: GrantPayload = {
+      provider: 'Delivery Failure Clinic', specialty: 'Cardiology', address: seededAddress(917),
+      scope: 'Full Records', durationDays: 30,
+    };
+    const body = await authorizedGrantBody(fresh.token, payload);
+    mockedNotify.mockRejectedValueOnce(new Error('notification datastore unavailable'));
+    const logSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    try {
+      const res = await createGrant(
+        authed('http://localhost:3001/api/access', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+        }, fresh.token),
+      );
+      expect(res.status).toBe(201);
+      const responseBody = await res.json();
+      expect(responseBody.data.provider).toBe(payload.provider);
+      expect(await actualService.listAccessGrants(fresh.owner)).toContainEqual(responseBody.data);
+      expect(logSpy).toHaveBeenCalled();
+    } finally {
+      logSpy.mockRestore();
+    }
   });
 
   it('returns 422 for an invalid create body', async () => {
@@ -225,8 +510,7 @@ describe('/api/access create', () => {
 });
 
 describe('/api/access/[id] detail, modify, revoke', () => {
-  const owner = seededAddress(444);
-  const { token } = createSessionToken(owner);
+  const { owner, token } = walletSession(444);
   let grantId: string;
   let soonId: string;
   let expiredId: string;
@@ -407,8 +691,7 @@ describe('/api/access/audit log view', () => {
 });
 
 describe('/api/access grant lifecycle notifications', () => {
-  const owner = seededAddress(666);
-  const { token } = createSessionToken(owner);
+  const { owner, token } = walletSession(666);
   const provider = seededAddress(940);
 
   beforeEach(() => __resetNotificationsForTests());

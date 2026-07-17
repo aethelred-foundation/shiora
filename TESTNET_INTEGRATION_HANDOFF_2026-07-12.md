@@ -242,18 +242,38 @@ The service restarts automatically on crash and on server reboot.
 1. **Connect:** Connect Wallet → Aethelred Wallet or MetaMask → sign the
    EIP-191 challenge. The header shows your address; a dropped-session error
    here means the tier/transport rules above were violated.
-2. **Vault:** Records → upload a health record (AES-256-GCM sealed at rest);
-   Vault → log a cycle/symptom entry.
+2. **Vault:** Records → register a health-record metadata entry; Vault → log a
+   cycle/symptom entry. The current pilot encrypts and persists the metadata at
+   rest but does **not** retain the selected file bytes, so file-content testing
+   is outside this flow.
 3. **Access:** open **Platform → Access Control** (or the dashboard's
    "Manage Access" quick action — route `/access`) → **Grant Access** →
-   pick a provider, enter the provider's 0x address, choose scope/permissions
-   → the grant appears under Access Grants, and the event lands in the
-   Activity tab. Revoke from the grant's detail view.
+   pick a provider, enter the provider's real 0x address, and choose
+   scope/permissions/duration → **Sign & Grant Access** → approve the EIP-191
+   message in the same wallet used for the session. This authorizes the exact
+   off-chain RBAC grant; it is **not** a blockchain transaction and costs no
+   gas. Success appears only after the server verifies the payload-bound,
+   single-use signature. The grant appears under Access Grants and the event
+   lands in the Audit Log tab. Revoke from the grant's detail view.
 4. **Audit:** every read/write lands in the tamper-evident audit trail
    (Access page); `GET /api/health/ready` shows overall config/datastore
    status and the evaluation acknowledgments.
 5. Simulated surfaces (Attestation Tooling, clinical previews) are labeled
    as such by design — they are not test failures.
+
+### 9.3.2 Access-grant validation boundaries
+
+- The caller must have a valid, non-revoked wallet session and pass origin and
+  rate-limit middleware.
+- The grant requires a non-zero provider 0x address different from the owner,
+  a provider name and specialty, one of the supported data scopes, a duration
+  of 1–365 days, and a meaningful permission set.
+- The wallet authorization is valid for five minutes, is HMAC-bound to every
+  normalized grant field and the session owner, and can be redeemed once.
+- Provider record reads enforce grant status, expiry, view permission, owner,
+  provider address, and the selected record scope. Unknown scopes fail closed.
+- A grant is scope-based, not tied to a particular record ID or uploaded file;
+  the contents of a selected image do not participate in grant validation.
 
 ### 9.4 What to verify
 

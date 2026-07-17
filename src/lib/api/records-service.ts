@@ -23,6 +23,31 @@ import type { MockHealthRecord } from '@/lib/api/mock-data';
 import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
 import { activeGrantForProvider } from '@/lib/api/access-service';
 import { recordAuthorizationDecision } from '@/lib/api/authz-decision';
+import type { DataScope, RecordType } from '@/types';
+
+/**
+ * Record categories exposed by each patient-selected access scope. `null`
+ * means unrestricted: Full Records includes every current and future record
+ * category. Unknown persisted scopes fail closed in recordsWithinGrantScope.
+ */
+const RECORD_TYPES_BY_SCOPE: Readonly<Record<DataScope, readonly RecordType[] | null>> = {
+  'Full Records': null,
+  'Lab Results Only': ['lab_result'],
+  'Imaging Only': ['imaging'],
+  'Vitals Only': ['vitals'],
+  'Prescriptions Only': ['prescription'],
+  'Clinical Notes Only': ['notes'],
+};
+
+function recordsWithinGrantScope(
+  records: MockHealthRecord[],
+  scope: string,
+): MockHealthRecord[] {
+  const allowedTypes = RECORD_TYPES_BY_SCOPE[scope as DataScope];
+  if (allowedTypes === null) return records;
+  if (!allowedTypes) return [];
+  return records.filter((record) => allowedTypes.includes(record.type as RecordType));
+}
 
 let repository: EncryptedRecordRepository | null = null;
 
@@ -93,7 +118,8 @@ export async function listRecordsForProvider(
     resourceId: patientAddress,
     success: true,
   });
-  return repo().list(patientAddress);
+  const records = await repo().list(patientAddress);
+  return recordsWithinGrantScope(records, grant.scope);
 }
 
 export function getRecord(

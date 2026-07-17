@@ -179,9 +179,19 @@ export const handlers = [
     return ok(grant);
   }),
 
+  http.post('*/api/access/challenge', async () => {
+    return ok({
+      message: 'Shiora on Aethelred — Authorize Access Grant\n\nMock grant intent',
+      nonce: 'mock-grant-nonce-123',
+      issuedAt: Date.now(),
+      expiresAt: Date.now() + 300000,
+      hmac: 'mock-grant-hmac',
+    });
+  }),
+
   http.post('*/api/access', async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
-    return ok({ id: `grant-${Date.now()}`, ...body, status: 'Pending', grantedAt: Date.now(), accessCount: 0, txHash: `0x${'d'.repeat(64)}` }, 201);
+    return ok({ id: `grant-${Date.now()}`, ...body, status: 'Active', grantedAt: Date.now(), accessCount: 0, txHash: '' }, 201);
   }),
 
   http.patch('*/api/access/:id', async ({ params, request }) => {

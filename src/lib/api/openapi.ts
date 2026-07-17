@@ -61,6 +61,7 @@ export const ROUTE_MANIFEST: readonly RouteDoc[] = [
   // Access grants
   { path: '/api/access', method: 'get', summary: 'List access grants', tags: ['Access'], auth: true },
   { path: '/api/access', method: 'post', summary: 'Grant a provider access', tags: ['Access'], auth: true },
+  { path: '/api/access/challenge', method: 'post', summary: 'Request a payload-bound access-grant signing challenge', tags: ['Access'], auth: true },
   { path: '/api/access/{id}', method: 'delete', summary: 'Revoke an access grant', tags: ['Access'], auth: true },
 
   // Break-glass emergency access
