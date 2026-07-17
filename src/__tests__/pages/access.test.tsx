@@ -20,7 +20,12 @@ const mockAuditLog = [
   { id: 'a2', provider: '0xowner00000000000000000000000000000000000', action: 'Access granted', timestamp: mockNow - 5 * 3600000, details: 'access-grant · grant-1', txHash: '', type: 'grant' },
 ];
 jest.mock('@/hooks/useAccessControl', () => ({
-  useAccessControl: () => ({ grants: mockGrants, auditLog: mockAuditLog }),
+  useAccessControl: () => ({
+    grants: mockGrants,
+    auditLog: mockAuditLog,
+    createGrant: { mutate: jest.fn(), mutateAsync: jest.fn(async () => ({})), isLoading: false, error: null },
+    revokeGrant: { mutate: jest.fn(), mutateAsync: jest.fn(async () => {}), isLoading: false, error: null },
+  }),
 }));
 
 import React from 'react';
@@ -48,6 +53,17 @@ describe('AccessPage', () => {
     // "Access Control" appears in page heading and nav link
     expect(screen.getAllByText('Access Control').length).toBeGreaterThanOrEqual(1);
   });
+
+  it('guards Grant Access behind wallet connection with a notification', () => {
+    render(
+      <TestWrapper>
+        <AccessPage />
+      </TestWrapper>
+    );
+    fireEvent.click(screen.getByRole('button', { name: /grant access/i }));
+    expect(screen.getByText(/Connect your wallet/i)).toBeInTheDocument();
+  });
+
 
   it('renders the page description', () => {
     render(

@@ -224,6 +224,19 @@ prepare step in `start:standalone` must keep running):
 SHIORA_PREFLIGHT_MODE=evaluation PORT=3008 npm run start:standalone
 ```
 
+### 9.2.2 Run as a background service (systemd)
+
+`deploy/systemd/shiora.service` is a ready template — adjust the user/paths
+per its comments, then:
+
+```bash
+sudo cp deploy/systemd/shiora.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now shiora
+journalctl -u shiora -f   # logs
+```
+
+The service restarts automatically on crash and on server reboot.
+
 ### 9.3.1 Suggested testing flow (evaluation deployment)
 
 1. **Connect:** Connect Wallet → Aethelred Wallet or MetaMask → sign the
@@ -231,8 +244,11 @@ SHIORA_PREFLIGHT_MODE=evaluation PORT=3008 npm run start:standalone
    here means the tier/transport rules above were violated.
 2. **Vault:** Records → upload a health record (AES-256-GCM sealed at rest);
    Vault → log a cycle/symptom entry.
-3. **Access:** Manage Access → grant a provider address view access → check
-   Access Activity shows the grant event.
+3. **Access:** open **Platform → Access Control** (or the dashboard's
+   "Manage Access" quick action — route `/access`) → **Grant Access** →
+   pick a provider, enter the provider's 0x address, choose scope/permissions
+   → the grant appears under Access Grants, and the event lands in the
+   Activity tab. Revoke from the grant's detail view.
 4. **Audit:** every read/write lands in the tamper-evident audit trail
    (Access page); `GET /api/health/ready` shows overall config/datastore
    status and the evaluation acknowledgments.

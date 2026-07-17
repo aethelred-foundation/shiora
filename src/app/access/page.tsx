@@ -26,6 +26,8 @@ import {
 import { formatDate, timeAgo, daysFromNow } from '@/lib/utils';
 import { useAccessControl } from '@/hooks/useAccessControl';
 import type { AccessGrant, AuditEntry } from '@/types';
+import { GrantAccessModal } from '@/components/modals/GrantAccessModal';
+import { useApp } from '@/contexts/AppContext';
 
 // ============================================================
 // Sub-components
@@ -47,7 +49,12 @@ const TYPE_COLORS: Record<string, string> = {
   download: 'bg-violet-50 text-violet-600',
 };
 
-function GrantDetailModal({ grant, open, onClose }: { grant: AccessGrant | null; open: boolean; onClose: () => void }) {
+function GrantDetailModal({ grant, open, onClose, onRevoke }: {
+  grant: AccessGrant | null;
+  open: boolean;
+  onClose: () => void;
+  onRevoke?: (grant: AccessGrant) => void;
+}) {
   if (!grant) return null;
 
   const daysLeft = daysFromNow(grant.expiresAt);
@@ -131,10 +138,12 @@ function GrantDetailModal({ grant, open, onClose }: { grant: AccessGrant | null;
         {/* Actions */}
         {grant.status === 'Active' && (
           <div className="flex gap-3">
-            <button className="flex-1 py-2.5 px-4 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-sm font-medium hover:bg-amber-100 transition-colors">
-              Modify Scope
-            </button>
-            <button className="flex-1 py-2.5 px-4 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors">
+            {/* Scope modification (PATCH /api/access/:id) ships with the scope-edit
+                form — no decorative button until the form exists. */}
+            <button
+              onClick={() => onRevoke?.(grant)}
+              className="flex-1 py-2.5 px-4 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors"
+            >
               Revoke Access
             </button>
           </div>
@@ -152,7 +161,9 @@ export default function AccessPage() {
   // Real, owner-scoped access grants + the real tamper-evident audit trail
   // (useAccessControl → GET /api/access and /api/access/audit). Empty until a
   // wallet session authenticates.
-  const { grants, auditLog } = useAccessControl();
+  const { grants, auditLog, createGrant, revokeGrant } = useAccessControl();
+  const { addNotification, wallet } = useApp();
+  const [grantOpen, setGrantOpen] = useState(false);
 
   const [activeTab, setActiveTab] = useState('grants');
   const [searchQuery, setSearchQuery] = useState('');
@@ -217,7 +228,16 @@ export default function AccessPage() {
                 Manage provider access to your encrypted health data — owner-scoped grants with a tamper-evident audit trail
               </p>
             </div>
-            <button className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-500 text-white rounded-xl font-medium text-sm hover:bg-brand-600 transition-colors shadow-sm shrink-0">
+            <button
+              onClick={() => {
+                if (!wallet.connected) {
+                  addNotification('error', 'Connect your wallet', 'Connect a wallet before granting access.');
+                  return;
+                }
+                setGrantOpen(true);
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-500 text-white rounded-xl font-medium text-sm hover:bg-brand-600 transition-colors shadow-sm shrink-0"
+            >
               <Plus className="w-4 h-4" />
               Grant Access
             </button>
@@ -440,7 +460,49 @@ export default function AccessPage() {
       <Footer />
 
       {/* Detail Modal */}
-      <GrantDetailModal grant={selectedGrant} open={detailOpen} onClose={() => setDetailOpen(false)} />
+      <GrantDetailModal
+        grant={selectedGrant}
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        onRevoke={async (grant) => {
+          try {
+            await revokeGrant.mutateAsync({ grantId: grant.id, reason: 'Revoked by owner' });
+            addNotification('success', 'Access revoked', `${grant.provider}'s access was revoked and audited.`);
+            setDetailOpen(false);
+          } catch (err) {
+            addNotification('error', 'Revoke failed', err instanceof Error ? err.message : 'Could not revoke the grant.');
+          }
+        }}
+      />
+
+      {/* Grant Access Modal — persists via the real POST /api/access */}
+      <GrantAccessModal
+        open={grantOpen}
+        onClose={() => setGrantOpen(false)}
+        onGrantComplete={async ({ provider, address, scope, permissions, duration, customExpiry }) => {
+          try {
+            const durationDays =
+              duration === 'custom' && customExpiry
+                ? Math.max(1, Math.ceil((new Date(customExpiry).getTime() - Date.now()) / 86_400_000))
+                : Number(duration) || 30;
+            await createGrant.mutateAsync({
+              providerAddress: address,
+              providerName: provider,
+              specialty: 'General Practice',
+              scope: scope as AccessGrant['scope'],
+              durationDays,
+              permissions: {
+                canView: permissions.view,
+                canDownload: permissions.download,
+                canShare: permissions.share,
+              },
+            });
+            addNotification('success', 'Access granted', `${provider} can now access: ${scope}.`);
+          } catch (err) {
+            addNotification('error', 'Grant failed', err instanceof Error ? err.message : 'Could not create the grant.');
+          }
+        }}
+      />
     </>
   );
 }
