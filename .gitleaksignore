@@ -3,7 +3,15 @@
 
 # Reviewed false positive: deployment documentation placeholder, not a credential.
 73286b2b70dad5298187db65ffbac675f5eeefc5:docs/DEPLOYMENT.md:generic-api-key:35
+9d8995416df12112da35986801cfe41497675c8f:docs/DEPLOYMENT.md:generic-api-key:35
 
 # Reviewed false positives: deterministic synthetic audit record identifiers.
 73286b2b70dad5298187db65ffbac675f5eeefc5:src/app/api/compliance/audit/route.ts:generic-api-key:46
 73286b2b70dad5298187db65ffbac675f5eeefc5:src/app/api/compliance/audit/route.ts:generic-api-key:51
+9d8995416df12112da35986801cfe41497675c8f:src/app/api/compliance/audit/route.ts:generic-api-key:46
+9d8995416df12112da35986801cfe41497675c8f:src/app/api/compliance/audit/route.ts:generic-api-key:51
+
+# Reviewed false positives: the same deterministic audit identifiers in GitHub's
+# ephemeral pull-request merge commit.
+4d3ea04b26c0bc54e9bf00b0f722096ae13167e8:src/app/api/compliance/audit/route.ts:generic-api-key:52
+4d3ea04b26c0bc54e9bf00b0f722096ae13167e8:src/app/api/compliance/audit/route.ts:generic-api-key:65
