@@ -1,0 +1,9 @@
+# Reviewed false positive: synthetic session secret used only by config-lint tests.
+742c88151442ba7393a6722229a104f754e19222:src/__tests__/lib/api/config-lint.test.ts:generic-api-key:13
+
+# Reviewed false positive: deployment documentation placeholder, not a credential.
+73286b2b70dad5298187db65ffbac675f5eeefc5:docs/DEPLOYMENT.md:generic-api-key:35
+
+# Reviewed false positives: deterministic synthetic audit record identifiers.
+73286b2b70dad5298187db65ffbac675f5eeefc5:src/app/api/compliance/audit/route.ts:generic-api-key:46
+73286b2b70dad5298187db65ffbac675f5eeefc5:src/app/api/compliance/audit/route.ts:generic-api-key:51

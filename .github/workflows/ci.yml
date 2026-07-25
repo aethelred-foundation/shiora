@@ -55,9 +55,13 @@ jobs:
         run: npm run type-check
 
       - name: Secret scan (full history)
-        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # The hosted gitleaks Action requires an organization license even
+        # though the scanner itself is MIT-licensed. Run the official CLI
+        # container at an immutable digest so security scanning remains
+        # fail-closed without an unrelated commercial secret.
+        uses: docker://ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+        with:
+          args: detect --source=/github/workspace --redact --verbose --no-banner
 
       - name: Production configuration lint
         run: npm run config:lint
