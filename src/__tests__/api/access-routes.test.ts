@@ -178,6 +178,7 @@ describe('/api/access middleware and auth guards', () => {
   });
 
   it('POST challenge returns 401 when unauthenticated', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(null);
     const res = await issueGrantChallenge(new NextRequest('http://localhost:3001/api/access/challenge', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
     }));
@@ -267,6 +268,22 @@ describe('/api/access list, filter, search', () => {
 
 describe('/api/access create', () => {
   const { owner, token } = walletSession(333);
+
+  it('challenge rethrows invalid JSON instead of misreporting validation', async () => {
+    await expect(
+      issueGrantChallenge(
+        authed(
+          'http://localhost:3001/api/access/challenge',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: 'not-json',
+          },
+          token,
+        ),
+      ),
+    ).rejects.toThrow();
+  });
 
   it('creates a grant (201, Active, no fabricated txHash)', async () => {
     const body = await authorizedGrantBody(token, {

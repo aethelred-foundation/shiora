@@ -164,6 +164,8 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
 
     const parts = customExpiry.split('-').map(Number);
     const selected = new Date(parts[0], parts[1] - 1, parts[2]);
+    /* istanbul ignore next -- native date inputs only emit valid YYYY-MM-DD values;
+       this remains a defensive check for non-browser callers and malformed DOM state */
     if (
       parts.length !== 3 ||
       parts.some((part) => !Number.isInteger(part)) ||
@@ -209,6 +211,8 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
   }, [canView, canDownload, canShare, validateCustomExpiry]);
 
   const submitGrant = useCallback(async () => {
+    /* istanbul ignore next -- review locks the duration fields, so a value that
+       passed goToReview cannot become invalid before this submit callback runs */
     if (!validateCustomExpiry()) {
       setStep('permissions');
       return;

@@ -273,6 +273,42 @@ describe('GrantAccessModal', () => {
     expect(screen.getByText('Review & Confirm')).toBeInTheDocument();
   });
 
+  it('fails honestly when no grant persistence callback is configured', async () => {
+    render(<GrantAccessModal open={true} onClose={jest.fn()} />);
+
+    selectProviderWithAddress();
+    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByText('Review'));
+    fireEvent.click(screen.getByRole('button', { name: 'Sign & Grant Access' }));
+
+    expect(await screen.findByText('Grant Failed')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'The access grant service is unavailable. Please try again.',
+    );
+    expect(screen.queryByText('Access Granted')).not.toBeInTheDocument();
+  });
+
+  it('uses a safe message when the grant callback rejects with a non-Error', async () => {
+    const onGrantComplete = jest.fn().mockRejectedValue('offline');
+    render(
+      <GrantAccessModal
+        open={true}
+        onClose={jest.fn()}
+        onGrantComplete={onGrantComplete}
+      />,
+    );
+
+    selectProviderWithAddress();
+    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByText('Review'));
+    fireEvent.click(screen.getByRole('button', { name: 'Sign & Grant Access' }));
+
+    expect(await screen.findByText('Grant Failed')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Could not create the access grant. Please try again.',
+    );
+  });
+
   // ─── Success state Done button (line 224 area) ───
 
   it('closes modal from success state when Done is clicked', async () => {

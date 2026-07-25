@@ -20,12 +20,17 @@ jest.mock('@/lib/persistence/sql-client', () => ({ getPgClient: jest.fn(() => ({
 
 import { register } from '@/instrumentation';
 import { preloadKeyProvider } from '@/lib/crypto/key-provider';
-import { assertProductionReadiness, hasDurableDatastore } from '@/lib/api/preflight';
+import {
+  assertProductionReadiness,
+  checkProductionReadiness,
+  hasDurableDatastore,
+} from '@/lib/api/preflight';
 import { startMaintenanceScheduler } from '@/lib/maintenance/store-maintenance';
 import { migrate } from '@/lib/persistence/migrator';
 
 const mockPreload = preloadKeyProvider as jest.Mock;
 const mockAssert = assertProductionReadiness as jest.Mock;
+const mockCheck = checkProductionReadiness as jest.Mock;
 const mockDurable = hasDurableDatastore as jest.Mock;
 const mockStartScheduler = startMaintenanceScheduler as jest.Mock;
 const mockMigrate = migrate as jest.Mock;
@@ -85,5 +90,49 @@ describe('register (startup instrumentation)', () => {
     process.env.NEXT_RUNTIME = 'nodejs';
     await register();
     expect(mockMigrate).not.toHaveBeenCalled();
+  });
+
+  it('prints every acknowledged gap for an evaluation deployment', async () => {
+    process.env.NEXT_RUNTIME = 'nodejs';
+    mockCheck.mockReturnValueOnce({
+      ok: true,
+      enforced: true,
+      mode: 'evaluation',
+      problems: [],
+      acknowledged: [
+        { code: 'NON_TLS_BACKEND', message: 'Backend transport is not TLS.' },
+      ],
+    });
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    try {
+      await register();
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'NON_TLS_BACKEND: Backend transport is not TLS.',
+        ),
+      );
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('logs the schema migrations applied during durable startup', async () => {
+    process.env.NEXT_RUNTIME = 'nodejs';
+    mockDurable.mockReturnValueOnce(true);
+    mockMigrate.mockResolvedValueOnce({
+      applied: ['001_initial', '002_access_grants'],
+      alreadyApplied: 3,
+    });
+    const log = jest.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    try {
+      await register();
+      expect(log).toHaveBeenCalledWith(
+        '[db] applied schema migrations: 001_initial, 002_access_grants (3 already in place)',
+      );
+    } finally {
+      log.mockRestore();
+    }
   });
 });

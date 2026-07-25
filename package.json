@@ -1,7 +1,7 @@
 {
   "name": "@aethelred/shiora",
   "version": "1.0.0",
-  "description": "Shiora Health AI \u2014 Women's Health Platform on Aethelred",
+  "description": "Shiora Health AI — Women's Health Platform on Aethelred",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
@@ -16,7 +16,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
     "perf": "node perf/load-test.mjs",
-    "config:lint": "node scripts/prod-config-lint.mjs",
+    "config:lint": "tsx scripts/prod-config-lint.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\" \"*.{js,mjs,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\" \"*.{js,mjs,json}\"",
     "validate": "npm run type-check && npm run lint && npm run format:check && npm run test",
@@ -59,6 +59,7 @@
     "msw": "^2.1.4",
     "prettier": "^3.2.4",
     "ts-jest": "^29.4.11",
+    "tsx": "^4.23.1",
     "typescript": "^5.3.3"
   },
   "overrides": {

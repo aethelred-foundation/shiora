@@ -2,7 +2,10 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppProvider } from '@/contexts/AppContext';
-import { useAccessControl } from '@/hooks/useAccessControl';
+import {
+  toGrantCreatePayload,
+  useAccessControl,
+} from '@/hooks/useAccessControl';
 
 const mockWalletConnected = true;
 const mockSignMessage = jest.fn(async ({ message }: { message: string }) => ({
@@ -32,6 +35,23 @@ function createWrapper() {
 describe('useAccessControl', () => {
   beforeEach(() => {
     mockSignMessage.mockClear();
+  });
+
+  it('uses a nonempty provider label for a manually entered address', () => {
+    expect(
+      toGrantCreatePayload({
+        providerAddress: '0x1111111111111111111111111111111111111111',
+        providerName: '',
+        specialty: 'General Practice',
+        scope: 'Full Records',
+        durationDays: 30,
+        permissions: {
+          canView: true,
+          canDownload: false,
+          canShare: false,
+        },
+      }).provider,
+    ).toBe('Custom Provider');
   });
 
   it('initializes with loading state', () => {

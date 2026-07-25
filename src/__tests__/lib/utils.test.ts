@@ -159,6 +159,12 @@ describe('seededPick', () => {
 // formatNumber
 // ---------------------------------------------------------------------------
 describe('formatNumber', () => {
+  it('renders unknown or invalid persisted values safely', () => {
+    expect(formatNumber(null)).toBe('—');
+    expect(formatNumber(undefined)).toBe('—');
+    expect(formatNumber(Number.NaN)).toBe('—');
+  });
+
   it('formats numbers less than 1000 without suffix', () => {
     expect(formatNumber(500)).toBe('500');
     expect(formatNumber(0)).toBe('0');

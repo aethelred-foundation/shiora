@@ -483,7 +483,7 @@ export default function AccessPage() {
           const durationDays =
             duration === 'custom' && customExpiry
               ? Math.max(1, Math.ceil((new Date(customExpiry).getTime() - Date.now()) / 86_400_000))
-              : Number(duration) || 30;
+              : Number(duration);
 
           // The mutation obtains a payload-bound wallet challenge, prompts the
           // connected wallet to sign it, and persists only after the server
