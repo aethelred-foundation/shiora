@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useApp } from '@/contexts/AppContext';
 import { api } from '@/lib/api/client';
@@ -101,6 +101,16 @@ const CHAIN_IDS: Record<string, string> = {
   testnet: '7332',
 };
 
+function aethelToWeiHex(amount: number): string {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error('Transaction amount must be a positive finite number');
+  }
+
+  const [whole, fraction = ''] = amount.toFixed(18).split('.');
+  const wei = BigInt(`${whole}${fraction.padEnd(18, '0')}`);
+  return `0x${wei.toString(16)}`;
+}
+
 /**
  * Resolve the injected EIP-1193 provider for a wallet choice, by identity:
  *
@@ -143,12 +153,7 @@ function resolveProvider(kind: WalletProvider): Eip1193Provider | null {
 }
 
 export function useWallet(): UseWalletReturn {
-  const {
-    wallet,
-    connectWalletWithData,
-    disconnectWallet,
-    addNotification,
-  } = useApp();
+  const { wallet, connectWalletWithData, disconnectWallet, addNotification } = useApp();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -156,12 +161,7 @@ export function useWallet(): UseWalletReturn {
   const [activeProvider, setActiveProvider] = useState<WalletProvider | null>(
     (wallet.provider as WalletProvider | null) ?? null,
   );
-  const [activeChainId, setActiveChainId] = useState<string>(
-    wallet.chainId ?? CHAIN_IDS.mainnet,
-  );
-
-  // Ref to seed dev tx hashes deterministically after each connect/sign.
-  const seedRef = useRef(Date.now());
+  const [activeChainId, setActiveChainId] = useState<string>(wallet.chainId ?? CHAIN_IDS.mainnet);
 
   /** Check whether the requested wallet's EIP-1193 provider is injected. */
   const isProviderAvailable = useCallback((provider: WalletProvider): boolean => {
@@ -239,11 +239,11 @@ export function useWallet(): UseWalletReturn {
           await api.get('/api/me');
         } catch {
           throw new Error(
-            'Signed in, but the browser did not keep the session cookie — every '
-            + 'request would stay unauthorized. This happens on plain-HTTP '
-            + 'origins with a production (non-evaluation) server. Serve the app '
-            + 'with SHIORA_PREFLIGHT_MODE=evaluation, put it behind HTTPS, or '
-            + 'open it via http://localhost (SSH tunnel).',
+            'Signed in, but the browser did not keep the session cookie — every ' +
+              'request would stay unauthorized. This happens on plain-HTTP ' +
+              'origins with a production (non-evaluation) server. Serve the app ' +
+              'with SHIORA_PREFLIGHT_MODE=evaluation, put it behind HTTPS, or ' +
+              'open it via http://localhost (SSH tunnel).',
           );
         }
 
@@ -253,7 +253,6 @@ export function useWallet(): UseWalletReturn {
 
         setActiveProvider(provider);
         setActiveChainId(chainId);
-        seedRef.current = Date.now();
         addNotification(
           'success',
           'Wallet Connected',
@@ -315,7 +314,7 @@ export function useWallet(): UseWalletReturn {
     [wallet.connected, wallet.address, activeProvider],
   );
 
-  /** Sign and broadcast a transaction (dev stub). Returns a tx hash. */
+  /** Ask the active wallet to sign and broadcast an EVM transaction. */
   const signTransaction = useCallback(
     async (tx: Omit<Transaction, 'hash' | 'status' | 'timestamp'>): Promise<string> => {
       if (!wallet.connected) {
@@ -323,17 +322,43 @@ export function useWallet(): UseWalletReturn {
       }
       setIsLoading(true);
       try {
-        await new Promise((r) => setTimeout(r, 800));
-        const seed = seedRef.current + tx.amount + tx.blockHeight;
-        const hex = Math.abs(seed).toString(16).padStart(8, '0');
-        const hash = `0x${hex.repeat(8)}`;
-        addNotification('success', 'Transaction Signed', `Tx ${hash.slice(0, 14)}... submitted`);
+        const eip1193 = resolveProvider(activeProvider ?? 'aethelred');
+        if (!eip1193) {
+          throw new Error('No wallet provider available for transactions');
+        }
+        if (tx.from.toLowerCase() !== wallet.address.toLowerCase()) {
+          throw new Error('Transaction sender does not match the connected wallet');
+        }
+        if (!/^0x[0-9a-fA-F]{40}$/.test(tx.to)) {
+          throw new Error('Transaction recipient must be a valid EVM address');
+        }
+
+        const hash = (await eip1193.request({
+          method: 'eth_sendTransaction',
+          params: [
+            {
+              from: wallet.address,
+              to: tx.to,
+              value: aethelToWeiHex(tx.amount),
+            },
+          ],
+        })) as string;
+
+        if (!/^0x[0-9a-fA-F]{64}$/.test(hash)) {
+          throw new Error('Wallet returned an invalid transaction hash');
+        }
+
+        addNotification(
+          'success',
+          'Transaction Submitted',
+          `Tx ${hash.slice(0, 14)}... is awaiting confirmation`,
+        );
         return hash;
       } finally {
         setIsLoading(false);
       }
     },
-    [wallet.connected, addNotification],
+    [wallet.connected, wallet.address, activeProvider, addNotification],
   );
 
   // Keep the session's chain id in sync when it is restored from storage.
