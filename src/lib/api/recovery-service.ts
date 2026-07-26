@@ -30,6 +30,9 @@ export const RECOVERY_CODE_COUNT = 10;
 // retyped from paper. 10 symbols = 50 bits of entropy per code.
 const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 const CODE_LENGTH = 10;
+// Crockford base32 has exactly 2^5 symbols. Selecting the low five bits of a
+// uniform random byte is therefore uniform and avoids modulo-based ambiguity.
+const ALPHABET_INDEX_MASK = 0b1_1111;
 
 interface StoredCode {
   salt: string; // hex, per-code
@@ -71,7 +74,7 @@ function randomCode(): string {
   const bytes = crypto.randomBytes(CODE_LENGTH);
   let raw = '';
   for (let i = 0; i < CODE_LENGTH; i += 1) {
-    raw += ALPHABET[bytes[i] % ALPHABET.length];
+    raw += ALPHABET[bytes[i] & ALPHABET_INDEX_MASK];
   }
   return `${raw.slice(0, 5)}-${raw.slice(5)}`;
 }
