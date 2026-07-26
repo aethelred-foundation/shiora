@@ -7,18 +7,18 @@
 
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Wallet, ChevronRight, ChevronDown,
-  LogOut, ArrowDownLeft, ArrowUpRight, Clock, Shield,
+  LogOut, Clock, Shield,
   FileSignature,
 } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
 import { useWallet } from '@/hooks/useWallet';
-import { Modal, Badge, Drawer } from '@/components/ui/SharedComponents';
+import { Modal, Drawer } from '@/components/ui/SharedComponents';
 import { CopyButton } from '@/components/ui/PagePrimitives';
-import { formatNumber, truncateAddress, seededHex, seededRandom, formatDate, generateTxHash, timeAgo } from '@/lib/utils';
+import { formatNumber, truncateAddress } from '@/lib/utils';
 
 // ============================================================
 // Types
@@ -34,18 +34,6 @@ interface WalletOption {
   icon: React.ReactNode;
   color: string;
   recommended?: boolean;
-}
-
-interface Transaction {
-  id: string;
-  type: 'send' | 'receive' | 'contract';
-  hash: string;
-  amount: number;
-  token: string;
-  from: string;
-  to: string;
-  timestamp: number;
-  status: 'confirmed' | 'pending' | 'failed';
 }
 
 // ============================================================
@@ -70,24 +58,6 @@ const WALLET_OPTIONS: WalletOption[] = [
   },
 ];
 
-const SEED = 700;
-
-function generateMockTransactions(): Transaction[] {
-  const types: Transaction['type'][] = ['send', 'receive', 'contract', 'receive', 'send'];
-  const statuses: Transaction['status'][] = ['confirmed', 'confirmed', 'confirmed', 'pending', 'confirmed'];
-  return Array.from({ length: 8 }, (_, i) => ({
-    id: `tx-${i}`,
-    type: types[i % types.length],
-    hash: generateTxHash(SEED + i * 50),
-    amount: parseFloat((Math.round(seededRandom(SEED + i * 7) * 5000) / 100).toFixed(2)),
-    token: i % 3 === 0 ? 'AETHEL' : '$AETHEL',
-    from: `aeth1${seededHex(SEED + i * 10, 8)}...${seededHex(SEED + i * 11, 4)}`,
-    to: `aeth1${seededHex(SEED + i * 20, 8)}...${seededHex(SEED + i * 21, 4)}`,
-    timestamp: Date.now() - (i + 1) * 3600000 * (1 + seededRandom(SEED + i) * 24),
-    status: statuses[i % statuses.length],
-  }));
-}
-
 // ============================================================
 // WalletConnect Component
 // ============================================================
@@ -104,8 +74,6 @@ export function WalletConnect() {
   const [signMessageText, setSignMessageText] = useState('');
   const [signResult, setSignResult] = useState('');
   const [signing, setSigning] = useState(false);
-
-  const transactions = useMemo(() => generateMockTransactions(), []);
 
   const handleConnect = useCallback(async (type: WalletType) => {
     setSelectedWalletType(type);
@@ -308,42 +276,16 @@ export function WalletConnect() {
         onClose={() => setShowTxDrawer(false)}
         title="Transaction History"
       >
-        <div className="space-y-3">
-          {transactions.map((tx) => (
-            <div key={tx.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                tx.type === 'receive' ? 'bg-emerald-100 text-emerald-600' :
-                tx.type === 'send' ? 'bg-brand-100 text-brand-600' :
-                'bg-violet-100 text-violet-600'
-              }`}>
-                {tx.type === 'receive' ? <ArrowDownLeft className="w-4 h-4" /> :
-                 tx.type === 'send' ? <ArrowUpRight className="w-4 h-4" /> :
-                 <Shield className="w-4 h-4" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-slate-900 capitalize">{tx.type}</p>
-                  <Badge variant={tx.status === 'confirmed' ? 'success' : tx.status === 'pending' ? 'warning' : /* istanbul ignore next */ 'error'}>
-                    {tx.status}
-                  </Badge>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">{timeAgo(tx.timestamp)}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className={`text-sm font-medium ${tx.type === 'receive' ? 'text-emerald-600' : 'text-slate-900'}`}>
-                  {tx.type === 'receive' ? '+' : '-'}{tx.amount}
-                </p>
-                <p className="text-xs text-slate-400">{tx.token}</p>
-              </div>
-            </div>
-          ))}
-
-          {transactions.length === 0 && (
-            <div className="text-center py-12">
-              <Clock className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-              <p className="text-sm text-slate-500">No transactions yet</p>
-            </div>
-          )}
+        <div className="text-center py-12">
+          <Clock className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm font-medium text-slate-700">
+            No indexed transactions available
+          </p>
+          <p className="mx-auto mt-2 max-w-xs text-xs leading-relaxed text-slate-500">
+            Shiora does not fabricate wallet activity. Until the production
+            chain indexer is configured, use your connected wallet to review
+            signed transaction history.
+          </p>
         </div>
       </Drawer>
 
