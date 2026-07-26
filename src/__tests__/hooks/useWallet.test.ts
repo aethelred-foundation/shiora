@@ -300,6 +300,114 @@ describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
     });
   });
 
+  it('signTransaction fails when the injected provider is no longer available', async () => {
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
+    });
+
+    await expect(
+      result.current.wallet.signTransaction({
+        type: 'transfer',
+        from: TEST_ACCOUNT,
+        to: '0x1111111111111111111111111111111111111111',
+        amount: 1,
+        blockHeight: 1,
+      }),
+    ).rejects.toThrow('No wallet provider available for transactions');
+  });
+
+  it('signTransaction rejects a sender other than the connected wallet', async () => {
+    injectWallet(createMockWallet());
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
+    });
+
+    await expect(
+      result.current.wallet.signTransaction({
+        type: 'transfer',
+        from: '0x9999999999999999999999999999999999999999',
+        to: '0x1111111111111111111111111111111111111111',
+        amount: 1,
+        blockHeight: 1,
+      }),
+    ).rejects.toThrow('Transaction sender does not match the connected wallet');
+  });
+
+  it('signTransaction rejects an invalid EVM recipient', async () => {
+    injectWallet(createMockWallet());
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
+    });
+
+    await expect(
+      result.current.wallet.signTransaction({
+        type: 'transfer',
+        from: TEST_ACCOUNT,
+        to: 'not-an-address',
+        amount: 1,
+        blockHeight: 1,
+      }),
+    ).rejects.toThrow('Transaction recipient must be a valid EVM address');
+  });
+
+  it.each([0, Number.POSITIVE_INFINITY])(
+    'signTransaction rejects invalid amount %s',
+    async (amount) => {
+      injectWallet(createMockWallet());
+      const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+        wrapper: createWrapper(),
+      });
+      act(() => {
+        result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
+      });
+
+      await expect(
+        result.current.wallet.signTransaction({
+          type: 'transfer',
+          from: TEST_ACCOUNT,
+          to: '0x1111111111111111111111111111111111111111',
+          amount,
+          blockHeight: 1,
+        }),
+      ).rejects.toThrow('Transaction amount must be a positive finite number');
+    },
+  );
+
+  it('signTransaction rejects a malformed transaction hash from the wallet', async () => {
+    const provider = createMockWallet({
+      request: jest.fn(async ({ method }: { method: string }) => {
+        if (method === 'eth_sendTransaction') return 'not-a-hash';
+        return null;
+      }),
+    });
+    injectWallet(provider);
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
+    });
+
+    await expect(
+      result.current.wallet.signTransaction({
+        type: 'transfer',
+        from: TEST_ACCOUNT,
+        to: '0x1111111111111111111111111111111111111111',
+        amount: 1,
+        blockHeight: 1,
+      }),
+    ).rejects.toThrow('Wallet returned an invalid transaction hash');
+  });
+
   it('disconnect clears state', async () => {
     injectWallet(createMockWallet());
     const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
