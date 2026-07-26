@@ -385,12 +385,135 @@ describe('UploadModal', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  // ─── Error state (line 296) ───
+  it('shows the persistence error and lets the user retry', async () => {
+    const onUploadComplete = jest
+      .fn()
+      .mockRejectedValue(new Error('Encrypted record persistence failed'));
+    render(
+      <UploadModal
+        open={true}
+        onClose={jest.fn()}
+        onUploadComplete={onUploadComplete}
+      />,
+    );
 
-  // We cannot reach error state through normal flow since simulateUpload doesn't set it,
-  // but we can test the Try Again button functionality if we could set stage to 'error'.
-  // The error state is not reachable through UI since simulateUpload always goes to success.
-  // Let's test the remaining uncovered paths instead.
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: {
+        files: [createFile('test.pdf', 1024, 'application/pdf')],
+      },
+    });
+    fireEvent.click(screen.getByText('Lab Results'));
+    fireEvent.click(screen.getByText('Encrypt & Upload'));
+
+    await act(async () => {
+      jest.advanceTimersByTime(250);
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText('Upload Failed')).toBeInTheDocument();
+    expect(screen.getByText('Encrypted record persistence failed')).toBeInTheDocument();
+    expect(screen.queryByText('Record Saved')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Try Again'));
+    expect(screen.getByText('Upload Health Record')).toBeInTheDocument();
+    expect(screen.queryByText('Upload Failed')).not.toBeInTheDocument();
+  });
+
+  it('uses a safe message when persistence rejects with a non-Error', async () => {
+    const onUploadComplete = jest.fn().mockRejectedValue('offline');
+    render(
+      <UploadModal
+        open={true}
+        onClose={jest.fn()}
+        onUploadComplete={onUploadComplete}
+      />,
+    );
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: {
+        files: [createFile('test.pdf', 1024, 'application/pdf')],
+      },
+    });
+    fireEvent.click(screen.getByText('Lab Results'));
+    fireEvent.click(screen.getByText('Encrypt & Upload'));
+
+    await act(async () => {
+      jest.advanceTimersByTime(250);
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText('Upload Failed')).toBeInTheDocument();
+    expect(screen.getByText('Could not save the record.')).toBeInTheDocument();
+  });
+
+  it('uses the safe default label when the browser supplies an empty file name', async () => {
+    const onUploadComplete = jest.fn();
+    render(
+      <UploadModal
+        open={true}
+        onClose={jest.fn()}
+        onUploadComplete={onUploadComplete}
+      />,
+    );
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [createFile('', 1024, 'application/pdf')] },
+    });
+    fireEvent.click(screen.getByText('Lab Results'));
+    fireEvent.click(screen.getByText('Encrypt & Upload'));
+
+    await act(async () => {
+      jest.advanceTimersByTime(250);
+      await Promise.resolve();
+    });
+
+    expect(onUploadComplete).toHaveBeenCalledWith(
+      expect.objectContaining({ label: 'Health Record' }),
+    );
+  });
+
+  it('renders completed and current indicators while the record is being saved', async () => {
+    let resolveSave!: () => void;
+    const onUploadComplete = jest.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+    render(
+      <UploadModal
+        open={true}
+        onClose={jest.fn()}
+        onUploadComplete={onUploadComplete}
+      />,
+    );
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: {
+        files: [createFile('test.pdf', 1024, 'application/pdf')],
+      },
+    });
+    fireEvent.click(screen.getByText('Lab Results'));
+    fireEvent.click(screen.getByText('Encrypt & Upload'));
+
+    await act(async () => {
+      jest.advanceTimersByTime(250);
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText('80%')).toBeInTheDocument();
+    expect(screen.getByText('Encrypting with AES-256-GCM...')).toBeInTheDocument();
+    expect(screen.getAllByText('Saving encrypted record...')).toHaveLength(2);
+
+    await act(async () => {
+      resolveSave();
+      await Promise.resolve();
+    });
+  });
 
   // ─── Provider dropdown (lines 442-504) ───
 

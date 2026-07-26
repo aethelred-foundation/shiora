@@ -101,6 +101,15 @@ describe('verifyWalletSignature (EIP-191 personal_sign)', () => {
   });
 
   it.each([
+    ['zero r', '00'.repeat(32) + '01'.padStart(64, '0') + '1b'],
+    ['zero s', '01'.padStart(64, '0') + '00'.repeat(32) + '1b'],
+  ])('rejects an out-of-range signature scalar: %s', (_label, raw) => {
+    expect(
+      verifyWalletSignature('challenge', `0x${raw}`, KNOWN_ADDRESS),
+    ).toBe(false);
+  });
+
+  it.each([
     ['not-hex', 'zzzz', KNOWN_ADDRESS],
     ['wrong length (64 bytes, no v)', '0x' + '11'.repeat(64), KNOWN_ADDRESS],
     ['empty', '', KNOWN_ADDRESS],

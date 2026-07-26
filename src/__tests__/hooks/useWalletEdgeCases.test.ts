@@ -6,7 +6,7 @@
  * no "re-enable the extension on mount" step. These tests cover what remains:
  * restoring persisted session state and the provider-detection path.
  */
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Eip1193Provider } from '@/hooks/useWallet';
@@ -109,5 +109,32 @@ describe('useWallet edge cases (persisted state, provider detection)', () => {
     };
     const { result } = renderHook(() => useWallet(), { wrapper });
     expect(result.current.displayAddress).toBe('0xabcd…ef01');
+  });
+
+  it('clears local wallet state even when server disconnect fails', async () => {
+    mockWallet = {
+      connected: true,
+      address: '0xabcdef0123456789abcdef0123456789abcdef01',
+      balance: null,
+      provider: 'aethelred',
+      chainId: '7331',
+    };
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn().mockRejectedValue(new Error('offline'));
+
+    try {
+      const { result } = renderHook(() => useWallet(), { wrapper });
+      act(() => {
+        result.current.disconnect();
+      });
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(mockDisconnectWallet).toHaveBeenCalled();
+      expect(result.current.activeProvider).toBeNull();
+    } finally {
+      global.fetch = originalFetch;
+    }
   });
 });

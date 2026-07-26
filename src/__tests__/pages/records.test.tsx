@@ -23,15 +23,63 @@ jest.mock('@/hooks/useHealthRecords', () => ({
 }));
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { AppProvider } from '@/contexts/AppContext';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { AppProvider, useApp } from '@/contexts/AppContext';
 import RecordsPage from '@/app/records/page';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   return <AppProvider>{children}</AppProvider>;
 }
 
+function ConnectWallet({ children }: { children: React.ReactNode }) {
+  const { connectWalletWithData } = useApp();
+  React.useEffect(() => {
+    connectWalletWithData(
+      '0x00000000000000000000000000000000000a1b2c',
+      null,
+      'aethelred',
+      '7332',
+    );
+  }, [connectWalletWithData]);
+  return children;
+}
+
+function ConnectedTestWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <AppProvider>
+      <ConnectWallet>{children}</ConnectWallet>
+    </AppProvider>
+  );
+}
+
+function createUploadFile(): File {
+  return new File([new ArrayBuffer(1024)], 'bloodwork.pdf', {
+    type: 'application/pdf',
+  });
+}
+
+async function openUploadForConnectedWallet() {
+  await waitFor(() =>
+    expect(JSON.parse(localStorage.getItem('shiora_wallet')!)).toMatchObject({
+      connected: true,
+    }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: /upload record/i }));
+  expect(screen.getByText('Upload Health Record')).toBeInTheDocument();
+}
+
+function fillUploadForm() {
+  const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+  fireEvent.change(input, { target: { files: [createUploadFile()] } });
+  fireEvent.click(screen.getByText('Lab Results'));
+}
+
 describe('RecordsPage', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    mockMutateAsync.mockReset().mockResolvedValue({});
+  });
+
   it('renders the records page', () => {
     render(
       <TestWrapper>
@@ -387,5 +435,61 @@ describe('RecordsPage', () => {
     const notesTab = screen.getAllByText('Notes')[0];
     fireEvent.click(notesTab);
     expect(screen.getByText(/Showing \d+ of \d+ records/)).toBeInTheDocument();
+  });
+
+  it('persists an upload for a connected wallet and closes the success modal', async () => {
+    render(
+      <ConnectedTestWrapper>
+        <RecordsPage />
+      </ConnectedTestWrapper>,
+    );
+    await openUploadForConnectedWallet();
+    fillUploadForm();
+    fireEvent.click(screen.getByText('Encrypt & Upload'));
+
+    expect(await screen.findByText('Record Saved')).toBeInTheDocument();
+    expect(mockMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'lab_result',
+        label: 'bloodwork',
+        encryption: 'AES-256-GCM',
+      }),
+    );
+    expect(screen.getByText('Record uploaded')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Done'));
+    expect(screen.queryByText('Record Saved')).not.toBeInTheDocument();
+  });
+
+  it('reports the API Error and never claims a failed upload succeeded', async () => {
+    mockMutateAsync.mockRejectedValueOnce(new Error('record store offline'));
+    render(
+      <ConnectedTestWrapper>
+        <RecordsPage />
+      </ConnectedTestWrapper>,
+    );
+    await openUploadForConnectedWallet();
+    fillUploadForm();
+    fireEvent.click(screen.getByText('Encrypt & Upload'));
+
+    expect(await screen.findByText('Upload Failed')).toBeInTheDocument();
+    expect(screen.getAllByText('record store offline').length).toBe(2);
+    expect(screen.getByText('Upload failed')).toBeInTheDocument();
+    expect(screen.queryByText('Record Saved')).not.toBeInTheDocument();
+  });
+
+  it('uses a safe upload message when the API rejects with a non-Error', async () => {
+    mockMutateAsync.mockRejectedValueOnce('offline');
+    render(
+      <ConnectedTestWrapper>
+        <RecordsPage />
+      </ConnectedTestWrapper>,
+    );
+    await openUploadForConnectedWallet();
+    fillUploadForm();
+    fireEvent.click(screen.getByText('Encrypt & Upload'));
+
+    expect(await screen.findByText('Upload Failed')).toBeInTheDocument();
+    expect(screen.getAllByText('Could not save the record.').length).toBeGreaterThan(0);
   });
 });

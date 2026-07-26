@@ -2,22 +2,29 @@
  * Shiora on Aethelred — Grant Access Modal
  *
  * Modal for granting healthcare provider access to encrypted health data
- * with granular permissions, duration selection, and blockchain transaction simulation.
+ * with granular permissions, duration selection, and wallet confirmation.
  */
 
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
 import {
-  Shield, Search, Building2, Eye, Download, ExternalLink,
-  Calendar, Clock, CheckCircle, AlertCircle, Lock,
-  ChevronRight, ChevronLeft, Fingerprint, Link2,
+  Shield,
+  Search,
+  Building2,
+  Eye,
+  Download,
+  ExternalLink,
+  Calendar,
+  CheckCircle,
+  AlertCircle,
+  ChevronRight,
+  ChevronLeft,
+  Fingerprint,
 } from 'lucide-react';
 
 import { Modal, Badge } from '@/components/ui/SharedComponents';
-import { MedicalCard, TruncatedHash } from '@/components/ui/PagePrimitives';
-import { PROVIDER_NAMES, SPECIALTIES, DATA_SCOPES } from '@/lib/constants';
-import { seededAddress, generateTxHash } from '@/lib/utils';
+import { PROVIDER_NAMES, DATA_SCOPES } from '@/lib/constants';
 /* istanbul ignore next -- no-op handler for non-closeable modals */
 const noop = () => {};
 
@@ -28,7 +35,11 @@ const noop = () => {};
 interface GrantAccessModalProps {
   open: boolean;
   onClose: () => void;
-  onGrantComplete?: (data: GrantData) => void;
+  onGrantComplete?: (data: GrantData) => Promise<GrantResult | void> | GrantResult | void;
+}
+
+interface GrantResult {
+  id?: string;
 }
 
 interface GrantData {
@@ -75,15 +86,18 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
   const [canShare, setCanShare] = useState(false);
   const [duration, setDuration] = useState('30');
   const [customExpiry, setCustomExpiry] = useState('');
+  const [permissionError, setPermissionError] = useState('');
+  const [expiryError, setExpiryError] = useState('');
 
   // Submit state
-  const [txHash, setTxHash] = useState('');
+  const [grantId, setGrantId] = useState('');
+  const [submitError, setSubmitError] = useState('');
+
+  const providerLabel = selectedProvider || 'Custom provider';
 
   const filteredProviders = useMemo(() => {
     if (!providerSearch) return PROVIDER_NAMES;
-    return PROVIDER_NAMES.filter((p) =>
-      p.toLowerCase().includes(providerSearch.toLowerCase())
-    );
+    return PROVIDER_NAMES.filter((p) => p.toLowerCase().includes(providerSearch.toLowerCase()));
   }, [providerSearch]);
 
   const resetForm = useCallback(() => {
@@ -98,7 +112,10 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
     setCanShare(false);
     setDuration('30');
     setCustomExpiry('');
-    setTxHash('');
+    setPermissionError('');
+    setExpiryError('');
+    setGrantId('');
+    setSubmitError('');
   }, []);
 
   const handleClose = useCallback(() => {
@@ -122,43 +139,120 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
 
   const selectProvider = useCallback((provider: string) => {
     setSelectedProvider(provider);
-    // Generate a mock address for the provider
-    const seed = provider.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-    setProviderAddress(seededAddress(seed));
     setProviderSearch('');
+    setAddressError('');
   }, []);
 
   const goToPermissions = useCallback(() => {
-    if (!selectedProvider && !providerAddress) {
-      setAddressError('Please select a provider or enter an address');
+    if (!providerAddress.trim()) {
+      setAddressError('Provider address is required');
       return;
     }
-    if (providerAddress && !validateAddress(providerAddress)) return;
+    if (!validateAddress(providerAddress.trim())) return;
     setStep('permissions');
-  }, [selectedProvider, providerAddress, validateAddress]);
+  }, [providerAddress, validateAddress]);
+
+  const validateCustomExpiry = useCallback(() => {
+    if (duration !== 'custom') {
+      setExpiryError('');
+      return true;
+    }
+    if (!customExpiry) {
+      setExpiryError('Choose an expiry date');
+      return false;
+    }
+
+    const parts = customExpiry.split('-').map(Number);
+    const selected = new Date(parts[0], parts[1] - 1, parts[2]);
+    /* istanbul ignore next -- native date inputs only emit valid YYYY-MM-DD values;
+       this remains a defensive check for non-browser callers and malformed DOM state */
+    if (
+      parts.length !== 3 ||
+      parts.some((part) => !Number.isInteger(part)) ||
+      Number.isNaN(selected.getTime()) ||
+      selected.getFullYear() !== parts[0] ||
+      selected.getMonth() !== parts[1] - 1 ||
+      selected.getDate() !== parts[2]
+    ) {
+      setExpiryError('Choose a valid expiry date');
+      return false;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (selected <= today) {
+      setExpiryError('Expiry date must be in the future');
+      return false;
+    }
+
+    const latest = new Date(today);
+    latest.setDate(latest.getDate() + 365);
+    if (selected > latest) {
+      setExpiryError('Expiry date must be within 365 days');
+      return false;
+    }
+
+    setExpiryError('');
+    return true;
+  }, [duration, customExpiry]);
 
   const goToReview = useCallback(() => {
+    if (!canView) {
+      setPermissionError(
+        canDownload || canShare
+          ? 'View permission is required before records can be downloaded or shared'
+          : 'Enable View permission to create an access grant',
+      );
+      return;
+    }
+    setPermissionError('');
+    if (!validateCustomExpiry()) return;
     setStep('review');
-  }, []);
+  }, [canView, canDownload, canShare, validateCustomExpiry]);
 
   const submitGrant = useCallback(async () => {
+    /* istanbul ignore next -- review locks the duration fields, so a value that
+       passed goToReview cannot become invalid before this submit callback runs */
+    if (!validateCustomExpiry()) {
+      setStep('permissions');
+      return;
+    }
+    setSubmitError('');
     setStep('submitting');
-    // Simulate blockchain transaction
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      if (!onGrantComplete) {
+        throw new Error('The access grant service is unavailable. Please try again.');
+      }
 
-    const hash = generateTxHash(Date.now());
-    setTxHash(hash);
-    setStep('success');
+      const result = await onGrantComplete({
+        provider: providerLabel,
+        address: providerAddress,
+        scope,
+        permissions: { view: canView, download: canDownload, share: canShare },
+        duration,
+        customExpiry,
+      });
 
-    onGrantComplete?.({
-      provider: selectedProvider,
-      address: providerAddress,
-      scope,
-      permissions: { view: canView, download: canDownload, share: canShare },
-      duration,
-      customExpiry,
-    });
-  }, [selectedProvider, providerAddress, scope, canView, canDownload, canShare, duration, customExpiry, onGrantComplete]);
+      setGrantId(result?.id ?? '');
+      setStep('success');
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : 'Could not create the access grant. Please try again.',
+      );
+      setStep('error');
+    }
+  }, [
+    providerLabel,
+    providerAddress,
+    scope,
+    canView,
+    canDownload,
+    canShare,
+    duration,
+    customExpiry,
+    onGrantComplete,
+    validateCustomExpiry,
+  ]);
 
   const expiryDate = useMemo(() => {
     if (duration === 'custom') return customExpiry;
@@ -177,13 +271,13 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
           </div>
           <h3 className="text-lg font-bold text-slate-900 mb-2">Access Granted</h3>
           <p className="text-sm text-slate-500 mb-6">
-            Provider access has been recorded on the Aethelred blockchain and will be enforced by TEE smart contracts.
+            The provider access grant was created successfully and added to your audit trail.
           </p>
 
           <div className="bg-slate-50 rounded-xl p-4 mb-6 space-y-3 text-left">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-500">Provider</span>
-              <span className="font-medium text-slate-900">{selectedProvider || /* istanbul ignore next */ 'Custom Address'}</span>
+              <span className="font-medium text-slate-900">{providerLabel}</span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-500">Scope</span>
@@ -193,10 +287,12 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
               <span className="text-slate-500">Expires</span>
               <span className="font-medium text-slate-900">{expiryDate}</span>
             </div>
-            <div>
-              <p className="text-xs text-slate-500 mb-1">Transaction Hash</p>
-              <TruncatedHash hash={txHash} startLen={14} endLen={10} />
-            </div>
+            {grantId && (
+              <div>
+                <p className="text-xs text-slate-500 mb-1">Grant ID</p>
+                <p className="text-xs font-mono text-slate-700 break-all">{grantId}</p>
+              </div>
+            )}
           </div>
 
           <button
@@ -211,7 +307,6 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
   }
 
   // ─── Error state ───
-  /* istanbul ignore next -- error state is unreachable: submitGrant always succeeds */
   if (step === 'error') {
     return (
       <Modal open={open} onClose={handleClose} size="md">
@@ -219,13 +314,21 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
           <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900 mb-2">Transaction Failed</h3>
-          <p className="text-sm text-slate-500 mb-6">The blockchain transaction could not be completed. Please try again.</p>
+          <h3 className="text-lg font-bold text-slate-900 mb-2">Grant Failed</h3>
+          <p className="text-sm text-slate-500 mb-6" role="alert">
+            {submitError}
+          </p>
           <div className="flex gap-3 justify-center">
-            <button onClick={handleClose} className="px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">
+            <button
+              onClick={handleClose}
+              className="px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors"
+            >
               Cancel
             </button>
-            <button onClick={() => setStep('review')} className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-medium transition-colors">
+            <button
+              onClick={() => setStep('review')}
+              className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-medium transition-colors"
+            >
               Try Again
             </button>
           </div>
@@ -237,13 +340,17 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
   // ─── Submitting state ───
   if (step === 'submitting') {
     return (
-      <Modal open={open} onClose={noop} showClose={false} title="Processing Transaction" size="md">
+      <Modal open={open} onClose={noop} showClose={false} title="Confirm Access Grant" size="md">
         <div className="py-8 text-center">
           <div className="w-16 h-16 rounded-full bg-brand-50 flex items-center justify-center mx-auto mb-4">
             <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
           </div>
-          <p className="text-sm text-slate-600 mb-2">Simulating blockchain transaction...</p>
-          <p className="text-xs text-slate-400">Recording access grant on the Aethelred blockchain</p>
+          <p className="text-sm text-slate-600 mb-2">
+            Approve the wallet signature request to confirm this grant.
+          </p>
+          <p className="text-xs text-slate-400">
+            This signs a message only. No transaction is sent and no gas is charged.
+          </p>
         </div>
       </Modal>
     );
@@ -251,21 +358,25 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
 
   // ─── Step indicators ───
   const steps = ['provider', 'permissions', 'review'] as const;
-  const currentStepIndex = steps.indexOf(step as typeof steps[number]);
+  const currentStepIndex = steps.indexOf(step as (typeof steps)[number]);
 
   return (
     <Modal
       open={open}
       onClose={handleClose}
       title={
-        step === 'provider' ? 'Select Provider' :
-        step === 'permissions' ? 'Set Permissions' :
-        'Review & Confirm'
+        step === 'provider'
+          ? 'Select Provider'
+          : step === 'permissions'
+            ? 'Set Permissions'
+            : 'Review & Confirm'
       }
       description={
-        step === 'provider' ? 'Choose a healthcare provider to grant access' :
-        step === 'permissions' ? 'Configure data scope, permissions, and duration' :
-        'Review the access grant before submitting'
+        step === 'provider'
+          ? 'Choose a healthcare provider to grant access'
+          : step === 'permissions'
+            ? 'Configure data scope, permissions, and duration'
+            : 'Review the access grant before submitting'
       }
       size="lg"
     >
@@ -280,7 +391,9 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
                 }`}
               />
               {i < steps.length - 1 && (
-                <div className={`w-8 h-0.5 ${i < currentStepIndex ? 'bg-brand-500' : 'bg-slate-200'}`} />
+                <div
+                  className={`w-8 h-0.5 ${i < currentStepIndex ? 'bg-brand-500' : 'bg-slate-200'}`}
+                />
               )}
             </React.Fragment>
           ))}
@@ -328,20 +441,23 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
 
             {/* Manual address */}
             <div>
-              <label className="block text-sm font-medium text-slate-900 mb-1.5">Or enter provider address manually</label>
+              <label className="block text-sm font-medium text-slate-900 mb-1.5">
+                Or enter provider address manually
+              </label>
               <div className="relative">
                 <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
                   value={providerAddress}
-                  onChange={(e) => { setProviderAddress(e.target.value); setAddressError(''); }}
+                  onChange={(e) => {
+                    setProviderAddress(e.target.value);
+                    setAddressError('');
+                  }}
                   placeholder="0x..."
                   className="w-full pl-9 pr-4 py-2 text-sm font-mono border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 />
               </div>
-              {addressError && (
-                <p className="text-xs text-red-500 mt-1">{addressError}</p>
-              )}
+              {addressError && <p className="text-xs text-red-500 mt-1">{addressError}</p>}
             </div>
 
             {/* Next */}
@@ -369,7 +485,9 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
                     key={s}
                     onClick={() => setScope(s)}
                     className={`p-3 rounded-xl border-2 text-left transition-colors ${
-                      scope === s ? 'border-brand-500 bg-brand-50' : 'border-slate-200 hover:border-slate-300'
+                      scope === s
+                        ? 'border-brand-500 bg-brand-50'
+                        : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
                     <span className="text-xs font-medium text-slate-700">{s}</span>
@@ -383,34 +501,71 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
               <label className="block text-sm font-medium text-slate-900 mb-2">Permissions</label>
               <div className="space-y-2">
                 {[
-                  { key: 'view', label: 'View', desc: 'View records within TEE enclave', icon: Eye, enabled: canView, toggle: setCanView },
-                  { key: 'download', label: 'Download', desc: 'Download encrypted records', icon: Download, enabled: canDownload, toggle: setCanDownload },
-                  { key: 'share', label: 'Share', desc: 'Share with other authorized providers', icon: ExternalLink, enabled: canShare, toggle: setCanShare },
+                  {
+                    key: 'view',
+                    label: 'View',
+                    desc: 'View records covered by this grant',
+                    icon: Eye,
+                    enabled: canView,
+                    toggle: setCanView,
+                  },
+                  {
+                    key: 'download',
+                    label: 'Download',
+                    desc: 'Download encrypted records',
+                    icon: Download,
+                    enabled: canDownload,
+                    toggle: setCanDownload,
+                  },
+                  {
+                    key: 'share',
+                    label: 'Share',
+                    desc: 'Share with other authorized providers',
+                    icon: ExternalLink,
+                    enabled: canShare,
+                    toggle: setCanShare,
+                  },
                 ].map((perm) => (
                   <button
                     key={perm.key}
-                    onClick={() => perm.toggle(!perm.enabled)}
+                    onClick={() => {
+                      perm.toggle(!perm.enabled);
+                      setPermissionError('');
+                    }}
                     className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-colors text-left ${
-                      perm.enabled ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 hover:border-slate-300'
+                      perm.enabled
+                        ? 'border-emerald-300 bg-emerald-50'
+                        : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      perm.enabled ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'
-                    }`}>
+                    <div
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                        perm.enabled
+                          ? 'bg-emerald-100 text-emerald-600'
+                          : 'bg-slate-100 text-slate-400'
+                      }`}
+                    >
                       <perm.icon className="w-4 h-4" />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-slate-900">{perm.label}</p>
                       <p className="text-xs text-slate-500">{perm.desc}</p>
                     </div>
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      perm.enabled ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300'
-                    }`}>
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        perm.enabled ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300'
+                      }`}
+                    >
                       {perm.enabled && <CheckCircle className="w-3 h-3 text-white" />}
                     </div>
                   </button>
                 ))}
               </div>
+              {permissionError && (
+                <p className="text-xs text-red-500 mt-2" role="alert">
+                  {permissionError}
+                </p>
+              )}
             </div>
 
             {/* Duration */}
@@ -420,7 +575,10 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
                 {DURATION_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
-                    onClick={() => setDuration(opt.value)}
+                    onClick={() => {
+                      setDuration(opt.value);
+                      setExpiryError('');
+                    }}
                     className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                       duration === opt.value
                         ? 'bg-brand-500 text-white'
@@ -437,10 +595,20 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
                   <input
                     type="date"
                     value={customExpiry}
-                    onChange={(e) => setCustomExpiry(e.target.value)}
+                    onChange={(e) => {
+                      setCustomExpiry(e.target.value);
+                      setExpiryError('');
+                    }}
+                    aria-invalid={Boolean(expiryError)}
+                    aria-describedby={expiryError ? 'custom-expiry-error' : undefined}
                     className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                   />
                 </div>
+              )}
+              {duration === 'custom' && expiryError && (
+                <p id="custom-expiry-error" className="text-xs text-red-500 mt-1" role="alert">
+                  {expiryError}
+                </p>
               )}
             </div>
 
@@ -473,11 +641,13 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
               <div className="space-y-3">
                 <div className="flex items-center justify-between py-2 border-b border-slate-200">
                   <span className="text-sm text-slate-500">Provider</span>
-                  <span className="text-sm font-medium text-slate-900">{selectedProvider || 'Custom Address'}</span>
+                  <span className="text-sm font-medium text-slate-900">{providerLabel}</span>
                 </div>
                 <div className="flex items-start justify-between py-2 border-b border-slate-200">
                   <span className="text-sm text-slate-500">Address</span>
-                  <span className="text-xs font-mono text-slate-700 max-w-[200px] break-all text-right">{providerAddress}</span>
+                  <span className="text-xs font-mono text-slate-700 max-w-[200px] break-all text-right">
+                    {providerAddress}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-slate-200">
                   <span className="text-sm text-slate-500">Data Scope</span>
@@ -498,12 +668,12 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
               </div>
             </div>
 
-            {/* Blockchain notice */}
+            {/* Wallet-signature notice */}
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
-              <Link2 className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+              <Fingerprint className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
               <p className="text-xs text-amber-700">
-                This action will submit a transaction to the Aethelred blockchain. The access grant
-                will be enforced by TEE smart contracts and cannot be modified without a new transaction.
+                Your wallet will ask you to sign this access grant. This is a message signature
+                only; no transaction is sent and no gas is charged.
               </p>
             </div>
 
@@ -521,7 +691,7 @@ export function GrantAccessModal({ open, onClose, onGrantComplete }: GrantAccess
                 className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-medium transition-colors flex items-center gap-2"
               >
                 <Shield className="w-4 h-4" />
-                Grant Access
+                Sign &amp; Grant Access
               </button>
             </div>
           </>

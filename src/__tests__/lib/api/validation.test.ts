@@ -7,6 +7,7 @@ import {
   RecordCreateSchema,
   RecordTypeEnum,
   GrantCreateSchema,
+  GrantAuthorizationSchema,
   WalletConnectSchema,
   IPFSUploadSchema,
   ConsentCreateSchema,
@@ -176,6 +177,22 @@ describe('GrantCreateSchema', () => {
     expect(result.canView).toBe(true);
     expect(result.canDownload).toBe(false);
     expect(result.canShare).toBe(false);
+  });
+});
+
+describe('GrantAuthorizationSchema', () => {
+  it('accepts a complete payload-bound wallet authorization', () => {
+    const authorization = {
+      signature: `0x${'11'.repeat(65)}`,
+      nonce: 'a'.repeat(64),
+      issuedAt: 1,
+      expiresAt: 2,
+      hmac: 'b'.repeat(64),
+    };
+
+    expect(GrantAuthorizationSchema.parse(authorization)).toEqual(
+      authorization,
+    );
   });
 });
 

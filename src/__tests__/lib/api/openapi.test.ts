@@ -41,6 +41,8 @@ describe('OpenAPI contract (GAP-19)', () => {
     expect(connectPost).not.toHaveProperty('security'); // public
     const recordsPost = spec.paths['/api/records'].post as { security?: unknown };
     expect(recordsPost.security).toEqual([{ walletSession: [] }]);
+    const accessChallengePost = spec.paths['/api/access/challenge'].post as { security?: unknown };
+    expect(accessChallengePost.security).toEqual([{ walletSession: [] }]);
   });
 
   it('lists every documented path with its declared tag', () => {

@@ -301,9 +301,7 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
             <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
           <h3 className="text-lg font-bold text-slate-900 mb-2">Upload Failed</h3>
-          <p className="text-sm text-slate-500 mb-6">
-            {error || 'The record could not be saved. Please try again.'}
-          </p>
+          <p className="text-sm text-slate-500 mb-6">{error}</p>
           <div className="flex gap-3 justify-center">
             <button
               onClick={handleClose}

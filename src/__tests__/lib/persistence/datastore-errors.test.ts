@@ -22,7 +22,7 @@ describe('looksLikeConnectivityFailure', () => {
     expect(looksLikeConnectivityFailure(new DatastoreUnavailableError())).toBe(true);
   });
 
-  it.each(['ECONNREFUSED', 'ECONNRESET', 'ENOTFOUND', 'ETIMEDOUT', 'EPIPE', 'EHOSTUNREACH', 'ENETUNREACH'])(
+  it.each(['ECONNREFUSED', 'ECONNRESET', 'ENOTFOUND', 'ETIMEDOUT', 'EPIPE', 'EHOSTUNREACH', 'ENETUNREACH', 'EPERM'])(
     'recognizes socket error code %s',
     (code) => {
       expect(looksLikeConnectivityFailure(Object.assign(new Error('x'), { code }))).toBe(true);

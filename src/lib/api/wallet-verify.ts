@@ -153,5 +153,7 @@ function bytesToHex(bytes: Uint8Array): string {
 }
 
 function bytesToBigInt(bytes: Uint8Array): bigint {
-  return BigInt('0x' + (bytesToHex(bytes) || '0'));
+  // Every caller passes a 32-byte r/s scalar after the 65-byte signature
+  // length guard, so the hex payload is necessarily non-empty.
+  return BigInt('0x' + bytesToHex(bytes));
 }

@@ -31,6 +31,11 @@ export const AethelredAddressSchema = z
   .regex(/^0x[0-9a-fA-F]{40}$/, 'Invalid Aethelred (0x) address')
   .transform((addr) => addr.toLowerCase());
 
+/** The EVM sentinel is syntactically valid but can never control a wallet. */
+export function isZeroAethelredAddress(address: string): boolean {
+  return /^0x0{40}$/i.test(address);
+}
+
 /** IPFS CID: CIDv0 (Qm…, base58) or CIDv1 multibase base32 (b…, e.g. bafkrei…). */
 export const CIDSchema = z
   .string()
@@ -111,7 +116,7 @@ export const DataScopeEnum = z.enum([
   'Clinical Notes Only',
 ]);
 
-export const GrantCreateSchema = z.object({
+const GrantCreateObjectSchema = z.object({
   provider: z.string().min(1).max(200),
   specialty: z.string().min(1).max(200),
   address: AethelredAddressSchema,
@@ -121,6 +126,58 @@ export const GrantCreateSchema = z.object({
   canDownload: z.boolean().default(false),
   canShare: z.boolean().default(false),
 });
+
+const atLeastOneGrantPermission = (grant: {
+  canView: boolean;
+  canDownload: boolean;
+  canShare: boolean;
+}) => grant.canView || grant.canDownload || grant.canShare;
+
+const viewRequiredForDerivedPermissions = (grant: {
+  canView: boolean;
+  canDownload: boolean;
+  canShare: boolean;
+}) => grant.canView || (!grant.canDownload && !grant.canShare);
+
+export const GrantCreateSchema = GrantCreateObjectSchema.refine(
+  atLeastOneGrantPermission,
+  {
+    message: 'At least one access permission must be enabled.',
+    path: ['canView'],
+  },
+).refine(
+  viewRequiredForDerivedPermissions,
+  {
+    message: 'View permission must be enabled when download or share is enabled.',
+    path: ['canView'],
+  },
+);
+
+export const GrantAuthorizationSchema = z.object({
+  // Kept loose at the schema layer so the verifier is the authority for EIP-191
+  // signature shape and validity, matching WalletConnectSchema.
+  signature: z.string().min(1).max(200),
+  nonce: z.string().regex(/^[0-9a-f]{64}$/, 'Invalid grant authorization nonce'),
+  issuedAt: z.number().int().positive(),
+  expiresAt: z.number().int().positive(),
+  hmac: z.string().regex(/^[0-9a-f]{64}$/, 'Invalid grant authorization HMAC'),
+});
+
+export const AuthorizedGrantCreateSchema = GrantCreateObjectSchema.extend({
+  authorization: GrantAuthorizationSchema,
+}).refine(
+  atLeastOneGrantPermission,
+  {
+    message: 'At least one access permission must be enabled.',
+    path: ['canView'],
+  },
+).refine(
+  viewRequiredForDerivedPermissions,
+  {
+    message: 'View permission must be enabled when download or share is enabled.',
+    path: ['canView'],
+  },
+);
 
 export const GrantUpdateSchema = z.object({
   scope: DataScopeEnum.optional(),

@@ -23,6 +23,40 @@ import type {
 } from '@/types';
 import { useApp } from '@/contexts/AppContext';
 import { api } from '@/lib/api/client';
+import { useWallet } from '@/hooks/useWallet';
+
+interface GrantCreatePayload {
+  provider: string;
+  specialty: string;
+  address: string;
+  scope: GrantAccessForm['scope'];
+  durationDays: number;
+  canView: boolean;
+  canDownload: boolean;
+  canShare: boolean;
+}
+
+interface GrantAuthorizationChallenge {
+  message: string;
+  nonce: string;
+  issuedAt: number;
+  expiresAt: number;
+  hmac: string;
+}
+
+/** Translate the UI form contract into the flat DTO validated by /api/access. */
+export function toGrantCreatePayload(form: GrantAccessForm): GrantCreatePayload {
+  return {
+    provider: form.providerName || 'Custom Provider',
+    specialty: form.specialty,
+    address: form.providerAddress,
+    scope: form.scope,
+    durationDays: form.durationDays,
+    canView: form.permissions.canView,
+    canDownload: form.permissions.canDownload,
+    canShare: form.permissions.canShare,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Query keys
@@ -116,6 +150,7 @@ export interface UseAccessControlReturn {
 export function useAccessControl(): UseAccessControlReturn {
   const queryClient = useQueryClient();
   const { addNotification } = useApp();
+  const { signMessage } = useWallet();
 
   const [statusFilter, setStatusFilter] = useState<AccessGrantStatus | undefined>(undefined);
   const [search, setSearch] = useState('');
@@ -166,8 +201,25 @@ export function useAccessControl(): UseAccessControlReturn {
   // ---- Create mutation ---------------------------------------------------
 
   const createMutation = useMutation({
-    mutationFn: (form: GrantAccessForm) =>
-      api.post<AccessGrant>('/api/access', form),
+    mutationFn: async (form: GrantAccessForm) => {
+      const payload = toGrantCreatePayload(form);
+      const challenge = await api.post<GrantAuthorizationChallenge>(
+        '/api/access/challenge',
+        payload,
+      );
+      const { signature } = await signMessage({ message: challenge.message });
+
+      return api.post<AccessGrant>('/api/access', {
+        ...payload,
+        authorization: {
+          signature,
+          nonce: challenge.nonce,
+          issuedAt: challenge.issuedAt,
+          expiresAt: challenge.expiresAt,
+          hmac: challenge.hmac,
+        },
+      });
+    },
     onSuccess: (grant) => {
       queryClient.invalidateQueries({ queryKey: [GRANTS_KEY] });
       addNotification('success', 'Access Granted', `Granted ${grant.scope} access to ${grant.provider}`);

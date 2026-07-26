@@ -18,16 +18,18 @@ import {
 import { createAccessGrant, __resetAccessForTests } from '@/lib/api/access-service';
 import { getAuditLog, __resetAuditLogForTests } from '@/lib/api/audit-log';
 import type { MockAccessGrant, MockHealthRecord } from '@/lib/api/mock-data';
+import type { DataScope, RecordType } from '@/types';
 
 const OWNER = 'aeth1own000000000000000000000000000000000';
 const PROVIDER = 'aeth1prov00000000000000000000000000000000';
 
-function sampleRecord(): MockHealthRecord {
+function sampleRecord(overrides: Partial<MockHealthRecord> = {}): MockHealthRecord {
   return {
-    id: 'rec-1', type: 'lab', label: 'BRCA1 panel', description: 'note',
+    id: 'rec-1', type: 'lab_result', label: 'BRCA1 panel', description: 'note',
     date: 1, uploadDate: 1, encrypted: false, encryption: 'none', cid: 'c', txHash: 't',
     attestation: 'a', size: 10, provider: 'p', status: 'Processing', ipfsNodes: 0,
     tags: ['genomics'], deleted: false, ownerAddress: OWNER, blockHeight: 1,
+    ...overrides,
   };
 }
 
@@ -117,6 +119,49 @@ describe('records-service', () => {
         actor: PROVIDER, subject: OWNER, success: true,
         metadata: { decision: 'allow', reason: 'active_grant', legalBasis: 'consent', grantId: created.id },
       });
+    });
+
+    it.each<[
+      DataScope,
+      readonly RecordType[],
+    ]>([
+      ['Full Records', ['lab_result', 'imaging', 'prescription', 'vitals', 'notes']],
+      ['Lab Results Only', ['lab_result']],
+      ['Imaging Only', ['imaging']],
+      ['Vitals Only', ['vitals']],
+      ['Prescriptions Only', ['prescription']],
+      ['Clinical Notes Only', ['notes']],
+    ])('filters provider reads for the %s scope', async (scope, expectedTypes) => {
+      const recordTypes: readonly RecordType[] = [
+        'lab_result',
+        'imaging',
+        'prescription',
+        'vitals',
+        'notes',
+      ];
+      for (const [index, type] of recordTypes.entries()) {
+        await createRecord(OWNER, sampleRecord({
+          id: `rec-${type}`,
+          type,
+          label: `Record ${index}`,
+        }));
+      }
+      await createAccessGrant(OWNER, grant({ scope }));
+
+      const records = await listRecordsForProvider(PROVIDER, OWNER);
+
+      expect(records?.map((record) => record.type).sort()).toEqual([...expectedTypes].sort());
+      expect(await getAuditLog().list({ action: 'AUTHZ_DECISION' })).toHaveLength(1);
+      expect(await getAuditLog().list({ action: 'RECORD_READ', actor: PROVIDER })).toHaveLength(1);
+    });
+
+    it('fails closed for an unrecognized persisted scope while preserving the allow/read audit', async () => {
+      await createRecord(OWNER, sampleRecord());
+      await createAccessGrant(OWNER, grant({ scope: 'Unexpected Scope' }));
+
+      expect(await listRecordsForProvider(PROVIDER, OWNER)).toEqual([]);
+      expect(await getAuditLog().list({ action: 'AUTHZ_DECISION' })).toHaveLength(1);
+      expect(await getAuditLog().list({ action: 'RECORD_READ', actor: PROVIDER })).toHaveLength(1);
     });
 
     it('returns null for an expired grant even if it was viewable', async () => {

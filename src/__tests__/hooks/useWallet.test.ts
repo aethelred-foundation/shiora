@@ -30,6 +30,7 @@ function createMockWallet(overrides: Partial<Record<string, unknown>> = {}): Eip
   const request = jest.fn(async ({ method }: { method: string }) => {
     if (method === 'eth_requestAccounts') return [TEST_ACCOUNT];
     if (method === 'personal_sign') return '0x' + '11'.repeat(65);
+    if (method === 'eth_sendTransaction') return '0x' + '22'.repeat(32);
     return null;
   });
   return { request, isAethelred: true, ...overrides } as Eip1193Provider;
@@ -92,7 +93,13 @@ describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
   it('signTransaction throws when not connected', async () => {
     const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
     await expect(
-      result.current.signTransaction({ type: 'transfer', from: '', to: '', amount: 0, blockHeight: 0 }),
+      result.current.signTransaction({
+        type: 'transfer',
+        from: '',
+        to: '',
+        amount: 0,
+        blockHeight: 0,
+      }),
     ).rejects.toThrow('Wallet not connected');
   });
 
@@ -119,7 +126,10 @@ describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
       const url = String(input);
       if (url.endsWith('/api/me')) {
         return new Response(
-          JSON.stringify({ success: false, error: { code: 'UNAUTHORIZED', message: 'no session' } }),
+          JSON.stringify({
+            success: false,
+            error: { code: 'UNAUTHORIZED', message: 'no session' },
+          }),
           { status: 401, headers: { 'content-type': 'application/json' } },
         );
       }
@@ -234,7 +244,10 @@ describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
       await result.current.connect('aethelred');
     });
     await act(async () => {
-      await result.current.signMessage({ message: 'm', signer: '0xABCDEF0000000000000000000000000000000000' });
+      await result.current.signMessage({
+        message: 'm',
+        signer: '0xABCDEF0000000000000000000000000000000000',
+      });
     });
     expect(wallet.request).toHaveBeenCalledWith({
       method: 'personal_sign',
@@ -243,10 +256,9 @@ describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
   });
 
   it('signMessage throws when the wallet is gone but state says connected', async () => {
-    const { result } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
     act(() => {
       result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
     });
@@ -255,11 +267,12 @@ describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
     );
   });
 
-  it('signTransaction returns a 0x hash when connected', async () => {
-    const { result } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
+  it('signTransaction broadcasts through the connected wallet', async () => {
+    const provider = createMockWallet();
+    injectWallet(provider);
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
     act(() => {
       result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
     });
@@ -275,6 +288,124 @@ describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
       });
     });
     expect(hash!.startsWith('0x')).toBe(true);
+    expect(provider.request).toHaveBeenCalledWith({
+      method: 'eth_sendTransaction',
+      params: [
+        {
+          from: TEST_ACCOUNT,
+          to: '0x1111111111111111111111111111111111111111',
+          value: '0x56bc75e2d63100000',
+        },
+      ],
+    });
+  });
+
+  it('signTransaction fails when the injected provider is no longer available', async () => {
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
+    });
+
+    await expect(
+      result.current.wallet.signTransaction({
+        type: 'transfer',
+        from: TEST_ACCOUNT,
+        to: '0x1111111111111111111111111111111111111111',
+        amount: 1,
+        blockHeight: 1,
+      }),
+    ).rejects.toThrow('No wallet provider available for transactions');
+  });
+
+  it('signTransaction rejects a sender other than the connected wallet', async () => {
+    injectWallet(createMockWallet());
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
+    });
+
+    await expect(
+      result.current.wallet.signTransaction({
+        type: 'transfer',
+        from: '0x9999999999999999999999999999999999999999',
+        to: '0x1111111111111111111111111111111111111111',
+        amount: 1,
+        blockHeight: 1,
+      }),
+    ).rejects.toThrow('Transaction sender does not match the connected wallet');
+  });
+
+  it('signTransaction rejects an invalid EVM recipient', async () => {
+    injectWallet(createMockWallet());
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
+    });
+
+    await expect(
+      result.current.wallet.signTransaction({
+        type: 'transfer',
+        from: TEST_ACCOUNT,
+        to: 'not-an-address',
+        amount: 1,
+        blockHeight: 1,
+      }),
+    ).rejects.toThrow('Transaction recipient must be a valid EVM address');
+  });
+
+  it.each([0, Number.POSITIVE_INFINITY])(
+    'signTransaction rejects invalid amount %s',
+    async (amount) => {
+      injectWallet(createMockWallet());
+      const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+        wrapper: createWrapper(),
+      });
+      act(() => {
+        result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
+      });
+
+      await expect(
+        result.current.wallet.signTransaction({
+          type: 'transfer',
+          from: TEST_ACCOUNT,
+          to: '0x1111111111111111111111111111111111111111',
+          amount,
+          blockHeight: 1,
+        }),
+      ).rejects.toThrow('Transaction amount must be a positive finite number');
+    },
+  );
+
+  it('signTransaction rejects a malformed transaction hash from the wallet', async () => {
+    const provider = createMockWallet({
+      request: jest.fn(async ({ method }: { method: string }) => {
+        if (method === 'eth_sendTransaction') return 'not-a-hash';
+        return null;
+      }),
+    });
+    injectWallet(provider);
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
+    });
+
+    await expect(
+      result.current.wallet.signTransaction({
+        type: 'transfer',
+        from: TEST_ACCOUNT,
+        to: '0x1111111111111111111111111111111111111111',
+        amount: 1,
+        blockHeight: 1,
+      }),
+    ).rejects.toThrow('Wallet returned an invalid transaction hash');
   });
 
   it('disconnect clears state', async () => {
@@ -296,10 +427,9 @@ describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
   });
 
   it('displayAddress truncates a 0x address', () => {
-    const { result } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
     act(() => {
       result.current.app.connectWalletWithData(
         '0x1234567890abcdef1234567890abcdef12345678',
@@ -311,10 +441,9 @@ describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
   });
 
   it('displayAddress returns a short value as-is', () => {
-    const { result } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
     act(() => {
       result.current.app.connectWalletWithData('0x1234', null, 'aethelred');
     });

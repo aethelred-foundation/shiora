@@ -480,27 +480,27 @@ export default function AccessPage() {
         open={grantOpen}
         onClose={() => setGrantOpen(false)}
         onGrantComplete={async ({ provider, address, scope, permissions, duration, customExpiry }) => {
-          try {
-            const durationDays =
-              duration === 'custom' && customExpiry
-                ? Math.max(1, Math.ceil((new Date(customExpiry).getTime() - Date.now()) / 86_400_000))
-                : Number(duration) || 30;
-            await createGrant.mutateAsync({
-              providerAddress: address,
-              providerName: provider,
-              specialty: 'General Practice',
-              scope: scope as AccessGrant['scope'],
-              durationDays,
-              permissions: {
-                canView: permissions.view,
-                canDownload: permissions.download,
-                canShare: permissions.share,
-              },
-            });
-            addNotification('success', 'Access granted', `${provider} can now access: ${scope}.`);
-          } catch (err) {
-            addNotification('error', 'Grant failed', err instanceof Error ? err.message : 'Could not create the grant.');
-          }
+          const durationDays =
+            duration === 'custom' && customExpiry
+              ? Math.max(1, Math.ceil((new Date(customExpiry).getTime() - Date.now()) / 86_400_000))
+              : Number(duration);
+
+          // The mutation obtains a payload-bound wallet challenge, prompts the
+          // connected wallet to sign it, and persists only after the server
+          // verifies that signature. Errors intentionally propagate to the
+          // modal so it cannot show a false success state.
+          return createGrant.mutateAsync({
+            providerAddress: address,
+            providerName: provider,
+            specialty: 'General Practice',
+            scope: scope as AccessGrant['scope'],
+            durationDays,
+            permissions: {
+              canView: permissions.view,
+              canDownload: permissions.download,
+              canShare: permissions.share,
+            },
+          });
         }}
       />
     </>

@@ -7,21 +7,29 @@
 import { NextRequest } from 'next/server';
 import { ZodError } from 'zod';
 import {
-  GrantCreateSchema,
+  AuthorizedGrantCreateSchema,
   GrantListQuerySchema,
+  isZeroAethelredAddress,
   parseSearchParams,
 } from '@/lib/api/validation';
 import {
+  errorResponse,
   successResponse,
   paginatedResponse,
   validationError,
   HTTP,
 } from '@/lib/api/responses';
-import { requireAuth, runMiddleware } from '@/lib/api/middleware';
+import { AUTH_RATE_LIMIT, requireAuth, runMiddleware } from '@/lib/api/middleware';
 import { randomUUID } from 'node:crypto';
 import type { MockAccessGrant } from '@/lib/api/mock-data';
 import { createAccessGrant, listAccessGrants } from '@/lib/api/access-service';
 import { notify } from '@/lib/api/notification-service';
+import { verifyGrantAuthorizationChallenge } from '@/lib/api/grant-authorization';
+import { verifyWalletSignature } from '@/lib/api/wallet-verify';
+import { getNonceStore } from '@/lib/persistence/nonce-store';
+import { createLogger } from '@/lib/observability/logger';
+
+const log = createLogger({ subsystem: 'access-grants' });
 
 // ────────────────────────────────────────────────────────────
 // GET /api/access
@@ -82,7 +90,11 @@ export async function GET(request: NextRequest) {
 // ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const blocked = await runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, {
+    ...AUTH_RATE_LIMIT,
+    requireAuth: true,
+    scope: 'grant-authorization',
+  });
   if (blocked) return blocked;
 
   try {
@@ -90,41 +102,109 @@ export async function POST(request: NextRequest) {
     if ('status' in auth) return auth;
 
     const body = await request.json();
-    const validated = GrantCreateSchema.parse(body);
+    const validated = AuthorizedGrantCreateSchema.parse(body);
+    const { authorization, ...grant } = validated;
+    const ownerAddress = auth.walletAddress!.toLowerCase();
 
-    const expiresAt = Date.now() + validated.durationDays * 86400000;
+    if (isZeroAethelredAddress(grant.address)) {
+      return errorResponse(
+        'INVALID_PROVIDER_ADDRESS',
+        'Provider wallet address cannot be the zero address.',
+        HTTP.UNPROCESSABLE,
+      );
+    }
+
+    if (grant.address === ownerAddress) {
+      return errorResponse(
+        'SELF_GRANT_NOT_ALLOWED',
+        'You cannot grant record access to your own wallet address.',
+        HTTP.UNPROCESSABLE,
+      );
+    }
+
+    const challengeResult = verifyGrantAuthorizationChallenge(
+      ownerAddress,
+      grant,
+      authorization,
+    );
+    if (!challengeResult.valid) {
+      return errorResponse(
+        'INVALID_GRANT_AUTHORIZATION',
+        challengeResult.reason,
+        HTTP.BAD_REQUEST,
+      );
+    }
+
+    if (!verifyWalletSignature(
+      challengeResult.message,
+      authorization.signature,
+      ownerAddress,
+    )) {
+      return errorResponse(
+        'INVALID_GRANT_SIGNATURE',
+        'The access grant was not signed by the wallet for this session.',
+        HTTP.FORBIDDEN,
+      );
+    }
+
+    // Domain-prefix grant nonces so a value can never collide with a wallet
+    // login challenge. The store claim is atomic across Postgres replicas.
+    const fresh = await getNonceStore().consume(
+      `access-grant:${authorization.nonce}`,
+      authorization.expiresAt,
+    );
+    if (!fresh) {
+      return errorResponse(
+        'GRANT_AUTHORIZATION_ALREADY_USED',
+        'This access-grant authorization has already been used. Please sign a new one.',
+        HTTP.CONFLICT,
+      );
+    }
+
+    const expiresAt = Date.now() + grant.durationDays * 86400000;
 
     const newGrant: MockAccessGrant = {
       id: `grant-${randomUUID().replace(/-/g, '')}`,
-      provider: validated.provider,
-      specialty: validated.specialty,
-      address: validated.address,
+      provider: grant.provider,
+      specialty: grant.specialty,
+      address: grant.address,
       // Grants take effect immediately and are enforced by the platform's
       // RBAC + tamper-evident audit trail — there is no on-chain confirmation
       // step to be "Pending" on, and no txHash/attestation to fabricate.
       status: 'Active',
-      scope: validated.scope,
+      scope: grant.scope,
       grantedAt: Date.now(),
       expiresAt,
       lastAccess: null,
       accessCount: 0,
       txHash: '',
       attestation: '',
-      canView: validated.canView,
-      canDownload: validated.canDownload,
-      canShare: validated.canShare,
-      ownerAddress: auth.walletAddress!,
+      canView: grant.canView,
+      canDownload: grant.canDownload,
+      canShare: grant.canShare,
+      ownerAddress,
     };
 
-    const persistedGrant = await createAccessGrant(auth.walletAddress!, newGrant);
+    const persistedGrant = await createAccessGrant(ownerAddress, newGrant);
 
     // Tell the provider they've been granted access (push counterpart to the
     // grants they can already query).
-    await notify(persistedGrant.address, {
-      type: 'consent',
-      title: 'You were granted record access',
-      body: 'A patient granted you access to their health records.',
-    });
+    // The grant is the durable source of truth. A notification failure must not
+    // turn a successful mutation into a 500: the nonce is already consumed and
+    // a retry would correctly be rejected as a replay even though the grant
+    // exists. Log the delivery failure and return the persisted grant.
+    try {
+      await notify(persistedGrant.address, {
+        type: 'consent',
+        title: 'You were granted record access',
+        body: 'A patient granted you access to their health records.',
+      });
+    } catch (err) {
+      log.error('provider grant notification failed', {
+        err,
+        grantId: persistedGrant.id,
+      });
+    }
 
     return successResponse(persistedGrant, HTTP.CREATED, {
       message: 'Access grant created.',

@@ -329,14 +329,15 @@ describe('WalletConnect - connected state', () => {
   it('opens transaction history drawer', () => {
     render(<WalletConnect />);
     fireEvent.click(screen.getByText('Transaction History'));
-    expect(screen.getAllByText(/confirmed|pending/).length).toBeGreaterThan(0);
+    expect(screen.getByText('No indexed transactions available')).toBeInTheDocument();
+    expect(screen.getByText(/does not fabricate wallet activity/)).toBeInTheDocument();
   });
 
   it('closes transaction history drawer via close button', () => {
     render(<WalletConnect />);
     fireEvent.click(screen.getByText('Transaction History'));
     // Drawer should be open
-    expect(screen.getAllByText(/confirmed|pending/).length).toBeGreaterThan(0);
+    expect(screen.getByText('No indexed transactions available')).toBeInTheDocument();
     // Close the drawer via the Close button (aria-label="Close")
     const closeBtn = screen.getByLabelText('Close');
     fireEvent.click(closeBtn);

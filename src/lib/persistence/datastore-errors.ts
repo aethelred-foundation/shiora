@@ -23,6 +23,9 @@ export function isDatastoreUnavailableError(value: unknown): value is DatastoreU
 // Node socket-level failures that mean "could not reach the server".
 const SOCKET_CODES = new Set([
   'ECONNREFUSED', 'ECONNRESET', 'ENOTFOUND', 'ETIMEDOUT', 'EPIPE', 'EHOSTUNREACH', 'ENETUNREACH',
+  // A container/OS network policy can reject the socket before connect(2).
+  // The datastore is just as unavailable to this process as on ECONNREFUSED.
+  'EPERM',
 ]);
 
 // Postgres SQLSTATEs that mean the connection/server is unavailable rather than

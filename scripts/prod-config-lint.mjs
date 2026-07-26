@@ -8,8 +8,9 @@
 //   npm run config:lint            # lints the current process environment
 //   env $(cat prod.env) npm run config:lint
 //
-// Exits non-zero on any finding. Requires Node >= 22.6 (native type
-// stripping imports src/lib/api/config-lint.ts directly — no build step).
+// Exits non-zero on any finding. The package script runs this through `tsx`
+// so the shared TypeScript module works on the project's supported Node 20
+// runtime without requiring a production build first.
 // ============================================================
 
 const { lintProductionConfig } = await import('../src/lib/api/config-lint.ts');
