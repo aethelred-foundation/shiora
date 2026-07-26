@@ -90,11 +90,18 @@ const nextConfig = {
           // Content-Security-Policy is set per-request in src/middleware.ts with a
           // script nonce (audit M-01); defining it here too would make browsers
           // enforce the intersection of both policies.
-          ...(enableHsts ? [{
-            key: 'Strict-Transport-Security',
-            value: 'max-age=31536000; includeSubDomains',
-          }] : []),
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
+          ...(enableHsts
+            ? [
+                {
+                  key: 'Strict-Transport-Security',
+                  value: 'max-age=63072000; includeSubDomains; preload',
+                },
+              ]
+            : []),
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), payment=()',
+          },
         ],
       },
     ];

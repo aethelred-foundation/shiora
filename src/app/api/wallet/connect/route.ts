@@ -6,12 +6,7 @@
 import { NextRequest } from 'next/server';
 import { ZodError } from 'zod';
 import { WalletConnectSchema } from '@/lib/api/validation';
-import {
-  successResponse,
-  errorResponse,
-  validationError,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, errorResponse, validationError, HTTP } from '@/lib/api/responses';
 import { AUTH_RATE_LIMIT, runMiddleware, extractAuth } from '@/lib/api/middleware';
 import {
   applySessionCookie,
@@ -198,7 +193,7 @@ export async function POST(request: NextRequest) {
         expiresIn: `${serverEnv.sessionTtlHours}h`,
         session: {
           transport: 'httpOnly-cookie',
-          cookieName: sessionCookieName,
+          cookieName: sessionCookieName(),
         },
       },
       HTTP.OK,

@@ -8,6 +8,8 @@
 // ============================================================
 
 import { preloadKeyProvider } from '@/lib/crypto/key-provider';
+import { isVaultConfigured } from '@/lib/crypto/vault-key-provider';
+import { isTransitConfigured, probeManagedDekCustody } from '@/lib/crypto/dek-wrapper';
 import {
   assertProductionReadiness,
   checkProductionReadiness,
@@ -19,11 +21,20 @@ import { createLogger } from '@/lib/observability/logger';
 const startupLog = createLogger({ subsystem: 'startup' });
 
 export async function registerNode(): Promise<void> {
-  // Warm key custody (fetch + cache the KEK from Vault) before any PHI is served.
-  await preloadKeyProvider();
-  // In production, hard-fail a misconfigured boot (durable DB, key custody,
-  // session secret, TLS/HSTS).
+  // Validate static production invariants before making dependency calls.
   assertProductionReadiness();
+  // A fresh Transit-only deployment has no in-process KEK to preload: every
+  // DEK is wrapped by the managed Transit key. Warm the legacy key provider
+  // only when it is the active backend, or when a Vault KV compatibility key
+  // is explicitly configured for historical local-kek envelopes.
+  if (!isTransitConfigured() || isVaultConfigured()) {
+    await preloadKeyProvider();
+  }
+  // Do not report a configured custody service as ready until the process has
+  // proved that its scoped token can wrap a DEK with the production key.
+  if (isTransitConfigured()) {
+    await probeManagedDekCustody();
+  }
   // An evaluation deployment boots, but never quietly: every acknowledged
   // production gap is printed at startup and stays visible on
   // GET /api/health/ready.

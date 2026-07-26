@@ -34,6 +34,17 @@ function isLocalhost(url: string): boolean {
   }
 }
 
+function databaseTransportIsEncrypted(databaseUrl: string): boolean {
+  try {
+    const url = new URL(databaseUrl);
+    if (isLocalhost(databaseUrl)) return true;
+    const sslMode = url.searchParams.get('sslmode')?.toLowerCase();
+    return sslMode === 'require' || sslMode === 'verify-ca' || sslMode === 'verify-full';
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Lint a production environment map. Returns an empty array when the
  * configuration is releasable. Callers decide enforcement (the preflight
@@ -59,6 +70,17 @@ export function lintProductionConfig(env: Record<string, string | undefined>): C
       code: 'INSECURE_ORIGIN',
       message:
         'SHIORA_ALLOWED_ORIGINS contains a plaintext http:// origin. Production origins must be https.',
+    });
+  }
+
+  // -- Durable datastore transport ------------------------------------------
+  const databaseUrl = env.DATABASE_URL;
+  if (databaseUrl && !databaseTransportIsEncrypted(databaseUrl)) {
+    problems.push({
+      code: 'NON_TLS_DATABASE',
+      message:
+        'DATABASE_URL must require certificate-protected TLS for a non-local Postgres service ' +
+        '(sslmode=require, verify-ca, or verify-full).',
     });
   }
 

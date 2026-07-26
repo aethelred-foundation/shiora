@@ -7,13 +7,18 @@ import {
   VaultTransitDekWrapper,
   getDekWrapper,
   isTransitConfigured,
+  probeManagedDekCustody,
   transitKeyVersion,
   __resetDekWrapperForTests,
   type WrappedDek,
 } from '@/lib/crypto/dek-wrapper';
 import { getKeyProvider, __resetKeyProviderForTests } from '@/lib/crypto/key-provider';
 
-const TRANSIT_ENVS = ['SHIORA_VAULT_ADDR', 'SHIORA_VAULT_TOKEN', 'SHIORA_TRANSIT_KEY_NAME'] as const;
+const TRANSIT_ENVS = [
+  'SHIORA_VAULT_ADDR',
+  'SHIORA_VAULT_TOKEN',
+  'SHIORA_TRANSIT_KEY_NAME',
+] as const;
 const saved: Record<string, string | undefined> = {};
 
 beforeEach(() => {
@@ -57,8 +62,9 @@ describe('LocalKekDekWrapper', () => {
     const wrapped = await wrapperImpl.wrap(crypto.randomBytes(32));
     const raw = Buffer.from(wrapped.ciphertext, 'base64');
     raw[raw.length - 1] ^= 0xff;
-    await expect(wrapperImpl.unwrap({ ...wrapped, ciphertext: raw.toString('base64') }))
-      .rejects.toThrow();
+    await expect(
+      wrapperImpl.unwrap({ ...wrapped, ciphertext: raw.toString('base64') }),
+    ).rejects.toThrow();
   });
 
   it('binds the wrap to the DEK-wrap domain (a ciphertext produced without the AAD fails)', async () => {
@@ -71,9 +77,13 @@ describe('LocalKekDekWrapper', () => {
     const body = Buffer.concat([cipher.update(crypto.randomBytes(32)), cipher.final()]);
     const unbound = Buffer.concat([iv, cipher.getAuthTag(), body]).toString('base64');
 
-    await expect(new LocalKekDekWrapper().unwrap({
-      ciphertext: unbound, keyVersion: version, backend: 'local-kek',
-    })).rejects.toThrow();
+    await expect(
+      new LocalKekDekWrapper().unwrap({
+        ciphertext: unbound,
+        keyVersion: version,
+        backend: 'local-kek',
+      }),
+    ).rejects.toThrow();
   });
 });
 
@@ -88,27 +98,40 @@ describe('transitKeyVersion', () => {
 describe('VaultTransitDekWrapper', () => {
   it('wraps by POSTing the DEK to transit/encrypt and parses the key version', async () => {
     configureTransit();
-    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ data: { ciphertext: 'vault:v3:opaque' } }), { status: 200 }),
-    );
+    const fetchMock = jest
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify({ data: { ciphertext: 'vault:v3:opaque' } }), { status: 200 }),
+      );
     const dek = crypto.randomBytes(32);
 
     const wrapped = await new VaultTransitDekWrapper().wrap(dek);
 
-    expect(wrapped).toEqual({ ciphertext: 'vault:v3:opaque', keyVersion: 3, backend: 'vault-transit' });
+    expect(wrapped).toEqual({
+      ciphertext: 'vault:v3:opaque',
+      keyVersion: 3,
+      backend: 'vault-transit',
+    });
     const [url, init] = fetchMock.mock.calls[0];
     expect(String(url)).toBe('https://vault.internal:8200/v1/transit/encrypt/shiora-kek');
     expect((init!.headers as Record<string, string>)['X-Vault-Token']).toBe('s.token');
     expect(JSON.parse(String(init!.body))).toEqual({ plaintext: dek.toString('base64') });
+    expect(init!.signal).toBeInstanceOf(AbortSignal);
   });
 
   it('unwraps by POSTing the ciphertext to transit/decrypt', async () => {
     configureTransit();
     const dek = crypto.randomBytes(32);
     jest.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ data: { plaintext: dek.toString('base64') } }), { status: 200 }),
+      new Response(JSON.stringify({ data: { plaintext: dek.toString('base64') } }), {
+        status: 200,
+      }),
     );
-    const wrapped: WrappedDek = { ciphertext: 'vault:v1:opaque', keyVersion: 1, backend: 'vault-transit' };
+    const wrapped: WrappedDek = {
+      ciphertext: 'vault:v1:opaque',
+      keyVersion: 1,
+      backend: 'vault-transit',
+    };
     expect((await new VaultTransitDekWrapper().unwrap(wrapped)).equals(dek)).toBe(true);
   });
 
@@ -126,16 +149,17 @@ describe('VaultTransitDekWrapper', () => {
     jest.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response('{}', { status: 200 }));
     await expect(wrapperImpl.wrap(dek)).rejects.toThrow(/unexpected payload/);
 
-    jest.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      new Response(JSON.stringify({ data: {} }), { status: 200 }),
-    );
+    jest
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: {} }), { status: 200 }));
     await expect(wrapperImpl.wrap(dek)).rejects.toThrow(/no ciphertext/);
 
-    jest.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      new Response(JSON.stringify({ data: {} }), { status: 200 }),
-    );
-    await expect(wrapperImpl.unwrap({ ciphertext: 'vault:v1:x', keyVersion: 1, backend: 'vault-transit' }))
-      .rejects.toThrow(/no plaintext/);
+    jest
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: {} }), { status: 200 }));
+    await expect(
+      wrapperImpl.unwrap({ ciphertext: 'vault:v1:x', keyVersion: 1, backend: 'vault-transit' }),
+    ).rejects.toThrow(/no plaintext/);
 
     jest.spyOn(globalThis, 'fetch').mockRejectedValueOnce('not-an-error');
     await expect(wrapperImpl.wrap(dek)).rejects.toThrow(/unreachable/);
@@ -153,6 +177,20 @@ describe('VaultTransitDekWrapper', () => {
   it('accepts a plaintext localhost Vault for development', () => {
     configureTransit('http://localhost:8200');
     expect(new VaultTransitDekWrapper().backend).toBe('vault-transit');
+  });
+
+  it('probes managed custody by wrapping a throwaway DEK', async () => {
+    configureTransit();
+    const fetchMock = jest
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify({ data: { ciphertext: 'vault:v7:probe' } }), { status: 200 }),
+      );
+
+    await probeManagedDekCustody();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0][0])).toContain('/v1/transit/encrypt/shiora-kek');
   });
 });
 

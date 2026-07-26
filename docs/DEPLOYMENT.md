@@ -28,10 +28,13 @@ and **hard-fails a production boot** when any of these hold:
 | Gate | Requirement |
 |---|---|
 | `DATASTORE_NOT_DURABLE` | `DATABASE_URL` must be set — the in-memory store must never hold PHI in production |
-| `DATA_KEY_DEFAULT` | `SHIORA_DATA_ENCRYPTION_KEY` (or Vault custody) must be configured — never the dev key |
+| `NON_TLS_DATABASE` | A remote `DATABASE_URL` must require certificate-protected TLS |
+| `DATA_KEY_DEFAULT` | Vault Transit must be configured, or a managed legacy KEK must exist while migrating historical envelopes — never the dev key |
 | `SESSION_SECRET_DEFAULT` | `SHIORA_SESSION_SECRET` must be set (`openssl rand -base64 48`) |
 | `TRANSPORT_NOT_HARDENED` | `SHIORA_ENABLE_HSTS=true` — PHI is served only behind TLS/HSTS |
 | `INSECURE_WALLET_HEADER_ENABLED` | The dev-only wallet-header bypass must be off |
+| `ORIGIN_ALLOWLIST_EMPTY` | At least one exact HTTPS browser origin must be configured |
+| `ADMIN_BOOTSTRAP_EMPTY` | At least one production administrative wallet must be configured |
 
 Do **not** configure a production dependency on an Aethelred **mainnet** endpoint.
 The Aethelred mainnet gate (external audit) has not cleared; anchoring targets are
@@ -43,11 +46,16 @@ See [.env.example](../.env.example) for the complete annotated set. Summary:
 
 **Required in production**
 
-- `DATABASE_URL` — Postgres connection string.
+- `DATABASE_URL` — managed Postgres connection string with TLS required
+  (`sslmode=require`, `verify-ca`, or `verify-full` for non-local services).
 - `SHIORA_SESSION_SECRET` — HMAC session-signing secret (32+ chars).
-- `SHIORA_DATA_ENCRYPTION_KEY` + `SHIORA_DATA_ENCRYPTION_KEY_VERSION` — KEK for
-  PHI envelope encryption, **or** Vault custody via `SHIORA_VAULT_ADDR` /
-  `SHIORA_VAULT_TOKEN` / `SHIORA_VAULT_KEK_PATH`.
+- `SHIORA_VAULT_ADDR` / `SHIORA_VAULT_TOKEN` /
+  `SHIORA_TRANSIT_KEY_NAME` — production DEK custody. The Transit master key
+  never enters application memory. Startup makes a bounded wrap probe and
+  fails closed if the Transit key or scoped token is unavailable.
+- `SHIORA_VAULT_KEK_PATH` is optional and used only to read/re-seal historical
+  `local-kek` envelopes during a migration. Fresh production deployments do
+  not configure `SHIORA_DATA_ENCRYPTION_KEY`.
 - `SHIORA_ALLOWED_ORIGINS` — exact browser origins (no wildcards).
 - `SHIORA_ENABLE_HSTS=true`.
 - `SHIORA_ADMIN_ADDRESSES` — RBAC bootstrap allowlist.

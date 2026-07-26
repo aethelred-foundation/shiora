@@ -68,7 +68,7 @@ User Master Key
 - All API communication over TLS 1.3
 - Certificate pinning recommended for mobile clients
 - WebSocket connections use WSS (TLS-encrypted)
-- HSTS enforced with max-age=31536000
+- HSTS enforced with max-age=63072000, includeSubDomains, and preload
 
 ## TEE Attestation Flow
 
@@ -242,7 +242,7 @@ The application sets the following security headers via `next.config.js`:
 | X-Content-Type-Options    | nosniff                                                       |
 | X-XSS-Protection          | 1; mode=block                                                 |
 | Referrer-Policy           | strict-origin-when-cross-origin                               |
-| Strict-Transport-Security | max-age=31536000; includeSubDomains                           |
+| Strict-Transport-Security | max-age=63072000; includeSubDomains; preload                  |
 | Permissions-Policy        | camera=(), microphone=(), geolocation=(), payment=()          |
 | Content-Security-Policy   | default-src 'self'; frame-ancestors 'none'; object-src 'none' |
 

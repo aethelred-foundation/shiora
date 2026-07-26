@@ -47,6 +47,7 @@ function createMockWallet(
 ): Eip1193Provider {
   const request = jest.fn(async ({ method }: { method: string }) => {
     if (method === 'eth_requestAccounts') return [TEST_ACCOUNT];
+    if (method === 'eth_chainId') return '0x1ca4';
     if (method === 'personal_sign') return '0x' + '11'.repeat(65);
     return null;
   });

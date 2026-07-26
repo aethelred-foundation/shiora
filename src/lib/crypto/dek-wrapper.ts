@@ -33,10 +33,7 @@ export type WrapBackend = 'local-kek' | 'vault-transit';
 // New DEK wraps by custody backend. In production this must show ZERO
 // local-kek wraps (all new writes go through Vault Transit, consultant §7);
 // a non-zero local-kek count in production is a custody regression.
-const dekWrapTotal = counter(
-  'shiora_dek_wrap_total',
-  'DEK wrap operations, by custody backend',
-);
+const dekWrapTotal = counter('shiora_dek_wrap_total', 'DEK wrap operations, by custody backend');
 
 export interface WrappedDek {
   /** Backend-opaque ciphertext of the DEK. */
@@ -55,6 +52,7 @@ export interface DekWrapper {
 // ── Local KEK (in-process) ──────────────────────────────────────────────────
 
 const GCM_IV_BYTES = 12;
+const VAULT_REQUEST_TIMEOUT_MS = 10_000;
 
 /**
  * Domain separator (AAD) binding a local-KEK DEK wrap to its purpose: a GCM
@@ -106,7 +104,9 @@ export interface TransitConfig {
 }
 
 /** True when every setting needed for Transit custody is configured. */
-export function isTransitConfigured(env: Record<string, string | undefined> = process.env): boolean {
+export function isTransitConfigured(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
   return !!(env.SHIORA_VAULT_ADDR && env.SHIORA_VAULT_TOKEN && env.SHIORA_TRANSIT_KEY_NAME);
 }
 
@@ -125,9 +125,12 @@ function transitConfigFromEnv(): TransitConfig {
 
 function assertTlsAddr(addr: string): void {
   const url = new URL(addr);
-  const local = url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '::1';
+  const local =
+    url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '::1';
   if (url.protocol !== 'https:' && !local) {
-    throw new Error('SHIORA_VAULT_ADDR must use https for a non-local Vault (key material in transit).');
+    throw new Error(
+      'SHIORA_VAULT_ADDR must use https for a non-local Vault (key material in transit).',
+    );
   }
 }
 
@@ -153,7 +156,10 @@ export class VaultTransitDekWrapper implements DekWrapper {
     assertTlsAddr(this.config.addr);
   }
 
-  private async post(operation: 'encrypt' | 'decrypt', body: Record<string, string>): Promise<Record<string, string>> {
+  private async post(
+    operation: 'encrypt' | 'decrypt',
+    body: Record<string, string>,
+  ): Promise<Record<string, string>> {
     const url = `${this.config.addr.replace(/\/$/, '')}/v1/transit/${operation}/${encodeURIComponent(this.config.keyName)}`;
     let res: Awaited<ReturnType<typeof fetch>>;
     try {
@@ -161,9 +167,12 @@ export class VaultTransitDekWrapper implements DekWrapper {
         method: 'POST',
         headers: { 'X-Vault-Token': this.config.token, 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(VAULT_REQUEST_TIMEOUT_MS),
       });
     } catch (err) {
-      throw new Error(`Vault Transit ${operation} unreachable: ${err instanceof Error ? err.message : String(err)}`);
+      throw new Error(
+        `Vault Transit ${operation} unreachable: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
     if (!res.ok) {
       throw new Error(`Vault Transit ${operation} failed with status ${res.status}.`);
@@ -207,6 +216,29 @@ export function getDekWrapper(): DekWrapper {
     wrapper = isTransitConfigured() ? new VaultTransitDekWrapper() : new LocalKekDekWrapper();
   }
   return wrapper;
+}
+
+/**
+ * Prove that the configured managed custody path is reachable and authorized.
+ * The probe wraps a fresh, throwaway DEK and validates the returned Transit
+ * ciphertext; no plaintext key material is persisted.
+ */
+export async function probeManagedDekCustody(): Promise<void> {
+  const active = getDekWrapper();
+  if (active.backend !== 'vault-transit') return;
+  const probe = crypto.randomBytes(32);
+  try {
+    const wrapped = await active.wrap(probe);
+    if (
+      wrapped.backend !== 'vault-transit' ||
+      wrapped.keyVersion < 1 ||
+      !wrapped.ciphertext.startsWith('vault:v')
+    ) {
+      throw new Error('Vault Transit custody probe returned an invalid wrapped key.');
+    }
+  } finally {
+    probe.fill(0);
+  }
 }
 
 export function __resetDekWrapperForTests(): void {

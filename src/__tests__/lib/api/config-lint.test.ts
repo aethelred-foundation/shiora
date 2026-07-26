@@ -13,6 +13,7 @@ describe('lintProductionConfig', () => {
     expect(
       lintProductionConfig({
         SHIORA_ALLOWED_ORIGINS: 'https://app.shiora.health,https://shiora.health',
+        DATABASE_URL: 'postgresql://user:secret@db.internal:5432/shiora?sslmode=verify-full',
         SHIORA_SESSION_SECRET: VALID_SESSION_FIXTURE,
         SHIORA_VAULT_ADDR: 'https://vault.internal:8200',
         SHIORA_L1_RPC_URL: 'https://rpc.testnet.aethelred.org',
@@ -79,6 +80,21 @@ describe('lintProductionConfig', () => {
       'NON_TLS_BACKEND',
     );
     expect(codes({ SHIORA_L1_RPC_URL: 'http://localhost:8545' })).toEqual([]);
+  });
+
+  it('requires encrypted transport to a non-local Postgres service', () => {
+    expect(codes({ DATABASE_URL: 'postgresql://user:secret@db.internal/shiora' })).toContain(
+      'NON_TLS_DATABASE',
+    );
+    expect(
+      codes({ DATABASE_URL: 'postgresql://user:secret@db.internal/shiora?sslmode=disable' }),
+    ).toContain('NON_TLS_DATABASE');
+    expect(
+      codes({ DATABASE_URL: 'postgresql://user:secret@db.internal/shiora?sslmode=require' }),
+    ).not.toContain('NON_TLS_DATABASE');
+    expect(codes({ DATABASE_URL: 'postgresql://localhost/shiora' })).not.toContain(
+      'NON_TLS_DATABASE',
+    );
   });
 
   it('requires managed inference configuration as one complete set', () => {

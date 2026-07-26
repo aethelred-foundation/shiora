@@ -92,8 +92,26 @@ export function checkProductionReadiness(): ReadinessReport {
     problems.push({
       code: 'DATASTORE_NOT_DURABLE',
       message:
-        'DATABASE_URL is not set. Production must use the Postgres datastore; '
-        + 'the in-memory store is not durable and must not hold PHI.',
+        'DATABASE_URL is not set. Production must use the Postgres datastore; ' +
+        'the in-memory store is not durable and must not hold PHI.',
+    });
+  }
+
+  if (!(process.env.SHIORA_ALLOWED_ORIGINS ?? '').trim()) {
+    problems.push({
+      code: 'ORIGIN_ALLOWLIST_EMPTY',
+      message:
+        'SHIORA_ALLOWED_ORIGINS is empty. Production must list every approved browser origin ' +
+        'exactly so wallet-backed requests cannot originate from an unapproved site.',
+    });
+  }
+
+  if (!(process.env.SHIORA_ADMIN_ADDRESSES ?? '').trim()) {
+    problems.push({
+      code: 'ADMIN_BOOTSTRAP_EMPTY',
+      message:
+        'SHIORA_ADMIN_ADDRESSES is empty. Configure at least one production administrative ' +
+        'wallet address so role administration and emergency operations remain recoverable.',
     });
   }
 
@@ -101,19 +119,24 @@ export function checkProductionReadiness(): ReadinessReport {
     problems.push({
       code: 'KEY_CUSTODY_NOT_TRANSIT',
       message:
-        'Vault Transit DEK custody is not configured (SHIORA_TRANSIT_KEY_NAME + '
-        + 'SHIORA_VAULT_ADDR/TOKEN). Production must wrap every DEK through a KMS/Vault '
-        + 'so the master key never enters application memory; the in-process local KEK '
-        + 'is a development backend only and must not custody production PHI keys.',
+        'Vault Transit DEK custody is not configured (SHIORA_TRANSIT_KEY_NAME + ' +
+        'SHIORA_VAULT_ADDR/TOKEN). Production must wrap every DEK through a KMS/Vault ' +
+        'so the master key never enters application memory; the in-process local KEK ' +
+        'is a development backend only and must not custody production PHI keys.',
     });
   }
 
-  if (!hasConfiguredDataKey()) {
+  // Transit custody is the production key path: the master key never enters
+  // application memory, so it must not also require a local/KV KEK merely to
+  // boot a fresh deployment. A local/KV KEK is required only when Transit is
+  // absent (development or legacy-envelope compatibility).
+  if (!isTransitConfigured() && !hasConfiguredDataKey()) {
     problems.push({
       code: 'DATA_KEY_DEFAULT',
       message:
-        'SHIORA_DATA_ENCRYPTION_KEY is not set to a real value. PHI would be '
-        + 'sealed with the insecure development key. Configure a KMS-managed key.',
+        'Neither Vault Transit nor a managed legacy KEK is configured. PHI would be ' +
+        'sealed with the insecure development key. Configure Vault Transit for ' +
+        'production, or a managed KEK only for legacy-envelope compatibility.',
     });
   }
 
@@ -121,8 +144,8 @@ export function checkProductionReadiness(): ReadinessReport {
     problems.push({
       code: 'SESSION_SECRET_DEFAULT',
       message:
-        'SHIORA_SESSION_SECRET is not set. Sessions would be signed with the '
-        + 'insecure development secret. Generate one with: openssl rand -base64 48',
+        'SHIORA_SESSION_SECRET is not set. Sessions would be signed with the ' +
+        'insecure development secret. Generate one with: openssl rand -base64 48',
     });
   }
 
@@ -130,9 +153,9 @@ export function checkProductionReadiness(): ReadinessReport {
     problems.push({
       code: 'TRANSPORT_NOT_HARDENED',
       message:
-        'SHIORA_ENABLE_HSTS is not enabled. Production must serve PHI only behind '
-        + 'TLS with HTTP Strict Transport Security (HSTS + preload), terminated at '
-        + 'the edge/reverse proxy, so clients never negotiate plaintext.',
+        'SHIORA_ENABLE_HSTS is not enabled. Production must serve PHI only behind ' +
+        'TLS with HTTP Strict Transport Security (HSTS + preload), terminated at ' +
+        'the edge/reverse proxy, so clients never negotiate plaintext.',
     });
   }
 
@@ -140,8 +163,8 @@ export function checkProductionReadiness(): ReadinessReport {
     problems.push({
       code: 'INSECURE_WALLET_HEADER_ENABLED',
       message:
-        'The x-wallet-address header bypass is enabled. It must be disabled in '
-        + 'production so identity is established only by a signed session.',
+        'The x-wallet-address header bypass is enabled. It must be disabled in ' +
+        'production so identity is established only by a signed session.',
     });
   }
 
@@ -181,11 +204,11 @@ export function assertProductionReadiness(): void {
     const detail = report.problems.map((p) => `- ${p.code}: ${p.message}`).join('\n');
     const hint =
       report.mode === 'production'
-        ? '\n\nFor a testnet/pilot deployment that does not custody real PHI, the '
-          + 'infrastructure gates (Vault Transit, HSTS, TLS backends, durable '
-          + 'datastore) can be explicitly acknowledged with '
-          + 'SHIORA_PREFLIGHT_MODE=evaluation. Dev crypto keys, placeholder '
-          + 'secrets, auth bypasses and mainnet targets are never acknowledgeable.'
+        ? '\n\nFor a testnet/pilot deployment that does not custody real PHI, the ' +
+          'infrastructure gates (Vault Transit, HSTS, TLS backends, durable ' +
+          'datastore) can be explicitly acknowledged with ' +
+          'SHIORA_PREFLIGHT_MODE=evaluation. Dev crypto keys, placeholder ' +
+          'secrets, auth bypasses and mainnet targets are never acknowledgeable.'
         : '';
     throw new Error(`Shiora ${report.mode} preflight failed:\n${detail}${hint}`);
   }

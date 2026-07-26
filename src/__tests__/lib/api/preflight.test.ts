@@ -26,7 +26,14 @@ const mockServerEnv = serverEnv as unknown as {
   enableHsts: boolean;
 };
 const mockHasKey = hasConfiguredDataKey as jest.Mock;
-const MANAGED_ENVS = ['DATABASE_URL', 'SHIORA_TRANSIT_KEY_NAME', 'SHIORA_VAULT_ADDR', 'SHIORA_VAULT_TOKEN'] as const;
+const MANAGED_ENVS = [
+  'DATABASE_URL',
+  'SHIORA_TRANSIT_KEY_NAME',
+  'SHIORA_VAULT_ADDR',
+  'SHIORA_VAULT_TOKEN',
+  'SHIORA_ALLOWED_ORIGINS',
+  'SHIORA_ADMIN_ADDRESSES',
+] as const;
 const savedEnv: Record<string, string | undefined> = {};
 
 function codes(): string[] {
@@ -40,6 +47,8 @@ beforeEach(() => {
   process.env.SHIORA_TRANSIT_KEY_NAME = 'shiora-kek';
   process.env.SHIORA_VAULT_ADDR = 'https://vault.internal:8200';
   process.env.SHIORA_VAULT_TOKEN = 's.token';
+  process.env.SHIORA_ALLOWED_ORIGINS = 'https://shiora.vercel.app';
+  process.env.SHIORA_ADMIN_ADDRESSES = '0x1111111111111111111111111111111111111111';
   mockServerEnv.isProduction = true;
   mockServerEnv.hasConfiguredSessionSecret = true;
   mockServerEnv.allowInsecureWalletHeader = false;
@@ -49,7 +58,8 @@ beforeEach(() => {
 
 afterEach(() => {
   for (const key of MANAGED_ENVS) {
-    if (savedEnv[key] === undefined) delete process.env[key]; else process.env[key] = savedEnv[key];
+    if (savedEnv[key] === undefined) delete process.env[key];
+    else process.env[key] = savedEnv[key];
   }
 });
 
@@ -89,9 +99,24 @@ describe('checkProductionReadiness', () => {
     expect(checkProductionReadiness().ok).toBe(false);
   });
 
-  it('flags the default data-encryption key', () => {
+  it('flags missing browser-origin and administrative bootstrap allowlists', () => {
+    delete process.env.SHIORA_ALLOWED_ORIGINS;
+    delete process.env.SHIORA_ADMIN_ADDRESSES;
+    expect(codes()).toEqual(
+      expect.arrayContaining(['ORIGIN_ALLOWLIST_EMPTY', 'ADMIN_BOOTSTRAP_EMPTY']),
+    );
+  });
+
+  it('flags the default data-encryption key when Transit is absent', () => {
+    delete process.env.SHIORA_TRANSIT_KEY_NAME;
     mockHasKey.mockReturnValue(false);
     expect(codes()).toContain('DATA_KEY_DEFAULT');
+  });
+
+  it('accepts Transit custody without a second local or KV data key', () => {
+    mockHasKey.mockReturnValue(false);
+    expect(codes()).not.toContain('DATA_KEY_DEFAULT');
+    expect(checkProductionReadiness().ok).toBe(true);
   });
 
   it('flags production key custody that is not Vault Transit (§7)', () => {

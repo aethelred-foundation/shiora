@@ -29,6 +29,7 @@ const TEST_ACCOUNT = '0x00000000000000000000000000000000000a1b2c';
 function createMockWallet(overrides: Partial<Record<string, unknown>> = {}): Eip1193Provider {
   const request = jest.fn(async ({ method }: { method: string }) => {
     if (method === 'eth_requestAccounts') return [TEST_ACCOUNT];
+    if (method === 'eth_chainId') return '0x1ca4';
     if (method === 'personal_sign') return '0x' + '11'.repeat(65);
     if (method === 'eth_sendTransaction') return '0x' + '22'.repeat(32);
     return null;
@@ -167,6 +168,7 @@ describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
     expect(result.current.error).toBeNull();
     // Drove the real EIP-1193 methods.
     expect(wallet.request).toHaveBeenCalledWith({ method: 'eth_requestAccounts' });
+    expect(wallet.request).toHaveBeenCalledWith({ method: 'eth_chainId' });
     expect(wallet.request).toHaveBeenCalledWith(
       expect.objectContaining({ method: 'personal_sign' }),
     );
@@ -186,6 +188,55 @@ describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
     });
     expect(result.current.isConnected).toBe(false);
     expect(result.current.error).toMatch(/No account was authorised/);
+  });
+
+  it('switches to chain 7332 before authenticating when the wallet is on another chain', async () => {
+    let activeChainId = '0x1';
+    const wallet = createMockWallet({
+      request: jest.fn(async ({ method }: { method: string }) => {
+        if (method === 'eth_requestAccounts') return [TEST_ACCOUNT];
+        if (method === 'eth_chainId') return activeChainId;
+        if (method === 'wallet_switchEthereumChain') {
+          activeChainId = '0x1ca4';
+          return null;
+        }
+        if (method === 'personal_sign') return '0x' + '11'.repeat(65);
+        return null;
+      }),
+    });
+    injectWallet(wallet);
+    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.connect('aethelred', 'testnet');
+    });
+
+    expect(wallet.request).toHaveBeenCalledWith({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x1ca4' }],
+    });
+    expect(result.current.wallet.chainId).toBe('7332');
+  });
+
+  it('fails closed when chain 7332 is not configured in the wallet', async () => {
+    const missingChain = Object.assign(new Error('Unknown chain'), { code: 4902 });
+    const wallet = createMockWallet({
+      request: jest.fn(async ({ method }: { method: string }) => {
+        if (method === 'eth_requestAccounts') return [TEST_ACCOUNT];
+        if (method === 'eth_chainId') return '0x1';
+        if (method === 'wallet_switchEthereumChain') throw missingChain;
+        return null;
+      }),
+    });
+    injectWallet(wallet);
+    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.connect('aethelred', 'testnet').catch(() => {});
+    });
+
+    expect(result.current.isConnected).toBe(false);
+    expect(result.current.error).toMatch(/official chain 7332 network profile/);
   });
 
   it('connect surfaces a user rejection from the wallet', async () => {
@@ -300,6 +351,46 @@ describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
     });
   });
 
+  it('switches to chain 7332 before broadcasting a transaction', async () => {
+    let activeChainId = '0x1';
+    const provider = createMockWallet({
+      request: jest.fn(async ({ method }: { method: string }) => {
+        if (method === 'eth_chainId') return activeChainId;
+        if (method === 'wallet_switchEthereumChain') {
+          activeChainId = '0x1ca4';
+          return null;
+        }
+        if (method === 'eth_sendTransaction') return '0x' + '22'.repeat(32);
+        return null;
+      }),
+    });
+    injectWallet(provider);
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
+    });
+
+    await act(async () => {
+      await result.current.wallet.signTransaction({
+        type: 'transfer',
+        from: TEST_ACCOUNT,
+        to: '0x1111111111111111111111111111111111111111',
+        amount: 1,
+        blockHeight: 1,
+      });
+    });
+
+    expect(provider.request).toHaveBeenCalledWith({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x1ca4' }],
+    });
+    expect(provider.request).toHaveBeenCalledWith(
+      expect.objectContaining({ method: 'eth_sendTransaction' }),
+    );
+  });
+
   it('signTransaction fails when the injected provider is no longer available', async () => {
     const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
       wrapper: createWrapper(),
@@ -385,6 +476,7 @@ describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
   it('signTransaction rejects a malformed transaction hash from the wallet', async () => {
     const provider = createMockWallet({
       request: jest.fn(async ({ method }: { method: string }) => {
+        if (method === 'eth_chainId') return '0x1ca4';
         if (method === 'eth_sendTransaction') return 'not-a-hash';
         return null;
       }),
