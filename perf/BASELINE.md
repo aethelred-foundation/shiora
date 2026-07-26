@@ -17,8 +17,9 @@ npm run perf
 #   TARGET=http://localhost:3001  DURATION=10  CONNECTIONS=20   (defaults)
 ```
 
-The script (`perf/load-test.mjs`) warms each route, then runs autocannon for
-`DURATION` seconds per scenario at `CONNECTIONS` concurrency. It exits non-zero
+The script (`perf/load-test.mjs`) warms each route, then uses Node's native
+`fetch` with concurrent request workers for `DURATION` seconds per scenario at
+`CONNECTIONS` concurrency. It exits non-zero
 if any scenario returns errors, timeouts, or non-2xx responses.
 
 ## Reference numbers
@@ -29,7 +30,7 @@ materially faster for the SSR page. The endpoints are chosen to be
 deterministic and dependency-light (no wallet, no database).
 
 - Environment: Apple M3 Pro (12 cores), macOS 27.0, Node v24.8.0, in-memory datastore.
-- Config: 20 connections × 10 s per scenario, pipelining 1.
+- Config: 20 concurrent request workers × 10 s per scenario.
 
 | Scenario | req/s (mean) | p50 (ms) | p99 (ms) | max (ms) | errors |
 |----------|-------------:|---------:|---------:|---------:|-------:|

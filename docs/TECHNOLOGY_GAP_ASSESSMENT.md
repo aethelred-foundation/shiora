@@ -9,7 +9,8 @@ Each gap states what exists today, what is missing, and the closure. Items are
 > Phase 1–2: GAP-01/02/03/04/07/08/10/11/23; Phase 3: GAP-13/14/17/18/20;
 > Phase 4: GAP-05/09/19/22/24/27; Phase 5: GAP-06/12/15/16/21/25/26/28. Jest suite
 > grew 4,005 → 4,459 tests, plus a new Playwright E2E suite (7 specs) and an
-> autocannon load/perf baseline. Every fix is real (no stubs) and honestly scoped;
+> dependency-free Node load/perf baseline. Every fix is real (no stubs) and
+> honestly scoped;
 > externally-gated items in §G remain tracked, not faked.
 
 Items are prioritized: **P0** (correctness/operability defects), **P1** (enterprise
@@ -53,9 +54,9 @@ surfaces as an unhandled 500 with no typed error, no readiness flip. Closure:
 typed `DATASTORE_UNAVAILABLE` error mapping + readiness probe reflecting store
 connectivity.
 
-**GAP-06 (P2) — No load/perf baseline.** ✅ CLOSED No k6/autocannon scripts, no
-recorded throughput/latency baseline to detect regressions. Closure: an
-autocannon-driven load profile (`perf/load-test.mjs`, `npm run perf`) that warms
+**GAP-06 (P2) — No load/perf baseline.** ✅ CLOSED No load scripts, no
+recorded throughput/latency baseline to detect regressions. Closure: a
+Node-native load profile (`perf/load-test.mjs`, `npm run perf`) that warms
 then drives representative dependency-light endpoints (liveness, OpenAPI,
 dashboard SSR) at configurable concurrency, and doubles as a smoke gate — exiting
 non-zero if any scenario returns errors/timeouts/non-2xx under load (catching
