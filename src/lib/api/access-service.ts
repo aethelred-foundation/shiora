@@ -12,12 +12,12 @@ import { EncryptedDocumentRepository } from '@/lib/persistence/encrypted-documen
 import { InMemoryDocumentStore, type DocumentStorePort } from '@/lib/persistence/document-store';
 import { PgDocumentStore } from '@/lib/persistence/pg-document-store';
 import { getPgClient } from '@/lib/persistence/sql-client';
-import type { MockAccessGrant } from '@/lib/api/mock-data';
+import type { StoredAccessGrant } from '@/lib/api/domain-types';
 import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
 
 const COLLECTION = 'access-grant';
 
-let repository: EncryptedDocumentRepository<MockAccessGrant> | null = null;
+let repository: EncryptedDocumentRepository<StoredAccessGrant> | null = null;
 
 function createStore(): DocumentStorePort {
   if (shouldUsePostgres()) {
@@ -26,9 +26,9 @@ function createStore(): DocumentStorePort {
   return new InMemoryDocumentStore();
 }
 
-function repo(): EncryptedDocumentRepository<MockAccessGrant> {
+function repo(): EncryptedDocumentRepository<StoredAccessGrant> {
   if (!repository) {
-    repository = new EncryptedDocumentRepository<MockAccessGrant>(
+    repository = new EncryptedDocumentRepository<StoredAccessGrant>(
       createStore(),
       getAuditLog(),
       COLLECTION,
@@ -38,17 +38,17 @@ function repo(): EncryptedDocumentRepository<MockAccessGrant> {
   return repository;
 }
 
-export function listAccessGrants(ownerAddress: string): Promise<MockAccessGrant[]> {
+export function listAccessGrants(ownerAddress: string): Promise<StoredAccessGrant[]> {
   return repo().list(ownerAddress);
 }
 
 /** All access grants across every owner. For aggregate analytics only. */
-export function listAllAccessGrants(): Promise<MockAccessGrant[]> {
+export function listAllAccessGrants(): Promise<StoredAccessGrant[]> {
   return repo().listAll();
 }
 
 /** Grants targeting a specific provider — the patients who shared with them. */
-export async function listGrantsForProvider(providerAddress: string): Promise<MockAccessGrant[]> {
+export async function listGrantsForProvider(providerAddress: string): Promise<StoredAccessGrant[]> {
   const all = await repo().listAll();
   return all.filter((grant) => grant.address === providerAddress);
 }
@@ -63,15 +63,17 @@ export async function activeGrantForProvider(
   providerAddress: string,
   patientAddress: string,
   now: number = Date.now(),
-): Promise<MockAccessGrant | null> {
+): Promise<StoredAccessGrant | null> {
   const grants = await listGrantsForProvider(providerAddress);
-  return grants.find(
-    (grant) =>
-      grant.ownerAddress === patientAddress
-      && grant.status === 'Active'
-      && grant.canView
-      && now <= grant.expiresAt, // an expired grant no longer permits access
-  ) ?? null;
+  return (
+    grants.find(
+      (grant) =>
+        grant.ownerAddress === patientAddress &&
+        grant.status === 'Active' &&
+        grant.canView &&
+        now <= grant.expiresAt, // an expired grant no longer permits access
+    ) ?? null
+  );
 }
 
 /**
@@ -89,22 +91,22 @@ export async function providerHasActiveGrant(
 export function getAccessGrant(
   ownerAddress: string,
   id: string,
-): Promise<MockAccessGrant | undefined> {
+): Promise<StoredAccessGrant | undefined> {
   return repo().get(ownerAddress, id);
 }
 
 export function createAccessGrant(
   ownerAddress: string,
-  grant: MockAccessGrant,
-): Promise<MockAccessGrant> {
+  grant: StoredAccessGrant,
+): Promise<StoredAccessGrant> {
   return repo().create(ownerAddress, grant);
 }
 
 export function updateAccessGrant(
   ownerAddress: string,
   id: string,
-  patch: Partial<MockAccessGrant>,
-): Promise<MockAccessGrant | undefined> {
+  patch: Partial<StoredAccessGrant>,
+): Promise<StoredAccessGrant | undefined> {
   return repo().update(ownerAddress, id, patch);
 }
 

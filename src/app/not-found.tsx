@@ -6,12 +6,16 @@
  */
 
 import Link from 'next/link';
-import { Home, Search, FolderLock, Brain, KeyRound, Settings, ArrowRight } from 'lucide-react';
+import { Home, FolderLock, KeyRound, Settings } from 'lucide-react';
 
 const SUGGESTED_LINKS = [
   { href: '/', label: 'Dashboard', description: 'Health overview and metrics', icon: Home },
-  { href: '/records', label: 'Health Records', description: 'Encrypted health data', icon: FolderLock },
-  { href: '/insights', label: 'AI Insights', description: 'Statistical health analysis', icon: Brain },
+  {
+    href: '/records',
+    label: 'Health Records',
+    description: 'Encrypted health data',
+    icon: FolderLock,
+  },
   { href: '/access', label: 'Access Control', description: 'Provider permissions', icon: KeyRound },
   { href: '/settings', label: 'Settings', description: 'Account preferences', icon: Settings },
 ];
@@ -45,25 +49,9 @@ export default function NotFound() {
         <h1 className="text-8xl font-bold text-slate-200 mb-4 tracking-tight">404</h1>
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Page Not Found</h2>
         <p className="text-slate-500 mb-8 max-w-md mx-auto">
-          The page you&apos;re looking for doesn&apos;t exist or has been moved.
-          Try searching or browse the links below.
+          The page you&apos;re looking for doesn&apos;t exist or has been moved. Browse one of the
+          available production-backed pages below.
         </p>
-
-        {/* Search bar */}
-        <div className="max-w-md mx-auto mb-10">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search Shiora..."
-              className="w-full pl-11 pr-4 py-3 text-sm border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-brand-500 focus:border-transparent shadow-sm"
-              readOnly
-            />
-            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 px-2 py-0.5 text-xs text-slate-400 bg-slate-100 border border-slate-200 rounded">
-              Ctrl K
-            </kbd>
-          </div>
-        </div>
 
         {/* Suggested links */}
         <div className="mb-10">
@@ -79,7 +67,9 @@ export default function NotFound() {
                   <link.icon className="w-4 h-4 text-brand-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-900 group-hover:text-brand-600 transition-colors">{link.label}</p>
+                  <p className="text-sm font-medium text-slate-900 group-hover:text-brand-600 transition-colors">
+                    {link.label}
+                  </p>
                   <p className="text-xs text-slate-400">{link.description}</p>
                 </div>
               </Link>
@@ -97,9 +87,7 @@ export default function NotFound() {
         </Link>
 
         {/* Footer text */}
-        <p className="mt-8 text-xs text-slate-400">
-          Shiora on Aethelred
-        </p>
+        <p className="mt-8 text-xs text-slate-400">Shiora on Aethelred</p>
       </div>
     </div>
   );

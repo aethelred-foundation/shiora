@@ -24,7 +24,6 @@ const RULES: ReadonlyArray<readonly [string, Maturity]> = [
   ['/api/clinical', 'simulated'],
   ['/api/emergency', 'simulated'],
   ['/api/genomics', 'simulated'],
-  ['/api/network', 'simulated'],
   ['/api/rewards', 'simulated'],
   ['/api/staking', 'simulated'],
   ['/api/tee', 'simulated'],

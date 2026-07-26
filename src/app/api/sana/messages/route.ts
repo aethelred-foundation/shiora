@@ -7,9 +7,10 @@
 import { NextRequest } from 'next/server';
 import { z, ZodError } from 'zod';
 
-import { successResponse, validationError } from '@/lib/api/responses';
+import { errorResponse, HTTP, successResponse, validationError } from '@/lib/api/responses';
 import { runMiddleware, requireAuth } from '@/lib/api/middleware';
 import { sendMessage } from '@/lib/api/sana/sana-service';
+import { InferenceConfigurationError } from '@/lib/api/sana/inference-provider';
 
 const MessageSchema = z.object({
   conversationId: z.string().max(80).optional(),
@@ -33,6 +34,13 @@ export async function POST(request: NextRequest) {
     return successResponse({ conversationId: conversation.id, reply });
   } catch (err) {
     if (err instanceof ZodError) return validationError(err);
+    if (err instanceof InferenceConfigurationError) {
+      return errorResponse(
+        'INFERENCE_SERVICE_NOT_CONFIGURED',
+        'The health assistant is unavailable because its managed inference service is not configured.',
+        HTTP.SERVICE_UNAVAILABLE,
+      );
+    }
     throw err;
   }
 }

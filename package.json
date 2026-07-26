@@ -1,7 +1,7 @@
 {
   "name": "@aethelred/shiora",
   "version": "1.0.0",
-  "description": "Shiora Health AI — Women's Health Platform on Aethelred",
+  "description": "Shiora — Women's Health Data Platform on Aethelred",
   "private": true,
   "engines": {
     "node": ">=20.9.0"

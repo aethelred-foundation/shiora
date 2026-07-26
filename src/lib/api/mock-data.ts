@@ -4,58 +4,30 @@
 // ============================================================
 
 import {
-  seededRandom, seededInt, seededHex, seededPick, seededAddress,
-  generateCID, generateTxHash, generateAttestation,
+  seededRandom,
+  seededInt,
+  seededHex,
+  seededPick,
+  seededAddress,
+  generateCID,
+  generateTxHash,
+  generateAttestation,
 } from '@/lib/utils';
 import {
-  PROVIDER_NAMES, SPECIALTIES, DATA_SCOPES,
-  AI_MODELS, TEE_PLATFORMS,
+  PROVIDER_NAMES,
+  SPECIALTIES,
+  DATA_SCOPES,
+  INFERENCE_WORKLOADS,
+  TEE_PLATFORMS,
 } from '@/lib/constants';
+import type { StoredAccessGrant, StoredHealthRecord } from '@/lib/api/domain-types';
 
 // ────────────────────────────────────────────────────────────
 // Record Types
 // ────────────────────────────────────────────────────────────
 
-export interface MockHealthRecord {
-  id: string;
-  type: string;
-  label: string;
-  description: string;
-  date: number;
-  uploadDate: number;
-  encrypted: boolean;
-  encryption: string;
-  cid: string;
-  txHash: string;
-  attestation: string;
-  size: number;
-  provider: string;
-  status: 'Verified' | 'Pinning' | 'Pinned' | 'Processing';
-  ipfsNodes: number;
-  tags: string[];
-  deleted: boolean;
-  ownerAddress: string;
-  blockHeight: number;
-}
-
-export interface MockAccessGrant {
-  id: string;
-  provider: string;
-  specialty: string;
-  address: string;
-  status: 'Active' | 'Expired' | 'Revoked' | 'Pending';
-  scope: string;
-  grantedAt: number;
-  expiresAt: number;
-  lastAccess: number | null;
-  accessCount: number;
-  txHash: string;
-  attestation: string;
-  canView: boolean;
-  canDownload: boolean;
-  canShare: boolean;
-  ownerAddress: string;
-}
+export type MockHealthRecord = StoredHealthRecord;
+export type MockAccessGrant = StoredAccessGrant;
 
 export interface MockAuditEntry {
   id: string;
@@ -122,45 +94,112 @@ const TEE_SEED = 500;
 
 const TYPE_DESCRIPTIONS: Record<string, string[]> = {
   lab_result: [
-    'Complete Blood Count', 'Thyroid Panel (TSH, T3, T4)', 'Lipid Panel',
-    'Hemoglobin A1C', 'Hormone Panel (Estradiol, Progesterone)',
-    'Comprehensive Metabolic Panel', 'Iron Studies', 'Vitamin D Level',
+    'Complete Blood Count',
+    'Thyroid Panel (TSH, T3, T4)',
+    'Lipid Panel',
+    'Hemoglobin A1C',
+    'Hormone Panel (Estradiol, Progesterone)',
+    'Comprehensive Metabolic Panel',
+    'Iron Studies',
+    'Vitamin D Level',
   ],
   imaging: [
-    'Pelvic Ultrasound', 'Mammogram Bilateral', 'Transvaginal Sonogram',
-    'Bone Density Scan', 'MRI Pelvis', 'HSG Report',
+    'Pelvic Ultrasound',
+    'Mammogram Bilateral',
+    'Transvaginal Sonogram',
+    'Bone Density Scan',
+    'MRI Pelvis',
+    'HSG Report',
   ],
   prescription: [
-    'Estradiol 2mg Oral', 'Progesterone 200mg', 'Levothyroxine 50mcg',
-    'Prenatal Vitamins', 'Metformin 500mg',
+    'Estradiol 2mg Oral',
+    'Progesterone 200mg',
+    'Levothyroxine 50mcg',
+    'Prenatal Vitamins',
+    'Metformin 500mg',
   ],
   vitals: [
-    'Blood Pressure Reading', 'Weight & BMI Check', 'Heart Rate Monitoring',
-    'Oxygen Saturation', 'Temperature Log',
+    'Blood Pressure Reading',
+    'Weight & BMI Check',
+    'Heart Rate Monitoring',
+    'Oxygen Saturation',
+    'Temperature Log',
   ],
   notes: [
-    'Annual Exam Notes', 'Follow-up Visit Summary', 'Pre-conception Consultation',
-    'Specialist Referral', 'Treatment Plan Update',
+    'Annual Exam Notes',
+    'Follow-up Visit Summary',
+    'Pre-conception Consultation',
+    'Specialist Referral',
+    'Treatment Plan Update',
   ],
 };
 
 const TAGS_POOL = [
-  'routine', 'urgent', 'follow-up', 'annual', 'specialist',
-  'lab', 'imaging', 'medication', 'monitoring', 'fertility',
-  'prenatal', 'postpartum',
+  'routine',
+  'urgent',
+  'follow-up',
+  'annual',
+  'specialist',
+  'lab',
+  'imaging',
+  'medication',
+  'monitoring',
+  'fertility',
+  'prenatal',
+  'postpartum',
 ];
 
 const AUDIT_ACTIONS = [
-  { action: 'Viewed lab results', type: 'access' as const, detail: 'Accessed Complete Blood Count record' },
-  { action: 'Access granted', type: 'grant' as const, detail: 'Full Records access granted for 90 days' },
-  { action: 'Downloaded imaging', type: 'download' as const, detail: 'Downloaded Pelvic Ultrasound report' },
-  { action: 'Access revoked', type: 'revoke' as const, detail: 'Provider access revoked by patient' },
-  { action: 'Scope modified', type: 'modify' as const, detail: 'Access scope changed from Full Records to Lab Results Only' },
-  { action: 'Viewed vitals', type: 'access' as const, detail: 'Accessed Blood Pressure reading history' },
-  { action: 'Access request', type: 'grant' as const, detail: 'New access request submitted by provider' },
-  { action: 'Viewed prescriptions', type: 'access' as const, detail: 'Accessed Estradiol prescription record' },
-  { action: 'Access expired', type: 'revoke' as const, detail: 'Time-limited access expired automatically' },
-  { action: 'Downloaded lab results', type: 'download' as const, detail: 'Downloaded Thyroid Panel report' },
+  {
+    action: 'Viewed lab results',
+    type: 'access' as const,
+    detail: 'Accessed Complete Blood Count record',
+  },
+  {
+    action: 'Access granted',
+    type: 'grant' as const,
+    detail: 'Full Records access granted for 90 days',
+  },
+  {
+    action: 'Downloaded imaging',
+    type: 'download' as const,
+    detail: 'Downloaded Pelvic Ultrasound report',
+  },
+  {
+    action: 'Access revoked',
+    type: 'revoke' as const,
+    detail: 'Provider access revoked by patient',
+  },
+  {
+    action: 'Scope modified',
+    type: 'modify' as const,
+    detail: 'Access scope changed from Full Records to Lab Results Only',
+  },
+  {
+    action: 'Viewed vitals',
+    type: 'access' as const,
+    detail: 'Accessed Blood Pressure reading history',
+  },
+  {
+    action: 'Access request',
+    type: 'grant' as const,
+    detail: 'New access request submitted by provider',
+  },
+  {
+    action: 'Viewed prescriptions',
+    type: 'access' as const,
+    detail: 'Accessed Estradiol prescription record',
+  },
+  {
+    action: 'Access expired',
+    type: 'revoke' as const,
+    detail: 'Time-limited access expired automatically',
+  },
+  {
+    action: 'Downloaded lab results',
+    type: 'download' as const,
+    detail: 'Downloaded Thyroid Panel report',
+  },
 ];
 
 const ANOMALY_TYPES = [
@@ -201,7 +240,14 @@ export function generateMockRecords(count: number = 24): MockHealthRecord[] {
       attestation: generateAttestation(RECORD_SEED + i * 40),
       size: seededInt(RECORD_SEED + i * 11, 20, 2000) * 1024,
       provider: seededPick(RECORD_SEED + i * 13, PROVIDER_NAMES),
-      status: (i < 2 ? 'Processing' : i < 4 ? 'Pinning' : seededPick(RECORD_SEED + i * 9, ['Verified', 'Pinned'] as const)) as MockHealthRecord['status'],
+      status: (i < 2
+        ? 'Processing'
+        : i < 4
+          ? 'Pinning'
+          : seededPick(RECORD_SEED + i * 9, [
+              'Verified',
+              'Pinned',
+            ] as const)) as MockHealthRecord['status'],
       ipfsNodes: seededInt(RECORD_SEED + i * 17, 12, 64),
       tags: [TAGS_POOL[i % TAGS_POOL.length], TAGS_POOL[(i + 3) % TAGS_POOL.length]],
       deleted: false,
@@ -227,7 +273,14 @@ export function generateMockGrants(count: number = 8): MockAccessGrant[] {
   if (_cachedGrants && _cachedGrants.length === count) return _cachedGrants;
 
   const statuses: MockAccessGrant['status'][] = [
-    'Active', 'Active', 'Active', 'Expired', 'Revoked', 'Pending', 'Active', 'Expired',
+    'Active',
+    'Active',
+    'Active',
+    'Expired',
+    'Revoked',
+    'Pending',
+    'Active',
+    'Expired',
   ];
 
   _cachedGrants = Array.from({ length: count }, (_, i) => ({
@@ -238,15 +291,18 @@ export function generateMockGrants(count: number = 8): MockAccessGrant[] {
     status: statuses[i % statuses.length],
     scope: seededPick(ACCESS_SEED + i * 3, DATA_SCOPES),
     grantedAt: Date.now() - seededInt(ACCESS_SEED + i * 11, 7, 180) * 86400000,
-    expiresAt: statuses[i % statuses.length] === 'Expired'
-      ? Date.now() - seededInt(ACCESS_SEED + i * 13, 1, 30) * 86400000
-      : Date.now() + seededInt(ACCESS_SEED + i * 15, 7, 90) * 86400000,
-    lastAccess: statuses[i % statuses.length] === 'Active'
-      ? Date.now() - seededInt(ACCESS_SEED + i * 17, 1, 48) * 3600000
-      : null,
-    accessCount: statuses[i % statuses.length] === 'Active'
-      ? seededInt(ACCESS_SEED + i * 19, 3, 47)
-      : seededInt(ACCESS_SEED + i * 19, 0, 15),
+    expiresAt:
+      statuses[i % statuses.length] === 'Expired'
+        ? Date.now() - seededInt(ACCESS_SEED + i * 13, 1, 30) * 86400000
+        : Date.now() + seededInt(ACCESS_SEED + i * 15, 7, 90) * 86400000,
+    lastAccess:
+      statuses[i % statuses.length] === 'Active'
+        ? Date.now() - seededInt(ACCESS_SEED + i * 17, 1, 48) * 3600000
+        : null,
+    accessCount:
+      statuses[i % statuses.length] === 'Active'
+        ? seededInt(ACCESS_SEED + i * 19, 3, 47)
+        : seededInt(ACCESS_SEED + i * 19, 0, 15),
     txHash: generateTxHash(ACCESS_SEED + i * 30),
     attestation: generateAttestation(ACCESS_SEED + i * 40),
     canView: true,
@@ -301,12 +357,12 @@ export function generateMockAnomalies(count: number = 8): MockAnomaly[] {
   _cachedAnomalies = Array.from({ length: count }, (_, i) => ({
     id: `anomaly-${seededHex(INSIGHTS_SEED + i * 100, 8)}`,
     type: ANOMALY_TYPES[i % ANOMALY_TYPES.length],
-    description: `AI model detected ${ANOMALY_TYPES[i % ANOMALY_TYPES.length].toLowerCase()} that deviates from your personal baseline pattern by ${seededInt(INSIGHTS_SEED + i * 10, 15, 45)}%.`,
+    description: `Automated analysis detected ${ANOMALY_TYPES[i % ANOMALY_TYPES.length].toLowerCase()} that deviates from your personal baseline pattern by ${seededInt(INSIGHTS_SEED + i * 10, 15, 45)}%.`,
     severity: severities[i % severities.length],
     detectedAt: Date.now() - seededInt(INSIGHTS_SEED + i * 7, 1, 72) * 3600000,
     confidence: parseFloat((85 + seededRandom(INSIGHTS_SEED + i * 3) * 14).toFixed(1)),
-    model: AI_MODELS[i % AI_MODELS.length].name,
-    modelId: AI_MODELS[i % AI_MODELS.length].id,
+    model: INFERENCE_WORKLOADS[i % INFERENCE_WORKLOADS.length].name,
+    modelId: INFERENCE_WORKLOADS[i % INFERENCE_WORKLOADS.length].id,
     attestation: generateAttestation(INSIGHTS_SEED + i * 40),
     resolved: i > 4,
   }));
@@ -324,7 +380,7 @@ export function generateMockInferences(count: number = 20): MockInference[] {
   if (_cachedInferences && _cachedInferences.length === count) return _cachedInferences;
 
   _cachedInferences = Array.from({ length: count }, (_, i) => {
-    const model = AI_MODELS[i % AI_MODELS.length];
+    const model = INFERENCE_WORKLOADS[i % INFERENCE_WORKLOADS.length];
     return {
       id: `inf-${seededHex(INSIGHTS_SEED + i * 150, 8)}`,
       model: { ...model },
@@ -352,7 +408,7 @@ export function generateMockAttestations(count: number = 20): MockAttestation[] 
 
   _cachedAttestations = Array.from({ length: count }, (_, i) => {
     const hasModel = i % 2 === 0;
-    const model = hasModel ? AI_MODELS[i % AI_MODELS.length] : null;
+    const model = hasModel ? INFERENCE_WORKLOADS[i % INFERENCE_WORKLOADS.length] : null;
     return {
       id: `att-${seededHex(TEE_SEED + i * 100, 8)}`,
       hash: generateAttestation(TEE_SEED + i * 50),
@@ -384,7 +440,7 @@ export function generateInsightsOverview() {
       averageCycleLength: 28.3,
       avgBBTShift: 0.5,
       predictionAccuracy: 96.2,
-      model: 'Cycle LSTM v2.1',
+      model: 'Cycle Pattern Analysis v2.1',
     },
     healthScores: {
       overall: 82,
@@ -405,7 +461,7 @@ export function generateInsightsOverview() {
       avgMood: 78,
       avgSleep: 7.2,
     },
-    modelsActive: AI_MODELS.length,
+    modelsActive: INFERENCE_WORKLOADS.length,
     totalInferences: Math.round(12400 + seededRandom(INSIGHTS_SEED + 60) * 800),
   };
 }
@@ -416,7 +472,7 @@ export function generateInsightsOverview() {
 
 export function generateNetworkStatus() {
   return {
-    blockHeight: 2847391 + Math.floor(Date.now() / 3000) % 1000,
+    blockHeight: 2847391 + (Math.floor(Date.now() / 3000) % 1000),
     tps: Math.round(1800 + seededRandom(100) * 1000),
     epoch: 247,
     networkLoad: Math.round(60 + seededRandom(130) * 25),
@@ -443,7 +499,7 @@ export function generateTEEStatus() {
     attestationsTotal: 47_832,
     lastAttestation: Date.now() - 1000 * 60 * 2,
     inferencesCompleted: Math.round(12400 + seededRandom(TEE_SEED + 60) * 800),
-    modelsLoaded: AI_MODELS.length,
+    modelsLoaded: INFERENCE_WORKLOADS.length,
     memoryUsed: '3.2 GB',
     memoryTotal: '8 GB',
     securityLevel: 'Hardware-backed',

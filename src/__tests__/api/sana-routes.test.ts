@@ -2,7 +2,26 @@
 
 jest.mock('@/lib/api/middleware', () => {
   const actual = jest.requireActual('@/lib/api/middleware');
-  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+  return {
+    ...actual,
+    runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)),
+  };
+});
+
+const mockInferenceGenerate = jest.fn(async () => ({
+  text: 'General health information is available from your care team.',
+  refused: false,
+  provider: 'managed' as const,
+}));
+
+jest.mock('@/lib/api/sana/inference-provider', () => {
+  const actual = jest.requireActual('@/lib/api/sana/inference-provider');
+  return {
+    ...actual,
+    getInferenceProvider: () => ({
+      generate: mockInferenceGenerate,
+    }),
+  };
 });
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -12,6 +31,7 @@ import { GET as listConversations } from '@/app/api/sana/conversations/route';
 import { GET as getConversation } from '@/app/api/sana/conversations/[id]/route';
 import { __resetSanaForTests } from '@/lib/api/sana/sana-service';
 import { createSessionToken } from '@/lib/api/session';
+import { InferenceConfigurationError } from '@/lib/api/sana/inference-provider';
 import { seededAddress } from '@/lib/utils';
 
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
@@ -19,7 +39,12 @@ const USER = seededAddress(500);
 const token = createSessionToken(USER).token;
 
 beforeEach(() => {
-  delete process.env.ANTHROPIC_API_KEY; // force the deterministic offline stub
+  mockInferenceGenerate.mockReset();
+  mockInferenceGenerate.mockResolvedValue({
+    text: 'General health information is available from your care team.',
+    refused: false,
+    provider: 'managed',
+  });
   __resetSanaForTests();
 });
 
@@ -46,7 +71,10 @@ function authedGet(url: string): NextRequest {
   return new NextRequest(url, { headers: { authorization: `Bearer ${token}` } });
 }
 
-const blocked = () => mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+const blocked = () =>
+  mockedRunMiddleware.mockResolvedValueOnce(
+    NextResponse.json({ error: 'blocked' }, { status: 403 }),
+  );
 const ctx = (id: string) => ({ params: Promise.resolve({ id }) });
 
 describe('POST /api/sana/messages', () => {
@@ -57,7 +85,11 @@ describe('POST /api/sana/messages', () => {
 
   it('returns 401 when the middleware is bypassed but unauthenticated', async () => {
     mockedRunMiddleware.mockResolvedValueOnce(null);
-    const req = new NextRequest(MESSAGES, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const req = new NextRequest(MESSAGES, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    });
     expect((await sendMessage(req)).status).toBe(401);
   });
 
@@ -71,12 +103,21 @@ describe('POST /api/sana/messages', () => {
 
   it('continues an existing conversation by id', async () => {
     const first = await (await sendMessage(authedPost(MESSAGES, { message: 'hello' }))).json();
-    const res = await sendMessage(authedPost(MESSAGES, { conversationId: first.data.conversationId, message: 'more' }));
+    const res = await sendMessage(
+      authedPost(MESSAGES, { conversationId: first.data.conversationId, message: 'more' }),
+    );
     expect((await res.json()).data.conversationId).toBe(first.data.conversationId);
   });
 
   it('returns 422 for an empty message', async () => {
     expect((await sendMessage(authedPost(MESSAGES, { message: '' }))).status).toBe(422);
+  });
+
+  it('returns 503 when managed inference is not configured', async () => {
+    mockInferenceGenerate.mockRejectedValueOnce(new InferenceConfigurationError());
+    const response = await sendMessage(authedPost(MESSAGES, { message: 'hello' }));
+    expect(response.status).toBe(503);
+    expect((await response.json()).error.code).toBe('INFERENCE_SERVICE_NOT_CONFIGURED');
   });
 
   it('throws on an invalid JSON body', async () => {
@@ -95,7 +136,7 @@ describe('GET /api/sana/conversations', () => {
     expect((await listConversations(new NextRequest(CONVERSATIONS))).status).toBe(401);
   });
 
-  it('lists the caller\'s conversation summaries, most recently updated first', async () => {
+  it("lists the caller's conversation summaries, most recently updated first", async () => {
     await sendMessage(authedPost(MESSAGES, { message: 'first conversation' }));
     await sendMessage(authedPost(MESSAGES, { message: 'second conversation' }));
 
@@ -116,7 +157,9 @@ describe('GET /api/sana/conversations/[id]', () => {
 
   it('returns 401 when bypassed but unauthenticated', async () => {
     mockedRunMiddleware.mockResolvedValueOnce(null);
-    expect((await getConversation(new NextRequest(`${CONVERSATIONS}/x`), ctx('x'))).status).toBe(401);
+    expect((await getConversation(new NextRequest(`${CONVERSATIONS}/x`), ctx('x'))).status).toBe(
+      401,
+    );
   });
 
   it('returns the full transcript of a conversation', async () => {
@@ -128,6 +171,8 @@ describe('GET /api/sana/conversations/[id]', () => {
   });
 
   it('returns 404 for a missing conversation', async () => {
-    expect((await getConversation(authedGet(`${CONVERSATIONS}/nope`), ctx('nope'))).status).toBe(404);
+    expect((await getConversation(authedGet(`${CONVERSATIONS}/nope`), ctx('nope'))).status).toBe(
+      404,
+    );
   });
 });

@@ -262,7 +262,8 @@ describe('break-glass-service — retrospective review queue', () => {
     expect(uses.map((use) => use.grant.id)).toEqual([second!.id, first!.id]);
     expect(uses.every((use) => use.status === 'active')).toBe(true);
 
-    const later = await listBreakGlassUses({ now: first!.expiresAt + 1 });
+    const afterEveryExpiry = Math.max(first!.expiresAt, second!.expiresAt) + 1;
+    const later = await listBreakGlassUses({ now: afterEveryExpiry });
     expect(later.every((use) => use.status === 'expired')).toBe(true);
   });
 

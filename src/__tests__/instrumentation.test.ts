@@ -99,18 +99,14 @@ describe('register (startup instrumentation)', () => {
       enforced: true,
       mode: 'evaluation',
       problems: [],
-      acknowledged: [
-        { code: 'NON_TLS_BACKEND', message: 'Backend transport is not TLS.' },
-      ],
+      acknowledged: [{ code: 'NON_TLS_BACKEND', message: 'Backend transport is not TLS.' }],
     });
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     try {
       await register();
       expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'NON_TLS_BACKEND: Backend transport is not TLS.',
-        ),
+        expect.stringContaining('NON_TLS_BACKEND: Backend transport is not TLS.'),
       );
     } finally {
       warn.mockRestore();
@@ -129,8 +125,12 @@ describe('register (startup instrumentation)', () => {
     try {
       await register();
       expect(log).toHaveBeenCalledWith(
-        '[db] applied schema migrations: 001_initial, 002_access_grants (3 already in place)',
+        expect.stringContaining('"msg":"database migrations applied"'),
       );
+      expect(log).toHaveBeenCalledWith(
+        expect.stringContaining('"applied":["001_initial","002_access_grants"]'),
+      );
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('"alreadyApplied":3'));
     } finally {
       log.mockRestore();
     }

@@ -1,7 +1,7 @@
 # Shiora — Business Associate Agreements (BAA) Template & Register
 
-> **Status: template + register (process artifact).** A BAA is a *signed legal
-> contract* required by HIPAA §164.308(b) / §164.314(a) between a covered entity
+> **Status: template + register (process artifact).** A BAA is a _signed legal
+> contract_ required by HIPAA §164.308(b) / §164.314(a) between a covered entity
 > and each business associate (and between a business associate and its
 > subcontractors) before PHI is created, received, maintained, or transmitted on
 > its behalf. **This document does not constitute a signed BAA.** The template
@@ -10,11 +10,11 @@
 
 ## Part A — When Shiora needs BAAs
 
-- **Inbound:** If Shiora processes PHI *on behalf of* a covered entity (a
+- **Inbound:** If Shiora processes PHI _on behalf of_ a covered entity (a
   provider organization, health plan, or their business associate), Shiora is a
   **business associate** and must sign a BAA with that covered entity.
-- **Outbound (subcontractors):** Every downstream service that *creates,
-  receives, maintains, or transmits* PHI on Shiora's behalf is a subcontractor
+- **Outbound (subcontractors):** Every downstream service that _creates,
+  receives, maintains, or transmits_ PHI on Shiora's behalf is a subcontractor
   and requires a BAA with Shiora (§164.314(a)(2)(iii)).
 
 **Design note that shrinks BAA scope:** Shiora seals PHI before storage, so
@@ -54,14 +54,14 @@ effective **[date]**.
    after discovery (§164.410).
 7. **Access, amendment, accounting.** Business Associate will make PHI available
    for access (§164.524), amendment (§164.526), and an accounting of disclosures
-   (§164.528). *Shiora support:* data-subject export/erasure
+   (§164.528). _Shiora support:_ data-subject export/erasure
    (`src/lib/api/privacy.ts`) and the subject-side disclosure log
    (`/api/me/access-log`) provide the technical means.
 8. **Records to HHS.** Business Associate will make its internal practices, books,
    and records available to the Secretary of HHS for compliance determination.
 9. **Return or destruction.** On termination, Business Associate will return or
    destroy all PHI if feasible; where infeasible, protections continue.
-   *Shiora support:* envelope encryption + key destruction renders sealed PHI
+   _Shiora support:_ envelope encryption + key destruction renders sealed PHI
    unrecoverable (crypto-shredding); note the content-addressed-storage caveat in
    the risk assessment (a CID-addressed blob can be unpinned, not force-deleted —
    crypto-shredding via key destruction is the operative control there).
@@ -69,7 +69,7 @@ effective **[date]**.
     material breach not cured within **[N]** days.
 11. **Governing law / amendment / no third-party beneficiaries.** **[as advised]**.
 
-Signatures: ___________________ (Covered Entity)  ___________________ (Business Associate)
+Signatures: ********\_\_\_******** (Covered Entity) ********\_\_\_******** (Business Associate)
 
 ---
 
@@ -80,27 +80,26 @@ Signatures: ___________________ (Covered Entity)  ___________________ (Business 
 > require a BAA wherever PHI is handled. Replace `[…]` with the actual vendors
 > chosen for the production deployment.
 
-| Subprocessor | Role | PHI exposure | BAA required | BAA status |
-|---|---|---|---|---|
-| `[Cloud / hosting provider]` | Compute, networking, physical security | Ciphertext at rest + in-memory plaintext during processing | Yes | ☐ To execute |
-| `[Managed Postgres provider]` | Encrypted datastore (`DATABASE_URL`) | Ciphertext (sealed PHI in JSONB) + plaintext audit metadata | Yes | ☐ To execute |
-| `[KMS / HSM provider]` | KEK custody (planned — see R-1) | Key material, not PHI | Yes (key custody) | ☐ Pending KMS selection |
-| `[IPFS node / pinning gateway]` (only if `IPFS_API_URL` set) | Content-addressed storage of **ciphertext** blobs | Ciphertext only (encrypt-then-address) | Yes | ☐ To execute if used |
-| `[LLM provider — Anthropic]` (only if `ANTHROPIC_API_KEY` set) | SANA assistant inference | **Conversation content** is sent in plaintext to the provider at inference time | Yes — and zero-data-retention / no-training terms strongly advised | ☐ To execute if used |
-| `[Email / contact provider]` | Out-of-band contact (if enabled) | Contact PII | Yes | ☐ To execute if used |
+| Subprocessor                                                                          | Role                                              | PHI exposure                                                                           | BAA required                                                  | BAA status              |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ----------------------- |
+| `[Cloud / hosting provider]`                                                          | Compute, networking, physical security            | Ciphertext at rest + in-memory plaintext during processing                             | Yes                                                           | ☐ To execute            |
+| `[Managed Postgres provider]`                                                         | Encrypted datastore (`DATABASE_URL`)              | Ciphertext (sealed PHI in JSONB) + plaintext audit metadata                            | Yes                                                           | ☐ To execute            |
+| `[KMS / HSM provider]`                                                                | KEK custody (planned — see R-1)                   | Key material, not PHI                                                                  | Yes (key custody)                                             | ☐ Pending KMS selection |
+| `[IPFS node / pinning gateway]` (only if `IPFS_API_URL` set)                          | Content-addressed storage of **ciphertext** blobs | Ciphertext only (encrypt-then-address)                                                 | Yes                                                           | ☐ To execute if used    |
+| `[Managed inference gateway operator]` (only if the inference integration is enabled) | SANA assistant inference                          | **Conversation content** is sent in plaintext to the managed gateway at inference time | Yes — zero-data-retention and no-secondary-use terms required | ☐ To execute if used    |
+| `[Email / contact provider]`                                                          | Out-of-band contact (if enabled)                  | Contact PII                                                                            | Yes                                                           | ☐ To execute if used    |
 
 **Notes for the register owner:**
-- The **default deployment uses neither IPFS nor the LLM provider** (local
-  content-addressed store + deterministic offline SANA stub), which removes those
-  two rows from scope until explicitly enabled by env config. This is by design:
-  network subprocessors are opt-in.
-- The **LLM row is the highest-sensitivity subprocessor** when enabled, because
+
+- The default deployment uses the local content-addressed store. SANA is
+  unavailable until its operator-managed inference gateway is explicitly
+  configured; no offline response substitute is used.
+- The **managed inference row is the highest-sensitivity subprocessor** when enabled, because
   conversation content leaves the trust boundary in plaintext. Require a BAA with
-  zero-data-retention and no-model-training terms, or keep SANA in offline stub
-  mode.
+  zero-data-retention and no-secondary-use terms, or keep SANA disabled.
 
 ---
 
-*Owner: Ramesh Tamilselvan. This register must be reviewed before any production
+_Owner: Ramesh Tamilselvan. This register must be reviewed before any production
 handling of PHI and updated whenever a subprocessor is added, removed, or its PHI
-exposure changes.*
+exposure changes._

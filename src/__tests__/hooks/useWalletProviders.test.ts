@@ -123,14 +123,15 @@ describe('provider availability before any EIP-6963 announcement', () => {
     expect(result.current.error).toMatch(/Aethelred Wallet not found/);
   });
 
-  it('connect falls back to the mainnet chain id for unknown network names', async () => {
+  it('rejects unknown network names instead of falling back', async () => {
     walletWindow().aethelred = createMockWallet({ isAethelred: true });
     const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
     await act(async () => {
-      await result.current.connect('aethelred', 'not-a-network');
+      await expect(result.current.connect('aethelred', 'not-a-network')).rejects.toThrow(
+        /only the Aethelred public testnet/,
+      );
     });
-    expect(result.current.isConnected).toBe(true);
-    expect(result.current.wallet.chainId).toBe('7331');
+    expect(result.current.isConnected).toBe(false);
   });
 
   it('connect("aethelred") signs via window.aethelred, not the MetaMask-owned window.ethereum', async () => {
@@ -217,12 +218,8 @@ describe('EIP-6963 announcements take precedence', () => {
   });
 
   it('ignores malformed announcements (no rdns / no provider)', () => {
-    window.dispatchEvent(
-      new CustomEvent('eip6963:announceProvider', { detail: { info: {} } }),
-    );
-    window.dispatchEvent(
-      new CustomEvent('eip6963:announceProvider', { detail: undefined }),
-    );
+    window.dispatchEvent(new CustomEvent('eip6963:announceProvider', { detail: { info: {} } }));
+    window.dispatchEvent(new CustomEvent('eip6963:announceProvider', { detail: undefined }));
     // Reaching here without a throw is the assertion; availability logic
     // still answers from the well-formed announcements above.
     const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });

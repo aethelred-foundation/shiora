@@ -4,7 +4,7 @@
 // Closes audit Finding F5 (operator could rewrite history wholesale before an
 // external anchor). The anchor service hash-chains and WORM-persists the audit
 // head; this seam is the final hop that broadcasts that anchor to an external
-// record. Like the KeyProvider / IPFS / LLM seams, the concrete client is config-
+// record. Like the key-custody, storage, and inference seams, the concrete client is config-
 // selected so the platform stays honest about what is really on-chain:
 //
 //   - no L1 configured  -> LocalAnchorClient (recorded locally, NOT broadcast)
@@ -41,9 +41,9 @@ export interface AnchorClient {
 /** True when an L1 JSON-RPC endpoint is configured for real on-chain anchoring. */
 export function isOnChainAnchoringConfigured(): boolean {
   return Boolean(
-    process.env.SHIORA_L1_RPC_URL
-    && process.env.SHIORA_L1_ANCHOR_FROM
-    && process.env.SHIORA_L1_ANCHOR_TO,
+    process.env.SHIORA_L1_RPC_URL &&
+    process.env.SHIORA_L1_ANCHOR_FROM &&
+    process.env.SHIORA_L1_ANCHOR_TO,
   );
 }
 
@@ -187,10 +187,10 @@ export function getAnchorClient(): AnchorClient {
   if (!client) {
     client = isOnChainAnchoringConfigured()
       ? new JsonRpcAnchorClient(
-        process.env.SHIORA_L1_RPC_URL as string,
-        process.env.SHIORA_L1_ANCHOR_FROM as string,
-        process.env.SHIORA_L1_ANCHOR_TO as string,
-      )
+          process.env.SHIORA_L1_RPC_URL as string,
+          process.env.SHIORA_L1_ANCHOR_FROM as string,
+          process.env.SHIORA_L1_ANCHOR_TO as string,
+        )
       : new LocalAnchorClient();
   }
   return client;

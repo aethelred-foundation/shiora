@@ -1,7 +1,7 @@
 // ============================================================
 // Shiora on Aethelred — Health insights engine (non-diagnostic)
 //
-// Replaces the seeded "AI insights" mock with a REAL statistical reflection of
+// Replaces the seeded insight mock with a real statistical reflection of
 // the user's OWN data: per-metric baseline (mean ± 2σ), z-score anomaly
 // detection, and recent-vs-older trend, computed over the user's encrypted
 // wearable telemetry (wearables-service). It is INFORMATIONAL and NON-DIAGNOSTIC
@@ -85,7 +85,9 @@ function metricInsight(metric: string, samples: WearableSample[]): MetricInsight
   if (samples.length < MIN_SAMPLES) {
     return null;
   }
-  const chronological = [...samples].sort((a, b) => a.recordedAt - b.recordedAt).map((s) => s.value);
+  const chronological = [...samples]
+    .sort((a, b) => a.recordedAt - b.recordedAt)
+    .map((s) => s.value);
   const m = mean(chronological);
   const sd = stdDev(chronological, m);
   return {
@@ -133,9 +135,7 @@ export async function computeInsights(ownerAddress: string): Promise<InsightsRep
 /** Flattened anomalies across all metrics, newest first. */
 export async function listAnomalies(ownerAddress: string): Promise<Anomaly[]> {
   const report = await computeInsights(ownerAddress);
-  return report.metrics
-    .flatMap((mi) => mi.anomalies)
-    .sort((a, b) => b.recordedAt - a.recordedAt);
+  return report.metrics.flatMap((mi) => mi.anomalies).sort((a, b) => b.recordedAt - a.recordedAt);
 }
 
 /** Per-metric trend "inferences". */

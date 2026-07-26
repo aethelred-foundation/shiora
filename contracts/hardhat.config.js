@@ -1,4 +1,5 @@
-require('@nomicfoundation/hardhat-toolbox');
+require('@nomicfoundation/hardhat-ethers');
+require('@nomicfoundation/hardhat-chai-matchers');
 
 /**
  * Isolated Hardhat project for Shiora's consensus-anchored seal tier.

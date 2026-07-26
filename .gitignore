@@ -50,7 +50,6 @@ contracts/typechain-types/
 
 # Misc
 *.log
-.claude/
 
 # Playwright (GAP-26)
 /test-results/

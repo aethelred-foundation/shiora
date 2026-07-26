@@ -42,7 +42,7 @@ import { randomUUID } from 'crypto';
 
 import { getAuditLog } from '@/lib/api/audit-log';
 import { listRecords } from '@/lib/api/records-service';
-import type { MockHealthRecord } from '@/lib/api/mock-data';
+import type { StoredHealthRecord } from '@/lib/api/domain-types';
 import { notify } from '@/lib/api/notification-service';
 import { EncryptedDocumentRepository } from '@/lib/persistence/encrypted-documents';
 import { InMemoryDocumentStore, type DocumentStorePort } from '@/lib/persistence/document-store';
@@ -69,8 +69,17 @@ export type EmergencyCategory = (typeof EMERGENCY_CATEGORIES)[number];
  * against a record's `type` and `tags`.
  */
 export const SENSITIVE_RECORD_TAGS: ReadonlySet<string> = new Set([
-  'reproductive', 'sexual_health', 'sexual-health', 'mental_health', 'mental-health',
-  'genetics', 'genomics', 'genomic', 'safeguarding', 'hiv', 'sti',
+  'reproductive',
+  'sexual_health',
+  'sexual-health',
+  'mental_health',
+  'mental-health',
+  'genetics',
+  'genomics',
+  'genomic',
+  'safeguarding',
+  'hiv',
+  'sti',
 ]);
 
 /** Per-event governance context, recorded on every grant (§5). */
@@ -135,11 +144,11 @@ export interface BreakGlassDeclaration {
 }
 
 export type BreakGlassReadResult =
-  | { ok: true; grant: BreakGlassGrant; records: MockHealthRecord[]; sensitiveWithheld: number }
+  | { ok: true; grant: BreakGlassGrant; records: StoredHealthRecord[]; sensitiveWithheld: number }
   | { ok: false; reason: 'not_found' | 'forbidden' | 'expired' | 'closed' };
 
 /** Does a record carry any especially-sensitive tag (type or tags)? */
-function isSensitiveRecord(record: MockHealthRecord): boolean {
+function isSensitiveRecord(record: StoredHealthRecord): boolean {
   const labels = [record.type, ...(record.tags ?? [])].map((t) => String(t).toLowerCase());
   return labels.some((label) => SENSITIVE_RECORD_TAGS.has(label));
 }
@@ -150,9 +159,9 @@ function isSensitiveRecord(record: MockHealthRecord): boolean {
  * acknowledged them. Pure and unit-testable.
  */
 export function applyMinimumNecessary(
-  records: MockHealthRecord[],
+  records: StoredHealthRecord[],
   grant: Pick<BreakGlassGrant, 'recordTypes' | 'sensitiveAcknowledged'>,
-): { records: MockHealthRecord[]; sensitiveWithheld: number } {
+): { records: StoredHealthRecord[]; sensitiveWithheld: number } {
   const allowedTypes = new Set(grant.recordTypes.map((t) => t.toLowerCase()));
   let sensitiveWithheld = 0;
   const kept = records.filter((record) => {
@@ -177,7 +186,9 @@ function createStore(): DocumentStorePort {
 function repo(): EncryptedDocumentRepository<BreakGlassGrant> {
   if (!repository) {
     repository = new EncryptedDocumentRepository<BreakGlassGrant>(
-      createStore(), getAuditLog(), COLLECTION,
+      createStore(),
+      getAuditLog(),
+      COLLECTION,
       { create: 'BREAK_GLASS_ACCESS', update: 'BREAK_GLASS_REVIEW' },
     );
   }
@@ -237,10 +248,10 @@ export async function declareBreakGlass(
     type: 'emergency_access',
     title: 'Emergency access to your records',
     body:
-      'A verified provider declared emergency (break-glass) access to your records. '
-      + `Access is read-only, limited to the minimum necessary, and expires at `
-      + `${new Date(grant.expiresAt).toISOString()}. Every use is recorded in your `
-      + 'access history and is independently reviewed.',
+      'A verified provider declared emergency (break-glass) access to your records. ' +
+      `Access is read-only, limited to the minimum necessary, and expires at ` +
+      `${new Date(grant.expiresAt).toISOString()}. Every use is recorded in your ` +
+      'access history and is independently reviewed.',
   });
 
   return grant;
@@ -268,10 +279,13 @@ export async function readRecordsUnderBreakGlass(
 
   const status = statusOf(grant, now);
   const denial =
-    grant.requester !== requester ? 'forbidden'
-    : status === 'reviewed' ? 'closed'
-    : status === 'expired' ? 'expired'
-    : null;
+    grant.requester !== requester
+      ? 'forbidden'
+      : status === 'reviewed'
+        ? 'closed'
+        : status === 'expired'
+          ? 'expired'
+          : null;
 
   const governance = {
     category: grant.category,

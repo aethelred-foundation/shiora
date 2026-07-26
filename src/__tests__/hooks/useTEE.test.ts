@@ -3,15 +3,25 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppProvider } from '@/contexts/AppContext';
 import { useTEE } from '@/hooks/useTEE';
+import { api } from '@/lib/api/client';
 
 function createWrapper() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } } });
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
+  });
   return ({ children }: { children: React.ReactNode }) =>
-    React.createElement(QueryClientProvider, { client: qc },
-      React.createElement(AppProvider, null, children));
+    React.createElement(
+      QueryClientProvider,
+      { client: qc },
+      React.createElement(AppProvider, null, children),
+    );
 }
 
 describe('useTEE', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('initializes with loading', () => {
     const { result } = renderHook(() => useTEE(), { wrapper: createWrapper() });
     expect(result.current.isLoadingAttestations).toBe(true);
@@ -24,6 +34,27 @@ describe('useTEE', () => {
     expect(result.current.state.status).toBeDefined();
     expect(typeof result.current.isOperational).toBe('boolean');
     expect(typeof result.current.lastAttestationAgo).toBe('string');
+  });
+
+  it('formats the age of a reported live attestation', async () => {
+    const get = jest.spyOn(api, 'get') as jest.Mock;
+    get.mockImplementation(async (path: string, params?: { include?: string }) => {
+      if (path === '/api/tee/status' && !params?.include) {
+        return {
+          status: 'operational',
+          platform: 'Configured enclave',
+          attestationsToday: 1,
+          lastAttestation: Date.now() - 60_000,
+          enclaveUptime: 100,
+          inferencesCompleted: 1,
+        };
+      }
+      return [];
+    });
+
+    const { result } = renderHook(() => useTEE(), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.lastAttestationAgo).not.toBe('Unavailable'));
+    expect(result.current.isOperational).toBe(true);
   });
 
   it('provides inference stats', async () => {

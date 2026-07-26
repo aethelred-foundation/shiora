@@ -12,14 +12,11 @@
 // ============================================================
 
 import { getAuditLog } from '@/lib/api/audit-log';
-import {
-  EncryptedRecordRepository,
-  type RecordUpdate,
-} from '@/lib/persistence/encrypted-records';
+import { EncryptedRecordRepository, type RecordUpdate } from '@/lib/persistence/encrypted-records';
 import { InMemoryRecordStore, type RecordStorePort } from '@/lib/persistence/record-store';
 import { PgRecordStore } from '@/lib/persistence/pg-record-store';
 import { getPgClient } from '@/lib/persistence/sql-client';
-import type { MockHealthRecord } from '@/lib/api/mock-data';
+import type { StoredHealthRecord } from '@/lib/api/domain-types';
 import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
 import { activeGrantForProvider } from '@/lib/api/access-service';
 import { recordAuthorizationDecision } from '@/lib/api/authz-decision';
@@ -40,9 +37,9 @@ const RECORD_TYPES_BY_SCOPE: Readonly<Record<DataScope, readonly RecordType[] | 
 };
 
 function recordsWithinGrantScope(
-  records: MockHealthRecord[],
+  records: StoredHealthRecord[],
   scope: string,
-): MockHealthRecord[] {
+): StoredHealthRecord[] {
   const allowedTypes = RECORD_TYPES_BY_SCOPE[scope as DataScope];
   if (allowedTypes === null) return records;
   if (!allowedTypes) return [];
@@ -65,7 +62,7 @@ function repo(): EncryptedRecordRepository {
   return repository;
 }
 
-export function listRecords(ownerAddress: string): Promise<MockHealthRecord[]> {
+export function listRecords(ownerAddress: string): Promise<StoredHealthRecord[]> {
   return repo().list(ownerAddress);
 }
 
@@ -80,7 +77,7 @@ export function listRecords(ownerAddress: string): Promise<MockHealthRecord[]> {
 export async function listRecordsForProvider(
   providerAddress: string,
   patientAddress: string,
-): Promise<MockHealthRecord[] | null> {
+): Promise<StoredHealthRecord[] | null> {
   const grant = await activeGrantForProvider(providerAddress, patientAddress);
 
   // An immutable authorization-decision snapshot on both allow and deny (§3):
@@ -125,14 +122,14 @@ export async function listRecordsForProvider(
 export function getRecord(
   ownerAddress: string,
   id: string,
-): Promise<MockHealthRecord | undefined> {
+): Promise<StoredHealthRecord | undefined> {
   return repo().get(ownerAddress, id);
 }
 
 export function createRecord(
   ownerAddress: string,
-  record: MockHealthRecord,
-): Promise<MockHealthRecord> {
+  record: StoredHealthRecord,
+): Promise<StoredHealthRecord> {
   return repo().create(ownerAddress, record);
 }
 
@@ -141,7 +138,7 @@ export function updateRecord(
   id: string,
   updates: RecordUpdate,
   expectedVersion?: number,
-): Promise<MockHealthRecord | undefined> {
+): Promise<StoredHealthRecord | undefined> {
   return repo().update(ownerAddress, id, updates, expectedVersion);
 }
 
@@ -151,14 +148,14 @@ export function recordVersion(ownerAddress: string, id: string): Promise<number 
 }
 
 /** Find records by exact tag via blind index — no decryption of the filter (GAP-15). */
-export function findRecordsByTag(ownerAddress: string, tag: string): Promise<MockHealthRecord[]> {
+export function findRecordsByTag(ownerAddress: string, tag: string): Promise<StoredHealthRecord[]> {
   return repo().findByTag(ownerAddress, tag);
 }
 
 export function softDeleteRecord(
   ownerAddress: string,
   id: string,
-): Promise<MockHealthRecord | undefined> {
+): Promise<StoredHealthRecord | undefined> {
   return repo().softDelete(ownerAddress, id);
 }
 

@@ -9,7 +9,6 @@ import "./interfaces/ISeal.sol";
 
 /**
  * @title ShioraSealAttestation — consensus-anchored clinical/consent attestation
- * @author Shiora Health AI on Aethelred
  * @notice The consensus-anchored assurance tier for Shiora's health-data
  *         attestations. Elsewhere in this repo, `ShioraConsentManager` stores an
  *         UNVERIFIED `bytes32 attestation` supplied by the caller, and
@@ -17,7 +16,7 @@ import "./interfaces/ISeal.sol";
  *         both bottom out in "trust this key/hash." This contract replaces that
  *         trust with a **Digital Seal** minted by the Aethelred validator quorum:
  *         an attestation is anchored only when the chain's own Proof-of-Useful-
- *         Work pipeline sealed the underlying computation (a clinical AI
+ *         Work pipeline sealed the underlying computation (a clinical inference
  *         inference, or a consent-capture screening) under a CEAP confidentiality
  *         policy, verified in-EVM by the ISeal precompile (0x0900) — the SAME
  *         consensus logic that minted the seal.

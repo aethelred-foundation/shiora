@@ -9,7 +9,7 @@ pragma solidity ^0.8.20; // vendored from aethelred (pragma aligned to Shiora po
 ///         approved jurisdiction" without trusting any oracle: the answer is
 ///         computed by the same consensus logic that minted the seal.
 /// @dev    Precompiled contract at address 0x0000000000000000000000000000000000000900.
-///         Aethelred verifiable-AI precompile range: 0x0900 ISeal,
+///         Aethelred verifiable-compute precompile range: 0x0900 ISeal,
 ///         0x0901 IVerify (reserved), 0x0902 IPoUW (reserved).
 interface ISeal {
     /// @notice Core fields of a Digital Seal.

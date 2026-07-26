@@ -3,14 +3,14 @@
 import { screenInput, buildSystemPrompt, screenOutput } from '@/lib/api/sana/guardrails';
 
 describe('SANA guardrails — input screening', () => {
-  it('intercepts a self-harm crisis before the LLM', () => {
+  it('intercepts a self-harm crisis before the remote service', () => {
     const result = screenInput('sometimes I want to die');
     expect(result.allowed).toBe(false);
     expect(result.intervention).toBe('crisis');
     expect(result.response).toMatch(/988/);
   });
 
-  it('intercepts a medical emergency before the LLM', () => {
+  it('intercepts a medical emergency before the remote service', () => {
     const result = screenInput('I have severe chest pain right now');
     expect(result.allowed).toBe(false);
     expect(result.intervention).toBe('emergency');
@@ -38,7 +38,9 @@ describe('SANA guardrails — system prompt', () => {
 
 describe('SANA guardrails — output screening', () => {
   it('appends the disclaimer to an ordinary response with no flags', () => {
-    const { text, flags } = screenOutput('An A1C test reflects average blood sugar over ~3 months.');
+    const { text, flags } = screenOutput(
+      'An A1C test reflects average blood sugar over ~3 months.',
+    );
     expect(flags).toEqual([]);
     expect(text).toMatch(/not a substitute for professional/);
     expect(text).not.toMatch(/⚠️/); // no caution when nothing is flagged

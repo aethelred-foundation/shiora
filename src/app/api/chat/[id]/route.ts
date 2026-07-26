@@ -8,10 +8,17 @@
 import { NextRequest } from 'next/server';
 import { z, ZodError } from 'zod';
 
-import { successResponse, notFoundResponse, validationError, HTTP } from '@/lib/api/responses';
+import {
+  errorResponse,
+  successResponse,
+  notFoundResponse,
+  validationError,
+  HTTP,
+} from '@/lib/api/responses';
 import { runMiddleware, extractAuth } from '@/lib/api/middleware';
 import { getConversation, sendMessage, deleteConversation } from '@/lib/api/sana/sana-service';
 import { toChatMessage } from '@/lib/api/chat/chat-adapter';
+import { InferenceConfigurationError } from '@/lib/api/sana/inference-provider';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -48,6 +55,13 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return successResponse(toChatMessage(id, reply, saved.messages.length - 1), HTTP.CREATED);
   } catch (err) {
     if (err instanceof ZodError) return validationError(err);
+    if (err instanceof InferenceConfigurationError) {
+      return errorResponse(
+        'INFERENCE_SERVICE_NOT_CONFIGURED',
+        'The health assistant is unavailable because its managed inference service is not configured.',
+        HTTP.SERVICE_UNAVAILABLE,
+      );
+    }
     throw err;
   }
 }

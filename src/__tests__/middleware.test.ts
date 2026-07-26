@@ -43,6 +43,32 @@ describe('middleware — non-API routes', () => {
     const res = middleware(req);
     expect(res.headers.get('Cache-Control')).toBeNull();
   });
+
+  it('returns a 404 rewrite for deferred pages in the pilot profile', () => {
+    const previousProfile = process.env.SHIORA_PROFILE;
+    process.env.SHIORA_PROFILE = 'pilot';
+    try {
+      const res = middleware(makeRequest('/insights'));
+      expect(res.status).toBe(404);
+      expect(res.headers.get('x-middleware-rewrite')).toContain('/not-found');
+    } finally {
+      if (previousProfile === undefined) delete process.env.SHIORA_PROFILE;
+      else process.env.SHIORA_PROFILE = previousProfile;
+    }
+  });
+
+  it('serves production-backed pages in the pilot profile', () => {
+    const previousProfile = process.env.SHIORA_PROFILE;
+    process.env.SHIORA_PROFILE = 'pilot';
+    try {
+      for (const path of ['/', '/records', '/access', '/fhir', '/settings']) {
+        expect(middleware(makeRequest(path)).status).toBe(200);
+      }
+    } finally {
+      if (previousProfile === undefined) delete process.env.SHIORA_PROFILE;
+      else process.env.SHIORA_PROFILE = previousProfile;
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------

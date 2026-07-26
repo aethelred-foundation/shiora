@@ -1,278 +1,174 @@
-# Shiora Health AI -- Architecture
+# Shiora architecture
 
-## System Overview
+## Production boundary
 
-Shiora Health AI is a privacy-first women's health platform built on the Aethelred sovereign L1 blockchain. It combines end-to-end encrypted health records, TEE-verified AI inference, and decentralized storage (IPFS) to deliver a platform where sensitive health data never leaves the user's control.
+Shiora is a privacy-focused health-record and provider-access application on
+the Aethelred public testnet. Production is deliberately limited to the
+authenticated corridor that has durable, audited implementations:
 
-```
-+--------------------------------------------------+
-|                   Frontend                        |
-|         Next.js 14 App Router (React 18)          |
-|  +------+  +---------+  +--------+  +---------+  |
-|  | Dash |  | Records |  |Insights|  | Access  |  |
-|  +------+  +---------+  +--------+  +---------+  |
-|       |         |            |            |       |
-|       +---------+-----+------+-----+------+      |
-|                       |                           |
-|            React Context (AppProvider)             |
-|            TanStack Query (data fetching)          |
-+--------------------------------------------------+
-                        |
-                   HTTPS / WSS
-                        |
-+--------------------------------------------------+
-|                   Backend                         |
-|             Next.js API Routes                    |
-|  +--------+  +--------+  +-------+  +--------+   |
-|  |Records |  |Insights|  |Access |  |  TEE   |   |
-|  |  API   |  |  API   |  |  API  |  |  API   |   |
-|  +--------+  +--------+  +-------+  +--------+   |
-|       |           |           |          |        |
-+-------+-----------+-----------+----------+--------+
-        |           |           |          |
-   +----+----+ +----+----+ +---+---+ +----+----+
-   |  IPFS   | |TEE Encl.| |Smart  | |Aethelred|
-   |  Nodes  | |(SGX/    | |Contr. | |  L1 RPC |
-   |         | | Nitro)  | |       | |         |
-   +---------+ +---------+ +-------+ +---------+
-```
+- wallet-backed authentication and session management;
+- encrypted health records;
+- time-bound provider access and consent;
+- FHIR R4 import and mapping;
+- privacy controls, access history, and security settings;
+- operational health, release, API-schema, and live network telemetry.
 
-## Frontend Architecture
+Production always resolves to the fail-closed `pilot` profile. Deferred APIs
+return `503 FEATURE_DISABLED` before their handlers execute, and deferred pages
+are rewritten to the application 404. Setting `SHIORA_PROFILE=full` cannot
+enable them in production.
 
-### Technology Stack
+## Runtime topology
 
-- **Framework**: Next.js 14 with App Router
-- **Language**: TypeScript (strict mode)
-- **UI**: React 18, Tailwind CSS, Lucide React icons
-- **Charts**: Recharts for data visualizations
-- **Data fetching**: TanStack Query (React Query v5)
-- **State management**: React Context (AppProvider)
-
-### Directory Structure
-
-```
-src/
-  app/                    # Next.js App Router pages
-    page.tsx              # Dashboard (home)
-    layout.tsx            # Root layout with Providers
-    error.tsx             # Error boundary page
-    loading.tsx           # Global loading state
-    not-found.tsx         # 404 page
-    records/
-      page.tsx            # Health Records management
-      loading.tsx         # Records loading state
-    insights/
-      page.tsx            # AI Insights and predictions
-      loading.tsx         # Insights loading state
-    access/
-      page.tsx            # Access Control management
-      loading.tsx         # Access loading state
-  components/
-    SharedComponents.tsx  # Badge, Modal, Tabs, TopNav, Footer, etc.
-    PagePrimitives.tsx    # MedicalCard, StatusBadge, Sparkline, etc.
-    Providers.tsx         # QueryClient + AppProvider wrapper
-    ErrorBoundary.tsx     # React class-based error boundary
-    EmptyState.tsx        # Empty state placeholder component
-    Skeleton.tsx          # Loading skeleton components
-  contexts/
-    AppContext.tsx         # Global state: wallet, TEE, real-time, notifications
-  lib/
-    utils.ts              # Deterministic RNG, formatting, crypto helpers
-    constants.ts          # Brand colors, AI models, status styles, nav links
-  hooks/                  # Custom React hooks (extensible)
-  types/                  # TypeScript type definitions (extensible)
+```text
+Browser
+  |
+  | HTTPS
+  v
+Next.js application
+  |-- page middleware: nonce-based CSP and production page gating
+  |-- API middleware: origin checks, request IDs, no-store, maturity headers
+  |-- wallet challenge and signed session verification
+  |
+  +--> Postgres
+  |      encrypted PHI, access grants, consent, sessions, audit chain
+  |
+  +--> managed key service
+  |      data-key wrapping and key-version custody
+  |
+  +--> Aethelred EVM JSON-RPC
+         chain ID, latest/recent blocks, gas utilization, transaction rate
 ```
 
-### State Architecture
+Optional services are configuration-gated and fail closed. A missing database,
+key provider, required TLS setting, or configured integration prevents the
+corresponding production operation from claiming success.
 
-The `AppProvider` context manages:
+## Frontend
 
-1. **Wallet State**: Connection status, address, token balances ($SHIO, AETHEL)
-2. **Health Data State**: Record counts, encryption status, storage usage, IPFS nodes
-3. **TEE State**: Platform, attestation counts, enclave uptime, inference completions
-4. **Real-Time State**: Block height, TPS, epoch, network load, $SHIO price (3s interval)
-5. **Notification Queue**: Success/error/warning/info toasts with auto-dismissal (5s)
-6. **Search State**: Global search overlay toggle (Cmd+K)
+The application uses Next.js 15 App Router, React 18, strict TypeScript,
+Tailwind CSS, TanStack Query, and Zod.
 
-### Component Architecture
+Production navigation exposes only:
 
-Components are organized into two layers:
+| Route       | Purpose                                                 |
+| ----------- | ------------------------------------------------------- |
+| `/`         | Owner-scoped record, storage, access, and audit summary |
+| `/records`  | Upload, list, inspect, and remove encrypted records     |
+| `/access`   | Grant, modify, revoke, and inspect provider access      |
+| `/fhir`     | Import and map supported FHIR R4 resources              |
+| `/settings` | Session, security, recovery, and account controls       |
 
-- **SharedComponents**: App-wide UI primitives (Badge, Modal, Tabs, TopNav, Footer, ToastContainer, SearchOverlay)
-- **PagePrimitives**: Domain-specific components (MedicalCard, StatusBadge, EncryptionBadge, TEEBadge, HealthMetricCard, Sparkline, ChartTooltip)
+`AppProvider` owns only authenticated wallet state, notifications, and search
+state. It does not generate wallet addresses, balances, health metrics, chain
+metrics, enclave status, or transaction history. Wallet restoration is accepted
+only after the server revalidates the session, and the public-testnet chain ID
+is pinned to `7332`.
 
-### Mock Data Strategy
+Live remote state is handled by TanStack Query:
 
-All mock data uses deterministic seeded random number generation (`seededRandom` based on `Math.sin`) to ensure SSR and client rendering produce identical outputs, preventing hydration mismatches.
+- record and access hooks query authenticated APIs;
+- the network hook polls `/api/network/status`;
+- unavailable dependencies render an explicit unavailable state;
+- no client timer fabricates changing operational values.
 
-## Backend Architecture
+## API and trust boundaries
 
-### API Routes (Next.js Route Handlers)
+### Authentication
 
-```
-/api/records          GET    List records (filter by type, search, paginate)
-/api/records          POST   Upload new encrypted record
-/api/records/:id      GET    Get record details
-/api/records/:id      DELETE Remove record
+The wallet flow obtains a single-use server challenge, signs the required
+message through the selected wallet, and exchanges it for a signed,
+server-revocable session. Production requests rely on the session; client
+headers cannot bypass wallet verification.
 
-/api/access/grants    GET    List access grants (filter by status)
-/api/access/grants    POST   Create new grant
-/api/access/grants/:id PATCH Update grant (modify scope, revoke)
-/api/access/grants/:id DELETE Remove grant
-/api/access/audit     GET    Get audit log entries
+Sensitive actions enforce authorization and, where configured, step-up
+authentication. Mutating requests are rejected when their browser origin is
+not allow-listed.
 
-/api/insights         GET    Get all insights data
-/api/insights/cycle   GET    Cycle prediction data
-/api/insights/anomalies GET  Anomaly detection results
+### Records
 
-/api/tee/status       GET    TEE enclave status
-/api/tee/attestation/:hash GET  Verify attestation
+Record plaintext is encrypted with a per-record data-encryption key using
+AES-256-GCM. The data key is wrapped by the configured key provider and the
+ciphertext is bound to its owner and record identifier through authenticated
+additional data. Production refuses to use the in-memory datastore.
 
-/api/health/overview  GET    Health data summary
-/api/network/status   GET    Blockchain network status
-```
-
-### Validation & Middleware
-
-- Request body validation with schema checks
-- Authentication via wallet signature verification
-- Rate limiting on sensitive endpoints
-- CORS configuration for allowed origins
-- CSP headers (Content-Security-Policy) set in `next.config.js`
-
-## Blockchain Integration (Aethelred L1)
-
-### Smart Contracts
-
-1. **HealthRecordRegistry**: Registers encrypted CIDs on-chain, links records to patient addresses
-2. **AccessControlManager**: Manages time-limited, scope-restricted provider access grants
-3. **TEEAttestationVerifier**: Verifies TEE attestation proofs on-chain
-4. **ShioraToken ($SHIO)**: Utility token for platform operations
-
-### Transaction Flow
-
-```
-1. Patient uploads health data
-2. Data encrypted client-side (AES-256-GCM)
-3. Encrypted blob stored on IPFS -> returns CID
-4. CID + metadata registered on Aethelred L1
-5. Transaction hash returned to client
+```text
+authenticated owner
+  -> validate request and provenance
+  -> generate per-record data key
+  -> encrypt and bind owner:record-id
+  -> wrap data key with current key version
+  -> persist ciphertext and metadata
+  -> append tamper-evident audit event
 ```
 
-## TEE Integration
+### Provider access
 
-### Supported Platforms
+Grant validation is related to the authenticated owner, verified provider,
+selected record scope, expiry, and policy constraints. Access is never granted
+merely because a file was uploaded. A provider read succeeds only when a
+current grant covers the requested record, and the read is appended to the
+owner-visible audit history.
 
-- **Intel SGX**: Primary platform for AI model inference
-- **AWS Nitro**: Cloud-native enclave for scalable deployments
-- **AMD SEV**: Alternative secure computation environment
+### FHIR
 
-### Attestation Flow
+FHIR imports accept only supported R4 resource shapes, validate the request,
+preserve provenance, and route resulting records through the same encryption
+and owner-scoping boundary. Unsupported or malformed resources fail with a
+structured validation error.
 
-```
-1. Enclave loads signed AI model weights
-2. Patient data decrypted INSIDE enclave only
-3. AI inference runs on decrypted data
-4. Results encrypted before leaving enclave
-5. Cryptographic attestation generated
-6. Attestation registered on Aethelred L1
-7. Patient receives verified results + attestation hash
-```
+## Live Aethelred telemetry
 
-### AI Models (TEE-Verified)
+`GET /api/network/status` requires `SHIORA_L1_RPC_URL`. The server queries:
 
-| Model             | Type             | Accuracy | Purpose                          |
-|-------------------|------------------|----------|----------------------------------|
-| Cycle LSTM        | LSTM             | 96.2%    | Menstrual cycle timing prediction|
-| Anomaly Detector  | Isolation Forest | 93.8%    | Unusual health pattern detection |
-| Fertility XGBoost | XGBoost          | 91.5%    | Fertile window prediction        |
-| Health Transformer| Transformer      | 94.7%    | Personalized health insights     |
+- `eth_chainId`;
+- `eth_getBlockByNumber` for the latest and recent blocks.
 
-## IPFS Storage
+The response derives block height, recent blocks, transaction rate, and
+gas-based network load from the RPC result. Epoch and token price are `null`
+because the EVM interface does not provide an auditable source for them.
+Missing configuration returns `503`; an unavailable or invalid RPC response
+returns `502`.
 
-### Architecture
+## Deferred capabilities
 
-- Encrypted health records stored as content-addressed blobs on IPFS
-- CIDs (Content Identifiers) registered on-chain for integrity verification
-- Multi-node pinning for redundancy (47+ nodes in production)
-- Gateway: `https://gateway.ipfs.io/ipfs/`
+Advanced clinical, confidential-compute, marketplace, governance, staking,
+reward, research, genomics, digital-twin, and related demonstration surfaces
+are excluded from production. Development fixtures may exercise those
+interfaces in tests, but they cannot be enabled in a production process by an
+environment override.
 
-### Encryption Layer
+The authoritative production boundary is:
 
-```
-Raw Health Data
-      |
-  AES-256-GCM Encryption (client-side)
-      |
-  Encrypted Blob
-      |
-  IPFS Upload -> CID (Qm...)
-      |
-  CID registered on Aethelred L1
-```
+- `src/lib/api/feature-flags.ts`;
+- `src/lib/api/config-lint.ts`;
+- `src/middleware.ts`;
+- `docs/PILOT_SCOPE.md`.
 
-## Security Model
+## Security controls
 
-### Defense in Depth
+- nonce-based Content Security Policy for page responses;
+- no-execution CSP and `no-store` for APIs;
+- strict origin validation for mutations;
+- signed, revocable sessions with secure production cookies;
+- MFA and recovery controls;
+- encrypted PHI with versioned key rotation;
+- append-only tamper-evident audit events;
+- durable rate limiting and idempotency;
+- production configuration linting;
+- liveness, readiness, release provenance, and service-status endpoints.
 
-1. **Client-side encryption**: AES-256-GCM before data leaves the browser
-2. **TEE processing**: Data decrypted only inside secure enclaves
-3. **Blockchain verification**: All operations produce verifiable transaction hashes
-4. **Access control**: Time-limited, scope-restricted, revocable provider access
-5. **Transport security**: HTTPS with strict CSP, HSTS, X-Frame-Options: DENY
-6. **Audit trail**: Every access event logged on-chain with transaction hash
+## Deployment requirements
 
-### Security Headers (next.config.js)
+Before processing live PHI, operators must provide and validate:
 
-- X-Frame-Options: DENY
-- X-Content-Type-Options: nosniff
-- X-XSS-Protection: 1; mode=block
-- Referrer-Policy: strict-origin-when-cross-origin
-- Content-Security-Policy: strict default-src, frame-ancestors: none
-- Strict-Transport-Security: max-age=31536000; includeSubDomains
-- Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+1. TLS termination and approved browser origins;
+2. managed Postgres with backups and restore testing;
+3. managed key custody and a documented rotation procedure;
+4. Aethelred public-testnet RPC connectivity for live telemetry;
+5. production secrets and release provenance;
+6. external security, privacy, and regulatory approvals required by the pilot.
 
-## Data Flow Diagrams
-
-### Record Upload Flow
-
-```
-Patient Browser              Shiora API            IPFS          Aethelred L1
-      |                          |                  |                 |
-      |-- Encrypt (AES-256) ---->|                  |                 |
-      |                          |-- Store blob --->|                 |
-      |                          |<--- CID ---------|                 |
-      |                          |-- Register CID --|---------------->|
-      |                          |<-- Tx Hash ------|-----------------|
-      |<-- Record Confirmation --|                  |                 |
-```
-
-### AI Inference Flow
-
-```
-Patient Browser        Shiora API        TEE Enclave        Aethelred L1
-      |                    |                  |                   |
-      |-- Request -------->|                  |                   |
-      |                    |-- Encrypted data>|                   |
-      |                    |                  |-- Decrypt ------->|
-      |                    |                  |-- Run AI model -->|
-      |                    |                  |-- Re-encrypt ---->|
-      |                    |                  |-- Attestation --->|
-      |                    |<-- Results ------|                   |
-      |                    |-- Register att.--|------------------>|
-      |<-- Verified result-|                  |                   |
-```
-
-### Provider Access Flow
-
-```
-Provider              Patient              Smart Contract        IPFS
-   |                     |                       |                 |
-   |-- Request access -->|                       |                 |
-   |                     |-- Grant (on-chain) -->|                 |
-   |                     |<-- Tx confirmed ------|                 |
-   |<-- Access key ------|                       |                 |
-   |-- Fetch record -----|----(verify grant)---->|                 |
-   |                     |                       |-- Authorized -->|
-   |<-- Encrypted data --|---(via TEE decrypt)---|<--- CID data --|
-```
+Run `npm run config:lint`, `npm run type-check`, `npm run lint`, the test suite,
+and `npm run build` as release gates. `/api/health/ready` must pass in the
+deployed environment before traffic is admitted.

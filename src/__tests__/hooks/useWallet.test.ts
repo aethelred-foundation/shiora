@@ -435,6 +435,7 @@ describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
         '0x1234567890abcdef1234567890abcdef12345678',
         null,
         'aethelred',
+        '7332',
       );
     });
     expect(result.current.wallet.displayAddress).toBe('0x1234…5678');
@@ -445,7 +446,7 @@ describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
       wrapper: createWrapper(),
     });
     act(() => {
-      result.current.app.connectWalletWithData('0x1234', null, 'aethelred');
+      result.current.app.connectWalletWithData('0x1234', null, 'aethelred', '7332');
     });
     expect(result.current.wallet.displayAddress).toBe('0x1234');
   });

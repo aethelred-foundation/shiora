@@ -6,8 +6,8 @@ jest.mock('@/lib/persistence/sql-client', () => ({
 }));
 
 const mockGenerate = jest.fn();
-jest.mock('@/lib/api/sana/llm-provider', () => ({
-  getLLMProvider: () => ({ generate: mockGenerate }),
+jest.mock('@/lib/api/sana/inference-provider', () => ({
+  getInferenceProvider: () => ({ generate: mockGenerate }),
 }));
 
 import {
@@ -28,7 +28,11 @@ beforeEach(() => {
   __resetSanaForTests();
   __resetAuditLogForTests();
   mockGenerate.mockReset();
-  mockGenerate.mockResolvedValue({ text: 'An A1C reflects average blood sugar.', refused: false, provider: 'stub' });
+  mockGenerate.mockResolvedValue({
+    text: 'An A1C reflects average blood sugar.',
+    refused: false,
+    provider: 'managed',
+  });
 });
 
 afterEach(() => {
@@ -64,17 +68,21 @@ describe('sana-service', () => {
     const { reply } = await sendMessage(USER, null, 'I want to hurt myself');
     expect(reply.intervention).toBe('crisis');
     expect(reply.content).toMatch(/988/);
-    expect(mockGenerate).not.toHaveBeenCalled(); // the LLM is bypassed
+    expect(mockGenerate).not.toHaveBeenCalled(); // remote inference is bypassed
   });
 
   it('returns a safe reply when the model refuses', async () => {
-    mockGenerate.mockResolvedValueOnce({ text: '', refused: true, provider: 'anthropic' });
+    mockGenerate.mockResolvedValueOnce({ text: '', refused: true, provider: 'managed' });
     const { reply } = await sendMessage(USER, null, 'do something disallowed');
     expect(reply.content).toMatch(/not able to help/);
   });
 
   it('flags a reply that drifts into diagnosis', async () => {
-    mockGenerate.mockResolvedValueOnce({ text: 'It sounds like you have a cold.', refused: false, provider: 'stub' });
+    mockGenerate.mockResolvedValueOnce({
+      text: 'It sounds like you have a cold.',
+      refused: false,
+      provider: 'managed',
+    });
     const { reply } = await sendMessage(USER, null, 'I am sneezing');
     expect(reply.flags).toContain('diagnosis');
   });
@@ -86,7 +94,7 @@ describe('sana-service', () => {
     expect(await listConversations(seededAddress(501))).toEqual([]);
   });
 
-  it('erases all of an owner\'s conversations', async () => {
+  it("erases all of an owner's conversations", async () => {
     await sendMessage(USER, null, 'one');
     await sendMessage(USER, null, 'two');
     expect(await eraseSanaConversations(USER)).toBe(2);

@@ -32,17 +32,17 @@ You gave us a detailed production-readiness assessment: an executive verdict, a 
 
 ## 1. Current metrics (live-verified from the branch)
 
-| Metric | Value |
-|---|---|
-| Test suites / tests | **299 / 4,732**, all passing |
-| Coverage (statements, branches, functions, lines) | **100%** — enforced as a hard gate |
-| TypeScript strict | clean |
-| ESLint | clean |
-| Production build (`next build`) | green |
-| Dependency vulnerabilities (`npm audit`) | **0** |
-| API routes | 166 |
-| Feature maturity | 26 production · 10 pilot · 7 simulated (machine-readable registry, CI-enforced) |
-| Secret scan (gitleaks, full repository history) | 0 real secrets (4 intentional test-PKI keys allowlisted) |
+| Metric                                            | Value                                                                           |
+| ------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Test suites / tests                               | **303 / 4,796**, all passing                                                    |
+| Coverage (statements, branches, functions, lines) | **100%** — enforced as a hard gate                                              |
+| TypeScript strict                                 | clean                                                                           |
+| ESLint                                            | clean                                                                           |
+| Production build (`next build`)                   | green                                                                           |
+| Production dependency vulnerabilities             | **0** across the application and contract runtime trees                         |
+| API routes                                        | 166                                                                             |
+| Feature maturity                                  | 26 production · 10 pilot · 7 simulated (machine-readable registry, CI-enforced) |
+| Secret scan (gitleaks, full repository history)   | 0 real secrets (4 intentional test-PKI keys allowlisted)                        |
 
 Every commit is authored to a single owner (we address the segregation-of-duties point in §RC1) with no divergence on `main` (a clean fast-forward when we merge).
 
@@ -50,16 +50,16 @@ Every commit is authored to a single owner (we address the segregation-of-duties
 
 ## RC1. Response to your latest follow-up (2026-07-12)
 
-You upgraded the verdict to **Engineering Release Candidate 1** and — importantly — flagged that several remaining items are still *code*, not just operator work. We executed **every code-actionable item you raised**, each as an independent, fully-tested commit at 100% coverage:
+You upgraded the verdict to **Engineering Release Candidate 1** and — importantly — flagged that several remaining items are still _code_, not just operator work. We executed **every code-actionable item you raised**, each as an independent, fully-tested commit at 100% coverage:
 
-| Your item | What we did | Commit |
-|---|---|---|
-| **§1 Provenance inconsistencies** | Reconciled the commit-count wording (branch-lead 165 vs. history-scan; two different measures), the date, and — you were right — **the repo is PUBLIC, not private**: corrected, with a governance note (below). | `docs` |
+| Your item                                 | What we did                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Commit    |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| **§1 Provenance inconsistencies**         | Reconciled the commit-count wording (branch-lead 165 vs. history-scan; two different measures), the date, and — you were right — **the repo is PUBLIC, not private**: corrected, with a governance note (below).                                                                                                                                                                                                                                                                                                              | `docs`    |
 | **§3 Tenant/purpose snapshots** (code P0) | Immutable **authorization-decision snapshots** on every allowed AND denied PHI access — data domain/tenant, actor + organization, subject, purpose of use, legal basis, grant id/version, consent version, policy version, emergency-override id, decision, reason, timestamp — written to the tamper-evident chain and surfaced in the patient's access history. Wired into the canonical provider-read gate. Tenant/domain fields exist from day one; RLS is the additive multi-tenant follow-up (`docs/AUTHORIZATION.md`). | `47f1516` |
-| **§4 Encrypted-data recovery** (code P0) | Proven that wallet-derived client sealing is **browser-only and lives entirely inside the pilot-deferred `vault` surface** — so no pilot-enabled field is sealed to a losable wallet key; every pilot field is server-custodied and recoverable with the account. Enforced by an invariant test; the "non-recoverable private vault" + WebAuthn-PRF direction is documented. | `4625a67` |
-| **§5 Break-glass model** | Corrected the legal basis (the §164.512(j) citation was wrong; the design mirrors the §164.312(a)(2)(ii) technical safeguard, and even that is only a reference — the operative basis is the pilot jurisdiction + partner policy, never a US provision for an Abu Dhabi workflow). Added a structured emergency category, minimum-necessary record-type scoping, sensitive-category withholding, per-event governance (jurisdiction/policy/authorizing-org), and **PHI-free** patient notifications. | `98cd0cd` |
-| **§6 "Confirmed" = finality** | Anchor confirmation now requires the receipt's block to be buried under a configurable confirmation depth (default 12), not a single fresh receipt; a dropped tx (reorg) falls back to pending for re-submission. | `3ec93c0` |
-| **§7 Production key custody** | Production **boot-fails without Vault Transit** (no silent downgrade to local KEK custody), and every DEK wrap is metered by backend so operations can prove new writes use Transit (local-kek must be zero in production). | `f8921b7` |
+| **§4 Encrypted-data recovery** (code P0)  | Proven that wallet-derived client sealing is **browser-only and lives entirely inside the pilot-deferred `vault` surface** — so no pilot-enabled field is sealed to a losable wallet key; every pilot field is server-custodied and recoverable with the account. Enforced by an invariant test; the "non-recoverable private vault" + WebAuthn-PRF direction is documented.                                                                                                                                                  | `4625a67` |
+| **§5 Break-glass model**                  | Corrected the legal basis (the §164.512(j) citation was wrong; the design mirrors the §164.312(a)(2)(ii) technical safeguard, and even that is only a reference — the operative basis is the pilot jurisdiction + partner policy, never a US provision for an Abu Dhabi workflow). Added a structured emergency category, minimum-necessary record-type scoping, sensitive-category withholding, per-event governance (jurisdiction/policy/authorizing-org), and **PHI-free** patient notifications.                          | `98cd0cd` |
+| **§6 "Confirmed" = finality**             | Anchor confirmation now requires the receipt's block to be buried under a configurable confirmation depth (default 12), not a single fresh receipt; a dropped tx (reorg) falls back to pending for re-submission.                                                                                                                                                                                                                                                                                                             | `3ec93c0` |
+| **§7 Production key custody**             | Production **boot-fails without Vault Transit** (no silent downgrade to local KEK custody), and every DEK wrap is metered by backend so operations can prove new writes use Transit (local-kek must be zero in production).                                                                                                                                                                                                                                                                                                   | `f8921b7` |
 
 **Queued as scoped follow-ups (you flagged these as needing more than a quick change):** multi-tenant per-record tenant columns + Postgres RLS (default-deny, transaction-scoped); provider enterprise OIDC SSO + de-provisioning; property/fuzz/mutation testing of the in-house crypto and untrusted-input parsers; the deeper anchor hardening (multi-RPC/reorg re-verification, block-header in the auditor package) and the replacement root-only `ShioraAuditRootCommitment` contract.
 
@@ -88,20 +88,20 @@ You called the claims/implementation mismatch the top launch blocker. You were r
 
 ## 3. Your P0 pre-pilot table
 
-| Your required action | Status | Where |
-|---|---|---|
-| Freeze a narrow pilot scope | ✅ **Done (code)** — `SHIORA_PROFILE=pilot` serves only the corridor; 27 deferred segments return `503 FEATURE_DISABLED` at the middleware | `docs/PILOT_SCOPE.md`, `src/lib/api/feature-flags.ts` |
-| Hosted CI/CD & protected releases | ◑ **Workflow ready; hosting blocked** — unit + E2E + secret-scan + config-lint + SBOM jobs committed; **GitHub Actions billing is an operator unblock** | `.github/workflows/ci.yml` |
-| Production-like staging | ○ **Operator** — Postgres/KMS/TLS/WAF/workers must be provisioned; code targets them and boot-fails without them | `docs/DEPLOYMENT.md` |
-| Independent security review | ○ **Not started** — we accept your staged scoping (§6.1); needs firm engagement | — |
-| Identity & account recovery | ✅ **Done (code)** — one-time recovery codes + break-glass with retrospective review (§5.4) | `src/lib/api/recovery-service.ts`, `break-glass-service.ts` |
-| Tenant & authorization isolation | ◑ **Owner-scoping + negative-space suite done; row-level tenant column is the next step** (§5.5) | `src/__tests__/security/negative-space.test.ts` |
-| Backup & disaster recovery | ○ **Operator** — restore exercise + RTO/RPO must be performed; crypto-shred/backup interplay documented | `docs/KEY_MANAGEMENT.md`, `DEPLOYMENT.md` |
-| UAE health/privacy readiness (ADHICS, DPIA) | ○ **Organizational** — self-assessment work product exists; formal approval is external | `docs/compliance/` |
-| FHIR partner conformance | ○ **Needs a named partner** — parser is real; conformance is defined by the partner's guide | — |
-| Chain & TEE isolation | ✅ **Done (code)** — anchoring is a fail-soft async outbox; no chain/enclave outage can touch care (§5.6) | `src/lib/api/anchoring/` |
-| Multi-replica correctness (P1) | ✅ **Done (code)** — shared WebAuthn challenge store + durable notification replay (§5.2) | `src/lib/persistence/challenge-store.ts` |
-| Clinical & AI governance (P1) | ○ **Deferred by scope** — live SANA/CDS disabled under the pilot profile until governance exists | `docs/PILOT_SCOPE.md` |
+| Your required action                        | Status                                                                                                                                                  | Where                                                       |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Freeze a narrow pilot scope                 | ✅ **Done (code)** — `SHIORA_PROFILE=pilot` serves only the corridor; 27 deferred segments return `503 FEATURE_DISABLED` at the middleware              | `docs/PILOT_SCOPE.md`, `src/lib/api/feature-flags.ts`       |
+| Hosted CI/CD & protected releases           | ◑ **Workflow ready; hosting blocked** — unit + E2E + secret-scan + config-lint + SBOM jobs committed; **GitHub Actions billing is an operator unblock** | `.github/workflows/ci.yml`                                  |
+| Production-like staging                     | ○ **Operator** — Postgres/KMS/TLS/WAF/workers must be provisioned; code targets them and boot-fails without them                                        | `docs/DEPLOYMENT.md`                                        |
+| Independent security review                 | ○ **Not started** — we accept your staged scoping (§6.1); needs firm engagement                                                                         | —                                                           |
+| Identity & account recovery                 | ✅ **Done (code)** — one-time recovery codes + break-glass with retrospective review (§5.4)                                                             | `src/lib/api/recovery-service.ts`, `break-glass-service.ts` |
+| Tenant & authorization isolation            | ◑ **Owner-scoping + negative-space suite done; row-level tenant column is the next step** (§5.5)                                                        | `src/__tests__/security/negative-space.test.ts`             |
+| Backup & disaster recovery                  | ○ **Operator** — restore exercise + RTO/RPO must be performed; crypto-shred/backup interplay documented                                                 | `docs/KEY_MANAGEMENT.md`, `DEPLOYMENT.md`                   |
+| UAE health/privacy readiness (ADHICS, DPIA) | ○ **Organizational** — self-assessment work product exists; formal approval is external                                                                 | `docs/compliance/`                                          |
+| FHIR partner conformance                    | ○ **Needs a named partner** — parser is real; conformance is defined by the partner's guide                                                             | —                                                           |
+| Chain & TEE isolation                       | ✅ **Done (code)** — anchoring is a fail-soft async outbox; no chain/enclave outage can touch care (§5.6)                                               | `src/lib/api/anchoring/`                                    |
+| Multi-replica correctness (P1)              | ✅ **Done (code)** — shared WebAuthn challenge store + durable notification replay (§5.2)                                                               | `src/lib/persistence/challenge-store.ts`                    |
+| Clinical inference governance (P1)          | ○ **Deferred by scope** — live SANA/CDS disabled under the pilot profile until governance exists                                                        | `docs/PILOT_SCOPE.md`                                       |
 
 Legend: ✅ closed in code · ◑ partially done, remainder is operator/organizational · ○ operator/organizational (code cannot close it).
 
@@ -113,7 +113,7 @@ Legend: ✅ closed in code · ◑ partially done, remainder is operator/organiza
 
 **2. Change the production key-management design.** ✅ Done in code, ○ needs a Vault to run. We built the `DekWrapper` seam and a complete, tested **Vault Transit** backend — the app submits each DEK for wrap/unwrap and the master key never enters process memory — and then **adopted it through the entire PHI envelope path** (envelope → both encrypted repositories → the re-seal job → the IPFS object service are now async and wrap every DEK through `getDekWrapper()`). Configuring Transit switches the whole write path onto Vault custody with no code change; mixed-custody reads are handled by a `sealed.wrap` discriminator so a cut-over is safe and reversible. The formal key architecture — key inventory + HKDF domains, per-environment separation, rotation + back-catalog re-seal, compromise runbook (Transit token revocation = total cut-off), two-person rule, backup/crypto-shred interplay — is in `docs/KEY_MANAGEMENT.md`. **Remaining:** run it against a provisioned Vault; AWS/GCP KMS are drop-in behind the same interface. We also documented your wallet-derived-client-key caveat and the passkey/WebAuthn-PRF production direction.
 
-**3. Independently review or replace in-house standards implementations + add tests + fix CI.** ◑ Partly. Test depth and CI hardening are done: added the **negative-space authorization suite**, a **production config linter** (fails on in-memory storage, non-TLS endpoints, debug flags, placeholder secrets, wildcard origins, or a mainnet/foreign chain id — as a boot gate *and* a CLI), **gitleaks** over full history, and a **CycloneDX SBOM**, all in the release gate. **Not yet done and we agree it is the highest-value external item:** independent applied-crypto review of our in-house primitives (envelope/KDF, WebAuthn/CBOR/COSE, ZK, Shamir MPC, SEV-SNP verifier). We accept your point that "in-house" is not inherently safer; the config-lint/SBOM/secret-scan gates are in place, but property-based/fuzz/mutation testing and the independent review are open. See §8, Q1.
+**3. Independently review or replace in-house standards implementations + add tests + fix CI.** ◑ Partly. Test depth and CI hardening are done: added the **negative-space authorization suite**, a **production config linter** (fails on in-memory storage, non-TLS endpoints, debug flags, placeholder secrets, wildcard origins, or a mainnet/foreign chain id — as a boot gate _and_ a CLI), **gitleaks** over full history, and a **CycloneDX SBOM**, all in the release gate. **Not yet done and we agree it is the highest-value external item:** independent applied-crypto review of our in-house primitives (envelope/KDF, WebAuthn/CBOR/COSE, ZK, Shamir MPC, SEV-SNP verifier). We accept your point that "in-house" is not inherently safer; the config-lint/SBOM/secret-scan gates are in place, but property-based/fuzz/mutation testing and the independent review are open. See §8, Q1.
 
 **4. Healthcare-grade identity, not only wallet auth.** ✅ Individuals side done; ○ provider SSO is operator/integration. We shipped one-time **recovery codes** (10 per batch, Crockford-base32, salted-scrypt hashes sealed at rest, single-use, regeneration replaces the batch) and a deliberate **break-glass** model (§5.4). **Provider enterprise OIDC/SAML SSO, SCIM provisioning, and licence verification remain** — they are pilot-partner integrations, not standalone code, and we'd scope them to the actual partner.
 
@@ -123,7 +123,7 @@ Legend: ✅ closed in code · ◑ partially done, remainder is operator/organiza
 
 **7. Analytics/research privacy.** ○ Deferred by scope. Population analytics and the research marketplace are disabled under the pilot profile, so l-diversity / query budgets / differential privacy are not pilot-blocking. We noted your guidance for when we re-enable them.
 
-**8. Clinical & AI safety before SANA expansion.** ✅ Enforced by scope. Live SANA (chat + API) and clinical decision support are server-disabled under `pilot`; fertility-window prediction stays off. The intended-use / safety-case / evaluation apparatus is a precondition we've written into the scope doc for re-enablement.
+**8. Clinical inference safety before SANA expansion.** ✅ Enforced by scope. Live SANA (chat + API) and clinical decision support are server-disabled under `pilot`; fertility-window prediction stays off. The intended-use / safety-case / evaluation apparatus is a precondition we've written into the scope doc for re-enablement.
 
 **9. Arabic & accessibility scope.** ◑ Engine done; medical/legal review is a human step. Full i18n engine + app-wide RTL is shipped and the E2E suite runs axe scans in both directions. **Human medical/legal review of the core patient/consent/safety/recovery flows in Arabic, plus manual screen-reader/keyboard testing with Arabic-speaking users, remains** — we agree "shell plus a few flows" is not enough for consent/safety text.
 
@@ -158,25 +158,25 @@ Legend: ✅ closed in code · ◑ partially done, remainder is operator/organiza
 
 ## 7. Your seventeen-item final go/no-go gate
 
-| # | Gate | Status |
-|---|---|---|
-| 1 | One exact release commit, independently reviewable & reproducible | ✅ provenance manifest + release process; **needs `main` merge + branch protection (governance sign-off)** |
-| 2 | Public claims match the release | ✅ done |
-| 3 | Hosted CI/CD & protected release controls mandatory | ◑ workflow ready; **CI billing + branch protection = operator** |
-| 4 | No unresolved critical/high external security findings | ○ **external review not yet started** |
-| 5 | All retained custom crypto independently reviewed | ○ **not started — our top external ask (§8, Q1)** |
-| 6 | Production keys in KMS/HSM or Vault Transit | ✅ code adopted; ○ **needs a provisioned Vault to run** |
-| 7 | Cross-tenant & object-level authz tests pass | ◑ negative-space suite passes; **RLS tenant column pending** |
-| 8 | Wallet/passkey loss & provider de-provisioning handled | ◑ recovery + break-glass done; **provider SSO/de-provisioning pending** |
-| 9 | Full backup restoration + IR exercise succeeded | ○ **operator exercise** |
-| 10 | RTO/RPO/SLOs/on-call approved | ○ **organizational** |
-| 11 | ADHICS/DPIA/data-location/contracts approved | ○ **organizational** |
-| 12 | FHIR conformance passes with the actual partner | ○ **needs a named partner** |
-| 13 | Arabic core flows have human medical/legal review | ○ **human review pending** |
-| 14 | AI features have clinical governance or stay disabled | ✅ disabled under pilot scope |
-| 15 | Aethelred integration optional, async, privacy-preserving | ✅ done (§5.6) |
-| 16 | No PHI or linkable patient-health relationship on-chain | ✅ salted commitments only (contract caveat, §6) |
-| 17 | TEE language does not overclaim | ✅ verifier-only; no attested-processing claim |
+| #   | Gate                                                              | Status                                                                                                     |
+| --- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 1   | One exact release commit, independently reviewable & reproducible | ✅ provenance manifest + release process; **needs `main` merge + branch protection (governance sign-off)** |
+| 2   | Public claims match the release                                   | ✅ done                                                                                                    |
+| 3   | Hosted CI/CD & protected release controls mandatory               | ◑ workflow ready; **CI billing + branch protection = operator**                                            |
+| 4   | No unresolved critical/high external security findings            | ○ **external review not yet started**                                                                      |
+| 5   | All retained custom crypto independently reviewed                 | ○ **not started — our top external ask (§8, Q1)**                                                          |
+| 6   | Production keys in KMS/HSM or Vault Transit                       | ✅ code adopted; ○ **needs a provisioned Vault to run**                                                    |
+| 7   | Cross-tenant & object-level authz tests pass                      | ◑ negative-space suite passes; **RLS tenant column pending**                                               |
+| 8   | Wallet/passkey loss & provider de-provisioning handled            | ◑ recovery + break-glass done; **provider SSO/de-provisioning pending**                                    |
+| 9   | Full backup restoration + IR exercise succeeded                   | ○ **operator exercise**                                                                                    |
+| 10  | RTO/RPO/SLOs/on-call approved                                     | ○ **organizational**                                                                                       |
+| 11  | ADHICS/DPIA/data-location/contracts approved                      | ○ **organizational**                                                                                       |
+| 12  | FHIR conformance passes with the actual partner                   | ○ **needs a named partner**                                                                                |
+| 13  | Arabic core flows have human medical/legal review                 | ○ **human review pending**                                                                                 |
+| 14  | Inference features have clinical governance or stay disabled      | ✅ disabled under pilot scope                                                                              |
+| 15  | Aethelred integration optional, async, privacy-preserving         | ✅ done (§5.6)                                                                                             |
+| 16  | No PHI or linkable patient-health relationship on-chain           | ✅ salted commitments only (contract caveat, §6)                                                           |
+| 17  | TEE language does not overclaim                                   | ✅ verifier-only; no attested-processing claim                                                             |
 
 **Tally:** of 17 gates, **6 are closed in code**, **4 are partially closed with a defined remaining step**, and **7 are operator/organizational** (independent audit, provisioning, backup exercise, RTO/RPO, ADHICS/DPIA, FHIR partner, Arabic human review). None of the remaining seven can be closed inside the repository — which is the crux of what we want your guidance on.
 
@@ -208,15 +208,15 @@ Legend: ✅ closed in code · ◑ partially done, remainder is operator/organiza
 
 ## Appendix — where to verify
 
-| Area | Location |
-|---|---|
-| Release provenance | `GET /api/system/release`, `docs/RELEASE_PROCESS.md` |
-| Config linter (boot + CLI) | `src/lib/api/config-lint.ts`, `npm run config:lint` |
-| Pilot scope freeze | `docs/PILOT_SCOPE.md`, `src/lib/api/feature-flags.ts`, `GET /api/system/status` |
-| Key custody (Vault Transit, adopted) | `src/lib/crypto/dek-wrapper.ts`, `envelope.ts`, `docs/KEY_MANAGEMENT.md` |
-| Recovery codes & break-glass | `src/lib/api/recovery-service.ts`, `break-glass-service.ts`, routes under `/api/me/recovery`, `/api/break-glass` |
-| Multi-replica correctness | `src/lib/persistence/challenge-store.ts`, `src/lib/api/notification-stream.ts` |
-| Anchoring outbox (salted commitments) | `src/lib/api/anchoring/`, `src/lib/persistence/anchor-outbox-store.ts` |
-| Negative-space authz suite | `src/__tests__/security/negative-space.test.ts` |
-| Gap ledger (28/28) | `docs/TECHNOLOGY_GAP_ASSESSMENT.md` |
-| Maturity registry (SSoT) | `src/lib/api/maturity.ts` |
+| Area                                  | Location                                                                                                         |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Release provenance                    | `GET /api/system/release`, `docs/RELEASE_PROCESS.md`                                                             |
+| Config linter (boot + CLI)            | `src/lib/api/config-lint.ts`, `npm run config:lint`                                                              |
+| Pilot scope freeze                    | `docs/PILOT_SCOPE.md`, `src/lib/api/feature-flags.ts`, `GET /api/system/status`                                  |
+| Key custody (Vault Transit, adopted)  | `src/lib/crypto/dek-wrapper.ts`, `envelope.ts`, `docs/KEY_MANAGEMENT.md`                                         |
+| Recovery codes & break-glass          | `src/lib/api/recovery-service.ts`, `break-glass-service.ts`, routes under `/api/me/recovery`, `/api/break-glass` |
+| Multi-replica correctness             | `src/lib/persistence/challenge-store.ts`, `src/lib/api/notification-stream.ts`                                   |
+| Anchoring outbox (salted commitments) | `src/lib/api/anchoring/`, `src/lib/persistence/anchor-outbox-store.ts`                                           |
+| Negative-space authz suite            | `src/__tests__/security/negative-space.test.ts`                                                                  |
+| Gap ledger (28/28)                    | `docs/TECHNOLOGY_GAP_ASSESSMENT.md`                                                                              |
+| Maturity registry (SSoT)              | `src/lib/api/maturity.ts`                                                                                        |

@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraGovernance
- * @author Shiora Health AI on Aethelred
  * @notice On-chain governance for the Shiora protocol. Supports proposal creation,
  *         weighted voting, vote delegation, configurable quorum thresholds,
  *         and timelock-style execution. Voting power is determined by staked

@@ -8,14 +8,19 @@ import { errorResponse, HTTP } from '@/lib/api/responses';
 import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededRandom, seededInt } from '@/lib/utils';
-import { AI_MODELS } from '@/lib/constants';
+import { INFERENCE_WORKLOADS } from '@/lib/constants';
 
 const SEED = 1600;
 
 const BIAS_CATEGORIES = [
-  'Age Group 18-25', 'Age Group 26-35', 'Age Group 36-45', 'Age Group 46+',
-  'Regular Cycles', 'Irregular Cycles',
-  'BMI Normal', 'BMI Overweight',
+  'Age Group 18-25',
+  'Age Group 26-35',
+  'Age Group 36-45',
+  'Age Group 46+',
+  'Regular Cycles',
+  'Irregular Cycles',
+  'BMI Normal',
+  'BMI Overweight',
 ];
 
 // ────────────────────────────────────────────────────────────
@@ -29,10 +34,14 @@ export async function GET(request: NextRequest) {
   const modelId = request.nextUrl.searchParams.get('modelId');
 
   if (!modelId) {
-    return errorResponse('VALIDATION_ERROR', 'modelId query parameter is required', HTTP.UNPROCESSABLE);
+    return errorResponse(
+      'VALIDATION_ERROR',
+      'modelId query parameter is required',
+      HTTP.UNPROCESSABLE,
+    );
   }
 
-  const modelIndex = AI_MODELS.findIndex((m) => m.id === modelId);
+  const modelIndex = INFERENCE_WORKLOADS.findIndex((m) => m.id === modelId);
   if (modelIndex === -1) {
     return errorResponse('NOT_FOUND', `Model '${modelId}' not found`, HTTP.NOT_FOUND);
   }
@@ -46,9 +55,8 @@ export async function GET(request: NextRequest) {
       category,
       biasScore: parseFloat((seededRandom(SEED + i * 42 + j) * 0.2).toFixed(3)),
       sampleSize: seededInt(SEED + i * 43 + j, 500, 5000),
-      recommendation: seededRandom(SEED + i * 44 + j) > 0.7
-        ? 'No action needed.'
-        : 'Monitor bias levels.',
+      recommendation:
+        seededRandom(SEED + i * 44 + j) > 0.7 ? 'No action needed.' : 'Monitor bias levels.',
     })),
   };
 

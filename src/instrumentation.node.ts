@@ -14,6 +14,9 @@ import {
   hasDurableDatastore,
 } from '@/lib/api/preflight';
 import { startMaintenanceScheduler } from '@/lib/maintenance/store-maintenance';
+import { createLogger } from '@/lib/observability/logger';
+
+const startupLog = createLogger({ subsystem: 'startup' });
 
 export async function registerNode(): Promise<void> {
   // Warm key custody (fetch + cache the KEK from Vault) before any PHI is served.
@@ -28,12 +31,12 @@ export async function registerNode(): Promise<void> {
   if (report.mode === 'evaluation' && report.acknowledged.length > 0) {
     const lines = report.acknowledged.map((p) => `  - ${p.code}: ${p.message}`).join('\n');
     console.warn(
-      '\n============================================================\n'
-      + 'SHIORA EVALUATION DEPLOYMENT — NOT PRODUCTION-PHI READY\n'
-      + 'SHIORA_PREFLIGHT_MODE=evaluation acknowledged these gaps:\n'
-      + `${lines}\n`
-      + 'This process must not custody real patient data.\n'
-      + '============================================================\n',
+      '\n============================================================\n' +
+        'SHIORA EVALUATION DEPLOYMENT — NOT PRODUCTION-PHI READY\n' +
+        'SHIORA_PREFLIGHT_MODE=evaluation acknowledged these gaps:\n' +
+        `${lines}\n` +
+        'This process must not custody real patient data.\n' +
+        '============================================================\n',
     );
   }
   // Garbage-collect the durable auth stores (GAP-01). In-memory stores sweep
@@ -50,10 +53,10 @@ export async function registerNode(): Promise<void> {
       const { getPgClient } = await import('@/lib/persistence/sql-client');
       const result = await migrate(getPgClient());
       if (result.applied.length > 0) {
-        console.log(
-          `[db] applied schema migrations: ${result.applied.join(', ')} `
-          + `(${result.alreadyApplied} already in place)`,
-        );
+        startupLog.info('database migrations applied', {
+          applied: result.applied,
+          alreadyApplied: result.alreadyApplied,
+        });
       }
     }
     startMaintenanceScheduler();

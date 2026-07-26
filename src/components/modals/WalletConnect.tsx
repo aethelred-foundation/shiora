@@ -1,22 +1,18 @@
 /**
  * Shiora on Aethelred — Wallet Connect Component
  *
- * Wallet connection with Keplr and Leap support,
- * network selection, balance display, transaction history, and message signing.
+ * Wallet connection for the Aethelred public testnet, balance display, and
+ * message signing.
  */
 
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import {
-  Wallet, ChevronRight, ChevronDown,
-  LogOut, Clock, Shield,
-  FileSignature,
-} from 'lucide-react';
+import { Wallet, ChevronRight, ChevronDown, LogOut, Shield, FileSignature } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
 import { useWallet } from '@/hooks/useWallet';
-import { Modal, Drawer } from '@/components/ui/SharedComponents';
+import { Modal } from '@/components/ui/SharedComponents';
 import { CopyButton } from '@/components/ui/PagePrimitives';
 import { formatNumber, truncateAddress } from '@/lib/utils';
 
@@ -25,8 +21,6 @@ import { formatNumber, truncateAddress } from '@/lib/utils';
 // ============================================================
 
 type WalletType = 'aethelred' | 'metamask';
-type NetworkType = 'mainnet' | 'testnet';
-
 interface WalletOption {
   id: WalletType;
   name: string;
@@ -63,28 +57,35 @@ const WALLET_OPTIONS: WalletOption[] = [
 // ============================================================
 
 export function WalletConnect() {
-  const { wallet, realTime } = useApp();
-  const { connect, disconnect, signMessage: walletSignMessage, isLoading: walletLoading, error: walletError } = useWallet();
+  const { wallet } = useApp();
+  const {
+    connect,
+    disconnect,
+    signMessage: walletSignMessage,
+    isLoading: walletLoading,
+    error: walletError,
+  } = useWallet();
   const [showConnectModal, setShowConnectModal] = useState(false);
-  const [showTxDrawer, setShowTxDrawer] = useState(false);
   const [showSignModal, setShowSignModal] = useState(false);
   const [selectedWalletType, setSelectedWalletType] = useState<WalletType | null>(null);
-  const [network, setNetwork] = useState<NetworkType>('mainnet');
   const [connectError, setConnectError] = useState<string | null>(null);
   const [signMessageText, setSignMessageText] = useState('');
   const [signResult, setSignResult] = useState('');
   const [signing, setSigning] = useState(false);
 
-  const handleConnect = useCallback(async (type: WalletType) => {
-    setSelectedWalletType(type);
-    setConnectError(null);
-    try {
-      await connect(type, network);
-      setShowConnectModal(false);
-    } catch (err) {
-      setConnectError(err instanceof Error ? err.message : 'Connection failed');
-    }
-  }, [connect, network]);
+  const handleConnect = useCallback(
+    async (type: WalletType) => {
+      setSelectedWalletType(type);
+      setConnectError(null);
+      try {
+        await connect(type, 'testnet');
+        setShowConnectModal(false);
+      } catch (err) {
+        setConnectError(err instanceof Error ? err.message : 'Connection failed');
+      }
+    },
+    [connect],
+  );
 
   const handleDisconnect = useCallback(() => {
     disconnect();
@@ -126,26 +127,6 @@ export function WalletConnect() {
           size="sm"
         >
           <div className="space-y-3">
-            {/* Network selector */}
-            <div className="flex bg-slate-100 rounded-lg p-1 mb-4">
-              <button
-                onClick={() => setNetwork('mainnet')}
-                className={`flex-1 py-2 rounded-md text-xs font-medium transition-colors ${
-                  network === 'mainnet' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'
-                }`}
-              >
-                Mainnet
-              </button>
-              <button
-                onClick={() => setNetwork('testnet')}
-                className={`flex-1 py-2 rounded-md text-xs font-medium transition-colors ${
-                  network === 'testnet' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'
-                }`}
-              >
-                Testnet
-              </button>
-            </div>
-
             {/* Wallet options */}
             {WALLET_OPTIONS.map((opt) => (
               <button
@@ -154,11 +135,15 @@ export function WalletConnect() {
                 disabled={walletLoading}
                 className="w-full flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-brand-300 hover:bg-brand-50 transition-colors text-left disabled:opacity-50"
               >
-                <div className={`w-10 h-10 rounded-xl ${opt.color} flex items-center justify-center shrink-0`}>
+                <div
+                  className={`w-10 h-10 rounded-xl ${opt.color} flex items-center justify-center shrink-0`}
+                >
                   {(() => {
                     /* istanbul ignore next -- loading state is transient */
                     if (walletLoading && selectedWalletType === opt.id) {
-                      return <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />;
+                      return (
+                        <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                      );
                     }
                     return opt.icon;
                   })()}
@@ -187,8 +172,8 @@ export function WalletConnect() {
 
             {/* Network info */}
             <div className="pt-2 flex items-center justify-center gap-2 text-xs text-slate-400">
-              <div className={`w-2 h-2 rounded-full ${network === 'mainnet' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-              Aethelred {network === 'mainnet' ? 'Mainnet' : 'Testnet'}
+              <div className="w-2 h-2 rounded-full bg-amber-500" />
+              Aethelred Public Testnet
             </div>
           </div>
         </Modal>
@@ -197,18 +182,13 @@ export function WalletConnect() {
   }
 
   // Connected state
-  /* istanbul ignore next -- network is always mainnet in connected state */
-  const networkDotColor = network === 'mainnet' ? 'bg-emerald-500' : 'bg-amber-500';
-  /* istanbul ignore next */
-  const networkLabel = network === 'mainnet' ? 'Mainnet' : 'Testnet';
-
   return (
     <>
       <div className="flex items-center gap-2">
         {/* Network indicator */}
         <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs">
-          <div className={`w-1.5 h-1.5 rounded-full ${networkDotColor} animate-pulse`} />
-          <span className="text-slate-500">{networkLabel}</span>
+          <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+          <span className="text-slate-500">Public Testnet</span>
         </div>
 
         {/* Wallet button */}
@@ -227,7 +207,9 @@ export function WalletConnect() {
             <div className="mb-3">
               <div className="bg-slate-50 rounded-lg p-2.5 text-center">
                 <p className="text-xs text-slate-500">$AETHEL</p>
-                <p className="text-sm font-bold text-slate-900">{wallet.aethelBalance === null ? '—' : formatNumber(wallet.aethelBalance)}</p>
+                <p className="text-sm font-bold text-slate-900">
+                  {wallet.aethelBalance === null ? '—' : formatNumber(wallet.aethelBalance)}
+                </p>
               </div>
             </div>
 
@@ -243,13 +225,6 @@ export function WalletConnect() {
 
             {/* Actions */}
             <div className="space-y-1">
-              <button
-                onClick={() => setShowTxDrawer(true)}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
-              >
-                <Clock className="w-4 h-4 text-slate-400" />
-                Transaction History
-              </button>
               <button
                 onClick={() => setShowSignModal(true)}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
@@ -270,29 +245,14 @@ export function WalletConnect() {
         </div>
       </div>
 
-      {/* Transaction History Drawer */}
-      <Drawer
-        open={showTxDrawer}
-        onClose={() => setShowTxDrawer(false)}
-        title="Transaction History"
-      >
-        <div className="text-center py-12">
-          <Clock className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <p className="text-sm font-medium text-slate-700">
-            No indexed transactions available
-          </p>
-          <p className="mx-auto mt-2 max-w-xs text-xs leading-relaxed text-slate-500">
-            Shiora does not fabricate wallet activity. Until the production
-            chain indexer is configured, use your connected wallet to review
-            signed transaction history.
-          </p>
-        </div>
-      </Drawer>
-
       {/* Sign Message Modal */}
       <Modal
         open={showSignModal}
-        onClose={() => { setShowSignModal(false); setSignMessageText(''); setSignResult(''); }}
+        onClose={() => {
+          setShowSignModal(false);
+          setSignMessageText('');
+          setSignResult('');
+        }}
         title="Sign Message"
         description="Sign a message with your wallet to prove ownership"
         size="md"

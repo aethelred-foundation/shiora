@@ -50,13 +50,15 @@ export function lintProductionConfig(env: Record<string, string | undefined>): C
   if (origins.some((origin) => origin === '*' || origin === 'null' || origin.includes('*'))) {
     problems.push({
       code: 'WILDCARD_ORIGIN',
-      message: 'SHIORA_ALLOWED_ORIGINS must list exact origins; wildcard or null origins are prohibited.',
+      message:
+        'SHIORA_ALLOWED_ORIGINS must list exact origins; wildcard or null origins are prohibited.',
     });
   }
   if (origins.some((origin) => origin.startsWith('http://') && !isLocalhost(origin))) {
     problems.push({
       code: 'INSECURE_ORIGIN',
-      message: 'SHIORA_ALLOWED_ORIGINS contains a plaintext http:// origin. Production origins must be https.',
+      message:
+        'SHIORA_ALLOWED_ORIGINS contains a plaintext http:// origin. Production origins must be https.',
     });
   }
 
@@ -70,13 +72,27 @@ export function lintProductionConfig(env: Record<string, string | undefined>): C
   if (env.SHIORA_LOG_LEVEL === 'debug') {
     problems.push({
       code: 'DEBUG_LOGGING_ENABLED',
-      message: 'SHIORA_LOG_LEVEL=debug can write sensitive detail to logs. Use info or above in production.',
+      message:
+        'SHIORA_LOG_LEVEL=debug can write sensitive detail to logs. Use info or above in production.',
+    });
+  }
+  if (env.NODE_ENV === 'production' && env.SHIORA_PROFILE && env.SHIORA_PROFILE !== 'pilot') {
+    problems.push({
+      code: 'UNSAFE_PRODUCTION_PROFILE',
+      message:
+        'Production serves only the fail-closed pilot profile. ' +
+        'Remove SHIORA_PROFILE or set it to pilot.',
     });
   }
 
   // -- Placeholder secrets ---------------------------------------------------
   const placeholderPattern = /replace-with|changeme|example|dummy/i;
-  for (const key of ['SHIORA_SESSION_SECRET', 'SHIORA_DATA_ENCRYPTION_KEY', 'SHIORA_METRICS_TOKEN'] as const) {
+  for (const key of [
+    'SHIORA_SESSION_SECRET',
+    'SHIORA_DATA_ENCRYPTION_KEY',
+    'SHIORA_METRICS_TOKEN',
+    'SHIORA_INFERENCE_API_KEY',
+  ] as const) {
     const value = env[key];
     if (value && placeholderPattern.test(value)) {
       problems.push({
@@ -87,7 +103,11 @@ export function lintProductionConfig(env: Record<string, string | undefined>): C
   }
 
   // -- Backend transport -----------------------------------------------------
-  for (const key of ['SHIORA_VAULT_ADDR', 'SHIORA_L1_RPC_URL'] as const) {
+  for (const key of [
+    'SHIORA_VAULT_ADDR',
+    'SHIORA_L1_RPC_URL',
+    'SHIORA_INFERENCE_API_URL',
+  ] as const) {
     const value = env[key];
     if (value && value.startsWith('http://') && !isLocalhost(value)) {
       problems.push({
@@ -97,21 +117,37 @@ export function lintProductionConfig(env: Record<string, string | undefined>): C
     }
   }
 
+  // -- Managed inference integration -----------------------------------------
+  const inferenceValues = [
+    env.SHIORA_INFERENCE_API_URL,
+    env.SHIORA_INFERENCE_API_KEY,
+    env.SHIORA_INFERENCE_DEPLOYMENT_ID,
+  ];
+  const configuredInferenceValues = inferenceValues.filter(Boolean).length;
+  if (configuredInferenceValues > 0 && configuredInferenceValues < inferenceValues.length) {
+    problems.push({
+      code: 'INFERENCE_CONFIG_INCOMPLETE',
+      message:
+        'Managed inference configuration is incomplete. Set the API URL, API key, ' +
+        'and deployment ID together, or leave all three unset so SANA fails closed.',
+    });
+  }
+
   // -- Aethelred mainnet gate ------------------------------------------------
   if (/mainnet/i.test(env.SHIORA_L1_RPC_URL ?? '')) {
     problems.push({
       code: 'MAINNET_TARGET_PROHIBITED',
       message:
-        'SHIORA_L1_RPC_URL names a mainnet endpoint. Shiora must not carry a mainnet '
-        + 'dependency until the Aethelred mainnet gate (external audit) has cleared.',
+        'SHIORA_L1_RPC_URL names a mainnet endpoint. Shiora must not carry a mainnet ' +
+        'dependency until the Aethelred mainnet gate (external audit) has cleared.',
     });
   }
   if (env.SHIORA_L1_CHAIN_ID && !ALLOWED_ANCHOR_CHAIN_IDS.includes(env.SHIORA_L1_CHAIN_ID)) {
     problems.push({
       code: 'CHAIN_ID_NOT_ALLOWED',
       message:
-        `SHIORA_L1_CHAIN_ID=${env.SHIORA_L1_CHAIN_ID} is not an approved anchoring target `
-        + `(allowed: ${ALLOWED_ANCHOR_CHAIN_IDS.join(', ')}).`,
+        `SHIORA_L1_CHAIN_ID=${env.SHIORA_L1_CHAIN_ID} is not an approved anchoring target ` +
+        `(allowed: ${ALLOWED_ANCHOR_CHAIN_IDS.join(', ')}).`,
     });
   }
 

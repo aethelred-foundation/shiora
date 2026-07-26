@@ -7,7 +7,7 @@ import {
   MEDICAL,
   CHART_COLORS,
   CYCLE_PHASE_COLORS,
-  AI_MODELS,
+  INFERENCE_WORKLOADS,
   TEE_PLATFORMS,
   PROVIDER_NAMES,
   SPECIALTIES,
@@ -114,34 +114,34 @@ describe('CYCLE_PHASE_COLORS', () => {
 });
 
 // ---------------------------------------------------------------------------
-// AI_MODELS
+// INFERENCE_WORKLOADS
 // ---------------------------------------------------------------------------
-describe('AI_MODELS', () => {
+describe('INFERENCE_WORKLOADS', () => {
   it('is a non-empty array', () => {
-    expect(AI_MODELS.length).toBeGreaterThan(0);
+    expect(INFERENCE_WORKLOADS.length).toBeGreaterThan(0);
   });
 
-  it('each model has required fields', () => {
-    AI_MODELS.forEach((model) => {
-      expect(model.id).toBeDefined();
-      expect(typeof model.id).toBe('string');
-      expect(model.name).toBeDefined();
-      expect(typeof model.name).toBe('string');
-      expect(model.version).toBeDefined();
-      expect(typeof model.version).toBe('string');
-      expect(model.type).toBeDefined();
-      expect(typeof model.type).toBe('string');
-      expect(model.accuracy).toBeDefined();
-      expect(typeof model.accuracy).toBe('number');
-      expect(model.accuracy).toBeGreaterThan(0);
-      expect(model.accuracy).toBeLessThanOrEqual(100);
-      expect(model.description).toBeDefined();
-      expect(typeof model.description).toBe('string');
+  it('each workload has required fields', () => {
+    INFERENCE_WORKLOADS.forEach((workload) => {
+      expect(workload.id).toBeDefined();
+      expect(typeof workload.id).toBe('string');
+      expect(workload.name).toBeDefined();
+      expect(typeof workload.name).toBe('string');
+      expect(workload.version).toBeDefined();
+      expect(typeof workload.version).toBe('string');
+      expect(workload.type).toBeDefined();
+      expect(typeof workload.type).toBe('string');
+      expect(workload.accuracy).toBeDefined();
+      expect(typeof workload.accuracy).toBe('number');
+      expect(workload.accuracy).toBeGreaterThan(0);
+      expect(workload.accuracy).toBeLessThanOrEqual(100);
+      expect(workload.description).toBeDefined();
+      expect(typeof workload.description).toBe('string');
     });
   });
 
-  it('has unique model IDs', () => {
-    const ids = AI_MODELS.map((m) => m.id);
+  it('has unique workload IDs', () => {
+    const ids = INFERENCE_WORKLOADS.map((workload) => workload.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 });

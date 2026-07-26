@@ -1,8 +1,8 @@
-# Shiora Health AI -- Security Documentation
+# Shiora -- Security Documentation
 
 ## Security Model Overview
 
-Shiora Health AI implements a defense-in-depth security architecture designed to protect sensitive women's health data at every layer. The target security model is that health data is encrypted client-side before it leaves the user's browser and is decrypted only inside a Trusted Execution Environment (TEE) -- never on a standard server.
+Shiora implements a defense-in-depth security architecture designed to protect sensitive women's health data at every layer. The target security model is that health data is encrypted client-side before it leaves the user's browser and is decrypted only inside a Trusted Execution Environment (TEE) -- never on a standard server.
 
 Implemented today: AES-256-GCM envelope encryption of PHI at rest (`src/lib/crypto/envelope.ts`) and a tamper-evident, hash-chained audit log (`src/lib/crypto/audit-chain.ts`). Client-side encryption and TEE-only processing are in development. See [COMPLIANCE.md](COMPLIANCE.md) for per-control status.
 
@@ -77,23 +77,23 @@ User Master Key
 Trusted Execution Environments (TEEs) provide hardware-enforced isolation for processing sensitive health data. TEE attestation cryptographically proves that:
 
 1. The enclave is running unmodified, signed code
-2. The AI model weights have not been tampered with
+2. The workload artifact has not been tampered with
 3. The computation was performed correctly
 4. No data was leaked outside the enclave
 
 ### Supported Platforms
 
-| Platform   | Hardware                     | Use Case                     |
-|------------|------------------------------|------------------------------|
-| Intel SGX  | Intel Xeon with SGX support  | Primary inference platform   |
-| AWS Nitro  | AWS EC2 instances            | Cloud-native deployments     |
-| AMD SEV    | AMD EPYC processors         | Alternative compute          |
+| Platform  | Hardware                    | Use Case                   |
+| --------- | --------------------------- | -------------------------- |
+| Intel SGX | Intel Xeon with SGX support | Primary inference platform |
+| AWS Nitro | AWS EC2 instances           | Cloud-native deployments   |
+| AMD SEV   | AMD EPYC processors         | Alternative compute        |
 
 ### Attestation Protocol
 
 ```
 1. INITIALIZE
-   Enclave loads signed AI model binary
+   Enclave loads signed workload artifact
    Enclave generates ephemeral keypair (enclave_pk, enclave_sk)
    Platform generates hardware measurement (MR_ENCLAVE)
 
@@ -120,7 +120,7 @@ Trusted Execution Environments (TEEs) provide hardware-enforced isolation for pr
 5. PROCESS
    Client sends encrypted data to enclave
    Enclave decrypts data inside secure memory
-   Enclave runs AI inference
+   Enclave runs the configured inference workload
    Enclave encrypts results with client's public key
    Enclave generates inference attestation
 
@@ -162,12 +162,12 @@ Patient (Data Owner)
 
 ### Grant Properties
 
-| Property    | Description                                   |
-|-------------|-----------------------------------------------|
-| Scope       | Which record types the provider can access     |
-| Duration    | Time-limited expiry (e.g., 90 days)            |
-| canView     | Permission to view records inside TEE          |
-| canDownload | Permission to export decrypted data from TEE   |
+| Property    | Description                                      |
+| ----------- | ------------------------------------------------ |
+| Scope       | Which record types the provider can access       |
+| Duration    | Time-limited expiry (e.g., 90 days)              |
+| canView     | Permission to view records inside TEE            |
+| canDownload | Permission to export decrypted data from TEE     |
 | canShare    | Permission to share records with other providers |
 
 ### Smart Contract Enforcement
@@ -203,17 +203,17 @@ Patients can instantly revoke provider access:
 
 ### Covered Areas
 
-| HIPAA Requirement          | Shiora Implementation                     |
-|----------------------------|-------------------------------------------|
+| HIPAA Requirement          | Shiora Implementation                      |
+| -------------------------- | ------------------------------------------ |
 | Access controls            | Smart contract-enforced, wallet-based auth |
-| Audit controls             | Immutable on-chain audit trail            |
-| Integrity controls         | CID content-addressing, TEE attestations  |
-| Transmission security      | TLS 1.3, E2E encryption (AES-256-GCM)    |
-| Encryption at rest         | AES-256-GCM, keys derived from wallet     |
-| Unique user identification | Aethelred wallet addresses                |
-| Emergency access           | Multi-sig emergency recovery mechanism    |
-| Automatic logoff           | JWT expiry, session timeout               |
-| Backup and recovery        | IPFS multi-node pinning, on-chain CIDs    |
+| Audit controls             | Immutable on-chain audit trail             |
+| Integrity controls         | CID content-addressing, TEE attestations   |
+| Transmission security      | TLS 1.3, E2E encryption (AES-256-GCM)      |
+| Encryption at rest         | AES-256-GCM, keys derived from wallet      |
+| Unique user identification | Aethelred wallet addresses                 |
+| Emergency access           | Multi-sig emergency recovery mechanism     |
+| Automatic logoff           | JWT expiry, session timeout                |
+| Backup and recovery        | IPFS multi-node pinning, on-chain CIDs     |
 | Risk analysis              | Regular security audits, penetration tests |
 
 ### PHI Handling
@@ -236,14 +236,14 @@ Shiora operates with the following data handling guarantees:
 
 The application sets the following security headers via `next.config.js`:
 
-| Header                    | Value                                    |
-|---------------------------|------------------------------------------|
-| X-Frame-Options           | DENY                                     |
-| X-Content-Type-Options    | nosniff                                  |
-| X-XSS-Protection          | 1; mode=block                            |
-| Referrer-Policy           | strict-origin-when-cross-origin          |
-| Strict-Transport-Security | max-age=31536000; includeSubDomains      |
-| Permissions-Policy        | camera=(), microphone=(), geolocation=(), payment=() |
+| Header                    | Value                                                         |
+| ------------------------- | ------------------------------------------------------------- |
+| X-Frame-Options           | DENY                                                          |
+| X-Content-Type-Options    | nosniff                                                       |
+| X-XSS-Protection          | 1; mode=block                                                 |
+| Referrer-Policy           | strict-origin-when-cross-origin                               |
+| Strict-Transport-Security | max-age=31536000; includeSubDomains                           |
+| Permissions-Policy        | camera=(), microphone=(), geolocation=(), payment=()          |
 | Content-Security-Policy   | default-src 'self'; frame-ancestors 'none'; object-src 'none' |
 
 ## Bug Bounty Program
@@ -260,8 +260,8 @@ The following assets are in scope for the bug bounty program:
 
 ### Severity Levels and Rewards
 
-| Severity | Description                                           | Reward Range     |
-|----------|-------------------------------------------------------|------------------|
+| Severity | Description                                            | Reward Range     |
+| -------- | ------------------------------------------------------ | ---------------- |
 | Critical | Unauthorized access to PHI, key compromise, TEE bypass | $5,000 - $25,000 |
 | High     | Authentication bypass, privilege escalation            | $2,000 - $5,000  |
 | Medium   | Information disclosure, CSRF, improper access control  | $500 - $2,000    |
@@ -272,6 +272,7 @@ The following assets are in scope for the bug bounty program:
 Report vulnerabilities to: security@shiora.health
 
 Include in your report:
+
 1. Description of the vulnerability
 2. Steps to reproduce
 3. Potential impact assessment
@@ -279,12 +280,12 @@ Include in your report:
 
 ### Response Timeline
 
-| Action              | Target Time |
-|---------------------|-------------|
-| Acknowledgement     | 24 hours    |
-| Triage              | 72 hours    |
-| Fix deployed        | 7-14 days   |
-| Reward payout       | 30 days     |
+| Action          | Target Time |
+| --------------- | ----------- |
+| Acknowledgement | 24 hours    |
+| Triage          | 72 hours    |
+| Fix deployed    | 7-14 days   |
+| Reward payout   | 30 days     |
 
 ### Out of Scope
 
@@ -356,12 +357,12 @@ Include in your report:
 
 ### Severity Classification
 
-| Level    | Description                                       | Response Time |
-|----------|---------------------------------------------------|---------------|
-| P0       | PHI exposure, key compromise, TEE bypass          | Immediate     |
-| P1       | Authentication bypass, unauthorized access         | 1 hour        |
-| P2       | Data integrity issues, service degradation         | 4 hours       |
-| P3       | Minor vulnerabilities, non-critical bugs           | 24 hours      |
+| Level | Description                                | Response Time |
+| ----- | ------------------------------------------ | ------------- |
+| P0    | PHI exposure, key compromise, TEE bypass   | Immediate     |
+| P1    | Authentication bypass, unauthorized access | 1 hour        |
+| P2    | Data integrity issues, service degradation | 4 hours       |
+| P3    | Minor vulnerabilities, non-critical bugs   | 24 hours      |
 
 ### Response Steps
 

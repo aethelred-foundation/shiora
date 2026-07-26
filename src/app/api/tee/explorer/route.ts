@@ -17,7 +17,7 @@ import {
   generateAttestation,
   generateDayLabel,
 } from '@/lib/utils';
-import { TEE_PLATFORMS, AI_MODELS } from '@/lib/constants';
+import { TEE_PLATFORMS, INFERENCE_WORKLOADS } from '@/lib/constants';
 import type {
   TEEPlatformStats,
   TEEVerificationChain,
@@ -70,7 +70,7 @@ function generateAttestations(): TEEVerificationChain[] {
   for (let i = 0; i < 12; i++) {
     const s = SEED + i * 31;
     const platform = seededPick(s, TEE_PLATFORMS) as TEEPlatform;
-    const model = seededPick(s + 1, AI_MODELS);
+    const model = seededPick(s + 1, INFERENCE_WORKLOADS);
     const pcrValues: string[] = [];
     for (let p = 0; p < 3; p++) {
       pcrValues.push(`0x${seededHex(s + p * 13, 64)}`);
@@ -99,12 +99,17 @@ function generateAttestations(): TEEVerificationChain[] {
 
 function generateJobs(): TEEComputeJob[] {
   const statuses: ComputeJobStatus[] = ['queued', 'running', 'completed', 'failed', 'cancelled'];
-  const priorities: Array<'low' | 'normal' | 'high' | 'critical'> = ['low', 'normal', 'high', 'critical'];
+  const priorities: Array<'low' | 'normal' | 'high' | 'critical'> = [
+    'low',
+    'normal',
+    'high',
+    'critical',
+  ];
   const items: TEEComputeJob[] = [];
 
   for (let i = 0; i < 15; i++) {
     const s = SEED + 500 + i * 37;
-    const model = seededPick(s, AI_MODELS);
+    const model = seededPick(s, INFERENCE_WORKLOADS);
     const status = seededPick(s + 1, statuses);
     const submitted = Date.now() - seededInt(s + 2, 60_000, 86_400_000 * 3);
     const execTime = seededInt(s + 3, 80, 2500);
@@ -130,9 +135,36 @@ function generateJobs(): TEEComputeJob[] {
 }
 
 function generateEnclaves(): TEEEnclaveInfo[] {
-  const regions = ['us-east-1', 'us-west-2', 'eu-west-1', 'ap-southeast-1', 'us-central-1', 'eu-central-1', 'ap-northeast-1', 'sa-east-1'];
-  const firmwareVersions = ['2.18.100.4', '3.1.0', '1.51.0', '2.20.0', '3.2.1', '1.53.2', '2.19.0', '3.0.5'];
-  const statusOptions: TEEStatus[] = ['operational', 'operational', 'operational', 'operational', 'operational', 'operational', 'degraded', 'offline'];
+  const regions = [
+    'us-east-1',
+    'us-west-2',
+    'eu-west-1',
+    'ap-southeast-1',
+    'us-central-1',
+    'eu-central-1',
+    'ap-northeast-1',
+    'sa-east-1',
+  ];
+  const firmwareVersions = [
+    '2.18.100.4',
+    '3.1.0',
+    '1.51.0',
+    '2.20.0',
+    '3.2.1',
+    '1.53.2',
+    '2.19.0',
+    '3.0.5',
+  ];
+  const statusOptions: TEEStatus[] = [
+    'operational',
+    'operational',
+    'operational',
+    'operational',
+    'operational',
+    'operational',
+    'degraded',
+    'offline',
+  ];
   const items: TEEEnclaveInfo[] = [];
 
   for (let i = 0; i < 8; i++) {

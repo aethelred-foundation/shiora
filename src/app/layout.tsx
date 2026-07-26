@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     template: '%s | Shiora',
   },
   description:
-    "Women's Health AI Platform on the Aethelred Blockchain — encrypted, owner-controlled, and access-audited privacy for sensitive health data.",
+    "Women's Health Data Platform on the Aethelred Blockchain — encrypted, owner-controlled, and access-audited privacy for sensitive health data.",
   metadataBase: new URL('https://shiora.health'),
   icons: {
     icon: '/favicon.svg',
@@ -16,8 +16,7 @@ export const metadata: Metadata = {
   manifest: '/site.webmanifest',
   openGraph: {
     title: 'Shiora on Aethelred',
-    description:
-      "Women's Health AI Platform on the Aethelred Blockchain",
+    description: "Women's Health Data Platform on the Aethelred Blockchain",
     siteName: 'Shiora on Aethelred',
     images: [{ url: '/og-image.svg', width: 1200, height: 630 }],
     type: 'website',
@@ -25,8 +24,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Shiora on Aethelred',
-    description:
-      "Women's Health AI Platform on the Aethelred Blockchain",
+    description: "Women's Health Data Platform on the Aethelred Blockchain",
     images: ['/og-image.svg'],
   },
 };
@@ -40,11 +38,7 @@ export const viewport: Viewport = {
 // bootstrap scripts would carry no matching nonce — must never be served.
 export const dynamic = 'force-dynamic';
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className="bg-surface-50 text-slate-800 antialiased font-sans min-h-screen flex flex-col">

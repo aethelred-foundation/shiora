@@ -9,7 +9,7 @@ the verifier rather than removing the surface.
 
 A confidential-compute attestation proves that a specific, measured enclave —
 not a rogue process or a leaked key — produced a result. For sovereign,
-regulated health workloads (M42/G42-class), "our clinical AI runs in a verified
+regulated health workloads (M42/G42-class), "our clinical inference runs in a verified
 enclave" is only credible if the platform can _cryptographically verify_ the
 enclave's attestation, without trusting Shiora's own servers. This subsystem
 does exactly that.

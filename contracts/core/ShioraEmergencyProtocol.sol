@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraEmergencyProtocol
- * @author Shiora Health AI on Aethelred
  * @notice Manages emergency contact registries, triage assessment logging,
  *         and care handoff verification. Critical health data is accessible
  *         via time-limited emergency grants verified through TEE attestation.
@@ -244,7 +243,7 @@ contract ShioraEmergencyProtocol is Ownable, ReentrancyGuard, Pausable {
     // ────────────────────────────────────────────────────────
 
     /**
-     * @notice Record an AI-assisted triage assessment.
+     * @notice Record a decision-supported triage assessment.
      * @param patient Address of the patient
      * @param level ESI triage level (1-5)
      * @param symptomsHash Hash of the symptom assessment

@@ -91,13 +91,11 @@ export interface UseWalletReturn {
 }
 
 // ---------------------------------------------------------------------------
-// Aethelred EVM chain ids (cosmos/evm). Testnet and local devnet share 7332;
-// mainnet is 7331. Passed through to the session record; the challenge HMAC
-// does not depend on it.
+// Shiora is pinned to the Aethelred public testnet until the audited mainnet
+// release gate is explicitly cleared.
 // ---------------------------------------------------------------------------
 
 const CHAIN_IDS: Record<string, string> = {
-  mainnet: '7331',
   testnet: '7332',
 };
 
@@ -161,7 +159,7 @@ export function useWallet(): UseWalletReturn {
   const [activeProvider, setActiveProvider] = useState<WalletProvider | null>(
     (wallet.provider as WalletProvider | null) ?? null,
   );
-  const [activeChainId, setActiveChainId] = useState<string>(wallet.chainId ?? CHAIN_IDS.mainnet);
+  const [activeChainId, setActiveChainId] = useState<string>(wallet.chainId ?? CHAIN_IDS.testnet);
 
   /** Check whether the requested wallet's EIP-1193 provider is injected. */
   const isProviderAvailable = useCallback((provider: WalletProvider): boolean => {
@@ -185,7 +183,7 @@ export function useWallet(): UseWalletReturn {
    * 4. POST /api/wallet/connect with the 0x signature + challenge data
    */
   const connect = useCallback(
-    async (provider: WalletProvider = 'aethelred', network: string = 'mainnet') => {
+    async (provider: WalletProvider = 'aethelred', network: string = 'testnet') => {
       setIsLoading(true);
       setError(null);
       try {
@@ -198,7 +196,10 @@ export function useWallet(): UseWalletReturn {
           );
         }
 
-        const chainId = CHAIN_IDS[network] ?? CHAIN_IDS.mainnet;
+        if (network !== 'testnet') {
+          throw new Error('Shiora currently supports only the Aethelred public testnet.');
+        }
+        const chainId = CHAIN_IDS.testnet;
 
         // Step 1: request the account.
         const accounts = (await eip1193.request({
@@ -360,13 +361,6 @@ export function useWallet(): UseWalletReturn {
     },
     [wallet.connected, wallet.address, activeProvider, addNotification],
   );
-
-  // Keep the session's chain id in sync when it is restored from storage.
-  useEffect(() => {
-    if (wallet.chainId && wallet.chainId !== activeChainId) {
-      setActiveChainId(wallet.chainId);
-    }
-  }, [wallet.chainId, activeChainId]);
 
   return {
     wallet,

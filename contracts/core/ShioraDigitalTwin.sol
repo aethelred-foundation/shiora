@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraDigitalTwin
- * @author Shiora Health AI on Aethelred
  * @notice Manages Digital Health Twin registration, parameter snapshots,
  *         and simulation result anchoring — all executed inside TEE enclaves
  *         and verified on-chain via Aethelred attestation proofs.
@@ -165,7 +164,7 @@ contract ShioraDigitalTwin is Ownable, ReentrancyGuard, Pausable {
     /**
      * @notice Register a new Digital Health Twin.
      * @param parameterHash Hash of the initial patient parameters (encrypted in TEE)
-     * @param modelHash Hash of the AI model used for simulation
+     * @param modelHash Hash of the workload artifact used for simulation
      * @param teeAttestationHash TEE attestation proving twin was created in a verified enclave
      * @return twinId Unique identifier for the new twin
      */
