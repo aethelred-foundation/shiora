@@ -106,7 +106,7 @@ function aethelToWeiHex(amount: number): string {
     throw new Error('Transaction amount must be a positive finite number');
   }
 
-  const [whole, fraction = ''] = amount.toFixed(18).split('.');
+  const [whole, fraction] = amount.toFixed(18).split('.') as [string, string];
   const wei = BigInt(`${whole}${fraction.padEnd(18, '0')}`);
   return `0x${wei.toString(16)}`;
 }
