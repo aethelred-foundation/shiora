@@ -133,7 +133,7 @@ function resolveProvider(kind: WalletProvider): Eip1193Provider | null {
     return (
       discoveredProviders.get(AETHELRED_WALLET_RDNS) ??
       w.aethelred ??
-      w.ethereum ??
+      (w.ethereum?.isAethelred ? w.ethereum : null) ??
       null
     );
   }
