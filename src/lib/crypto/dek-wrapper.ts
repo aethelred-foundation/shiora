@@ -223,8 +223,7 @@ export function getDekWrapper(): DekWrapper {
  * The probe wraps a fresh, throwaway DEK and validates the returned Transit
  * ciphertext; no plaintext key material is persisted.
  */
-export async function probeManagedDekCustody(): Promise<void> {
-  const active = getDekWrapper();
+export async function probeManagedDekCustody(active: DekWrapper = getDekWrapper()): Promise<void> {
   if (active.backend !== 'vault-transit') return;
   const probe = crypto.randomBytes(32);
   try {

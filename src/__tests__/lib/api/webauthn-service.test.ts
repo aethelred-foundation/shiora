@@ -36,7 +36,7 @@ afterEach(() => {
 describe('webauthn-service', () => {
   it('exposes the configured relying party', () => {
     expect(rpId).toBe('localhost');
-    expect(origin).toBe('http://localhost:3000');
+    expect(origin).toBe('http://localhost:3001');
   });
 
   it('registers, then authenticates a passkey across two counter-advancing logins', async () => {

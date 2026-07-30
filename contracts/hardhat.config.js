@@ -17,6 +17,18 @@ module.exports = {
   },
   paths: { sources: './seal', tests: './test', cache: './cache', artifacts: './artifacts' },
   networks: {
+    // Aethelred public testnet. The URL/key names intentionally differ from
+    // the local-devnet variables. The deployment script requires both values
+    // and verifies chain id 7332 before sending its first transaction, so the
+    // localhost compile/test fallback cannot become a live deployment target.
+    aethelredTestnet: {
+      url: process.env.AETHELRED_TESTNET_RPC_URL || 'http://127.0.0.1:8545',
+      chainId: 7332,
+      accounts: process.env.SHIORA_DEPLOYER_PRIVATE_KEY
+        ? [process.env.SHIORA_DEPLOYER_PRIVATE_KEY]
+        : [],
+      gasMultiplier: 2,
+    },
     // Local aethelredd EVM devnet (chain-id 7332) — the live-node target for
     // scripts/devnet-seal-attestation-e2e.js, the running-node counterpart to
     // internal/evmhost/shiora_test.go. Accounts are populated only when a funded

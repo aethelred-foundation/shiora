@@ -24,7 +24,7 @@ const DECISION_TYPES: ClinicalDecisionAuditEntry['decisionType'][] = [
 
 const MODEL_IDS = [
   'clinical-pathway-reference-v3.2',
-  'drug-interaction-bert-v2.1',
+  'drug-interaction-reference-v2.1',
   'differential-reference-v4.0',
   'guideline-compliance-v2.8',
   'alert-engine-v3.5',

@@ -105,12 +105,8 @@ function chainIdNumber(value: unknown): number | null {
   if (typeof value !== 'string' || !/^0x[0-9a-fA-F]+$/.test(value)) {
     return null;
   }
-  try {
-    const parsed = BigInt(value);
-    return parsed <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(parsed) : null;
-  } catch {
-    return null;
-  }
+  const parsed = BigInt(value);
+  return parsed <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(parsed) : null;
 }
 
 function providerErrorCode(error: unknown): number | null {

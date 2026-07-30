@@ -17,12 +17,12 @@ function makeRequest(
   method = 'GET',
   headers: Record<string, string> = {},
 ): NextRequest {
-  const url = `http://localhost:3000${pathname}`;
+  const url = `http://localhost:3001${pathname}`;
   return new NextRequest(url, { method, headers });
 }
 
 // One of the origins that is allowed by default in serverEnv.
-const ALLOWED_ORIGIN = 'http://localhost:3000';
+const ALLOWED_ORIGIN = 'http://localhost:3001';
 // An origin that is NOT in the allow-list.
 const DISALLOWED_ORIGIN = 'https://evil.example.com';
 

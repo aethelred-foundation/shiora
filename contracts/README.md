@@ -1,21 +1,38 @@
-# Shiora Smart Contracts
+# Shiora Contract Sources
 
-On-chain protocol layer for Shiora on the Aethelred sovereign L1. These contracts govern health record registration, privacy-preserving data sharing, consent management, zero-knowledge verification, marketplace economics, staking, and decentralized governance.
+## Supported public-testnet scope
 
-All contracts target **Solidity ^0.8.20** and inherit from **OpenZeppelin 5.0.2** base contracts (`Ownable`, `ReentrancyGuard`, `Pausable`, `ECDSA`, `MessageHashUtils`).
+Exactly one contract is supported for deployment:
+`seal/ShioraSealAttestation.sol`, plus its vendored `ISeal` interface. The
+Hardhat configuration deliberately sets `sources: "./seal"` so compile, test,
+and deployment commands cannot silently include any other directory.
+
+Everything under `core/`, `privacy/`, and `defi/` is a historical design
+artifact. Those contracts are untested, unwired, and out of scope. **Do not
+deploy them.** A green Hardhat run vouches only for the seal tier.
+
+The canonical fresh-install procedure and environment contract are in
+[`../docs/PUBLIC_TESTNET_RUNBOOK.md`](../docs/PUBLIC_TESTNET_RUNBOOK.md) and
+[`.env.public-testnet.example`](.env.public-testnet.example).
 
 ## Directory Structure
 
 ```
 contracts/
-├── core/           # Infrastructure: access control, record registry, TEE attestation
-├── privacy/        # Privacy primitives: consent, reproductive vault, ZK proofs
-├── defi/           # Token economics: governance, staking, marketplace
-├── interfaces/     # Shared interface definitions (IShiora.sol)
+├── seal/           # Supported: ShioraSealAttestation + ISeal interface
+├── test/           # Seal-tier tests
+├── scripts/        # Public-testnet deploy + live-node validation
+├── core/           # Out of scope: historical design artifacts
+├── privacy/        # Out of scope: historical design artifacts
+├── defi/           # Out of scope: historical design artifacts
+├── interfaces/     # Out of scope: historical shared interfaces
 └── README.md
 ```
 
-## Contract Reference
+## Historical source catalog
+
+The table below documents files that remain for review and migration history;
+it is not a deployment manifest.
 
 | Contract                  | Directory  | Purpose                                                                                                                                                                                                                                                                   |
 | ------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -29,9 +46,10 @@ contracts/
 | `ShioraStaking`           | `defi/`    | SHIO token staking for governance voting weight and protocol rewards. Stake positions are time-locked with a 7-day cooldown for unstaking. 1 staked SHIO = 1 vote of governance power.                                                                                    |
 | `ShioraMarketplace`       | `defi/`    | Health data marketplace for anonymized, TEE-verified datasets. Revenue split: seller (85%), protocol treasury (10%), stakers (5%). Listings carry quality scores and expire after a configurable duration (max 90 days).                                                  |
 
-## Interfaces
+## Historical interfaces
 
-`interfaces/IShiora.sol` contains the canonical interface definitions for all nine contracts. External integrations and cross-contract calls should reference these interfaces rather than importing concrete implementations.
+`interfaces/IShiora.sol` describes the historical contracts above. It is not
+part of the supported seal-tier build or deployment.
 
 ## Dependencies
 
@@ -61,11 +79,24 @@ npx hardhat test
 
 ### Deploy
 
-Deployment scripts are located in the project root under `scripts/` (or `ignition/` if using Hardhat Ignition). Refer to the project-level documentation for network configuration and deployment procedures.
+Copy and populate the deployment-only template, then follow the canonical
+runbook. The command below sends live public-testnet transactions only when an
+operator invokes it with approved values:
 
 ```bash
-npx hardhat run scripts/deploy.ts --network <network>
+cp .env.public-testnet.example .env.public-testnet
+set -a
+. ./.env.public-testnet
+set +a
+npm run deploy:public-testnet
 ```
+
+The deployer becomes the initial `Ownable2Step` owner, and the script sets and
+reads back the approved CEAP policy. It refuses any chain other than `7332`.
+
+The Shiora application does not consume this contract address. In particular,
+do not use it as `SHIORA_L1_ANCHOR_TO`; it cannot receive the application's raw
+audit-root calldata.
 
 ### Code Coverage
 

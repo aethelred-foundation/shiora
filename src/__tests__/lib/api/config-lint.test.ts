@@ -95,6 +95,7 @@ describe('lintProductionConfig', () => {
     expect(codes({ DATABASE_URL: 'postgresql://localhost/shiora' })).not.toContain(
       'NON_TLS_DATABASE',
     );
+    expect(codes({ DATABASE_URL: 'not-a-database-url' })).toContain('NON_TLS_DATABASE');
   });
 
   it('requires managed inference configuration as one complete set', () => {

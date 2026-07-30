@@ -192,6 +192,40 @@ describe('VaultTransitDekWrapper', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(String(fetchMock.mock.calls[0][0])).toContain('/v1/transit/encrypt/shiora-kek');
   });
+
+  it('skips the managed-custody probe for a local KEK backend', async () => {
+    const probeWrapper = {
+      backend: 'local-kek' as const,
+      wrap: jest.fn(),
+      unwrap: jest.fn(),
+    };
+
+    await expect(probeManagedDekCustody(probeWrapper)).resolves.toBeUndefined();
+    expect(probeWrapper.wrap).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'wrong backend',
+      { ciphertext: 'vault:v1:probe', keyVersion: 1, backend: 'local-kek' as const },
+    ],
+    [
+      'invalid key version',
+      { ciphertext: 'vault:v1:probe', keyVersion: 0, backend: 'vault-transit' as const },
+    ],
+    [
+      'invalid ciphertext',
+      { ciphertext: 'not-vault-ciphertext', keyVersion: 1, backend: 'vault-transit' as const },
+    ],
+  ])('rejects a managed-custody probe with %s', async (_label, result) => {
+    const probeWrapper = {
+      backend: 'vault-transit' as const,
+      wrap: jest.fn().mockResolvedValue(result),
+      unwrap: jest.fn(),
+    };
+
+    await expect(probeManagedDekCustody(probeWrapper)).rejects.toThrow(/invalid wrapped key/);
+  });
 });
 
 describe('getDekWrapper selection', () => {

@@ -73,9 +73,10 @@ Production is pinned to the fail-closed pilot corridor and **refuses** the
 in-memory store: it requires `DATABASE_URL`, managed key custody, and TLS.
 Deferred APIs return 503 and their pages return 404. See
 [.env.example](.env.example), [docs/PILOT_SCOPE.md](docs/PILOT_SCOPE.md), and
-[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Do **not** configure a production
-dependency on an Aethelred mainnet endpoint; the Aethelred mainnet gate has not
-cleared.
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). The exact public-testnet installation
+procedure is [docs/PUBLIC_TESTNET_RUNBOOK.md](docs/PUBLIC_TESTNET_RUNBOOK.md).
+L1 audit anchoring remains disabled there until a dedicated compatible receiver
+exists; the seal-attestation registry is not that receiver.
 
 ## Documentation
 
@@ -88,6 +89,7 @@ cleared.
 | [docs/COMPLIANCE.md](docs/COMPLIANCE.md) + [docs/compliance/](docs/compliance/)                         | HIPAA/GDPR control mapping and self-assessment work product    |
 | [docs/ATTESTATION.md](docs/ATTESTATION.md)                                                              | TEE attestation verifier (SEV-SNP) — scope and honest boundary |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) · [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md) | Operational requirements and gates                             |
+| [docs/PUBLIC_TESTNET_RUNBOOK.md](docs/PUBLIC_TESTNET_RUNBOOK.md)                                        | Exact public-testnet fresh-install procedure                   |
 
 ## Honesty boundary
 

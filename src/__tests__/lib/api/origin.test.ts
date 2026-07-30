@@ -14,13 +14,13 @@ describe('getAllowedOrigins', () => {
     const origins = getAllowedOrigins();
     expect(Array.isArray(origins)).toBe(true);
     expect(origins.length).toBeGreaterThan(0);
-    expect(origins).toContain('http://localhost:3000');
+    expect(origins).toContain('http://localhost:3001');
   });
 });
 
 describe('isAllowedOrigin', () => {
   it('returns true for allowed origin', () => {
-    expect(isAllowedOrigin('http://localhost:3000')).toBe(true);
+    expect(isAllowedOrigin('http://localhost:3001')).toBe(true);
   });
 
   it('returns false for disallowed origin', () => {
@@ -76,18 +76,18 @@ describe('isAllowedOrigin with wildcard subdomain matching', () => {
 
 describe('getCorsHeaders', () => {
   it('returns full CORS headers for allowed origin', () => {
-    const req = new NextRequest('http://localhost:3000/api/test', {
-      headers: { origin: 'http://localhost:3000' },
+    const req = new NextRequest('http://localhost:3001/api/test', {
+      headers: { origin: 'http://localhost:3001' },
     });
     const headers = getCorsHeaders(req);
-    expect(headers['Access-Control-Allow-Origin']).toBe('http://localhost:3000');
+    expect(headers['Access-Control-Allow-Origin']).toBe('http://localhost:3001');
     expect(headers['Access-Control-Allow-Credentials']).toBe('true');
     expect(headers['Access-Control-Allow-Methods']).toContain('GET');
     expect(headers.Vary).toBe('Origin');
   });
 
   it('returns only Vary for disallowed origin', () => {
-    const req = new NextRequest('http://localhost:3000/api/test', {
+    const req = new NextRequest('http://localhost:3001/api/test', {
       headers: { origin: 'http://evil.example.com' },
     });
     const headers = getCorsHeaders(req);
@@ -118,21 +118,21 @@ describe('isMutatingMethod', () => {
 
 describe('hasDisallowedOrigin', () => {
   it('returns true for disallowed origin', () => {
-    const req = new NextRequest('http://localhost:3000/api/test', {
+    const req = new NextRequest('http://localhost:3001/api/test', {
       headers: { origin: 'http://evil.example.com' },
     });
     expect(hasDisallowedOrigin(req)).toBe(true);
   });
 
   it('returns false for allowed origin', () => {
-    const req = new NextRequest('http://localhost:3000/api/test', {
-      headers: { origin: 'http://localhost:3000' },
+    const req = new NextRequest('http://localhost:3001/api/test', {
+      headers: { origin: 'http://localhost:3001' },
     });
     expect(hasDisallowedOrigin(req)).toBe(false);
   });
 
   it('returns false when no origin header', () => {
-    const req = new NextRequest('http://localhost:3000/api/test');
+    const req = new NextRequest('http://localhost:3001/api/test');
     expect(hasDisallowedOrigin(req)).toBe(false);
   });
 });
