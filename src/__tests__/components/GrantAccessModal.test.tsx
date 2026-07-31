@@ -71,8 +71,8 @@ describe('GrantAccessModal', () => {
   });
 
   it('renders progress dots', () => {
-    const { container } = render(<GrantAccessModal open={true} onClose={jest.fn()} />);
-    const dots = container.querySelectorAll('.rounded-full.w-2\\.5');
+    render(<GrantAccessModal open={true} onClose={jest.fn()} />);
+    const dots = document.body.querySelectorAll('.rounded-full.w-2\\.5');
     expect(dots.length).toBeGreaterThanOrEqual(3);
   });
 
