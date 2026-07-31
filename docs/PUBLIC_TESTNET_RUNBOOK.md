@@ -35,7 +35,7 @@ Obtain and approve these values before starting:
 
 | Input                 | Requirement                                                                                                                 |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Release commit        | Exact 40-character SHA on `shiora/production-completion`                                                                    |
+| Release commit        | Exact 40-character SHA on `release/public-testnet-2026-07-31`                                                               |
 | EVM RPC               | HTTPS Aethelred public-testnet JSON-RPC endpoint                                                                            |
 | Consensus RPC         | `tcp://host:26657` endpoint for read-only parameter checks                                                                  |
 | Deployer              | Fresh funded testnet EVM account; private key held only for the contract ceremony                                           |
@@ -51,11 +51,11 @@ for a live-data production launch.
 ## 3. Fresh checkout and release verification
 
 ```bash
-git clone --branch shiora/production-completion --single-branch \
+git clone --branch release/public-testnet-2026-07-31 --single-branch \
   https://github.com/aethelred-foundation/shiora.git
 cd shiora
 
-git fetch origin shiora/production-completion
+git fetch origin release/public-testnet-2026-07-31
 git checkout --detach <approved-release-sha>
 test "$(git rev-parse HEAD)" = "<approved-release-sha>"
 test -z "$(git status --porcelain)"
