@@ -1,6 +1,10 @@
 /** @jest-environment node */
 
-import { lintProductionConfig, ALLOWED_ANCHOR_CHAIN_IDS } from '@/lib/api/config-lint';
+import {
+  classifyConfigProblems,
+  lintProductionConfig,
+  ALLOWED_ANCHOR_CHAIN_IDS,
+} from '@/lib/api/config-lint';
 
 const VALID_SESSION_FIXTURE = ['fixture', 'value', 'for', 'validation'].join('-');
 
@@ -119,5 +123,29 @@ describe('lintProductionConfig', () => {
     for (const chainId of ALLOWED_ANCHOR_CHAIN_IDS) {
       expect(codes({ SHIORA_L1_CHAIN_ID: chainId })).toEqual([]);
     }
+  });
+});
+
+describe('classifyConfigProblems', () => {
+  it('acknowledges only transport findings in evaluation mode', () => {
+    const result = classifyConfigProblems({
+      NODE_ENV: 'production',
+      SHIORA_PREFLIGHT_MODE: 'evaluation',
+      SHIORA_ALLOWED_ORIGINS: 'http://93.127.132.52:3001',
+      SHIORA_LOG_LEVEL: 'debug',
+    });
+
+    expect(result.acknowledged.map((problem) => problem.code)).toEqual(['INSECURE_ORIGIN']);
+    expect(result.blocking.map((problem) => problem.code)).toContain('DEBUG_LOGGING_ENABLED');
+  });
+
+  it('keeps transport findings blocking outside evaluation mode', () => {
+    const result = classifyConfigProblems({
+      NODE_ENV: 'production',
+      SHIORA_ALLOWED_ORIGINS: 'http://93.127.132.52:3001',
+    });
+
+    expect(result.acknowledged).toEqual([]);
+    expect(result.blocking.map((problem) => problem.code)).toContain('INSECURE_ORIGIN');
   });
 });

@@ -245,6 +245,24 @@ SHIORA_L1_ANCHOR_TO=
 SHIORA_L1_CHAIN_ID=
 ```
 
+The block above is the preferred TLS-terminated layout. If the evaluation is
+temporarily exposed directly on its IP address without a reverse proxy, use
+the exact browser origin instead:
+
+```dotenv
+SHIORA_ALLOWED_ORIGINS=http://<public-testnet-ip>:3001
+SHIORA_ENABLE_HSTS=false
+SHIORA_TRUSTED_PROXY_COUNT=0
+```
+
+That direct-IP profile is allowed only with
+`SHIORA_PREFLIGHT_MODE=evaluation`, synthetic data, and no live PHI. The
+configuration linter reports the plaintext origin as an explicitly
+acknowledged evaluation finding; it remains a blocking error in production
+mode. Never put both an invented HTTPS origin and the actual HTTP origin in
+the file merely to make the linter pass: browser mutations are accepted only
+when the incoming `Origin` matches `SHIORA_ALLOWED_ORIGINS` exactly.
+
 Before loading the file, confirm no template marker remains:
 
 ```bash
@@ -274,6 +292,14 @@ set +a
 npm run config:lint
 npm run type-check
 npm run build
+```
+
+Before starting the service, verify that the origin the US team will open is
+present verbatim in the loaded allowlist:
+
+```bash
+export SHIORA_PUBLIC_ORIGIN=http://<public-testnet-ip>:3001
+node -e 'const allowed=(process.env.SHIORA_ALLOWED_ORIGINS||"").split(",").map(v=>v.trim()); if(!allowed.includes(process.env.SHIORA_PUBLIC_ORIGIN)){console.error("STOP: browser origin is not in SHIORA_ALLOWED_ORIGINS"); process.exit(1)}; console.log("origin allowlist: OK")'
 ```
 
 The build creates and prepares `.next/standalone`. The supported start command
@@ -320,6 +346,8 @@ Verify:
 - the active profile is `pilot`;
 - schema migrations completed and a restart preserves data;
 - the browser origin connects through HTTPS;
+- for a direct-IP evaluation, the exact `http://<ip>:3001` browser origin is
+  allowlisted and readiness reports `TRANSPORT_NOT_HARDENED` as acknowledged;
 - the wallet reports chain `7332`;
 - contract manifest owner and CEAP policy match the approved values;
 - all L1 audit-anchor variables remain blank and anchor receipts remain

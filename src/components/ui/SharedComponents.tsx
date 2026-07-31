@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, Fragment } from 'react';
+import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -351,11 +352,12 @@ export function Modal({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  const portalTarget = typeof document === 'undefined' ? null : document.body;
+  if (!open || !portalTarget) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-3 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
@@ -365,7 +367,7 @@ export function Modal({
         onClick={onClose}
       />
       <div
-        className={`relative bg-white rounded-2xl shadow-float border border-slate-200 w-full ${MODAL_SIZES[size]} max-h-[90vh] flex flex-col animate-scale-in`}
+        className={`relative my-auto flex max-h-[calc(100dvh-1.5rem)] w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-float sm:max-h-[calc(100dvh-2rem)] ${MODAL_SIZES[size]} animate-scale-in`}
       >
         {(title || showClose) && (
           <div className="flex items-center justify-between p-5 border-b border-slate-100">
@@ -390,7 +392,8 @@ export function Modal({
         )}
         <div className="p-5 overflow-y-auto flex-1">{children}</div>
       </div>
-    </div>
+    </div>,
+    portalTarget,
   );
 }
 

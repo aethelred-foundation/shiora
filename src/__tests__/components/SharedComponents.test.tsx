@@ -226,6 +226,20 @@ describe('Tabs', () => {
 // Modal
 // ---------------------------------------------------------------------------
 describe('Modal', () => {
+  it('portals the dialog to document.body so transformed navigation cannot clip it', () => {
+    const { container } = render(
+      <nav>
+        <Modal open={true} onClose={jest.fn()} title="Viewport-safe dialog">
+          Content
+        </Modal>
+      </nav>,
+    );
+
+    const dialog = screen.getByRole('dialog', { name: 'Viewport-safe dialog' });
+    expect(dialog.parentElement).toBe(document.body);
+    expect(container.querySelector('[role="dialog"]')).toBeNull();
+  });
+
   it('does not render when open is false', () => {
     render(
       <Modal open={false} onClose={jest.fn()}>
@@ -736,7 +750,7 @@ describe('Modal showClose=false', () => {
 // ---------------------------------------------------------------------------
 describe('ConfirmDialog danger variant', () => {
   it('renders danger variant styling', () => {
-    const { container } = render(
+    render(
       <ConfirmDialog
         open={true}
         onClose={jest.fn()}
@@ -745,7 +759,7 @@ describe('ConfirmDialog danger variant', () => {
         variant="danger"
       />,
     );
-    expect(container.querySelector('.bg-red-50')).toBeInTheDocument();
+    expect(document.body.querySelector('.bg-red-50')).toBeInTheDocument();
   });
 });
 

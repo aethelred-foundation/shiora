@@ -18,6 +18,13 @@ export interface ConfigLintProblem {
   message: string;
 }
 
+export interface ConfigLintClassification {
+  blocking: ConfigLintProblem[];
+  acknowledged: ConfigLintProblem[];
+}
+
+const EVALUATION_ACKNOWLEDGEABLE_CONFIG_CODES = new Set(['INSECURE_ORIGIN', 'NON_TLS_BACKEND']);
+
 /**
  * Anchoring targets Shiora may point at before the Aethelred mainnet gate
  * (external audit) clears: the Aethelred EVM testnets only. Anything else —
@@ -174,4 +181,28 @@ export function lintProductionConfig(env: Record<string, string | undefined>): C
   }
 
   return problems;
+}
+
+/**
+ * Apply the runtime preflight's narrow evaluation exception to the
+ * standalone operator lint. Only transport findings may be acknowledged;
+ * wildcard origins, placeholder secrets, debug modes, unsafe profiles, and
+ * foreign/mainnet targets remain blocking.
+ */
+export function classifyConfigProblems(
+  env: Record<string, string | undefined>,
+  problems: ConfigLintProblem[] = lintProductionConfig(env),
+): ConfigLintClassification {
+  if (env.SHIORA_PREFLIGHT_MODE !== 'evaluation') {
+    return { blocking: problems, acknowledged: [] };
+  }
+
+  return {
+    blocking: problems.filter(
+      (problem) => !EVALUATION_ACKNOWLEDGEABLE_CONFIG_CODES.has(problem.code),
+    ),
+    acknowledged: problems.filter((problem) =>
+      EVALUATION_ACKNOWLEDGEABLE_CONFIG_CODES.has(problem.code),
+    ),
+  };
 }
