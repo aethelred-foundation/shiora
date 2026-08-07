@@ -14,9 +14,33 @@ const mockLockCompartment = { mutate: jest.fn(), isLoading: false };
 const mockUnlockCompartment = { mutate: jest.fn(), isLoading: false };
 
 const mockVaultSymptoms = [
-  { id: 's1', date: Date.now() - 2 * 86400000, category: 'pain', symptom: 'Cramps', severity: 3, notes: '', tags: [] },
-  { id: 's2', date: Date.now() - 5 * 86400000, category: 'mood', symptom: 'Anxiety', severity: 2, notes: '', tags: [] },
-  { id: 's3', date: Date.now() - 100 * 86400000, category: 'pain', symptom: 'Headache', severity: 1, notes: '', tags: [] },
+  {
+    id: 's1',
+    date: Date.now() - 2 * 86400000,
+    category: 'pain',
+    symptom: 'Cramps',
+    severity: 3,
+    notes: '',
+    tags: [],
+  },
+  {
+    id: 's2',
+    date: Date.now() - 5 * 86400000,
+    category: 'mood',
+    symptom: 'Anxiety',
+    severity: 2,
+    notes: '',
+    tags: [],
+  },
+  {
+    id: 's3',
+    date: Date.now() - 100 * 86400000,
+    category: 'pain',
+    symptom: 'Headache',
+    severity: 1,
+    notes: '',
+    tags: [],
+  },
 ];
 
 // Build one compartment per real vault category (labels like 'Fertility Data'
@@ -56,12 +80,42 @@ const mockCycleEntries = Array.from({ length: 28 }, (_, i) => ({
 }));
 
 const mockFertilityMarkers = [
-  { id: 'f1', date: Date.now() - 2 * 86400000, type: 'lh_surge', value: 45.2, confidence: 92.1, source: 'manual', attestation: '0xatt1' },
-  { id: 'f2', date: Date.now() - 10 * 86400000, type: 'bbt_shift', value: 30.0, confidence: 80.5, source: 'wearable', attestation: '0xatt2' },
-  { id: 'f3', date: Date.now() - 20 * 86400000, type: 'ovulation_confirmed', value: 88.0, confidence: 95.0, source: 'ai_predicted', attestation: '0xatt3' },
+  {
+    id: 'f1',
+    date: Date.now() - 2 * 86400000,
+    type: 'lh_surge',
+    value: 45.2,
+    confidence: 92.1,
+    source: 'manual',
+    attestation: '0xatt1',
+  },
+  {
+    id: 'f2',
+    date: Date.now() - 10 * 86400000,
+    type: 'bbt_shift',
+    value: 30.0,
+    confidence: 80.5,
+    source: 'wearable',
+    attestation: '0xatt2',
+  },
+  {
+    id: 'f3',
+    date: Date.now() - 20 * 86400000,
+    type: 'ovulation_confirmed',
+    value: 88.0,
+    confidence: 95.0,
+    source: 'ai_predicted',
+    attestation: '0xatt3',
+  },
 ];
 
-const mockPrivacyScore = { overall: 87, encryptionScore: 95, accessControlScore: 82, jurisdictionScore: 85, dataMinimizationScore: 78 };
+const mockPrivacyScore = {
+  overall: 87,
+  encryptionScore: 95,
+  accessControlScore: 82,
+  jurisdictionScore: 85,
+  dataMinimizationScore: 78,
+};
 
 jest.mock('@/hooks/useReproductiveVault', () => ({
   useReproductiveVault: () => ({
@@ -99,7 +153,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Reproductive Data Vault')).toBeInTheDocument();
   });
@@ -108,18 +162,16 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
-    expect(
-      screen.getByText(/Sovereign, encrypted reproductive health data/)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Sovereign, encrypted reproductive health data/)).toBeInTheDocument();
   });
 
   it('renders all tabs', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Use role=tab to target only the tab buttons
     const tabs = screen.getAllByRole('tab');
@@ -136,7 +188,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Data Compartments')).toBeInTheDocument();
     // Compartment labels appear (may have duplicates with tabs)
@@ -148,7 +200,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/Privacy Score: 87/)).toBeInTheDocument();
   });
@@ -157,7 +209,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Total Compartments')).toBeInTheDocument();
     // "Locked" appears multiple times (stat card + lock status badges), use getAllByText
@@ -170,7 +222,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Find tab by role
     const tabs = screen.getAllByRole('tab');
@@ -185,7 +237,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const privacyTab = tabs.find((t) => t.textContent === 'Privacy');
@@ -200,7 +252,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const compartmentsTab = tabs.find((t) => t.textContent === 'Compartments');
@@ -214,7 +266,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const symptomsTab = tabs.find((t) => t.textContent === 'Symptoms');
@@ -228,7 +280,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const fertilityTab = tabs.find((t) => t.textContent === 'Fertility');
@@ -242,7 +294,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Recent Activity')).toBeInTheDocument();
   });
@@ -251,23 +303,23 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText(/\d+\/\d+ Locked/)).toBeInTheDocument();
   });
 
   // --- Fertility tab details ---
 
-  it('renders AI predictions on fertility tab', () => {
+  it('renders verified estimates on fertility tab', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const fertilityTab = tabs.find((t) => t.textContent === 'Fertility');
     fireEvent.click(fertilityTab!);
-    expect(screen.getByText('AI Predictions')).toBeInTheDocument();
+    expect(screen.getByText('Verified Estimates')).toBeInTheDocument();
     expect(screen.getByText('Next Period')).toBeInTheDocument();
     expect(screen.getByText('Cycle Regularity')).toBeInTheDocument();
     expect(screen.getByText('Hormone Balance')).toBeInTheDocument();
@@ -277,23 +329,27 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const fertilityTab = tabs.find((t) => t.textContent === 'Fertility');
     fireEvent.click(fertilityTab!);
     expect(screen.getByText('Fertility Markers')).toBeInTheDocument();
     // Marker labels should appear
-    expect(screen.getAllByText(/LH Surge|BBT Shift|Cervical Mucus|Ovulation Confirmed/).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(/LH Surge|BBT Shift|Cervical Mucus|Ovulation Confirmed/).length,
+    ).toBeGreaterThan(0);
     // Source labels should appear
-    expect(screen.getAllByText(/Manual Entry|AI Predicted|Wearable Device/).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(/Manual Entry|Workload Estimated|Wearable Device/).length,
+    ).toBeGreaterThan(0);
   });
 
   it('renders hormone level chart on fertility tab', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const fertilityTab = tabs.find((t) => t.textContent === 'Fertility');
@@ -302,11 +358,11 @@ describe('VaultPage', () => {
     expect(screen.getByText('Estimated hormone levels through the cycle')).toBeInTheDocument();
   });
 
-  it('renders AI prediction confidence badges with correct variants on fertility tab', () => {
+  it('renders estimate confidence badges with correct variants on fertility tab', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const fertilityTab = tabs.find((t) => t.textContent === 'Fertility');
@@ -324,7 +380,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const compartmentsTab = tabs.find((t) => t.textContent === 'Compartments');
@@ -337,7 +393,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const compartmentsTab = tabs.find((t) => t.textContent === 'Compartments');
@@ -350,7 +406,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const compartmentsTab = tabs.find((t) => t.textContent === 'Compartments');
@@ -364,7 +420,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const privacyTab = tabs.find((t) => t.textContent === 'Privacy');
@@ -379,7 +435,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const privacyTab = tabs.find((t) => t.textContent === 'Privacy');
@@ -395,7 +451,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const privacyTab = tabs.find((t) => t.textContent === 'Privacy');
@@ -410,7 +466,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const cycleTab = tabs.find((t) => t.textContent === 'Cycle Tracking');
@@ -425,7 +481,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const cycleTab = tabs.find((t) => t.textContent === 'Cycle Tracking');
@@ -438,7 +494,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const cycleTab = tabs.find((t) => t.textContent === 'Cycle Tracking');
@@ -452,7 +508,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const symptomsTab = tabs.find((t) => t.textContent === 'Symptoms');
@@ -465,7 +521,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Find and click lock buttons (for unlocked compartments)
     const lockButtons = screen.getAllByLabelText('Lock compartment');
@@ -477,7 +533,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     // Find and click unlock buttons (for locked compartments)
     const unlockButtons = screen.getAllByLabelText('Unlock compartment');
@@ -489,7 +545,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const compartmentsTab = tabs.find((t) => t.textContent === 'Compartments');
@@ -505,7 +561,7 @@ describe('VaultPage', () => {
     render(
       <TestWrapper>
         <VaultPage />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const tabs = screen.getAllByRole('tab');
     const cycleTab = tabs.find((t) => t.textContent === 'Cycle Tracking');

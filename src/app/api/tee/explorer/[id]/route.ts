@@ -4,9 +4,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  notFoundResponse,
-} from '@/lib/api/responses';
+import { notFoundResponse } from '@/lib/api/responses';
 import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
@@ -17,11 +15,8 @@ import {
   generateTxHash,
   generateAttestation,
 } from '@/lib/utils';
-import { TEE_PLATFORMS, AI_MODELS } from '@/lib/constants';
-import type {
-  TEEVerificationChain,
-  TEEPlatform,
-} from '@/types';
+import { TEE_PLATFORMS, INFERENCE_WORKLOADS } from '@/lib/constants';
+import type { TEEVerificationChain, TEEPlatform } from '@/types';
 
 // ────────────────────────────────────────────────────────────
 // Deterministic seed (must match list endpoint)
@@ -48,7 +43,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   for (let i = 0; i < 12; i++) {
     const s = SEED + i * 31;
     const platform = seededPick(s, TEE_PLATFORMS) as TEEPlatform;
-    const model = seededPick(s + 1, AI_MODELS);
+    const model = seededPick(s + 1, INFERENCE_WORKLOADS);
     const pcrValues: string[] = [];
     for (let p = 0; p < 3; p++) {
       pcrValues.push(`0x${seededHex(s + p * 13, 64)}`);
@@ -80,25 +75,39 @@ export async function GET(request: NextRequest, context: RouteContext) {
   }
 
   // Return enriched detail
-  return simulatedResponse({
-    ...attestation,
-    verification: {
-      chainAnchored: attestation.verifiedOnChain,
-      anchorTxHash: attestation.txHash,
-      blockHeight: attestation.blockHeight,
-      blockTimestamp: attestation.timestamp,
-      confirmations: seededInt(SEED + attestation.blockHeight, 6, 128),
+  return simulatedResponse(
+    {
+      ...attestation,
+      verification: {
+        chainAnchored: attestation.verifiedOnChain,
+        anchorTxHash: attestation.txHash,
+        blockHeight: attestation.blockHeight,
+        blockTimestamp: attestation.timestamp,
+        confirmations: seededInt(SEED + attestation.blockHeight, 6, 128),
+      },
+      enclave: {
+        id: attestation.enclaveId,
+        platform: attestation.platform,
+        firmwareVersion:
+          attestation.platform === 'Intel SGX'
+            ? '2.18.100.4'
+            : attestation.platform === 'AWS Nitro'
+              ? '3.1.0'
+              : '1.51.0',
+        trustScore: parseFloat(
+          (seededRandom(SEED + attestation.blockHeight + 1) * 10 + 90).toFixed(1),
+        ),
+      },
+      model: {
+        id: attestation.modelId,
+        name:
+          INFERENCE_WORKLOADS.find((m) => m.id === attestation.modelId)
+            ?.name /* istanbul ignore next */ ?? attestation.modelId,
+        version:
+          INFERENCE_WORKLOADS.find((m) => m.id === attestation.modelId)
+            ?.version /* istanbul ignore next */ ?? 'v1.0',
+      },
     },
-    enclave: {
-      id: attestation.enclaveId,
-      platform: attestation.platform,
-      firmwareVersion: attestation.platform === 'Intel SGX' ? '2.18.100.4' : attestation.platform === 'AWS Nitro' ? '3.1.0' : '1.51.0',
-      trustScore: parseFloat((seededRandom(SEED + attestation.blockHeight + 1) * 10 + 90).toFixed(1)),
-    },
-    model: {
-      id: attestation.modelId,
-      name: AI_MODELS.find((m) => m.id === attestation.modelId)?.name /* istanbul ignore next */ ?? attestation.modelId,
-      version: AI_MODELS.find((m) => m.id === attestation.modelId)?.version /* istanbul ignore next */ ?? 'v1.0',
-    },
-  }, 'tee_attestation');
+    'tee_attestation',
+  );
 }

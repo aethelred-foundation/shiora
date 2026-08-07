@@ -4,17 +4,18 @@
 // POST /api/chat — send a message (creates a conversation when none is given)
 //
 // Owner-scoped, non-diagnostic. This is the chat UI's surface over the SANA
-// service (guardrails + LLM seam); it is NOT TEE-attested and fabricates no
+// service (guardrails + managed inference seam); it is NOT TEE-attested and fabricates no
 // attestation/token data. See the sana_assistant maturity entry.
 // ============================================================
 
 import { NextRequest } from 'next/server';
 import { z, ZodError } from 'zod';
 
-import { successResponse, validationError, HTTP } from '@/lib/api/responses';
+import { errorResponse, successResponse, validationError, HTTP } from '@/lib/api/responses';
 import { runMiddleware, extractAuth } from '@/lib/api/middleware';
 import { listConversations, sendMessage } from '@/lib/api/sana/sana-service';
 import { toChatConversation, toChatMessage } from '@/lib/api/chat/chat-adapter';
+import { InferenceConfigurationError } from '@/lib/api/sana/inference-provider';
 
 const SendSchema = z.object({
   conversationId: z.string().max(80).optional(),
@@ -45,6 +46,13 @@ export async function POST(request: NextRequest) {
     );
   } catch (err) {
     if (err instanceof ZodError) return validationError(err);
+    if (err instanceof InferenceConfigurationError) {
+      return errorResponse(
+        'INFERENCE_SERVICE_NOT_CONFIGURED',
+        'The health assistant is unavailable because its managed inference service is not configured.',
+        HTTP.SERVICE_UNAVAILABLE,
+      );
+    }
     throw err;
   }
 }

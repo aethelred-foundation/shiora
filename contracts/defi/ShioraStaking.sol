@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraStaking
- * @author Shiora Health AI on Aethelred
  * @notice Allows users to stake SHIO tokens for governance voting weight and
  *         protocol rewards. Stake positions are time-locked with a 7-day
  *         cooldown for unstaking. Rewards accrue based on staking duration

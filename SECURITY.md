@@ -3,7 +3,7 @@
 ## Supported Versions
 
 | Version | Supported |
-|---------|-----------|
+| ------- | --------- |
 | Latest  | Yes       |
 
 ## Reporting a Vulnerability
@@ -32,8 +32,9 @@ The Aethelred Foundation takes security seriously. If you discover a security vu
 ### Scope
 
 This policy applies to:
+
 - The Shiora frontend application
-- The backend API and AI services
+- The backend API and managed inference services
 - Smart contracts
 - TEE attestation infrastructure
 - CI/CD infrastructure

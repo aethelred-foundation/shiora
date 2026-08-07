@@ -5,7 +5,7 @@ developers evaluating "why anchor health attestations to a sovereign L1 instead
 of a signature or a database?"
 
 **Short answer:** Shiora's highest attestation tier — `ShioraSealAttestation` —
-binds a health-data attestation (a clinical AI inference, or a consent-capture
+binds a health-data attestation (a clinical inference, or a consent-capture
 screening) to a **Digital Seal minted by the Aethelred validator quorum** after
 the confidential computation ran under a CEAP policy, and re-checks that seal's
 live status through a **consensus-native precompile**. Those are consensus-layer
@@ -106,7 +106,7 @@ the self-signed/unverified attestations the rest of the layer gestures at.
   confidential-execution status ledger for which backends are
   production-operational vs. maturing; never present a maturing backend as
   fully operational.
-- This tier anchors attestations; it does not itself run clinical AI or make
+- This tier anchors attestations; it does not itself run clinical inference or make
   medical claims. The clinical model that a seal attests is a separate,
   program-governed artifact (registration/validation is a clinical
   responsibility).

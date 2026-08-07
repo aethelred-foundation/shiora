@@ -22,7 +22,7 @@ User=administrator
 WorkingDirectory=/home/administrator/shiora
 Environment=NODE_ENV=production
 Environment=SHIORA_PREFLIGHT_MODE=evaluation
-Environment=PORT=3005
+Environment=PORT=3001
 # Absolute path to npm (see install note 1); bash -lc keeps nvm setups working.
 ExecStart=/bin/bash -lc 'npm run start:standalone'
 Restart=always

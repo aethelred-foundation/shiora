@@ -84,6 +84,11 @@ and retires the legacy format. The job learns the current Transit key version
 by wrapping a throwaway probe DEK, because its token deliberately lacks
 key-metadata read rights (see §Environments & separation).
 
+At process startup, a configured Transit deployment also wraps one throwaway
+DEK through the scoped production key. The probe has a bounded network timeout
+and the process fails closed when the key, policy, or service is unavailable;
+the plaintext probe is zeroed and never persisted.
+
 ## Environments & separation
 
 - Separate Vault namespaces/keys per environment: `shiora-kek-dev`,

@@ -39,37 +39,24 @@ export function isZeroAethelredAddress(address: string): boolean {
 /** IPFS CID: CIDv0 (Qm…, base58) or CIDv1 multibase base32 (b…, e.g. bafkrei…). */
 export const CIDSchema = z
   .string()
-  .regex(
-    /^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$/,
-    'Invalid IPFS CID',
-  );
+  .regex(/^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$/, 'Invalid IPFS CID');
 
 /** Hex hash (0x prefixed) */
-export const HexHashSchema = z
-  .string()
-  .regex(/^0x[0-9a-f]{64}$/, 'Invalid hex hash');
+export const HexHashSchema = z.string().regex(/^0x[0-9a-f]{64}$/, 'Invalid hex hash');
 
 /** ISO date string */
-export const ISODateSchema = z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/));
+export const ISODateSchema = z
+  .string()
+  .datetime({ offset: true })
+  .or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/));
 
 // ────────────────────────────────────────────────────────────
 // Records
 // ────────────────────────────────────────────────────────────
 
-export const RecordTypeEnum = z.enum([
-  'lab_result',
-  'imaging',
-  'prescription',
-  'vitals',
-  'notes',
-]);
+export const RecordTypeEnum = z.enum(['lab_result', 'imaging', 'prescription', 'vitals', 'notes']);
 
-export const RecordStatusEnum = z.enum([
-  'Verified',
-  'Pinning',
-  'Pinned',
-  'Processing',
-]);
+export const RecordStatusEnum = z.enum(['Verified', 'Pinning', 'Pinned', 'Processing']);
 
 export const RecordCreateSchema = z.object({
   type: RecordTypeEnum,
@@ -100,12 +87,7 @@ export const RecordListQuerySchema = PaginationSchema.extend({
 // Access Grants
 // ────────────────────────────────────────────────────────────
 
-export const GrantStatusEnum = z.enum([
-  'Active',
-  'Expired',
-  'Revoked',
-  'Pending',
-]);
+export const GrantStatusEnum = z.enum(['Active', 'Expired', 'Revoked', 'Pending']);
 
 export const DataScopeEnum = z.enum([
   'Full Records',
@@ -139,19 +121,13 @@ const viewRequiredForDerivedPermissions = (grant: {
   canShare: boolean;
 }) => grant.canView || (!grant.canDownload && !grant.canShare);
 
-export const GrantCreateSchema = GrantCreateObjectSchema.refine(
-  atLeastOneGrantPermission,
-  {
-    message: 'At least one access permission must be enabled.',
-    path: ['canView'],
-  },
-).refine(
-  viewRequiredForDerivedPermissions,
-  {
-    message: 'View permission must be enabled when download or share is enabled.',
-    path: ['canView'],
-  },
-);
+export const GrantCreateSchema = GrantCreateObjectSchema.refine(atLeastOneGrantPermission, {
+  message: 'At least one access permission must be enabled.',
+  path: ['canView'],
+}).refine(viewRequiredForDerivedPermissions, {
+  message: 'View permission must be enabled when download or share is enabled.',
+  path: ['canView'],
+});
 
 export const GrantAuthorizationSchema = z.object({
   // Kept loose at the schema layer so the verifier is the authority for EIP-191
@@ -165,19 +141,15 @@ export const GrantAuthorizationSchema = z.object({
 
 export const AuthorizedGrantCreateSchema = GrantCreateObjectSchema.extend({
   authorization: GrantAuthorizationSchema,
-}).refine(
-  atLeastOneGrantPermission,
-  {
+})
+  .refine(atLeastOneGrantPermission, {
     message: 'At least one access permission must be enabled.',
     path: ['canView'],
-  },
-).refine(
-  viewRequiredForDerivedPermissions,
-  {
+  })
+  .refine(viewRequiredForDerivedPermissions, {
     message: 'View permission must be enabled when download or share is enabled.',
     path: ['canView'],
-  },
-);
+  });
 
 export const GrantUpdateSchema = z.object({
   scope: DataScopeEnum.optional(),
@@ -209,12 +181,7 @@ export const ConsentScopeEnum = z.enum([
   'full_access',
 ]);
 
-export const ConsentStatusEnum = z.enum([
-  'active',
-  'expired',
-  'revoked',
-  'pending',
-]);
+export const ConsentStatusEnum = z.enum(['active', 'expired', 'revoked', 'pending']);
 
 export const ConsentCreateSchema = z.object({
   providerAddress: AethelredAddressSchema.optional(),
@@ -225,15 +192,14 @@ export const ConsentCreateSchema = z.object({
   policyId: z.string().trim().min(1).max(100).optional(),
 });
 
-export const ConsentUpdateSchema = z.object({
-  scopes: z.array(ConsentScopeEnum).min(1).max(10).optional(),
-  durationDays: z.number().int().min(1).max(365).optional(),
-}).refine(
-  (value) => value.scopes !== undefined || value.durationDays !== undefined,
-  {
+export const ConsentUpdateSchema = z
+  .object({
+    scopes: z.array(ConsentScopeEnum).min(1).max(10).optional(),
+    durationDays: z.number().int().min(1).max(365).optional(),
+  })
+  .refine((value) => value.scopes !== undefined || value.durationDays !== undefined, {
     message: 'At least one updatable consent field is required.',
-  },
-);
+  });
 
 export const ConsentListQuerySchema = PaginationSchema.extend({
   status: ConsentStatusEnum.optional(),
@@ -245,13 +211,7 @@ export const ConsentListQuerySchema = PaginationSchema.extend({
 // Audit Log
 // ────────────────────────────────────────────────────────────
 
-export const AuditTypeEnum = z.enum([
-  'access',
-  'grant',
-  'revoke',
-  'modify',
-  'download',
-]);
+export const AuditTypeEnum = z.enum(['access', 'grant', 'revoke', 'modify', 'download']);
 
 export const AuditListQuerySchema = PaginationSchema.extend({
   type: AuditTypeEnum.optional(),
@@ -264,7 +224,9 @@ export const AuditListQuerySchema = PaginationSchema.extend({
 // ────────────────────────────────────────────────────────────
 
 export const InferenceListQuerySchema = PaginationSchema.extend({
-  model: z.enum(['lstm', 'anomaly', 'fertility', 'insights']).optional(),
+  model: z
+    .enum(['cycle-patterns', 'anomaly-detection', 'fertility-window', 'health-guidance'])
+    .optional(),
 });
 
 export const AnomalyListQuerySchema = PaginationSchema.extend({
@@ -291,8 +253,9 @@ export const WalletConnectSchema = z.object({
   // counts as a failed attempt for the brute-force lockout (audit GAP-09);
   // the verifier fails closed on any non-conforming input.
   signature: z.string().min(1).max(200),
-  // EVM chain id (7332 testnet/devnet, 7331 mainnet); recorded on the session.
-  chainId: z.string().min(1).max(50).default('7331'),
+  // Shiora is pinned to the Aethelred public testnet until the audited
+  // mainnet release gate is cleared.
+  chainId: z.literal('7332').default('7332'),
   // Challenge fields for HMAC verification
   nonce: z.string().min(1).max(128),
   issuedAt: z.number().int().positive(),
@@ -307,7 +270,11 @@ export const WalletConnectSchema = z.object({
 export const IPFSUploadSchema = z.object({
   filename: z.string().min(1).max(255),
   contentType: z.string().min(1).max(100),
-  size: z.number().int().positive().max(100 * 1024 * 1024), // 100 MB max
+  size: z
+    .number()
+    .int()
+    .positive()
+    .max(100 * 1024 * 1024), // 100 MB max
 });
 
 // ────────────────────────────────────────────────────────────

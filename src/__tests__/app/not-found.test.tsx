@@ -24,9 +24,9 @@ describe('NotFound page', () => {
     expect(homeLink).toHaveAttribute('href', '/');
   });
 
-  it('renders the search input placeholder', () => {
+  it('explains that only production-backed pages are suggested', () => {
     render(<NotFound />);
-    expect(screen.getByPlaceholderText('Search Shiora...')).toBeInTheDocument();
+    expect(screen.getByText(/available production-backed pages/)).toBeInTheDocument();
   });
 
   it('renders all suggested navigation links', () => {
@@ -34,7 +34,6 @@ describe('NotFound page', () => {
 
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Health Records')).toBeInTheDocument();
-    expect(screen.getByText('AI Insights')).toBeInTheDocument();
     expect(screen.getByText('Access Control')).toBeInTheDocument();
     expect(screen.getByText('Settings')).toBeInTheDocument();
   });

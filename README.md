@@ -23,13 +23,13 @@ Shiora gives a woman a trustworthy corridor for her health data: receive or impo
 
 Every feature carries a maturity label in a machine-readable registry ([`src/lib/api/maturity.ts`](src/lib/api/maturity.ts)), surfaced at `GET /api/system/status` and stamped on every API response via an `X-Shiora-Maturity` header. A CI test fails the build if a label drifts.
 
-| Tier | Count | Meaning |
-|---|---|---|
-| **Production** | 26 | Real implementation — encrypted + audited where PHI is involved, Postgres-ready |
-| **Pilot** | 10 | Functional and integrated, with one named remaining gap each |
-| **Simulated** | 7 | Honestly labeled placeholders — deliberately **not** faked (they need hardware, a regulatory pathway, an external service, or a real model) |
+| Tier           | Count | Meaning                                                                                                                                                      |
+| -------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Production** | 26    | Real implementation — encrypted + audited where PHI is involved, Postgres-ready                                                                              |
+| **Pilot**      | 10    | Functional and integrated, with one named remaining gap each                                                                                                 |
+| **Simulated**  | 7     | Honestly labeled placeholders — deliberately **not** faked (they need hardware, a regulatory pathway, an external service, or a validated inference service) |
 
-The simulated tier includes TEE attestation (verification code is real; enclave hardware is a deployment step), on-chain anchoring (contract proven against the real Aethelred node; live RPC target pending), clinical decision support, genomics, digital twin, explainable AI, and emergency response.
+The simulated tier includes TEE attestation (verification code is real; enclave hardware is a deployment step), on-chain anchoring (contract proven against the real Aethelred node; live RPC target pending), clinical decision support, genomics, digital twin, inference explainability, and emergency response.
 
 ## Core capabilities (production tier)
 
@@ -44,11 +44,11 @@ The simulated tier includes TEE attestation (verification code is real; enclave 
 
 ## Stack
 
-Next.js 15 (App Router) · React 18 · TypeScript strict · Tailwind · TanStack Query · Postgres (`pg`) · Zod. All cryptography is Node `crypto` / Web Crypto — **no third-party crypto, WebAuthn, chain, IPFS, or LLM libraries ship in the bundle**. `npm audit`: 0 vulnerabilities.
+Next.js 15 (App Router) · React 18 · TypeScript strict · Tailwind · TanStack Query · Postgres (`pg`) · Zod. All cryptography is Node `crypto` / Web Crypto. External inference is isolated behind an operator-managed gateway with no vendor SDK in the application bundle. Production dependency audits for both the application and contracts report 0 vulnerabilities.
 
 ## Quality gates
 
-- Jest: 281 suites / 4,459 tests at **100% coverage** (statements, branches, functions, lines) — a hard gate, not a target.
+- Jest: 303 suites / 4,796 tests at **100% coverage** (statements, branches, functions, lines) — a hard gate, not a target.
 - Playwright E2E suite (`npm run test:e2e`) including accessibility scans.
 - Load/perf smoke gate (`npm run perf`) + committed baseline ([perf/BASELINE.md](perf/BASELINE.md)).
 - TypeScript strict + ESLint clean; production build green.
@@ -68,19 +68,28 @@ npm run test:e2e             # Playwright (downloads Chromium on first run)
 npm run type-check && npm run lint
 ```
 
-Development uses an in-memory datastore (empty-start, no seeded data). Production **refuses** the in-memory store: it requires `DATABASE_URL`, a managed KEK (Vault/KMS), and TLS — see [.env.example](.env.example) and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Do **not** configure a production dependency on an Aethelred mainnet endpoint; the Aethelred mainnet gate has not cleared.
+Development uses an in-memory datastore (empty-start, no seeded data).
+Production is pinned to the fail-closed pilot corridor and **refuses** the
+in-memory store: it requires `DATABASE_URL`, managed key custody, and TLS.
+Deferred APIs return 503 and their pages return 404. See
+[.env.example](.env.example), [docs/PILOT_SCOPE.md](docs/PILOT_SCOPE.md), and
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). The exact public-testnet installation
+procedure is [docs/PUBLIC_TESTNET_RUNBOOK.md](docs/PUBLIC_TESTNET_RUNBOOK.md).
+L1 audit anchoring remains disabled there until a dedicated compatible receiver
+exists; the seal-attestation registry is not that receiver.
 
 ## Documentation
 
-| Document | Purpose |
-|---|---|
-| [docs/CONSULTANT_STATUS_REPORT.md](docs/CONSULTANT_STATUS_REPORT.md) | Complete platform status, honest posture, open decisions |
-| [docs/TECHNOLOGY_GAP_ASSESSMENT.md](docs/TECHNOLOGY_GAP_ASSESSMENT.md) | 28-gap hardening ledger (all closed, commit-referenced) |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/API.md](docs/API.md) | System and API reference |
-| [docs/SECURITY.md](docs/SECURITY.md) · [docs/SECURITY_REMEDIATION.md](docs/SECURITY_REMEDIATION.md) | Security posture and Tier-1 self-audit remediation |
-| [docs/COMPLIANCE.md](docs/COMPLIANCE.md) + [docs/compliance/](docs/compliance/) | HIPAA/GDPR control mapping and self-assessment work product |
-| [docs/ATTESTATION.md](docs/ATTESTATION.md) | TEE attestation verifier (SEV-SNP) — scope and honest boundary |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) · [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md) | Operational requirements and gates |
+| Document                                                                                                | Purpose                                                        |
+| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| [docs/CONSULTANT_STATUS_REPORT.md](docs/CONSULTANT_STATUS_REPORT.md)                                    | Complete platform status, honest posture, open decisions       |
+| [docs/TECHNOLOGY_GAP_ASSESSMENT.md](docs/TECHNOLOGY_GAP_ASSESSMENT.md)                                  | 28-gap hardening ledger (all closed, commit-referenced)        |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/API.md](docs/API.md)                               | System and API reference                                       |
+| [docs/SECURITY.md](docs/SECURITY.md) · [docs/SECURITY_REMEDIATION.md](docs/SECURITY_REMEDIATION.md)     | Security posture and Tier-1 self-audit remediation             |
+| [docs/COMPLIANCE.md](docs/COMPLIANCE.md) + [docs/compliance/](docs/compliance/)                         | HIPAA/GDPR control mapping and self-assessment work product    |
+| [docs/ATTESTATION.md](docs/ATTESTATION.md)                                                              | TEE attestation verifier (SEV-SNP) — scope and honest boundary |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) · [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md) | Operational requirements and gates                             |
+| [docs/PUBLIC_TESTNET_RUNBOOK.md](docs/PUBLIC_TESTNET_RUNBOOK.md)                                        | Exact public-testnet fresh-install procedure                   |
 
 ## Honesty boundary
 

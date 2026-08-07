@@ -5,7 +5,7 @@
 **Precompile:** `ISeal` at `0x0000000000000000000000000000000000000900`
 
 This is the contract-of-record for Shiora's consensus-anchored attestation
-tier: how a health-data attestation (a clinical AI inference, or a
+tier: how a health-data attestation (a clinical inference, or a
 consent-capture screening) is bound to the chain's own Proof-of-Useful-Work
 (PoUW) pipeline rather than to an unverified hash or a self-signed enclave key.
 

@@ -1,16 +1,37 @@
 /** @jest-environment node */
 
 // The chat surface is now backed by the real SANA engine (owner-scoped,
-// guardrails + offline LLM stub in tests). These tests assert the real adapter
+// guardrails + a controlled inference fixture in tests). These tests assert the real adapter
 // behaviour: auth-gated, empty-start, non-attested replies.
+
+const mockInferenceGenerate = jest.fn(async () => ({
+  text: 'General health information from the managed test gateway.',
+  refused: false,
+  provider: 'managed' as const,
+}));
+
+jest.mock('@/lib/api/sana/inference-provider', () => {
+  const actual = jest.requireActual('@/lib/api/sana/inference-provider');
+  return {
+    ...actual,
+    getInferenceProvider: () => ({
+      generate: mockInferenceGenerate,
+    }),
+  };
+});
 
 import { NextRequest } from 'next/server';
 import { GET as listChat, POST as sendChat } from '@/app/api/chat/route';
 import { GET as listConvs, POST as createConv } from '@/app/api/chat/conversations/route';
-import { GET as getMsgs, POST as sendToConv, DELETE as deleteConvo } from '@/app/api/chat/[id]/route';
+import {
+  GET as getMsgs,
+  POST as sendToConv,
+  DELETE as deleteConvo,
+} from '@/app/api/chat/[id]/route';
 import { __resetSanaForTests } from '@/lib/api/sana/sana-service';
 import { __resetAuditLogForTests } from '@/lib/api/audit-log';
 import { createSessionToken } from '@/lib/api/session';
+import { InferenceConfigurationError } from '@/lib/api/sana/inference-provider';
 import { seededAddress } from '@/lib/utils';
 
 const USER = seededAddress(800);
@@ -20,7 +41,10 @@ const URL = 'http://localhost:3000/api/chat';
 function req(method: string, body?: unknown, withToken = false): NextRequest {
   const headers: Record<string, string> = {};
   if (withToken) headers.authorization = `Bearer ${token}`;
-  const init: { method: string; headers: Record<string, string>; body?: string } = { method, headers };
+  const init: { method: string; headers: Record<string, string>; body?: string } = {
+    method,
+    headers,
+  };
   if (body !== undefined) {
     headers['content-type'] = 'application/json';
     init.body = typeof body === 'string' ? body : JSON.stringify(body);
@@ -38,6 +62,12 @@ async function newConversationId(): Promise<string> {
 }
 
 beforeEach(() => {
+  mockInferenceGenerate.mockReset();
+  mockInferenceGenerate.mockResolvedValue({
+    text: 'General health information from the managed test gateway.',
+    refused: false,
+    provider: 'managed',
+  });
   __resetSanaForTests();
   __resetAuditLogForTests();
 });
@@ -81,6 +111,13 @@ describe('POST /api/chat', () => {
 
   it('rejects an invalid body (422)', async () => {
     expect((await sendChat(req('POST', {}, true))).status).toBe(422);
+  });
+
+  it('returns 503 when managed inference is not configured', async () => {
+    mockInferenceGenerate.mockRejectedValueOnce(new InferenceConfigurationError());
+    const response = await sendChat(req('POST', { content: 'hello' }, true));
+    expect(response.status).toBe(503);
+    expect((await response.json()).error.code).toBe('INFERENCE_SERVICE_NOT_CONFIGURED');
   });
 
   it('rethrows on a non-JSON body', async () => {
@@ -145,12 +182,17 @@ describe('/api/chat/[id]', () => {
   });
 
   it('POST returns 404 for an unknown conversation', async () => {
-    expect((await sendToConv(req('POST', { content: 'hi' }, true), ctx('missing'))).status).toBe(404);
+    expect((await sendToConv(req('POST', { content: 'hi' }, true), ctx('missing'))).status).toBe(
+      404,
+    );
   });
 
   it('POST sends to an existing conversation', async () => {
     const id = await newConversationId();
-    const res = await sendToConv(req('POST', { content: 'How do I prepare for my appointment?' }, true), ctx(id));
+    const res = await sendToConv(
+      req('POST', { content: 'How do I prepare for my appointment?' }, true),
+      ctx(id),
+    );
     expect(res.status).toBe(201);
     expect((await res.json()).data.role).toBe('assistant');
   });
@@ -158,6 +200,14 @@ describe('/api/chat/[id]', () => {
   it('POST rejects an invalid body (422)', async () => {
     const id = await newConversationId();
     expect((await sendToConv(req('POST', {}, true), ctx(id))).status).toBe(422);
+  });
+
+  it('POST returns 503 when managed inference is not configured', async () => {
+    const id = await newConversationId();
+    mockInferenceGenerate.mockRejectedValueOnce(new InferenceConfigurationError());
+    const response = await sendToConv(req('POST', { content: 'hello' }, true), ctx(id));
+    expect(response.status).toBe(503);
+    expect((await response.json()).error.code).toBe('INFERENCE_SERVICE_NOT_CONFIGURED');
   });
 
   it('POST rethrows on a non-JSON body', async () => {

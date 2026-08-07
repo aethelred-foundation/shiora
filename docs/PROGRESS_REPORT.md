@@ -7,8 +7,8 @@
 
 > **Purpose.** This report describes, concretely and honestly, what has been
 > built in the current work stream so it can be reviewed by an external
-> consultant before further investment. It deliberately separates *what is real
-> and tested* from *what is still mock, not wired, or process-gated*, so the
+> consultant before further investment. It deliberately separates _what is real
+> and tested_ from _what is still mock, not wired, or process-gated_, so the
 > reader can form an accurate picture of platform maturity.
 
 ---
@@ -32,7 +32,7 @@ audit trail, owner-scoped encrypted persistence (Postgres-ready), six-audience
 RBAC + capability authorization, and working GDPR data-subject-rights endpoints.
 
 **What is explicitly NOT done:** external integrations (blockchain/L1, TEE
-attestation, zero-knowledge proofs, IPFS, AI/LLM) are **not wired**; several
+attestation, zero-knowledge proofs, IPFS, managed inference) are **not wired**; several
 display/reference endpoints still return synthetic data; durable storage
 requires a configured database (in-memory otherwise); and all third-party
 compliance certifications and clinical/regulatory clearances remain outstanding
@@ -120,6 +120,7 @@ marketplace, clinical, mpc, privacy).
 ## 4. What was built — by capability
 
 ### 4.1 PHI encryption at rest (real)
+
 - **AES-256-GCM envelope encryption** (`envelope.ts`): each value is encrypted
   under a fresh per-record Data Encryption Key (DEK); the DEK is wrapped under a
   Key Encryption Key (KEK). Additional Authenticated Data (AAD) binds every
@@ -129,6 +130,7 @@ marketplace, clinical, mpc, privacy).
   **Production key custody should move to a managed KMS/HSM** (see §6).
 
 ### 4.2 Tamper-evident, durable audit trail (real)
+
 - `PersistentAuditLog` (`audit-log.ts`) writes a **SHA-256 hash-linked, sealed,
   persisted** entry for every data mutation across all services. The chain is
   verifiable end-to-end (`verify()`), detects edits/deletions/reordering, and
@@ -138,6 +140,7 @@ marketplace, clinical, mpc, privacy).
   integrity at the technical-control level.
 
 ### 4.3 Real encrypted datastore for the core entities (real)
+
 - **Health records, access grants, consent records, and marketplace listings**
   are all persisted through the encrypted layer (owner-scoped; marketplace is a
   single global catalog). Each starts **empty** and accumulates real data via
@@ -147,6 +150,7 @@ marketplace, clinical, mpc, privacy).
   same millisecond silently overwrote each other. IDs are now collision-free.
 
 ### 4.4 Role-based access control for six audiences (real)
+
 - Six roles: `individual`, `provider`, `employer_admin`, `payer_analyst`,
   `government`, `researcher`. Every wallet defaults to `individual`.
 - A **capability matrix** (`capabilities.ts`) maps roles → concrete capabilities
@@ -159,9 +163,10 @@ marketplace, clinical, mpc, privacy).
   (`/api/me`) returning the caller's roles and effective capabilities.
 
 ### 4.5 Per-audience functional surfaces (gated; data realness varies)
+
 - **Individuals:** encrypted records/consent + GDPR rights (below).
 - **Providers:** clinical decision-support routes (now **auth + provider-gated**;
-  previously these were *unauthenticated*), plus `/api/provider/patients` — a
+  previously these were _unauthenticated_), plus `/api/provider/patients` — a
   real directory of which patients granted the provider access.
 - **Researchers:** secure multiparty-computation routes, now researcher-gated.
 - **Government / health plans / employers:** `/api/population/analytics` —
@@ -169,6 +174,7 @@ marketplace, clinical, mpc, privacy).
   cells below 5 are suppressed), so no statistic is traceable to a small group.
 
 ### 4.6 GDPR data-subject rights (real)
+
 - `/api/privacy/access-request` (Art. 15) and `/api/privacy/portability`
   (Art. 20) return the subject's **actual** records, consents, and grants.
 - `/api/privacy/erasure` (Art. 17) **actually** soft-deletes records and revokes
@@ -194,6 +200,7 @@ marketplace, clinical, mpc, privacy).
 > This section is deliberately explicit so the consultant can assess risk.
 
 **Not wired (no external integrations):**
+
 - **Blockchain / L1:** no chain client (`ethers`/`viem`: 0 files). On-chain
   anchoring of the audit head, on-chain consent, and `txHash` values are
   placeholders.
@@ -201,17 +208,19 @@ marketplace, clinical, mpc, privacy).
   records and listings are still placeholder values, not real attestations.
 - **Zero-knowledge proofs:** `/api/zkp/*` returns mock proofs (no prover wired).
 - **IPFS:** no client; record `cid` values are placeholders.
-- **AI / LLM:** no AI SDK; the "SANA" assistant and any inference are UI-only.
+- **Managed inference:** no external inference integration was wired at the time of this report; the SANA surface was UI-only.
 
 **Still synthetic / reference data (not migrated to the datastore):**
+
 - Clinical decision-support content (differentials, drug interactions, pathways)
-  is **seeded reference data** — the *authorization* is real, the *content* is
+  is **seeded reference data** — the _authorization_ is real, the _content_ is
   static. Any feature that influences care is likely regulated software-as-a-
   medical-device and must not be treated as clinically validated.
 - Marketplace **stats**, genomics reports, and compliance reports endpoints are
   still synthetic.
 
 **Operational / production-hardening:**
+
 - **Durability requires a configured database.** Without `DATABASE_URL` the
   system uses an in-memory store (data lost on restart). Postgres schema and
   adapters exist and are verified, but provisioning/migrations/backup are not
@@ -224,6 +233,7 @@ marketplace, clinical, mpc, privacy).
 - **Rate limiting** is in-memory (per-instance), not distributed.
 
 **Process- and time-gated (cannot be produced by code):**
+
 - No third-party **certifications** (HIPAA attestation, SOC 2 Type II, HITRUST,
   ISO 27001). SOC 2 Type II in particular requires a multi-month observation
   window and an independent auditor.
@@ -252,14 +262,14 @@ compliance).
 
 ## 8. Six-audience readiness snapshot
 
-| Audience | Authorization | Functional surface | Data realness |
-|---|---|---|---|
-| Individuals | ✅ owner-scoped | records, consent, GDPR rights | **Real** (encrypted) |
-| Providers | ✅ provider-gated | clinical DS, patient directory | Auth real; clinical *content* seeded |
-| Researchers | ✅ researcher-gated | secure multiparty computation | Auth real; compute is simulated |
-| Government | ✅ capability-gated | population analytics | Real aggregates over real data |
-| Health plans | ✅ capability-gated | population analytics | Real aggregates over real data |
-| Employers | ✅ capability-gated | population analytics | Real aggregates; admin console pending |
+| Audience     | Authorization       | Functional surface             | Data realness                          |
+| ------------ | ------------------- | ------------------------------ | -------------------------------------- |
+| Individuals  | ✅ owner-scoped     | records, consent, GDPR rights  | **Real** (encrypted)                   |
+| Providers    | ✅ provider-gated   | clinical DS, patient directory | Auth real; clinical _content_ seeded   |
+| Researchers  | ✅ researcher-gated | secure multiparty computation  | Auth real; compute is simulated        |
+| Government   | ✅ capability-gated | population analytics           | Real aggregates over real data         |
+| Health plans | ✅ capability-gated | population analytics           | Real aggregates over real data         |
+| Employers    | ✅ capability-gated | population analytics           | Real aggregates; admin console pending |
 
 ---
 
@@ -297,5 +307,5 @@ compliance).
 
 ---
 
-*This report reflects the state of PR #9 as of 2026-06-24. Figures (test counts,
-file counts, line counts) are taken directly from the repository and CI.*
+_This report reflects the state of PR #9 as of 2026-06-24. Figures (test counts,
+file counts, line counts) are taken directly from the repository and CI._

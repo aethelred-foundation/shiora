@@ -21,7 +21,7 @@ import {
 } from '@/lib/api/responses';
 import { AUTH_RATE_LIMIT, requireAuth, runMiddleware } from '@/lib/api/middleware';
 import { randomUUID } from 'node:crypto';
-import type { MockAccessGrant } from '@/lib/api/mock-data';
+import type { StoredAccessGrant } from '@/lib/api/domain-types';
 import { createAccessGrant, listAccessGrants } from '@/lib/api/access-service';
 import { notify } from '@/lib/api/notification-service';
 import { verifyGrantAuthorizationChallenge } from '@/lib/api/grant-authorization';
@@ -43,10 +43,7 @@ export async function GET(request: NextRequest) {
     const auth = requireAuth(request);
     if ('status' in auth) return auth;
 
-    const query = parseSearchParams(
-      GrantListQuerySchema,
-      request.nextUrl.searchParams,
-    );
+    const query = parseSearchParams(GrantListQuerySchema, request.nextUrl.searchParams);
 
     const allGrants = await listAccessGrants(auth.walletAddress!);
     let grants = [...allGrants];
@@ -122,24 +119,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const challengeResult = verifyGrantAuthorizationChallenge(
-      ownerAddress,
-      grant,
-      authorization,
-    );
+    const challengeResult = verifyGrantAuthorizationChallenge(ownerAddress, grant, authorization);
     if (!challengeResult.valid) {
-      return errorResponse(
-        'INVALID_GRANT_AUTHORIZATION',
-        challengeResult.reason,
-        HTTP.BAD_REQUEST,
-      );
+      return errorResponse('INVALID_GRANT_AUTHORIZATION', challengeResult.reason, HTTP.BAD_REQUEST);
     }
 
-    if (!verifyWalletSignature(
-      challengeResult.message,
-      authorization.signature,
-      ownerAddress,
-    )) {
+    if (!verifyWalletSignature(challengeResult.message, authorization.signature, ownerAddress)) {
       return errorResponse(
         'INVALID_GRANT_SIGNATURE',
         'The access grant was not signed by the wallet for this session.',
@@ -163,7 +148,7 @@ export async function POST(request: NextRequest) {
 
     const expiresAt = Date.now() + grant.durationDays * 86400000;
 
-    const newGrant: MockAccessGrant = {
+    const newGrant: StoredAccessGrant = {
       id: `grant-${randomUUID().replace(/-/g, '')}`,
       provider: grant.provider,
       specialty: grant.specialty,

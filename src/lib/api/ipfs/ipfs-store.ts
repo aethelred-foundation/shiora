@@ -1,7 +1,7 @@
 // ============================================================
 // Shiora on Aethelred — Content-Addressed Store (IPFS) — port + adapters
 //
-// A ports-and-adapters seam over content-addressed storage, mirroring the LLM
+// A ports-and-adapters seam over content-addressed storage, mirroring the inference
 // and datastore seams. The "node / pinning choice" is therefore a deployment
 // config, not a hardcoded vendor:
 //   • InMemoryIPFSStore — default. A real, local content-addressed store: bytes
@@ -57,14 +57,17 @@ export class HttpIPFSStore implements IPFSStorePort {
     if (!response.ok) {
       throw new Error(`IPFS add failed with status ${response.status}`);
     }
-    const data = await response.json() as { Hash: string };
+    const data = (await response.json()) as { Hash: string };
     return data.Hash;
   }
 
   async get(cid: string): Promise<Uint8Array | undefined> {
-    const response = await this.fetchImpl(`${this.apiUrl}/api/v0/cat?arg=${encodeURIComponent(cid)}`, {
-      method: 'POST',
-    });
+    const response = await this.fetchImpl(
+      `${this.apiUrl}/api/v0/cat?arg=${encodeURIComponent(cid)}`,
+      {
+        method: 'POST',
+      },
+    );
     if (response.status === 404) {
       return undefined;
     }

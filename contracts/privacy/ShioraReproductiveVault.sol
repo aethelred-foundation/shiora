@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraReproductiveVault
- * @author Shiora Health AI on Aethelred
  * @notice Manages encrypted data compartments with per-compartment access control
  *         and jurisdictional compliance flags. Designed for sensitive reproductive
  *         and women's health data that requires enhanced privacy protections,

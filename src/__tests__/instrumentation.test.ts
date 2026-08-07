@@ -1,6 +1,11 @@
 /** @jest-environment node */
 
 jest.mock('@/lib/crypto/key-provider', () => ({ preloadKeyProvider: jest.fn() }));
+jest.mock('@/lib/crypto/dek-wrapper', () => ({
+  isTransitConfigured: jest.fn(() => false),
+  probeManagedDekCustody: jest.fn(),
+}));
+jest.mock('@/lib/crypto/vault-key-provider', () => ({ isVaultConfigured: jest.fn(() => false) }));
 jest.mock('@/lib/api/preflight', () => ({
   assertProductionReadiness: jest.fn(),
   checkProductionReadiness: jest.fn(() => ({
@@ -20,6 +25,8 @@ jest.mock('@/lib/persistence/sql-client', () => ({ getPgClient: jest.fn(() => ({
 
 import { register } from '@/instrumentation';
 import { preloadKeyProvider } from '@/lib/crypto/key-provider';
+import { isTransitConfigured, probeManagedDekCustody } from '@/lib/crypto/dek-wrapper';
+import { isVaultConfigured } from '@/lib/crypto/vault-key-provider';
 import {
   assertProductionReadiness,
   checkProductionReadiness,
@@ -29,6 +36,9 @@ import { startMaintenanceScheduler } from '@/lib/maintenance/store-maintenance';
 import { migrate } from '@/lib/persistence/migrator';
 
 const mockPreload = preloadKeyProvider as jest.Mock;
+const mockTransitConfigured = isTransitConfigured as jest.Mock;
+const mockProbeCustody = probeManagedDekCustody as jest.Mock;
+const mockVaultConfigured = isVaultConfigured as jest.Mock;
 const mockAssert = assertProductionReadiness as jest.Mock;
 const mockCheck = checkProductionReadiness as jest.Mock;
 const mockDurable = hasDurableDatastore as jest.Mock;
@@ -40,6 +50,8 @@ afterEach(() => {
   if (originalRuntime === undefined) delete process.env.NEXT_RUNTIME;
   else process.env.NEXT_RUNTIME = originalRuntime;
   jest.clearAllMocks();
+  mockTransitConfigured.mockReturnValue(false);
+  mockVaultConfigured.mockReturnValue(false);
 });
 
 describe('register (startup instrumentation)', () => {
@@ -57,6 +69,23 @@ describe('register (startup instrumentation)', () => {
     expect(mockAssert).toHaveBeenCalledTimes(1);
     // In-memory deployment: no durable stores to garbage-collect.
     expect(mockStartScheduler).not.toHaveBeenCalled();
+  });
+
+  it('does not preload an in-process KEK for a fresh Transit-only deployment', async () => {
+    process.env.NEXT_RUNTIME = 'nodejs';
+    mockTransitConfigured.mockReturnValue(true);
+    await register();
+    expect(mockPreload).not.toHaveBeenCalled();
+    expect(mockAssert).toHaveBeenCalledTimes(1);
+    expect(mockProbeCustody).toHaveBeenCalledTimes(1);
+  });
+
+  it('preloads a configured Vault KV key for legacy envelopes alongside Transit', async () => {
+    process.env.NEXT_RUNTIME = 'nodejs';
+    mockTransitConfigured.mockReturnValue(true);
+    mockVaultConfigured.mockReturnValue(true);
+    await register();
+    expect(mockPreload).toHaveBeenCalledTimes(1);
   });
 
   it('starts the store-maintenance scheduler on durable deployments (GAP-01)', async () => {
@@ -99,18 +128,14 @@ describe('register (startup instrumentation)', () => {
       enforced: true,
       mode: 'evaluation',
       problems: [],
-      acknowledged: [
-        { code: 'NON_TLS_BACKEND', message: 'Backend transport is not TLS.' },
-      ],
+      acknowledged: [{ code: 'NON_TLS_BACKEND', message: 'Backend transport is not TLS.' }],
     });
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     try {
       await register();
       expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'NON_TLS_BACKEND: Backend transport is not TLS.',
-        ),
+        expect.stringContaining('NON_TLS_BACKEND: Backend transport is not TLS.'),
       );
     } finally {
       warn.mockRestore();
@@ -129,8 +154,12 @@ describe('register (startup instrumentation)', () => {
     try {
       await register();
       expect(log).toHaveBeenCalledWith(
-        '[db] applied schema migrations: 001_initial, 002_access_grants (3 already in place)',
+        expect.stringContaining('"msg":"database migrations applied"'),
       );
+      expect(log).toHaveBeenCalledWith(
+        expect.stringContaining('"applied":["001_initial","002_access_grants"]'),
+      );
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('"alreadyApplied":3'));
     } finally {
       log.mockRestore();
     }

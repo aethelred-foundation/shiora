@@ -3,14 +3,13 @@
 import { useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { useApp } from '@/contexts/AppContext';
 import { api } from '@/lib/api/client';
 import type {
   TEEState,
   TEEAttestation,
   TEEPlatform,
   TEEStatus,
-  AIModel,
+  InferenceWorkload,
   Inference,
   InferenceResult,
 } from '@/types';
@@ -41,13 +40,14 @@ interface VerifyAttestationResponse {
 const ATTESTATIONS_KEY = 'tee-attestations';
 const INFERENCES_KEY = 'tee-inferences';
 const MODELS_KEY = 'tee-models';
+const STATUS_KEY = 'tee-status';
 
 // ---------------------------------------------------------------------------
 // Return type
 // ---------------------------------------------------------------------------
 
 export interface UseTEEReturn {
-  /** Live TEE enclave state from AppContext. */
+  /** Live TEE enclave state from the configured attestation service. */
   state: TEEState;
   /** Whether the enclave is fully operational. */
   isOperational: boolean;
@@ -68,8 +68,8 @@ export interface UseTEEReturn {
   /** Inference query error. */
   inferencesError: Error | null;
 
-  /** Cached AI model registry. */
-  models: AIModel[];
+  /** Cached inference workload registry. */
+  models: InferenceWorkload[];
   /** Whether models are loading. */
   isLoadingModels: boolean;
   /** Models query error. */
@@ -95,7 +95,7 @@ export interface UseTEEReturn {
 // ---------------------------------------------------------------------------
 
 /**
- * Comprehensive TEE monitoring hook combining real-time enclave status
+ * Comprehensive TEE monitoring hook combining live enclave status
  * with cached queries for attestation history, inference runs, and
  * the model registry.
  *
@@ -105,28 +105,32 @@ export interface UseTEEReturn {
  * ```
  */
 export function useTEE(): UseTEEReturn {
-  const { teeState } = useApp();
   const queryClient = useQueryClient();
 
   // ---- Live state --------------------------------------------------------
 
-  const isOperational = teeState.status === 'operational';
-  const lastAttestationAgo = useMemo(
-    () => timeAgo(teeState.lastAttestation),
-    [teeState.lastAttestation],
-  );
+  const statusQuery = useQuery({
+    queryKey: [STATUS_KEY],
+    queryFn: () => api.get<TEEStatusResponse>('/api/tee/status'),
+    staleTime: 15_000,
+  });
 
-  // Map the AppContext TEEState to our typed TEEState.
   const state: TEEState = useMemo(
-    () => ({
-      status: teeState.status as TEEStatus,
-      platform: teeState.platform,
-      attestationsToday: teeState.attestationsToday,
-      lastAttestation: teeState.lastAttestation,
-      enclaveUptime: teeState.enclaveUptime,
-      inferencesCompleted: teeState.inferencesCompleted,
-    }),
-    [teeState],
+    () =>
+      statusQuery.data ?? {
+        status: 'offline',
+        platform: 'Unavailable',
+        attestationsToday: 0,
+        lastAttestation: 0,
+        enclaveUptime: 0,
+        inferencesCompleted: 0,
+      },
+    [statusQuery.data],
+  );
+  const isOperational = statusQuery.isSuccess && state.status === 'operational';
+  const lastAttestationAgo = useMemo(
+    () => (state.lastAttestation > 0 ? timeAgo(state.lastAttestation) : 'Unavailable'),
+    [state.lastAttestation],
   );
 
   // ---- Attestation query -------------------------------------------------
@@ -149,7 +153,7 @@ export function useTEE(): UseTEEReturn {
 
   const modelsQuery = useQuery({
     queryKey: [MODELS_KEY],
-    queryFn: () => api.get<AIModel[]>('/api/tee/status', { include: 'models' }),
+    queryFn: () => api.get<InferenceWorkload[]>('/api/tee/status', { include: 'models' }),
     staleTime: 60_000,
   });
 
@@ -157,7 +161,10 @@ export function useTEE(): UseTEEReturn {
 
   const verifyAttestationFn = useCallback(
     async (hash: string): Promise<VerifyAttestationResponse> => {
-      return api.post<VerifyAttestationResponse>('/api/tee/attestations', { hash, action: 'verify' });
+      return api.post<VerifyAttestationResponse>('/api/tee/attestations', {
+        hash,
+        action: 'verify',
+      });
     },
     [],
   );
@@ -169,9 +176,7 @@ export function useTEE(): UseTEEReturn {
     const anomalies = list.filter((i) => i.result === 'Anomaly Detected').length;
     const normal = list.filter((i) => i.result === 'Normal').length;
     const avgConf =
-      list.length > 0
-        ? list.reduce((sum, i) => sum + i.confidence, 0) / list.length
-        : 0;
+      list.length > 0 ? list.reduce((sum, i) => sum + i.confidence, 0) / list.length : 0;
     return {
       total: list.length,
       anomalies,
@@ -183,6 +188,7 @@ export function useTEE(): UseTEEReturn {
   // ---- Refetch -----------------------------------------------------------
 
   const refetch = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: [STATUS_KEY] });
     queryClient.invalidateQueries({ queryKey: [ATTESTATIONS_KEY] });
     queryClient.invalidateQueries({ queryKey: [INFERENCES_KEY] });
     queryClient.invalidateQueries({ queryKey: [MODELS_KEY] });

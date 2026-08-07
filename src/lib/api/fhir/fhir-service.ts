@@ -15,7 +15,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { createRecord, listRecords } from '@/lib/api/records-service';
-import type { MockHealthRecord } from '@/lib/api/mock-data';
+import type { StoredHealthRecord } from '@/lib/api/domain-types';
 import type {
   FhirBundle,
   FhirCodeableConcept,
@@ -44,9 +44,7 @@ interface MappedFields {
   provider: string;
 }
 
-type MapResult =
-  | { ok: true; fields: MappedFields }
-  | { ok: false; reason: string };
+type MapResult = { ok: true; fields: MappedFields } | { ok: false; reason: string };
 
 export interface ImportSummary {
   bundleType: string | null;
@@ -62,10 +60,26 @@ export const RESOURCE_MAPPING: ReadonlyArray<{
   recordType: string;
   description: string;
 }> = [
-  { resourceType: 'Observation', recordType: 'lab_result | vitals', description: 'Lab results and vital signs (by category)' },
-  { resourceType: 'Condition', recordType: 'notes', description: 'Problem-list conditions / diagnoses' },
-  { resourceType: 'MedicationStatement', recordType: 'prescription', description: 'Medication statements' },
-  { resourceType: 'AllergyIntolerance', recordType: 'notes', description: 'Allergies and intolerances' },
+  {
+    resourceType: 'Observation',
+    recordType: 'lab_result | vitals',
+    description: 'Lab results and vital signs (by category)',
+  },
+  {
+    resourceType: 'Condition',
+    recordType: 'notes',
+    description: 'Problem-list conditions / diagnoses',
+  },
+  {
+    resourceType: 'MedicationStatement',
+    recordType: 'prescription',
+    description: 'Medication statements',
+  },
+  {
+    resourceType: 'AllergyIntolerance',
+    recordType: 'notes',
+    description: 'Allergies and intolerances',
+  },
   { resourceType: 'DiagnosticReport', recordType: 'lab_result', description: 'Diagnostic reports' },
 ];
 
@@ -112,8 +126,9 @@ function parseDate(value: string | undefined, now: number): number {
 
 function isVitalSigns(observation: FhirObservation): boolean {
   return (observation.category ?? []).some(
-    (concept) => (concept.coding ?? []).some((c) => c.code === 'vital-signs')
-      || (concept.text?.toLowerCase().includes('vital') ?? false),
+    (concept) =>
+      (concept.coding ?? []).some((c) => c.code === 'vital-signs') ||
+      (concept.text?.toLowerCase().includes('vital') ?? false),
   );
 }
 
@@ -259,7 +274,7 @@ export function parseBundle(input: unknown): FhirBundle {
   return input as FhirBundle;
 }
 
-function buildRecord(ownerAddress: string, fields: MappedFields, now: number): MockHealthRecord {
+function buildRecord(ownerAddress: string, fields: MappedFields, now: number): StoredHealthRecord {
   return {
     id: `fhir-${randomUUID().replace(/-/g, '')}`,
     type: fields.type,

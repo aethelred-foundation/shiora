@@ -2,7 +2,10 @@
 
 jest.mock('@/lib/api/middleware', () => {
   const actual = jest.requireActual('@/lib/api/middleware');
-  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+  return {
+    ...actual,
+    runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)),
+  };
 });
 
 const actualChallenge = jest.requireActual('@/lib/api/challenge');
@@ -53,7 +56,6 @@ afterEach(() => {
 const TEST_ADDRESS = seededAddress(12345);
 const { token: TEST_TOKEN } = createSessionToken(TEST_ADDRESS);
 
-
 function authedReq(url: string, init?: RequestInit): NextRequest {
   return new NextRequest(url, {
     ...init,
@@ -67,10 +69,7 @@ function createTestChallenge(address: string) {
   const issuedAt = Date.now();
   const expiresAt = issuedAt + 5 * 60 * 1000;
   const payload = `${address}:${nonce}:${issuedAt}:${expiresAt}`;
-  const hmac = crypto
-    .createHmac('sha256', challengeSigningKey())
-    .update(payload)
-    .digest('hex');
+  const hmac = crypto.createHmac('sha256', challengeSigningKey()).update(payload).digest('hex');
   return { nonce, issuedAt, expiresAt, hmac };
 }
 
@@ -79,11 +78,13 @@ describe('failed-auth lockout (GAP-09)', () => {
     const victim = seededAddress(90909);
     function badAttempt() {
       const challenge = createTestChallenge(victim);
-      return postConnect(new NextRequest('http://localhost:3000/api/wallet/connect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: victim, signature: 'fakesig', ...challenge }),
-      }));
+      return postConnect(
+        new NextRequest('http://localhost:3000/api/wallet/connect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: victim, signature: 'fakesig', ...challenge }),
+        }),
+      );
     }
 
     // The first five bad signatures fail verification (not yet locked).
@@ -105,22 +106,30 @@ describe('auth rate-limit class (GAP-04)', () => {
     const { AUTH_RATE_LIMIT } = jest.requireActual('@/lib/api/middleware');
     expect(AUTH_RATE_LIMIT).toEqual({ maxRequests: 20, windowMs: 60_000, scope: 'auth' });
 
-    await getChallenge(new NextRequest(`http://localhost:3000/api/wallet/challenge?address=${TEST_ADDRESS}`));
+    await getChallenge(
+      new NextRequest(`http://localhost:3000/api/wallet/challenge?address=${TEST_ADDRESS}`),
+    );
     expect(mockedRunMiddleware).toHaveBeenLastCalledWith(expect.anything(), AUTH_RATE_LIMIT);
 
-    await postConnect(new NextRequest('http://localhost:3000/api/wallet/connect', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    }));
+    await postConnect(
+      new NextRequest('http://localhost:3000/api/wallet/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      }),
+    );
     expect(mockedRunMiddleware).toHaveBeenLastCalledWith(expect.anything(), AUTH_RATE_LIMIT);
   });
 });
 
 describe('/api/wallet/challenge', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const req = new NextRequest(`http://localhost:3000/api/wallet/challenge?address=${TEST_ADDRESS}`);
+    mockedRunMiddleware.mockResolvedValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
+    const req = new NextRequest(
+      `http://localhost:3000/api/wallet/challenge?address=${TEST_ADDRESS}`,
+    );
     const res = await getChallenge(req);
     expect(res.status).toBe(403);
   });
@@ -150,9 +159,7 @@ describe('/api/wallet/challenge', () => {
   });
 
   it('returns 400 for invalid address format', async () => {
-    const req = new NextRequest(
-      'http://localhost:3000/api/wallet/challenge?address=invalidaddr',
-    );
+    const req = new NextRequest('http://localhost:3000/api/wallet/challenge?address=invalidaddr');
     const res = await getChallenge(req);
     expect(res.status).toBe(400);
   });
@@ -160,7 +167,9 @@ describe('/api/wallet/challenge', () => {
 
 describe('/api/wallet/connect GET', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const res = await getConnect(authedReq('http://localhost:3000/api/wallet/connect'));
     expect(res.status).toBe(403);
   });
@@ -185,7 +194,9 @@ describe('/api/wallet/connect GET', () => {
 
 describe('/api/wallet/connect POST', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const req = new NextRequest('http://localhost:3000/api/wallet/connect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -328,11 +339,12 @@ describe('/api/wallet/connect POST', () => {
       timestamp: Date.now(),
       ...challenge,
     };
-    const mk = () => new NextRequest('http://localhost:3000/api/wallet/connect', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    const mk = () =>
+      new NextRequest('http://localhost:3000/api/wallet/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
     // First redemption consumes the nonce, then fails on the bogus signature.
     const first = await postConnect(mk());
@@ -376,6 +388,7 @@ describe('/api/wallet/connect POST', () => {
     expect(body.data.address).toBe(walletAddress);
     expect(body.data.expiresAt).toBeDefined();
     expect(body.data.session).toBeDefined();
+    expect(body.data.session.cookieName).toBe('shiora_session');
     // The server must not fabricate data it has no source for (audit L-01).
     expect(body.data.balances).toBeUndefined();
     expect(body.data.profile).toBeUndefined();
@@ -384,7 +397,9 @@ describe('/api/wallet/connect POST', () => {
 
 describe('/api/wallet/connect DELETE', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const req = new NextRequest('http://localhost:3000/api/wallet/connect', { method: 'DELETE' });
     const res = await deleteConnect(req);
     expect(res.status).toBe(403);

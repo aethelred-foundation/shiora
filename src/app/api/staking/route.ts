@@ -5,8 +5,9 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
+import { errorResponse, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { seededInt, seededHex, seededRandom, generateTxHash } from '@/lib/utils';
 
 const SEED = 1450;
@@ -23,15 +24,18 @@ export async function GET(request: NextRequest) {
 
   // Return aggregated staking stats
   if (view === 'stats') {
-    return successResponse({
-      totalStaked: seededInt(SEED + 200, 500000, 2000000),
-      totalStakers: seededInt(SEED + 201, 200, 1000),
-      currentAPY: parseFloat((seededRandom(SEED + 202) * 8 + 4).toFixed(1)),
-      rewardsDistributed: seededInt(SEED + 203, 50000, 200000),
-      nextRewardEpoch: Date.now() + seededInt(SEED + 204, 1, 7) * 86400000,
-      minStakeAmount: 100,
-      unstakeCooldownDays: 7,
-    });
+    return simulatedResponse(
+      {
+        totalStaked: seededInt(SEED + 200, 500000, 2000000),
+        totalStakers: seededInt(SEED + 201, 200, 1000),
+        currentAPY: parseFloat((seededRandom(SEED + 202) * 8 + 4).toFixed(1)),
+        rewardsDistributed: seededInt(SEED + 203, 50000, 200000),
+        nextRewardEpoch: Date.now() + seededInt(SEED + 204, 1, 7) * 86400000,
+        minStakeAmount: 100,
+        unstakeCooldownDays: 7,
+      },
+      'blockchain_anchoring',
+    );
   }
 
   const positions = Array.from({ length: 3 }, (_, i) => {
@@ -50,7 +54,7 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  return successResponse(positions);
+  return simulatedResponse(positions, 'blockchain_anchoring');
 }
 
 // ────────────────────────────────────────────────────────────
@@ -66,13 +70,18 @@ export async function POST(request: NextRequest) {
     const { amount } = body;
 
     if (!amount || typeof amount !== 'number' || amount < 100) {
-      return errorResponse('VALIDATION_ERROR', 'amount must be a number >= 100', HTTP.UNPROCESSABLE);
+      return errorResponse(
+        'VALIDATION_ERROR',
+        'amount must be a number >= 100',
+        HTTP.UNPROCESSABLE,
+      );
     }
 
     const seed = Date.now();
     const position = {
       id: `stake-${seededHex(seed, 8)}`,
-      staker: request.headers.get('x-wallet-address') ?? 'aeth1demo000000000000000000000000000000000',
+      staker:
+        request.headers.get('x-wallet-address') ?? 'aeth1demo000000000000000000000000000000000',
       amount,
       stakedAt: Date.now(),
       status: 'staked',
@@ -82,7 +91,7 @@ export async function POST(request: NextRequest) {
       txHash: generateTxHash(seed),
     };
 
-    return successResponse(position, HTTP.CREATED, {
+    return simulatedResponse(position, 'blockchain_anchoring', HTTP.CREATED, {
       message: 'Tokens staked successfully.',
     });
   } catch {

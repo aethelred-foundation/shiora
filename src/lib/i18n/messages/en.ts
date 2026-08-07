@@ -7,7 +7,7 @@
 export const en = {
   app: {
     name: 'Shiora on Aethelred',
-    tagline: "Women's Health AI Platform",
+    tagline: "Women's Health Data Platform",
   },
   common: {
     save: 'Save',
@@ -32,8 +32,8 @@ export const en = {
   nav: {
     dashboard: 'Dashboard',
     records: 'Health Records',
-    chat: 'Health AI Chat',
-    insights: 'AI Insights',
+    chat: 'Health Assistant',
+    insights: 'Health Insights',
     vault: 'Data Vault',
     access: 'Access Control',
     compliance: 'Compliance Center',

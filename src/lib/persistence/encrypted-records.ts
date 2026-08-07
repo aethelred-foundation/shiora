@@ -16,7 +16,7 @@ import type { AuditRecorder } from '@/lib/crypto/audit-chain';
 import { openJson, sealJson, shredEnvelope, isShredded } from '@/lib/crypto/envelope';
 import { blindIndex, blindIndexAll } from '@/lib/crypto/blind-index';
 import { OptimisticLockError, versionOf } from './optimistic-lock';
-import type { MockHealthRecord } from '@/lib/api/mock-data';
+import type { StoredHealthRecord } from '@/lib/api/domain-types';
 import type { RecordStorePort, StoredRecord } from './record-store';
 
 /** Domain separator for record-tag blind indexes (GAP-15). */
@@ -53,7 +53,7 @@ export class EncryptedRecordRepository {
   ) {}
 
   /** Encrypt and persist a new health record. */
-  async create(ownerAddress: string, record: MockHealthRecord): Promise<MockHealthRecord> {
+  async create(ownerAddress: string, record: StoredHealthRecord): Promise<StoredHealthRecord> {
     const row: StoredRecord = {
       id: record.id,
       ownerAddress,
@@ -85,7 +85,7 @@ export class EncryptedRecordRepository {
   }
 
   /** Fetch a single record, decrypting its PHI. */
-  async get(ownerAddress: string, id: string): Promise<MockHealthRecord | undefined> {
+  async get(ownerAddress: string, id: string): Promise<StoredHealthRecord | undefined> {
     const row = await this.store.findById(ownerAddress, id);
     if (!row || row.deleted) {
       return undefined;
@@ -104,7 +104,7 @@ export class EncryptedRecordRepository {
   }
 
   /** List an owner's non-deleted records, decrypting each. */
-  async list(ownerAddress: string): Promise<MockHealthRecord[]> {
+  async list(ownerAddress: string): Promise<StoredHealthRecord[]> {
     const rows = await this.store.findByOwner(ownerAddress);
     return Promise.all(rows.filter((row) => !row.deleted).map((row) => this.toRecord(row)));
   }
@@ -120,7 +120,7 @@ export class EncryptedRecordRepository {
     id: string,
     updates: RecordUpdate,
     expectedVersion?: number,
-  ): Promise<MockHealthRecord | undefined> {
+  ): Promise<StoredHealthRecord | undefined> {
     const existing = await this.store.findById(ownerAddress, id);
     if (!existing || existing.deleted) {
       return undefined;
@@ -140,9 +140,10 @@ export class EncryptedRecordRepository {
       next.provider = updates.provider;
     }
 
-    const phiChanged = updates.label !== undefined
-      || updates.description !== undefined
-      || updates.tags !== undefined;
+    const phiChanged =
+      updates.label !== undefined ||
+      updates.description !== undefined ||
+      updates.tags !== undefined;
 
     if (phiChanged) {
       const current = await this.openPhi(existing);
@@ -167,16 +168,18 @@ export class EncryptedRecordRepository {
    * against the stored tokens. Case/'‍width-insensitive via the same
    * normalization used at write time.
    */
-  async findByTag(ownerAddress: string, tag: string): Promise<MockHealthRecord[]> {
+  async findByTag(ownerAddress: string, tag: string): Promise<StoredHealthRecord[]> {
     const token = blindIndex(tag, TAG_INDEX_DOMAIN);
     const rows = await this.store.findByOwner(ownerAddress);
-    return Promise.all(rows
-      .filter((row) => !row.deleted && (row.blindTags ?? []).includes(token))
-      .map((row) => this.toRecord(row)));
+    return Promise.all(
+      rows
+        .filter((row) => !row.deleted && (row.blindTags ?? []).includes(token))
+        .map((row) => this.toRecord(row)),
+    );
   }
 
   /** Soft-delete a record (retained, but excluded from reads). */
-  async softDelete(ownerAddress: string, id: string): Promise<MockHealthRecord | undefined> {
+  async softDelete(ownerAddress: string, id: string): Promise<StoredHealthRecord | undefined> {
     const existing = await this.store.findById(ownerAddress, id);
     if (!existing || existing.deleted) {
       return undefined;
@@ -217,11 +220,15 @@ export class EncryptedRecordRepository {
     return openJson<SealedPhiPayload>(row.sealedPhi, phiAad(row.ownerAddress, row.id));
   }
 
-  private async record(action: 'RECORD_CREATE' | 'RECORD_READ' | 'RECORD_UPDATE' | 'RECORD_DELETE', actor: string, resourceId: string): Promise<void> {
+  private async record(
+    action: 'RECORD_CREATE' | 'RECORD_READ' | 'RECORD_UPDATE' | 'RECORD_DELETE',
+    actor: string,
+    resourceId: string,
+  ): Promise<void> {
     await this.audit.record({ action, actor, resource: 'record', resourceId, success: true });
   }
 
-  private async toRecord(row: StoredRecord): Promise<MockHealthRecord> {
+  private async toRecord(row: StoredRecord): Promise<StoredHealthRecord> {
     const phi = await this.openPhi(row);
     return {
       id: row.id,

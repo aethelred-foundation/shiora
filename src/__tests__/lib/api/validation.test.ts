@@ -79,9 +79,7 @@ describe('RecordCreateSchema', () => {
   });
 
   it('rejects empty label', () => {
-    expect(() =>
-      RecordCreateSchema.parse({ type: 'vitals', label: '', provider: 'P' }),
-    ).toThrow();
+    expect(() => RecordCreateSchema.parse({ type: 'vitals', label: '', provider: 'P' })).toThrow();
   });
 });
 
@@ -104,7 +102,7 @@ describe('WalletConnectSchema', () => {
       expiresAt: Date.now() + 300000,
       hmac: 'a'.repeat(64),
     });
-    expect(result.chainId).toBe('7331');
+    expect(result.chainId).toBe('7332');
   });
 
   it('rejects invalid HMAC format', () => {
@@ -190,9 +188,7 @@ describe('GrantAuthorizationSchema', () => {
       hmac: 'b'.repeat(64),
     };
 
-    expect(GrantAuthorizationSchema.parse(authorization)).toEqual(
-      authorization,
-    );
+    expect(GrantAuthorizationSchema.parse(authorization)).toEqual(authorization);
   });
 });
 
@@ -238,7 +234,12 @@ describe('Additional schema coverage', () => {
   } = require('@/lib/api/validation');
 
   it('RecordListQuerySchema accepts valid input', () => {
-    const result = RecordListQuerySchema.parse({ type: 'lab_result', sort: 'date', order: 'asc', q: 'blood' });
+    const result = RecordListQuerySchema.parse({
+      type: 'lab_result',
+      sort: 'date',
+      order: 'asc',
+      q: 'blood',
+    });
     expect(result.type).toBe('lab_result');
     expect(result.sort).toBe('date');
   });
@@ -269,8 +270,8 @@ describe('Additional schema coverage', () => {
   });
 
   it('InferenceListQuerySchema accepts model filter', () => {
-    const result = InferenceListQuerySchema.parse({ model: 'lstm' });
-    expect(result.model).toBe('lstm');
+    const result = InferenceListQuerySchema.parse({ model: 'cycle-patterns' });
+    expect(result.model).toBe('cycle-patterns');
   });
 
   it('AnomalyListQuerySchema accepts severity filter', () => {

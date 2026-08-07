@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraConsentManager
- * @author Shiora Health AI on Aethelred
  * @notice Manages granular, time-limited, scope-limited, revocable consent
  *         permissions for health data sharing between patients and providers.
  *         Consents can carry multiple scopes, auto-renew, and reference

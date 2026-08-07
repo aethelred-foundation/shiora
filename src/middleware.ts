@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getCorsHeaders, hasDisallowedOrigin, isMutatingMethod } from '@/lib/api/origin';
 import { maturityForPath } from '@/lib/api/route-maturity';
+import { activeProfile, PILOT_DISABLED_PAGE_SEGMENTS } from '@/lib/api/feature-flags';
 
 // ────────────────────────────────────────────────────────────
 // Content-Security-Policy (audit M-01)
@@ -95,6 +96,16 @@ function createApiResponse(request: NextRequest): NextResponse {
 
 export function middleware(request: NextRequest) {
   if (!request.nextUrl.pathname.startsWith('/api')) {
+    const pageSegment = request.nextUrl.pathname.split('/').filter(Boolean)[0];
+    if (
+      activeProfile() === 'pilot' &&
+      pageSegment &&
+      PILOT_DISABLED_PAGE_SEGMENTS.has(pageSegment)
+    ) {
+      const unavailableUrl = request.nextUrl.clone();
+      unavailableUrl.pathname = '/not-found';
+      return NextResponse.rewrite(unavailableUrl, { status: 404 });
+    }
     return createPageResponse(request);
   }
 

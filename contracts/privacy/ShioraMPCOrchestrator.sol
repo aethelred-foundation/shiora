@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraMPCOrchestrator
- * @author Shiora Health AI on Aethelred
  * @notice Orchestrates Multi-Party Computation sessions for federated
  *         health analytics. Manages session lifecycle, participant enrollment,
  *         result commitment, and differential privacy budget tracking.

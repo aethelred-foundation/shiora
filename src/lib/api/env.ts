@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 const DEFAULT_ALLOWED_ORIGINS = [
-  'http://localhost:3000',
   'http://localhost:3001',
   'https://shiora.health',
   'https://app.shiora.health',

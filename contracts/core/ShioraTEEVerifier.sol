@@ -9,9 +9,8 @@ import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title ShioraTEEVerifier
- * @author Shiora Health AI on Aethelred
  * @notice Stores TEE attestations on-chain, verifies attestation signatures,
- *         manages a model registry, and tracks AI inferences inside
+ *         manages a workload registry, and tracks verified inferences inside
  *         secure enclaves (Intel SGX, AWS Nitro, AMD SEV).
  */
 contract ShioraTEEVerifier is Ownable, ReentrancyGuard, Pausable {
@@ -264,7 +263,7 @@ contract ShioraTEEVerifier is Ownable, ReentrancyGuard, Pausable {
     // ────────────────────────────────────────────────────────
 
     /**
-     * @notice Register a new AI model in the on-chain registry.
+     * @notice Register a new confidential-compute workload in the on-chain registry.
      * @param name Human-readable model name
      * @param version Model version string (e.g., "v2.1")
      * @param modelHash Hash of the model weights/binary
@@ -339,7 +338,7 @@ contract ShioraTEEVerifier is Ownable, ReentrancyGuard, Pausable {
     // ────────────────────────────────────────────────────────
 
     /**
-     * @notice Record a completed AI inference with its attestation.
+     * @notice Record a completed inference with its attestation.
      * @param modelId The model that performed the inference
      * @param inputHash Hash of the input data
      * @param outputHash Hash of the inference output

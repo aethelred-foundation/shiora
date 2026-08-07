@@ -171,7 +171,7 @@ export function buildOpenApiSpec(): OpenApiSpec {
     },
     servers: [
       { url: 'https://app.shiora.health', description: 'Production' },
-      { url: 'http://localhost:3000', description: 'Local development' },
+      { url: 'http://localhost:3001', description: 'Local development' },
     ],
     // Every tag used in the manifest has a description (asserted by tests).
     tags: usedTags.map((name) => ({ name, description: TAG_DESCRIPTIONS[name] })),

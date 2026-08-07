@@ -3,6 +3,7 @@
 import {
   activeProfile,
   featureDisabledReason,
+  PILOT_DISABLED_PAGE_SEGMENTS,
   PILOT_DISABLED_SEGMENTS,
 } from '@/lib/api/feature-flags';
 import { runMiddleware } from '@/lib/api/middleware';
@@ -16,11 +17,21 @@ afterEach(() => {
 });
 
 describe('activeProfile', () => {
-  it('defaults to full and only recognizes an exact pilot value', () => {
+  it('defaults non-production to full and only recognizes an exact pilot value', () => {
     expect(activeProfile({})).toBe('full');
     expect(activeProfile({ SHIORA_PROFILE: 'pilot' })).toBe('pilot');
     expect(activeProfile({ SHIORA_PROFILE: 'PILOT' })).toBe('full');
     expect(activeProfile({ SHIORA_PROFILE: 'staging' })).toBe('full');
+  });
+
+  it('always selects the fail-closed pilot profile in production', () => {
+    expect(activeProfile({ NODE_ENV: 'production' })).toBe('pilot');
+    expect(
+      activeProfile({
+        NODE_ENV: 'production',
+        SHIORA_PROFILE: 'full',
+      }),
+    ).toBe('pilot');
   });
 
   it('reads the process environment when no map is supplied', () => {
@@ -45,12 +56,26 @@ describe('featureDisabledReason', () => {
 
   it('keeps the pilot corridor open under the pilot profile', () => {
     for (const path of [
-      '/api/wallet/challenge', '/api/webauthn/credentials', '/api/mfa',
-      '/api/records', '/api/records/abc', '/api/access', '/api/consent',
-      '/api/provider/patients', '/api/providers', '/api/me/access-log',
-      '/api/notifications', '/api/privacy/erasure', '/api/fhir/import',
-      '/api/audit/export', '/api/anchors', '/api/system/status',
-      '/api/health/ready', '/api/openapi', '/api/roles', '/api/security/csp-report',
+      '/api/wallet/challenge',
+      '/api/webauthn/credentials',
+      '/api/mfa',
+      '/api/records',
+      '/api/records/abc',
+      '/api/access',
+      '/api/consent',
+      '/api/provider/patients',
+      '/api/providers',
+      '/api/me/access-log',
+      '/api/notifications',
+      '/api/privacy/erasure',
+      '/api/fhir/import',
+      '/api/audit/export',
+      '/api/anchors',
+      '/api/system/status',
+      '/api/health/ready',
+      '/api/openapi',
+      '/api/roles',
+      '/api/security/csp-report',
     ]) {
       expect(featureDisabledReason(path, 'pilot')).toBeNull();
     }
@@ -72,6 +97,20 @@ describe('featureDisabledReason', () => {
     expect(featureDisabledReason('/api/marketplace')).toBeTruthy();
     delete process.env.SHIORA_PROFILE;
     expect(featureDisabledReason('/api/marketplace')).toBeNull();
+  });
+});
+
+describe('PILOT_DISABLED_PAGE_SEGMENTS', () => {
+  it('contains the page surfaces whose backing services are deferred', () => {
+    for (const segment of ['insights', 'clinical', 'vault', 'marketplace', 'tee-explorer']) {
+      expect(PILOT_DISABLED_PAGE_SEGMENTS.has(segment)).toBe(true);
+    }
+  });
+
+  it('keeps production-backed pages available', () => {
+    for (const segment of ['records', 'access', 'fhir', 'settings']) {
+      expect(PILOT_DISABLED_PAGE_SEGMENTS.has(segment)).toBe(false);
+    }
   });
 });
 

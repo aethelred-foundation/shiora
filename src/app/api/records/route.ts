@@ -5,20 +5,11 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  RecordCreateSchema,
-  RecordListQuerySchema,
-  parseSearchParams,
-} from '@/lib/api/validation';
+import { RecordCreateSchema, RecordListQuerySchema, parseSearchParams } from '@/lib/api/validation';
 import { withIdempotency } from '@/lib/api/idempotency';
-import {
-  successResponse,
-  paginatedResponse,
-  errorFromThrow,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, paginatedResponse, errorFromThrow, HTTP } from '@/lib/api/responses';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
-import type { MockHealthRecord } from '@/lib/api/mock-data';
+import type { StoredHealthRecord } from '@/lib/api/domain-types';
 import { randomUUID } from 'node:crypto';
 import { createRecord, listRecords, findRecordsByTag } from '@/lib/api/records-service';
 
@@ -34,10 +25,7 @@ export async function GET(request: NextRequest) {
     const auth = requireAuth(request);
     if ('status' in auth) return auth;
 
-    const query = parseSearchParams(
-      RecordListQuerySchema,
-      request.nextUrl.searchParams,
-    );
+    const query = parseSearchParams(RecordListQuerySchema, request.nextUrl.searchParams);
 
     // An exact ?tag= match resolves via the blind index — the tag is a sealed
     // field, so this finds records without decrypting anything to filter (GAP-15).
@@ -105,52 +93,52 @@ export async function POST(request: NextRequest) {
   // A retried create (with an Idempotency-Key) replays the first response
   // instead of writing a duplicate record (GAP-17).
   return withIdempotency(request, auth.walletAddress!, async () => {
-  try {
-    const body = await request.json();
-    const validated = RecordCreateSchema.parse(body);
+    try {
+      const body = await request.json();
+      const validated = RecordCreateSchema.parse(body);
 
-    const description =
-      validated.description ?? `Health record created at ${new Date().toISOString()}`;
-    // A record stores only its encrypted metadata — no file blob — so "size"
-    // reflects that metadata payload rather than a fabricated file size.
-    const contentBytes = Buffer.byteLength(
-      JSON.stringify({ label: validated.label, description, tags: validated.tags }),
-      'utf8',
-    );
-    const newRecord: MockHealthRecord = {
-      id: `rec-${randomUUID().replace(/-/g, '')}`,
-      type: validated.type,
-      label: validated.label,
-      description,
-      date: Date.now(),
-      uploadDate: Date.now(),
-      encrypted: true,
-      encryption: validated.encryption,
-      // Records are encrypted at rest and integrity-tracked via the tamper-
-      // evident audit chain. They are NOT IPFS-pinned, on-chain-anchored, or
-      // TEE-attested, so these fields are left empty rather than fabricated.
-      cid: '',
-      txHash: '',
-      attestation: '',
-      size: contentBytes,
-      provider: validated.provider,
-      status: 'Verified',
-      ipfsNodes: 0,
-      tags: validated.tags,
-      deleted: false,
-      ownerAddress: auth.walletAddress!,
-      blockHeight: 0,
-    };
+      const description =
+        validated.description ?? `Health record created at ${new Date().toISOString()}`;
+      // A record stores only its encrypted metadata — no file blob — so "size"
+      // reflects that metadata payload rather than a fabricated file size.
+      const contentBytes = Buffer.byteLength(
+        JSON.stringify({ label: validated.label, description, tags: validated.tags }),
+        'utf8',
+      );
+      const newRecord: StoredHealthRecord = {
+        id: `rec-${randomUUID().replace(/-/g, '')}`,
+        type: validated.type,
+        label: validated.label,
+        description,
+        date: Date.now(),
+        uploadDate: Date.now(),
+        encrypted: true,
+        encryption: validated.encryption,
+        // Records are encrypted at rest and integrity-tracked via the tamper-
+        // evident audit chain. They are NOT IPFS-pinned, on-chain-anchored, or
+        // TEE-attested, so these fields are left empty rather than fabricated.
+        cid: '',
+        txHash: '',
+        attestation: '',
+        size: contentBytes,
+        provider: validated.provider,
+        status: 'Verified',
+        ipfsNodes: 0,
+        tags: validated.tags,
+        deleted: false,
+        ownerAddress: auth.walletAddress!,
+        blockHeight: 0,
+      };
 
-    const persistedRecord = await createRecord(auth.walletAddress!, newRecord);
+      const persistedRecord = await createRecord(auth.walletAddress!, newRecord);
 
-    return successResponse(persistedRecord, HTTP.CREATED, {
-      message: 'Record created and encrypted at rest.',
-    });
-  } catch (err) {
-    const mapped = errorFromThrow(err);
-    if (mapped) return mapped;
-    throw err;
-  }
+      return successResponse(persistedRecord, HTTP.CREATED, {
+        message: 'Record created and encrypted at rest.',
+      });
+    } catch (err) {
+      const mapped = errorFromThrow(err);
+      if (mapped) return mapped;
+      throw err;
+    }
   });
 }

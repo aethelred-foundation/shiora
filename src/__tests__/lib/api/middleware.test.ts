@@ -66,9 +66,9 @@ describe('logRequest', () => {
 
 describe('handleOptions', () => {
   it('returns 204 for allowed origin', () => {
-    const req = makeReq('http://localhost:3000/api/test', {
+    const req = makeReq('http://localhost:3001/api/test', {
       method: 'OPTIONS',
-      headers: { origin: 'http://localhost:3000' },
+      headers: { origin: 'http://localhost:3001' },
     });
     const res = handleOptions(req);
     expect(res.status).toBe(204);

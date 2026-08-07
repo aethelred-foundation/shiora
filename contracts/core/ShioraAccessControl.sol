@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraAccessControl
- * @author Shiora Health AI on Aethelred
  * @notice Manages granular, time-limited access grants for encrypted health data.
  *         Only the record owner can grant, modify, or revoke provider access.
  *         Grants auto-expire based on the specified duration.

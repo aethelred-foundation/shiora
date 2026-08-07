@@ -11,20 +11,34 @@
 import { listRecords, cryptoShredRecord } from './records-service';
 import { listConsents, updateConsent } from './consent-service';
 import { listAccessGrants, updateAccessGrant } from './access-service';
-import { listSymptoms, listCycleEntries, eraseVaultEntries, type SymptomEntry, type CycleEntry } from './vault-service';
-import { listClinicalNotesForPatient, eraseClinicalNotes, type ClinicalNote } from './clinical-notes-service';
+import {
+  listSymptoms,
+  listCycleEntries,
+  eraseVaultEntries,
+  type SymptomEntry,
+  type CycleEntry,
+} from './vault-service';
+import {
+  listClinicalNotesForPatient,
+  eraseClinicalNotes,
+  type ClinicalNote,
+} from './clinical-notes-service';
 import { listNotifications, eraseNotifications, type Notification } from './notification-service';
 import { getProfile, eraseProfile, type Profile } from './profile-service';
-import { listConversations, eraseSanaConversations, type SanaConversation } from './sana/sana-service';
+import {
+  listConversations,
+  eraseSanaConversations,
+  type SanaConversation,
+} from './sana/sana-service';
 import { listObjects, eraseObjects, type IpfsObject } from './ipfs/ipfs-service';
-import type { MockHealthRecord, MockAccessGrant } from './mock-data';
+import type { StoredAccessGrant, StoredHealthRecord } from './domain-types';
 import type { ConsentGrant } from '@/types';
 
 export interface UserDataBundle {
   profile: Profile;
-  records: MockHealthRecord[];
+  records: StoredHealthRecord[];
   consents: ConsentGrant[];
-  accessGrants: MockAccessGrant[];
+  accessGrants: StoredAccessGrant[];
   symptoms: SymptomEntry[];
   cycleEntries: CycleEntry[];
   clinicalNotes: ClinicalNote[];
@@ -36,8 +50,16 @@ export interface UserDataBundle {
 /** Assemble a data subject's complete data across every owner-scoped store. */
 export async function collectUserData(owner: string): Promise<UserDataBundle> {
   const [
-    profile, records, consents, accessGrants, symptoms, cycleEntries,
-    clinicalNotes, notifications, sanaConversations, ipfsObjects,
+    profile,
+    records,
+    consents,
+    accessGrants,
+    symptoms,
+    cycleEntries,
+    clinicalNotes,
+    notifications,
+    sanaConversations,
+    ipfsObjects,
   ] = await Promise.all([
     getProfile(owner),
     listRecords(owner),
@@ -51,8 +73,16 @@ export async function collectUserData(owner: string): Promise<UserDataBundle> {
     listObjects(owner),
   ]);
   return {
-    profile, records, consents, accessGrants, symptoms, cycleEntries,
-    clinicalNotes, notifications, sanaConversations, ipfsObjects,
+    profile,
+    records,
+    consents,
+    accessGrants,
+    symptoms,
+    cycleEntries,
+    clinicalNotes,
+    notifications,
+    sanaConversations,
+    ipfsObjects,
   };
 }
 
@@ -94,8 +124,12 @@ export async function eraseUserData(owner: string): Promise<ErasureSummary> {
   );
 
   const [
-    vaultEntriesErased, clinicalNotesErased, notificationsErased,
-    profileErased, sanaConversationsErased, ipfsObjectsErased,
+    vaultEntriesErased,
+    clinicalNotesErased,
+    notificationsErased,
+    profileErased,
+    sanaConversationsErased,
+    ipfsObjectsErased,
   ] = await Promise.all([
     eraseVaultEntries(owner),
     eraseClinicalNotes(owner),

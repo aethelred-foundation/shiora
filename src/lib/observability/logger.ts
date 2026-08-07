@@ -5,7 +5,7 @@
 // jsdom): it writes through console only. Each line is a single JSON object
 // with a timestamp, level, message, and any bound context — machine-parseable
 // by any log pipeline (CloudWatch, Loki, Datadog) without an agent-side
-// grok pattern. `child()` binds context (request id, route, subsystem) so
+// log parsing pattern. `child()` binds context (request id, route, subsystem) so
 // call sites never re-thread correlation fields by hand.
 //
 // Level threshold comes from SHIORA_LOG_LEVEL (debug|info|warn|error,

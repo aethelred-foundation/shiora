@@ -7,10 +7,9 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraClinicalPathway
- * @author Shiora Health AI on Aethelred
  * @notice Immutable on-chain registry for clinical decision support guidelines,
  *         drug interaction checks, and differential diagnosis audit trails.
- *         Every clinical AI decision is TEE-attested and version-tracked.
+ *         Every clinical decision-support outcome is TEE-attested and version-tracked.
  */
 contract ShioraClinicalPathway is Ownable, ReentrancyGuard, Pausable {
 
@@ -224,7 +223,7 @@ contract ShioraClinicalPathway is Ownable, ReentrancyGuard, Pausable {
      * @param patient Address of the patient
      * @param stepIndex Which step in the pathway
      * @param inputHash Hash of the clinical inputs
-     * @param outputHash Hash of the AI recommendation
+     * @param outputHash Hash of the decision-support recommendation
      * @param teeAttestationHash TEE attestation for the decision computation
      * @param severity Severity classification
      * @param confidenceScore Confidence (0-10000 = 0%-100.00%)

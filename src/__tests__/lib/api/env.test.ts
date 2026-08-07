@@ -51,7 +51,7 @@ describe('serverEnv', () => {
   describe('SHIORA_ALLOWED_ORIGINS parsing', () => {
     it('allowedOrigins contains default origins when env var not set', () => {
       // When SHIORA_ALLOWED_ORIGINS is not set, defaults are used
-      expect(serverEnv.allowedOrigins).toContain('http://localhost:3000');
+      expect(serverEnv.allowedOrigins).toContain('http://localhost:3001');
     });
   });
 });
@@ -70,7 +70,7 @@ describe('serverEnv with custom SHIORA_ALLOWED_ORIGINS', () => {
       // Empty entries after filter(Boolean) should be removed
       expect(customEnv.allowedOrigins).not.toContain('');
       // Default origins should NOT be present when custom is set
-      expect(customEnv.allowedOrigins).not.toContain('http://localhost:3000');
+      expect(customEnv.allowedOrigins).not.toContain('http://localhost:3001');
     } finally {
       process.env = originalEnv;
       jest.resetModules();

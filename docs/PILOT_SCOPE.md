@@ -2,9 +2,11 @@
 
 Adopted 2026-07-11 per external consultant review: the first production pilot
 serves **one narrow corridor**, enforced **server-side** by the deployment
-profile (`SHIORA_PROFILE=pilot`), not by UI hiding. Deferred surfaces answer
-`503 FEATURE_DISABLED` at the middleware, before auth or handler logic runs.
-The active profile is auditable at `GET /api/system/status`.
+profile. Production is always pinned to `pilot`; `SHIORA_PROFILE=full` is
+ignored there and is rejected by the production config gate. Deferred APIs
+answer `503 FEATURE_DISABLED` before auth or handler logic runs, and their
+pages are rewritten to the application 404. The active profile is auditable
+at `GET /api/system/status`.
 
 ## The corridor (enabled under `pilot`)
 
@@ -24,7 +26,7 @@ The active profile is auditable at `GET /api/system/status`.
    acknowledged, and an admin retrospective-review queue (`/api/break-glass`).
    Deliberately in the corridor: a care pilot cannot ship without an emergency
    path. Legal basis is the pilot jurisdiction + partner policy (counsel-confirmed),
-   not a US HIPAA provision. Distinct from the *simulated* emergency-response
+   not a US HIPAA provision. Distinct from the _simulated_ emergency-response
    feature (`emergency` segment), which stays deferred, and from system-continuity
    operational access, which is a separate admin concern (no patient PHI).
 8. **Patient-visible access history** (`/api/me/access-log`, `/api/me/activity`).
@@ -34,27 +36,28 @@ The active profile is auditable at `GET /api/system/status`.
     (`/api/anchors`, `/api/audit/export`) — never a dependency for care.
 
 Plus the operational plane: `/api/health/*`, `/api/system/*`, `/api/openapi`,
-`/api/roles` (admin), `/api/security/csp-report`.
+`/api/roles` (admin), `/api/security/csp-report`, and live Aethelred telemetry
+at `/api/network/status` when `SHIORA_L1_RPC_URL` is configured.
 
 ## Deferred under `pilot` (server-enforced)
 
-| Surface | Segment(s) | Re-enable requires |
-|---|---|---|
-| Employer console & wellness | `employer` | Signed pilot requirement |
-| Health-plan/payer (care gaps) | `health-plans` | Signed pilot requirement |
-| Government workflows | `governance` | Signed pilot requirement |
-| Population analytics | `population` | Strengthened de-identification governance |
-| Community circles | `community` | Moderation model |
-| Research marketplace & studies | `marketplace`, `research` | Research environment + governance path |
-| User-facing ZK/MPC | `zkp`, `mpc` | Post-pilot |
-| Live SANA (chat + API) | `chat`, `sana` | Clinical/AI governance sign-off |
-| Clinical decision support | `clinical` | Regulatory (SaMD) pathway |
-| Genomics / digital twin / XAI / emergency | `genomics`, `twin`, `xai`, `emergency` | Real pipelines + pathways |
-| Wearables + derived insights | `wearables`, `insights` | Signed pilot use case |
-| Cycle/symptom vault | `vault` | Signed pilot scope inclusion (one-flag flip) |
-| Compliance reports (audience-facing) | `compliance` | Post-pilot |
-| Outbound webhooks | `webhooks` | Partner integration requirement |
-| Chain/demo surfaces | `tee`, `staking`, `rewards`, `network`, `ipfs` | Not pilot material |
+| Surface                                   | Segment(s)                             | Re-enable requires                           |
+| ----------------------------------------- | -------------------------------------- | -------------------------------------------- |
+| Employer console & wellness               | `employer`                             | Signed pilot requirement                     |
+| Health-plan/payer (care gaps)             | `health-plans`                         | Signed pilot requirement                     |
+| Government workflows                      | `governance`                           | Signed pilot requirement                     |
+| Population analytics                      | `population`                           | Strengthened de-identification governance    |
+| Community circles                         | `community`                            | Moderation model                             |
+| Research marketplace & studies            | `marketplace`, `research`              | Research environment + governance path       |
+| User-facing ZK/MPC                        | `zkp`, `mpc`                           | Post-pilot                                   |
+| Live SANA (chat + API)                    | `chat`, `sana`                         | Clinical inference governance sign-off       |
+| Clinical decision support                 | `clinical`                             | Regulatory (SaMD) pathway                    |
+| Genomics / digital twin / XAI / emergency | `genomics`, `twin`, `xai`, `emergency` | Real pipelines + pathways                    |
+| Wearables + derived insights              | `wearables`, `insights`                | Signed pilot use case                        |
+| Cycle/symptom vault                       | `vault`                                | Signed pilot scope inclusion (one-flag flip) |
+| Compliance reports (audience-facing)      | `compliance`                           | Post-pilot                                   |
+| Outbound webhooks                         | `webhooks`                             | Partner integration requirement              |
+| Deferred chain/storage surfaces           | `tee`, `staking`, `rewards`, `ipfs`    | Validated service integration                |
 
 The authoritative machine-readable list is `PILOT_DISABLED_SEGMENTS` in
 [`src/lib/api/feature-flags.ts`](../src/lib/api/feature-flags.ts); this table
@@ -63,12 +66,12 @@ update here — never an ad-hoc config toggle.
 
 ## Rules
 
-- The **default profile is `full`** (development and the test suite are
-  unaffected). Pilot deployments must set `SHIORA_PROFILE=pilot` explicitly and
-  verify it via `/api/system/status`.
-- A deferred surface is disabled at the API. UI navigation to it will receive
-  honest 503s — pilot builds should also hide those pages, but the server is
-  the enforcement point.
+- The **default profile is `full` only outside production**, so development and
+  test can exercise deferred contracts. Production always uses `pilot`.
+- Operators should set `SHIORA_PROFILE=pilot` explicitly and verify it through
+  `/api/system/status`; an explicit production `full` value fails config lint.
+- Deferred APIs return 503 and deferred pages return 404. Production navigation,
+  search, dashboard actions, and footer links expose only corridor routes.
 - An MBZUAI research track runs in a **separate environment and governance
   path** with synthetic or governed de-identified data — never by widening this
   corridor.

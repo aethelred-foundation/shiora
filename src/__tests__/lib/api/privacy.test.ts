@@ -1,9 +1,27 @@
 /** @jest-environment node */
 
+jest.mock('@/lib/api/sana/inference-provider', () => {
+  const actual = jest.requireActual('@/lib/api/sana/inference-provider');
+  return {
+    ...actual,
+    getInferenceProvider: () => ({
+      generate: async () => ({
+        text: 'General health information from the managed test gateway.',
+        refused: false,
+        provider: 'managed' as const,
+      }),
+    }),
+  };
+});
+
 import { collectUserData, eraseUserData } from '@/lib/api/privacy';
 import { createRecord, listRecords, __resetRecordsForTests } from '@/lib/api/records-service';
 import { createConsent, listConsents, __resetConsentForTests } from '@/lib/api/consent-service';
-import { createAccessGrant, listAccessGrants, __resetAccessForTests } from '@/lib/api/access-service';
+import {
+  createAccessGrant,
+  listAccessGrants,
+  __resetAccessForTests,
+} from '@/lib/api/access-service';
 import { logSymptom, logCycleEntry, __resetVaultForTests } from '@/lib/api/vault-service';
 import { createClinicalNote, __resetClinicalNotesForTests } from '@/lib/api/clinical-notes-service';
 import { __resetNotificationsForTests } from '@/lib/api/notification-service';
@@ -18,25 +36,63 @@ const OWNER = seededAddress(300);
 
 function record(id: string): MockHealthRecord {
   return {
-    id, type: 'lab-result', label: 'L', description: 'D', date: 1, uploadDate: 1,
-    encrypted: false, encryption: 'none', cid: 'c', txHash: 't', attestation: 'a',
-    size: 1, provider: 'p', status: 'Verified', ipfsNodes: 1, tags: ['t'],
-    deleted: false, ownerAddress: OWNER, blockHeight: 1,
+    id,
+    type: 'lab-result',
+    label: 'L',
+    description: 'D',
+    date: 1,
+    uploadDate: 1,
+    encrypted: false,
+    encryption: 'none',
+    cid: 'c',
+    txHash: 't',
+    attestation: 'a',
+    size: 1,
+    provider: 'p',
+    status: 'Verified',
+    ipfsNodes: 1,
+    tags: ['t'],
+    deleted: false,
+    ownerAddress: OWNER,
+    blockHeight: 1,
   };
 }
 
 function consent(id: string, status: ConsentStatus): ConsentGrant {
   return {
-    id, patientAddress: OWNER, providerAddress: 'aeth1prov', providerName: 'Dr', scopes: ['cycle_data'],
-    status, grantedAt: 1, expiresAt: 2, txHash: 't', attestation: 'a', policyId: 'policy-0', autoRenew: false,
+    id,
+    patientAddress: OWNER,
+    providerAddress: 'aeth1prov',
+    providerName: 'Dr',
+    scopes: ['cycle_data'],
+    status,
+    grantedAt: 1,
+    expiresAt: 2,
+    txHash: 't',
+    attestation: 'a',
+    policyId: 'policy-0',
+    autoRenew: false,
   };
 }
 
 function grant(id: string, status: MockAccessGrant['status']): MockAccessGrant {
   return {
-    id, provider: 'P', specialty: 'OB-GYN', address: 'aeth1prov', status, scope: 'Full Records',
-    grantedAt: 1, expiresAt: 2, lastAccess: null, accessCount: 0, txHash: 't', attestation: 'a',
-    canView: true, canDownload: false, canShare: false, ownerAddress: OWNER,
+    id,
+    provider: 'P',
+    specialty: 'OB-GYN',
+    address: 'aeth1prov',
+    status,
+    scope: 'Full Records',
+    grantedAt: 1,
+    expiresAt: 2,
+    lastAccess: null,
+    accessCount: 0,
+    txHash: 't',
+    attestation: 'a',
+    canView: true,
+    canDownload: false,
+    canShare: false,
+    ownerAddress: OWNER,
   };
 }
 
@@ -53,7 +109,7 @@ beforeEach(() => {
 });
 
 describe('privacy data-subject operations', () => {
-  it('collects a subject\'s data across every store, including vault and notes', async () => {
+  it("collects a subject's data across every store, including vault and notes", async () => {
     await createRecord(OWNER, record('rec-1'));
     await createConsent(OWNER, consent('c-1', 'active'));
     await createAccessGrant(OWNER, grant('g-1', 'Active'));

@@ -91,15 +91,63 @@ export interface UseWalletReturn {
 }
 
 // ---------------------------------------------------------------------------
-// Aethelred EVM chain ids (cosmos/evm). Testnet and local devnet share 7332;
-// mainnet is 7331. Passed through to the session record; the challenge HMAC
-// does not depend on it.
+// Shiora is pinned to the Aethelred public testnet until the audited mainnet
+// release gate is explicitly cleared.
 // ---------------------------------------------------------------------------
 
 const CHAIN_IDS: Record<string, string> = {
-  mainnet: '7331',
   testnet: '7332',
 };
+
+const AETHELRED_TESTNET_CHAIN_ID_HEX = '0x1ca4';
+
+function chainIdNumber(value: unknown): number | null {
+  if (typeof value !== 'string' || !/^0x[0-9a-fA-F]+$/.test(value)) {
+    return null;
+  }
+  const parsed = BigInt(value);
+  return parsed <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(parsed) : null;
+}
+
+function providerErrorCode(error: unknown): number | null {
+  if (typeof error !== 'object' || error === null || !('code' in error)) {
+    return null;
+  }
+  const code = (error as { code?: unknown }).code;
+  return typeof code === 'number' ? code : null;
+}
+
+/**
+ * Prove that the selected wallet is operating on the public testnet before
+ * authentication or transaction broadcast. A client-supplied literal is not a
+ * network boundary; the provider itself must report EIP-155 chain 7332.
+ */
+async function ensureAethelredTestnet(provider: Eip1193Provider): Promise<void> {
+  const initial = await provider.request({ method: 'eth_chainId' });
+  if (chainIdNumber(initial) === Number(CHAIN_IDS.testnet)) {
+    return;
+  }
+
+  try {
+    await provider.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: AETHELRED_TESTNET_CHAIN_ID_HEX }],
+    });
+  } catch (error) {
+    if (providerErrorCode(error) === 4902) {
+      throw new Error(
+        'The Aethelred public testnet is not configured in this wallet. ' +
+          'Add the official chain 7332 network profile, then reconnect.',
+      );
+    }
+    throw new Error('Switch the wallet to the Aethelred public testnet (chain 7332) to continue.');
+  }
+
+  const confirmed = await provider.request({ method: 'eth_chainId' });
+  if (chainIdNumber(confirmed) !== Number(CHAIN_IDS.testnet)) {
+    throw new Error('The wallet did not switch to the Aethelred public testnet (chain 7332).');
+  }
+}
 
 function aethelToWeiHex(amount: number): string {
   if (!Number.isFinite(amount) || amount <= 0) {
@@ -161,7 +209,7 @@ export function useWallet(): UseWalletReturn {
   const [activeProvider, setActiveProvider] = useState<WalletProvider | null>(
     (wallet.provider as WalletProvider | null) ?? null,
   );
-  const [activeChainId, setActiveChainId] = useState<string>(wallet.chainId ?? CHAIN_IDS.mainnet);
+  const [activeChainId, setActiveChainId] = useState<string>(wallet.chainId ?? CHAIN_IDS.testnet);
 
   /** Check whether the requested wallet's EIP-1193 provider is injected. */
   const isProviderAvailable = useCallback((provider: WalletProvider): boolean => {
@@ -185,7 +233,7 @@ export function useWallet(): UseWalletReturn {
    * 4. POST /api/wallet/connect with the 0x signature + challenge data
    */
   const connect = useCallback(
-    async (provider: WalletProvider = 'aethelred', network: string = 'mainnet') => {
+    async (provider: WalletProvider = 'aethelred', network: string = 'testnet') => {
       setIsLoading(true);
       setError(null);
       try {
@@ -198,7 +246,10 @@ export function useWallet(): UseWalletReturn {
           );
         }
 
-        const chainId = CHAIN_IDS[network] ?? CHAIN_IDS.mainnet;
+        if (network !== 'testnet') {
+          throw new Error('Shiora currently supports only the Aethelred public testnet.');
+        }
+        const chainId = CHAIN_IDS.testnet;
 
         // Step 1: request the account.
         const accounts = (await eip1193.request({
@@ -209,18 +260,21 @@ export function useWallet(): UseWalletReturn {
           throw new Error('No account was authorised in the wallet.');
         }
 
-        // Step 2: server-issued challenge (nonce + HMAC + expiry).
+        // Step 2: prove the wallet is on the only network Shiora accepts.
+        await ensureAethelredTestnet(eip1193);
+
+        // Step 3: server-issued challenge (nonce + HMAC + expiry).
         const challenge = await api.get<ChallengeResponse>('/api/wallet/challenge', {
           address,
         });
 
-        // Step 3: personal_sign (EIP-191) the exact challenge message.
+        // Step 4: personal_sign (EIP-191) the exact challenge message.
         const signature = (await eip1193.request({
           method: 'personal_sign',
           params: [challenge.message, address],
         })) as string;
 
-        // Step 4: submit the signature to authenticate.
+        // Step 5: submit the signature to authenticate.
         const connectResult = await api.post<ConnectResponse>('/api/wallet/connect', {
           address,
           signature,
@@ -231,7 +285,7 @@ export function useWallet(): UseWalletReturn {
           hmac: challenge.hmac,
         });
 
-        // Step 5: prove the session actually took hold before declaring
+        // Step 6: prove the session actually took hold before declaring
         // success. A Secure-only cookie on a plain-http origin is silently
         // dropped by the browser — connect then "succeeds" while every
         // authenticated request 401s. Fail loudly instead.
@@ -326,6 +380,7 @@ export function useWallet(): UseWalletReturn {
         if (!eip1193) {
           throw new Error('No wallet provider available for transactions');
         }
+        await ensureAethelredTestnet(eip1193);
         if (tx.from.toLowerCase() !== wallet.address.toLowerCase()) {
           throw new Error('Transaction sender does not match the connected wallet');
         }
@@ -360,13 +415,6 @@ export function useWallet(): UseWalletReturn {
     },
     [wallet.connected, wallet.address, activeProvider, addNotification],
   );
-
-  // Keep the session's chain id in sync when it is restored from storage.
-  useEffect(() => {
-    if (wallet.chainId && wallet.chainId !== activeChainId) {
-      setActiveChainId(wallet.chainId);
-    }
-  }, [wallet.chainId, activeChainId]);
 
   return {
     wallet,

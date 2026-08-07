@@ -2,7 +2,7 @@
  * Shiora on Aethelred — Comprehensive Type Definitions
  *
  * Centralized types for the entire application covering health records,
- * access control, AI/TEE operations, wallet/network state, IPFS storage,
+ * access control, confidential-compute operations, wallet/network state, IPFS storage,
  * notifications, user profiles, API responses, and form schemas.
  */
 
@@ -11,12 +11,7 @@
 // ============================================================
 
 /** Supported health record categories. */
-export type RecordType =
-  | 'lab_result'
-  | 'imaging'
-  | 'prescription'
-  | 'vitals'
-  | 'notes';
+export type RecordType = 'lab_result' | 'imaging' | 'prescription' | 'vitals' | 'notes';
 
 /** Lifecycle status of a health record on IPFS/blockchain. */
 export type RecordStatus = 'Verified' | 'Pinning' | 'Pinned' | 'Processing';
@@ -169,28 +164,32 @@ export interface AuditEntry {
 }
 
 // ============================================================
-// AI / TEE
+// Confidential inference / TEE
 // ============================================================
 
-/** Architecture type of an AI model. */
-export type ModelArchitecture = 'LSTM' | 'Isolation Forest' | 'XGBoost' | 'Transformer';
+/** Implementation class for an inference workload. */
+export type WorkloadArchitecture =
+  | 'time-series'
+  | 'anomaly-detection'
+  | 'risk-scoring'
+  | 'contextual-analysis';
 
 /**
- * An AI model registered in the Shiora model registry,
+ * An inference workload registered in the Shiora workload registry,
  * executed inside a TEE enclave.
  */
-export interface AIModel {
-  /** Unique model identifier (e.g. `lstm`, `anomaly`). */
+export interface InferenceWorkload {
+  /** Unique workload identifier. */
   id: string;
-  /** Display name of the model. */
+  /** Display name of the workload. */
   name: string;
   /** Semantic version string (e.g. `v2.1`). */
   version: string;
-  /** Neural network / ML architecture. */
-  type: ModelArchitecture;
+  /** Workload implementation class. */
+  type: WorkloadArchitecture;
   /** Validation accuracy percentage (0-100). */
   accuracy: number;
-  /** Human-readable description of the model's purpose. */
+  /** Human-readable description of the workload's purpose. */
   description: string;
 }
 
@@ -217,20 +216,20 @@ export interface TEEAttestation {
   blockHeight: number;
 }
 
-/** Result classification from an AI inference. */
+/** Result classification from an inference. */
 export type InferenceResult = 'Normal' | 'Anomaly Detected';
 
 /**
- * A single TEE-verified AI inference run.
+ * A single TEE-verified inference run.
  */
 export interface Inference {
   /** Unique inference identifier. */
   id: string;
-  /** The AI model that produced this inference. */
-  model: AIModel;
+  /** The configured workload that produced this inference. */
+  model: InferenceWorkload;
   /** Classification result. */
   result: InferenceResult;
-  /** Model confidence in the result (0-100). */
+  /** Workload confidence in the result (0-100). */
   confidence: number;
   /** When the inference completed (epoch ms). */
   timestamp: number;
@@ -244,7 +243,7 @@ export interface Inference {
 export type AnomalySeverity = 'High' | 'Medium' | 'Low';
 
 /**
- * An anomaly detected by the AI anomaly detection model.
+ * An anomaly detected by a configured anomaly-detection workload.
  */
 export interface AnomalyDetection {
   /** Unique anomaly identifier. */
@@ -257,9 +256,9 @@ export interface AnomalyDetection {
   severity: AnomalySeverity;
   /** When the anomaly was detected (epoch ms). */
   detectedAt: number;
-  /** Model confidence in the anomaly detection (0-100). */
+  /** Workload confidence in the anomaly detection (0-100). */
   confidence: number;
-  /** Name of the model that detected the anomaly. */
+  /** Name of the workload that detected the anomaly. */
   model: string;
   /** TEE attestation hash for the detection. */
   attestation: string;
@@ -364,22 +363,22 @@ export interface SignMessageResult {
 // ============================================================
 
 /**
- * Real-time blockchain network state, updated via
- * WebSocket or polling simulation.
+ * Live blockchain network state. Null means the upstream source is
+ * unavailable or does not expose that metric.
  */
 export interface NetworkState {
   /** Current block height. */
-  blockHeight: number;
+  blockHeight: number | null;
   /** Current transactions per second. */
-  tps: number;
+  tps: number | null;
   /** Current network epoch. */
-  epoch: number;
+  epoch: number | null;
   /** Network load percentage (0-100). */
-  networkLoad: number;
+  networkLoad: number | null;
   /** Current AETHEL token price in USD. */
-  aethelPrice: number;
+  aethelPrice: number | null;
   /** Timestamp of the last block (epoch ms). */
-  lastBlockTime: number;
+  lastBlockTime: number | null;
 }
 
 /**
@@ -714,9 +713,16 @@ export interface HealthDataState {
 // ============================================================
 
 export type ConsentScope =
-  | 'cycle_data' | 'fertility_markers' | 'lab_results' | 'imaging'
-  | 'prescriptions' | 'vitals' | 'clinical_notes' | 'wearable_data'
-  | 'ai_inferences' | 'full_access';
+  | 'cycle_data'
+  | 'fertility_markers'
+  | 'lab_results'
+  | 'imaging'
+  | 'prescriptions'
+  | 'vitals'
+  | 'clinical_notes'
+  | 'wearable_data'
+  | 'ai_inferences'
+  | 'full_access';
 
 export type ConsentStatus = 'active' | 'expired' | 'revoked' | 'pending';
 
@@ -758,7 +764,7 @@ export interface ConsentAuditEntry {
 }
 
 // ============================================================
-// Health Chat AI
+// Health assistant
 // ============================================================
 
 export type ChatRole = 'user' | 'assistant' | 'system';
@@ -810,8 +816,14 @@ export interface ChatModelConfig {
 // ============================================================
 
 export type VaultCompartmentCategory =
-  | 'cycle_tracking' | 'fertility_data' | 'hormone_levels'
-  | 'medications' | 'lab_results' | 'imaging' | 'symptoms' | 'pregnancy';
+  | 'cycle_tracking'
+  | 'fertility_data'
+  | 'hormone_levels'
+  | 'medications'
+  | 'lab_results'
+  | 'imaging'
+  | 'symptoms'
+  | 'pregnancy';
 
 export type VaultLockStatus = 'locked' | 'unlocked' | 'partial';
 
@@ -833,8 +845,15 @@ export interface VaultCompartment {
 export type SymptomSeverity = 1 | 2 | 3 | 4 | 5;
 
 export type SymptomCategory =
-  | 'pain' | 'mood' | 'energy' | 'digestive' | 'skin'
-  | 'sleep' | 'discharge' | 'temperature' | 'other';
+  | 'pain'
+  | 'mood'
+  | 'energy'
+  | 'digestive'
+  | 'skin'
+  | 'sleep'
+  | 'discharge'
+  | 'temperature'
+  | 'other';
 
 export interface SymptomLog {
   id: string;
@@ -883,9 +902,14 @@ export interface VaultPrivacyScore {
 export type ListingStatus = 'active' | 'sold' | 'expired' | 'withdrawn';
 
 export type MarketplaceCategory =
-  | 'menstrual_cycles' | 'fertility_data' | 'lab_results'
-  | 'vitals_timeseries' | 'wearable_data' | 'imaging_anonymized'
-  | 'clinical_outcomes' | 'medication_responses';
+  | 'menstrual_cycles'
+  | 'fertility_data'
+  | 'lab_results'
+  | 'vitals_timeseries'
+  | 'wearable_data'
+  | 'imaging_anonymized'
+  | 'clinical_outcomes'
+  | 'medication_responses';
 
 export interface DataListing {
   id: string;
@@ -961,9 +985,18 @@ export interface WearableDevice {
 }
 
 export type WearableMetricType =
-  | 'heart_rate' | 'hrv' | 'spo2' | 'temperature' | 'steps'
-  | 'calories' | 'sleep_duration' | 'sleep_score' | 'readiness'
-  | 'strain' | 'recovery' | 'respiratory_rate';
+  | 'heart_rate'
+  | 'hrv'
+  | 'spo2'
+  | 'temperature'
+  | 'steps'
+  | 'calories'
+  | 'sleep_duration'
+  | 'sleep_score'
+  | 'readiness'
+  | 'strain'
+  | 'recovery'
+  | 'respiratory_rate';
 
 export interface WearableDataPoint {
   id: string;
@@ -989,8 +1022,14 @@ export interface WearableSyncBatch {
 // ============================================================
 
 export type FHIRResourceType =
-  | 'Patient' | 'Observation' | 'MedicationRequest' | 'Condition'
-  | 'DiagnosticReport' | 'Immunization' | 'Procedure' | 'AllergyIntolerance';
+  | 'Patient'
+  | 'Observation'
+  | 'MedicationRequest'
+  | 'Condition'
+  | 'DiagnosticReport'
+  | 'Immunization'
+  | 'Procedure'
+  | 'AllergyIntolerance';
 
 export interface FHIRResource {
   id: string;
@@ -1041,9 +1080,16 @@ export type AlertSeverity = 'critical' | 'warning' | 'info';
 export type AlertChannel = 'in_app' | 'email' | 'push' | 'sms';
 
 export type AlertMetric =
-  | 'temperature' | 'cycle_length' | 'heart_rate' | 'hrv'
-  | 'spo2' | 'blood_pressure' | 'glucose' | 'weight'
-  | 'sleep_score' | 'recovery_score';
+  | 'temperature'
+  | 'cycle_length'
+  | 'heart_rate'
+  | 'hrv'
+  | 'spo2'
+  | 'blood_pressure'
+  | 'glucose'
+  | 'weight'
+  | 'sleep_score'
+  | 'recovery_score';
 
 export interface AlertRule {
   id: string;
@@ -1089,8 +1135,12 @@ export interface AlertHistory {
 // ============================================================
 
 export type ZKClaimType =
-  | 'age_range' | 'condition_present' | 'medication_active'
-  | 'data_quality' | 'provider_verified' | 'fertility_window';
+  | 'age_range'
+  | 'condition_present'
+  | 'medication_active'
+  | 'data_quality'
+  | 'provider_verified'
+  | 'fertility_window';
 
 export interface ZKProof {
   id: string;
@@ -1220,8 +1270,14 @@ export interface StakingStats {
 // ============================================================
 
 export type CircleCategory =
-  | 'fertility' | 'pregnancy' | 'menopause' | 'endometriosis'
-  | 'pcos' | 'general_wellness' | 'mental_health' | 'nutrition';
+  | 'fertility'
+  | 'pregnancy'
+  | 'menopause'
+  | 'endometriosis'
+  | 'pcos'
+  | 'general_wellness'
+  | 'mental_health'
+  | 'nutrition';
 
 export interface CommunityCircle {
   id: string;
@@ -1264,8 +1320,14 @@ export interface CircleMembership {
 // ============================================================
 
 export type RewardAction =
-  | 'data_upload' | 'wearable_sync' | 'community_post' | 'health_checkup'
-  | 'data_contribution' | 'streak_bonus' | 'milestone' | 'referral';
+  | 'data_upload'
+  | 'wearable_sync'
+  | 'community_post'
+  | 'health_checkup'
+  | 'data_contribution'
+  | 'streak_bonus'
+  | 'milestone'
+  | 'referral';
 
 export interface RewardEntry {
   id: string;
@@ -1335,7 +1397,7 @@ export interface ProviderReview {
 }
 
 // ============================================================
-// Explainable AI
+// Explainability
 // ============================================================
 
 export interface SHAPValue {
@@ -1351,12 +1413,12 @@ export interface FeatureImportance {
   direction: 'positive' | 'negative' | 'neutral';
 }
 
-export interface ModelCard {
+export interface WorkloadAssessment {
   modelId: string;
   name: string;
   version: string;
   description: string;
-  architecture: ModelArchitecture;
+  architecture: WorkloadArchitecture;
   trainingDataSize: number;
   validationAccuracy: number;
   fairnessMetrics: {
@@ -1631,7 +1693,12 @@ export interface ClinicalGuideline {
 /** A clinical alert for the patient. */
 export interface ClinicalAlert {
   id: string;
-  type: 'drug_interaction' | 'overdue_screening' | 'lab_abnormal' | 'guideline_deviation' | 'contraindication';
+  type:
+    | 'drug_interaction'
+    | 'overdue_screening'
+    | 'lab_abnormal'
+    | 'guideline_deviation'
+    | 'contraindication';
   severity: AlertSeverity;
   title: string;
   message: string;
@@ -1658,7 +1725,12 @@ export interface SymptomAssessment {
 /** An immutable clinical decision audit entry. */
 export interface ClinicalDecisionAuditEntry {
   id: string;
-  decisionType: 'pathway_step' | 'drug_check' | 'differential' | 'guideline_applied' | 'alert_generated';
+  decisionType:
+    | 'pathway_step'
+    | 'drug_check'
+    | 'differential'
+    | 'guideline_applied'
+    | 'alert_generated';
   inputs: string;
   output: string;
   modelId: string;
@@ -1685,9 +1757,16 @@ export interface ClinicalStats {
 
 /** Organ system identifiers. */
 export type OrganSystem =
-  | 'cardiovascular' | 'respiratory' | 'neurological' | 'endocrine'
-  | 'musculoskeletal' | 'gastrointestinal' | 'renal' | 'hepatic'
-  | 'immune' | 'reproductive';
+  | 'cardiovascular'
+  | 'respiratory'
+  | 'neurological'
+  | 'endocrine'
+  | 'musculoskeletal'
+  | 'gastrointestinal'
+  | 'renal'
+  | 'hepatic'
+  | 'immune'
+  | 'reproductive';
 
 /** A digital twin model representing a virtual patient. */
 export interface DigitalTwin {
@@ -1696,7 +1775,12 @@ export interface DigitalTwin {
   createdAt: number;
   lastUpdated: number;
   modelVersion: string;
-  organScores: { system: OrganSystem; score: number; trend: 'improving' | 'stable' | 'declining'; lastUpdated: number }[];
+  organScores: {
+    system: OrganSystem;
+    score: number;
+    trend: 'improving' | 'stable' | 'declining';
+    lastUpdated: number;
+  }[];
   overallHealthScore: number;
   dataSourceCount: number;
   simulationCount: number;
@@ -1769,10 +1853,22 @@ export interface TwinTimelineEvent {
 // ============================================================
 
 /** MPC protocol types. */
-export type MPCProtocolType = 'secure_sum' | 'federated_averaging' | 'private_intersection' | 'garbled_circuits' | 'secret_sharing';
+export type MPCProtocolType =
+  | 'secure_sum'
+  | 'federated_averaging'
+  | 'private_intersection'
+  | 'garbled_circuits'
+  | 'secret_sharing';
 
 /** Status of an MPC session. */
-export type MPCSessionStatus = 'setup' | 'enrolling' | 'computing' | 'converging' | 'completed' | 'failed' | 'cancelled';
+export type MPCSessionStatus =
+  | 'setup'
+  | 'enrolling'
+  | 'computing'
+  | 'converging'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
 
 /** An MPC computation session. */
 export interface MPCSession {
@@ -1948,7 +2044,12 @@ export interface ComplianceOverview {
 export type TriageLevel = 1 | 2 | 3 | 4 | 5;
 
 /** Disposition recommendation from triage. */
-export type TriageDisposition = 'emergency_room' | 'urgent_care' | 'primary_care' | 'self_care' | 'call_911';
+export type TriageDisposition =
+  | 'emergency_room'
+  | 'urgent_care'
+  | 'primary_care'
+  | 'self_care'
+  | 'call_911';
 
 /** An emergency information card. */
 export interface EmergencyCard {
@@ -1998,7 +2099,13 @@ export interface EmergencyProtocol {
   name: string;
   category: string;
   severity: AlertSeverity;
-  steps: { order: number; instruction: string; medication?: string; dosage?: string; timeLimit?: string }[];
+  steps: {
+    order: number;
+    instruction: string;
+    medication?: string;
+    dosage?: string;
+    timeLimit?: string;
+  }[];
   autoNotifyTeam: boolean;
   teeVerifiedDoses: boolean;
   attestation: string;
@@ -2127,7 +2234,12 @@ export interface GeneVariant {
   rsId: string;
   chromosome: string;
   position: number;
-  clinicalSignificance: 'pathogenic' | 'likely_pathogenic' | 'uncertain' | 'likely_benign' | 'benign';
+  clinicalSignificance:
+    | 'pathogenic'
+    | 'likely_pathogenic'
+    | 'uncertain'
+    | 'likely_benign'
+    | 'benign';
   associatedConditions: string[];
   frequency: number;
 }
