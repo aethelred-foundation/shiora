@@ -62,4 +62,57 @@ describe('lintProductionConfig', () => {
       expect(codes({ SHIORA_L1_CHAIN_ID: chainId })).toEqual([]);
     }
   });
+
+  // ---------------------------------------------------------------------
+  // Runbook verification (docs/READINESS_GATE_RUNBOOK.md)
+  //
+  // The runbook tells operators exactly which values close the acknowledged
+  // evaluation-mode gates. These cases prove that advice against the real
+  // linter, so the document cannot quietly rot away from the code.
+  // ---------------------------------------------------------------------
+
+  it('runbook: https origins clear INSECURE_ORIGIN', () => {
+    expect(codes({ SHIORA_ALLOWED_ORIGINS: 'https://shiora.example.org' }))
+      .not.toContain('INSECURE_ORIGIN');
+  });
+
+  it('runbook: a plaintext non-local origin still trips INSECURE_ORIGIN', () => {
+    expect(codes({ SHIORA_ALLOWED_ORIGINS: 'http://93.127.132.52:3001' }))
+      .toContain('INSECURE_ORIGIN');
+  });
+
+  it('runbook: localhost origins are exempt, so dev tunnels stay clean', () => {
+    expect(codes({ SHIORA_ALLOWED_ORIGINS: 'http://localhost:3001,http://127.0.0.1:3001' }))
+      .not.toContain('INSECURE_ORIGIN');
+  });
+
+  it('runbook 3a: a loopback L1 RPC clears NON_TLS_BACKEND', () => {
+    expect(codes({ SHIORA_L1_RPC_URL: 'http://127.0.0.1:8545' }))
+      .not.toContain('NON_TLS_BACKEND');
+  });
+
+  it('runbook 3b: an https L1 RPC clears NON_TLS_BACKEND', () => {
+    expect(codes({ SHIORA_L1_RPC_URL: 'https://rpc.internal.example.org' }))
+      .not.toContain('NON_TLS_BACKEND');
+  });
+
+  it('runbook: a plaintext remote L1 RPC still trips NON_TLS_BACKEND', () => {
+    expect(codes({ SHIORA_L1_RPC_URL: 'http://93.127.132.52:8545' }))
+      .toContain('NON_TLS_BACKEND');
+  });
+
+  it('runbook: a plaintext remote Vault address also trips NON_TLS_BACKEND', () => {
+    expect(codes({ SHIORA_VAULT_ADDR: 'http://vault.example.org:8200' }))
+      .toContain('NON_TLS_BACKEND');
+  });
+
+  it('runbook: the fully remediated environment lints clean', () => {
+    expect(lintProductionConfig({
+      SHIORA_ALLOWED_ORIGINS: 'https://shiora.example.org',
+      SHIORA_L1_RPC_URL: 'http://127.0.0.1:8545',
+      SHIORA_VAULT_ADDR: 'https://vault.internal.example.org',
+      SHIORA_SESSION_SECRET: 'k3kQ0uH2mYb8vTqXo1cRr5wLuJ9aZ4dNfE6gPi7sBt0=',
+      SHIORA_L1_CHAIN_ID: '7332',
+    })).toEqual([]);
+  });
 });
