@@ -17,7 +17,6 @@ import {
   ChevronRight,
   Sparkles,
   Lock,
-  Cpu,
 } from 'lucide-react';
 
 import { TopNav, Footer, ToastContainer, SearchOverlay } from '@/components/ui/SharedComponents';
@@ -49,7 +48,6 @@ export default function ChatPage() {
     sendMessage,
     createConversation,
     deleteConversation,
-    totalAttestations,
   } = useHealthChat();
 
   // Panel visibility toggles.
@@ -161,7 +159,7 @@ export default function ChatPage() {
 
                 <div>
                   <h1 className="text-base font-semibold text-slate-800">
-                    {activeConversation?.title ?? 'Health AI'}
+                    {activeConversation?.title ?? 'Health Assistant'}
                   </h1>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="inline-flex items-center gap-1 text-xs text-slate-500">
@@ -170,7 +168,7 @@ export default function ChatPage() {
                     </span>
                     <span className="inline-flex items-center gap-1 text-xs text-slate-500">
                       <Shield className="w-3 h-3 text-emerald-500" />
-                      {totalAttestations} attestations
+                      Non-diagnostic
                     </span>
                   </div>
                 </div>
@@ -179,7 +177,7 @@ export default function ChatPage() {
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">
                   <Lock className="w-3 h-3" />
-                  E2E Encrypted
+                  Encrypted at rest
                 </span>
                 <button
                   onClick={() => setShowAttestation(!showAttestation)}
@@ -193,10 +191,7 @@ export default function ChatPage() {
           </div>
 
           {/* Messages area */}
-          <div
-            ref={messagesContainerRef}
-            className="flex-1 overflow-y-auto p-6"
-          >
+          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-6">
             {isLoadingMessages && activeConversation ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-pulse flex flex-col items-center gap-3">
@@ -210,41 +205,33 @@ export default function ChatPage() {
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-100 to-brand-100 flex items-center justify-center mb-4">
                   <Bot className="w-8 h-8 text-brand-400" />
                 </div>
-                <h2 className="text-xl font-semibold text-slate-800 mb-2">
-                  Shiora on Aethelred
-                </h2>
+                <h2 className="text-xl font-semibold text-slate-800 mb-2">Shiora on Aethelred</h2>
                 <p className="text-sm text-slate-500 mb-6 text-center max-w-md">
-                  Ask me anything about your health data. All responses are
-                  verified through TEE attestation for tamper-proof analysis.
+                  SANA is a non-diagnostic assistant. It can help you understand your own health
+                  data and prepare questions for your clinician — it is not a medical device or a
+                  substitute for professional care.
                 </p>
                 <div className="flex items-center gap-4 mb-8">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200">
-                    <Cpu className="w-3 h-3" />
-                    {activeModel.teePlatform}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">
-                    <Shield className="w-3 h-3" />
-                    TEE Verified
-                  </span>
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-200">
                     <Sparkles className="w-3 h-3" />
                     {activeModel.name}
                   </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                    <Shield className="w-3 h-3" />
+                    Non-diagnostic
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200">
+                    <Lock className="w-3 h-3" />
+                    Encrypted at rest
+                  </span>
                 </div>
-                <SuggestedPrompts
-                  prompts={suggestedPrompts}
-                  onSelect={handlePromptSelect}
-                />
+                <SuggestedPrompts prompts={suggestedPrompts} onSelect={handlePromptSelect} />
               </div>
             ) : (
               /* Message list */
               <div>
                 {messages.map((msg) => (
-                  <ChatBubble
-                    key={msg.id}
-                    message={msg}
-                    isUser={msg.role === 'user'}
-                  />
+                  <ChatBubble key={msg.id} message={msg} isUser={msg.role === 'user'} />
                 ))}
                 {isSending && <TypingIndicator />}
                 <div ref={messagesEndRef} />
@@ -255,15 +242,11 @@ export default function ChatPage() {
           {/* Input area */}
           <div className="flex-shrink-0 border-t border-slate-200 p-4 bg-white/70 backdrop-blur-sm">
             <div className="max-w-3xl mx-auto">
-              <ChatInput
-                onSend={handleSend}
-                disabled={false}
-                isLoading={isSending}
-              />
+              <ChatInput onSend={handleSend} disabled={false} isLoading={isSending} />
               <div className="flex items-center justify-center gap-3 mt-2">
                 <span className="text-xs text-slate-400 flex items-center gap-1">
                   <Shield className="w-3 h-3" />
-                  Responses verified via TEE attestation
+                  SANA is non-diagnostic — not medical advice
                 </span>
               </div>
             </div>

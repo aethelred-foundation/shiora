@@ -1,8 +1,8 @@
 /**
  * Shiora on Aethelred — Access Control Page
  *
- * Granular provider access management with blockchain-verified
- * permissions, time-limited grants, and audit trails.
+ * Granular, owner-scoped provider access management — time-limited grants
+ * enforced by RBAC, with a tamper-evident audit trail.
  */
 
 'use client';
@@ -17,104 +17,17 @@ import {
   ToggleLeft, ToggleRight, RefreshCw, Trash2,
 } from 'lucide-react';
 
-import { useApp } from '@/contexts/AppContext';
 import { TopNav, Footer, ToastContainer, SearchOverlay, Badge, Tabs, Modal, ConfirmDialog } from '@/components/ui/SharedComponents';
 import ConsentTab from '@/components/consent/ConsentTab';
 import ReputationTab from '@/components/reputation/ReputationTab';
 import {
-  MedicalCard, SectionHeader, StatusBadge,
-  EncryptionBadge, TEEBadge, TruncatedHash, CopyButton,
+  MedicalCard, StatusBadge, EncryptionBadge, TruncatedHash,
 } from '@/components/ui/PagePrimitives';
-import { BRAND, PROVIDER_NAMES, SPECIALTIES, DATA_SCOPES } from '@/lib/constants';
-import {
-  seededRandom, seededInt, seededHex, seededPick, seededAddress,
-  formatDate, formatDateTime, timeAgo, daysFromNow, generateTxHash, generateAttestation,
-} from '@/lib/utils';
-
-// ============================================================
-// Types
-// ============================================================
-
-interface AccessGrant {
-  id: string;
-  provider: string;
-  specialty: string;
-  address: string;
-  status: 'Active' | 'Expired' | 'Revoked' | 'Pending';
-  scope: string;
-  grantedAt: number;
-  expiresAt: number;
-  lastAccess: number | null;
-  accessCount: number;
-  txHash: string;
-  attestation: string;
-  canView: boolean;
-  canDownload: boolean;
-  canShare: boolean;
-}
-
-interface AuditEntry {
-  id: string;
-  provider: string;
-  action: string;
-  timestamp: number;
-  details: string;
-  txHash: string;
-  type: 'access' | 'grant' | 'revoke' | 'modify' | 'download';
-}
-
-// ============================================================
-// Mock Data
-// ============================================================
-
-const SEED = 400;
-
-function generateGrants(): AccessGrant[] {
-  const statuses: AccessGrant['status'][] = ['Active', 'Active', 'Active', 'Expired', 'Revoked', 'Pending', 'Active', 'Expired'];
-  return Array.from({ length: 8 }, (_, i) => ({
-    id: `grant-${seededHex(SEED + i * 100, 8)}`,
-    provider: PROVIDER_NAMES[i % PROVIDER_NAMES.length],
-    specialty: seededPick(SEED + i * 7, SPECIALTIES),
-    address: seededAddress(SEED + i * 50),
-    status: statuses[i],
-    scope: seededPick(SEED + i * 3, DATA_SCOPES),
-    grantedAt: Date.now() - seededInt(SEED + i * 11, 7, 180) * 86400000,
-    expiresAt: statuses[i] === 'Expired'
-      ? Date.now() - seededInt(SEED + i * 13, 1, 30) * 86400000
-      : Date.now() + seededInt(SEED + i * 15, 7, 90) * 86400000,
-    lastAccess: statuses[i] === 'Active' ? Date.now() - seededInt(SEED + i * 17, 1, 48) * 3600000 : null,
-    accessCount: statuses[i] === 'Active' ? seededInt(SEED + i * 19, 3, 47) : seededInt(SEED + i * 19, 0, 15),
-    txHash: generateTxHash(SEED + i * 30),
-    attestation: generateAttestation(SEED + i * 40),
-    canView: true,
-    canDownload: i < 4,
-    canShare: i < 2,
-  }));
-}
-
-function generateAuditLog(): AuditEntry[] {
-  const actions = [
-    { action: 'Viewed lab results', type: 'access' as const, detail: 'Accessed Complete Blood Count record' },
-    { action: 'Access granted', type: 'grant' as const, detail: 'Full Records access granted for 90 days' },
-    { action: 'Downloaded imaging', type: 'download' as const, detail: 'Downloaded Pelvic Ultrasound report' },
-    { action: 'Access revoked', type: 'revoke' as const, detail: 'Provider access revoked by patient' },
-    { action: 'Scope modified', type: 'modify' as const, detail: 'Access scope changed from Full Records to Lab Results Only' },
-    { action: 'Viewed vitals', type: 'access' as const, detail: 'Accessed Blood Pressure reading history' },
-    { action: 'Access request', type: 'grant' as const, detail: 'New access request submitted by provider' },
-    { action: 'Viewed prescriptions', type: 'access' as const, detail: 'Accessed Estradiol prescription record' },
-    { action: 'Access expired', type: 'revoke' as const, detail: 'Time-limited access expired automatically' },
-    { action: 'Downloaded lab results', type: 'download' as const, detail: 'Downloaded Thyroid Panel report' },
-  ];
-  return Array.from({ length: 10 }, (_, i) => ({
-    id: `audit-${i}`,
-    provider: PROVIDER_NAMES[i % PROVIDER_NAMES.length],
-    action: actions[i].action,
-    timestamp: Date.now() - seededInt(SEED + i * 8, 1, 168) * 3600000,
-    details: actions[i].detail,
-    txHash: generateTxHash(SEED + i * 60),
-    type: actions[i].type,
-  }));
-}
+import { formatDate, timeAgo, daysFromNow } from '@/lib/utils';
+import { useAccessControl } from '@/hooks/useAccessControl';
+import type { AccessGrant, AuditEntry } from '@/types';
+import { GrantAccessModal } from '@/components/modals/GrantAccessModal';
+import { useApp } from '@/contexts/AppContext';
 
 // ============================================================
 // Sub-components
@@ -136,7 +49,12 @@ const TYPE_COLORS: Record<string, string> = {
   download: 'bg-violet-50 text-violet-600',
 };
 
-function GrantDetailModal({ grant, open, onClose }: { grant: AccessGrant | null; open: boolean; onClose: () => void }) {
+function GrantDetailModal({ grant, open, onClose, onRevoke }: {
+  grant: AccessGrant | null;
+  open: boolean;
+  onClose: () => void;
+  onRevoke?: (grant: AccessGrant) => void;
+}) {
   if (!grant) return null;
 
   const daysLeft = daysFromNow(grant.expiresAt);
@@ -206,21 +124,13 @@ function GrantDetailModal({ grant, open, onClose }: { grant: AccessGrant | null;
           </div>
         </div>
 
-        {/* Blockchain Details */}
+        {/* Provider */}
         <div className="space-y-3">
-          <h5 className="text-sm font-semibold text-slate-900">Blockchain Verification</h5>
+          <h5 className="text-sm font-semibold text-slate-900">Provider</h5>
           <div className="bg-slate-50 rounded-xl p-4 space-y-3">
             <div>
               <p className="text-xs text-slate-400 mb-1">Provider Address</p>
               <TruncatedHash hash={grant.address} startLen={12} endLen={8} />
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 mb-1">Grant Transaction</p>
-              <TruncatedHash hash={grant.txHash} startLen={12} endLen={8} />
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 mb-1">TEE Attestation</p>
-              <TruncatedHash hash={grant.attestation} startLen={12} endLen={8} />
             </div>
           </div>
         </div>
@@ -228,10 +138,12 @@ function GrantDetailModal({ grant, open, onClose }: { grant: AccessGrant | null;
         {/* Actions */}
         {grant.status === 'Active' && (
           <div className="flex gap-3">
-            <button className="flex-1 py-2.5 px-4 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-sm font-medium hover:bg-amber-100 transition-colors">
-              Modify Scope
-            </button>
-            <button className="flex-1 py-2.5 px-4 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors">
+            {/* Scope modification (PATCH /api/access/:id) ships with the scope-edit
+                form — no decorative button until the form exists. */}
+            <button
+              onClick={() => onRevoke?.(grant)}
+              className="flex-1 py-2.5 px-4 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors"
+            >
               Revoke Access
             </button>
           </div>
@@ -246,10 +158,12 @@ function GrantDetailModal({ grant, open, onClose }: { grant: AccessGrant | null;
 // ============================================================
 
 export default function AccessPage() {
-  const { addNotification } = useApp();
-
-  const grants = useMemo(() => generateGrants(), []);
-  const auditLog = useMemo(() => generateAuditLog(), []);
+  // Real, owner-scoped access grants + the real tamper-evident audit trail
+  // (useAccessControl → GET /api/access and /api/access/audit). Empty until a
+  // wallet session authenticates.
+  const { grants, auditLog, createGrant, revokeGrant } = useAccessControl();
+  const { addNotification, wallet } = useApp();
+  const [grantOpen, setGrantOpen] = useState(false);
 
   const [activeTab, setActiveTab] = useState('grants');
   const [searchQuery, setSearchQuery] = useState('');
@@ -311,10 +225,19 @@ export default function AccessPage() {
                 <h1 className="text-2xl font-bold text-slate-900">Access Control</h1>
               </div>
               <p className="text-sm text-slate-500">
-                Manage provider access to your encrypted health data with blockchain-verified permissions
+                Manage provider access to your encrypted health data — owner-scoped grants with a tamper-evident audit trail
               </p>
             </div>
-            <button className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-500 text-white rounded-xl font-medium text-sm hover:bg-brand-600 transition-colors shadow-sm shrink-0">
+            <button
+              onClick={() => {
+                if (!wallet.connected) {
+                  addNotification('error', 'Connect your wallet', 'Connect a wallet before granting access.');
+                  return;
+                }
+                setGrantOpen(true);
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-500 text-white rounded-xl font-medium text-sm hover:bg-brand-600 transition-colors shadow-sm shrink-0"
+            >
               <Plus className="w-4 h-4" />
               Grant Access
             </button>
@@ -481,7 +404,6 @@ export default function AccessPage() {
                       <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Provider</th>
                       <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Details</th>
                       <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Time</th>
-                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Transaction</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -504,9 +426,6 @@ export default function AccessPage() {
                         <td className="px-5 py-3">
                           <p className="text-sm text-slate-500 whitespace-nowrap">{timeAgo(entry.timestamp)}</p>
                         </td>
-                        <td className="px-5 py-3">
-                          <TruncatedHash hash={entry.txHash} startLen={8} endLen={6} />
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -526,11 +445,11 @@ export default function AccessPage() {
             <div className="flex items-start gap-3">
               <Lock className="w-5 h-5 text-brand-600 mt-0.5 shrink-0" />
               <div>
-                <h4 className="text-sm font-semibold text-brand-900 mb-1">End-to-End Encrypted Access</h4>
+                <h4 className="text-sm font-semibold text-brand-900 mb-1">Encrypted, owner-controlled access</h4>
                 <p className="text-sm text-brand-700">
-                  All access grants are recorded on the Aethelred blockchain and enforced through smart contracts.
-                  Providers can only decrypt your data within TEE enclaves during their authorized access window.
-                  Data never leaves the enclave unencrypted, and every access produces a verifiable audit trail.
+                  Your records are encrypted at rest and access is owner-scoped: a provider can only read what
+                  you have granted, for as long as the grant is active. Every grant change and access is written
+                  to a tamper-evident audit trail you can review above.
                 </p>
               </div>
             </div>
@@ -541,7 +460,49 @@ export default function AccessPage() {
       <Footer />
 
       {/* Detail Modal */}
-      <GrantDetailModal grant={selectedGrant} open={detailOpen} onClose={() => setDetailOpen(false)} />
+      <GrantDetailModal
+        grant={selectedGrant}
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        onRevoke={async (grant) => {
+          try {
+            await revokeGrant.mutateAsync({ grantId: grant.id, reason: 'Revoked by owner' });
+            addNotification('success', 'Access revoked', `${grant.provider}'s access was revoked and audited.`);
+            setDetailOpen(false);
+          } catch (err) {
+            addNotification('error', 'Revoke failed', err instanceof Error ? err.message : 'Could not revoke the grant.');
+          }
+        }}
+      />
+
+      {/* Grant Access Modal — persists via the real POST /api/access */}
+      <GrantAccessModal
+        open={grantOpen}
+        onClose={() => setGrantOpen(false)}
+        onGrantComplete={async ({ provider, address, scope, permissions, duration, customExpiry }) => {
+          const durationDays =
+            duration === 'custom' && customExpiry
+              ? Math.max(1, Math.ceil((new Date(customExpiry).getTime() - Date.now()) / 86_400_000))
+              : Number(duration);
+
+          // The mutation obtains a payload-bound wallet challenge, prompts the
+          // connected wallet to sign it, and persists only after the server
+          // verifies that signature. Errors intentionally propagate to the
+          // modal so it cannot show a false success state.
+          return createGrant.mutateAsync({
+            providerAddress: address,
+            providerName: provider,
+            specialty: 'General Practice',
+            scope: scope as AccessGrant['scope'],
+            durationDays,
+            permissions: {
+              canView: permissions.view,
+              canDownload: permissions.download,
+              canShare: permissions.share,
+            },
+          });
+        }}
+      />
     </>
   );
 }

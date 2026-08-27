@@ -4,7 +4,11 @@
 // ============================================================
 
 import { NextResponse } from 'next/server';
+
+import { counter } from '@/lib/observability/metrics';
 import { ZodError } from 'zod';
+import { serverEnv } from './env';
+import { isDatastoreUnavailableError } from '@/lib/persistence/datastore-errors';
 
 // ────────────────────────────────────────────────────────────
 // HTTP Status Constants
@@ -13,15 +17,18 @@ import { ZodError } from 'zod';
 export const HTTP = {
   OK: 200,
   CREATED: 201,
+  ACCEPTED: 202,
   NO_CONTENT: 204,
   BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,
+  PRECONDITION_FAILED: 412,
   UNPROCESSABLE: 422,
   TOO_MANY_REQUESTS: 429,
   INTERNAL: 500,
+  SERVICE_UNAVAILABLE: 503,
 } as const;
 
 // ────────────────────────────────────────────────────────────
@@ -57,11 +64,38 @@ export interface APIErrorResponse {
   };
 }
 
+/**
+ * Hardened security headers applied to every API response.
+ *
+ * These are the application-layer half of transport hardening (the TLS floor,
+ * WAF, and edge DDoS protection are enforced at the reverse proxy / API gateway).
+ * `Strict-Transport-Security` is only emitted when SHIORA_ENABLE_HSTS=true — i.e.
+ * when the deployment actually sits behind TLS — so development and test traffic
+ * over http never advertises an unenforceable (and browser-pinned) policy.
+ */
+export function securityHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'no-referrer',
+    'Cross-Origin-Opener-Policy': 'same-origin',
+    'Cross-Origin-Resource-Policy': 'same-origin',
+    'X-Permitted-Cross-Domain-Policies': 'none',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), browsing-topics=()',
+  };
+
+  if (serverEnv.enableHsts) {
+    headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload';
+  }
+
+  return headers;
+}
+
 function buildHeaders(headers?: HeadersInit): Headers {
   const merged = new Headers({
     'Cache-Control': 'no-store, max-age=0',
     Pragma: 'no-cache',
-    'X-Content-Type-Options': 'nosniff',
+    ...securityHeaders(),
   });
 
   if (!headers) {
@@ -79,6 +113,13 @@ function buildHeaders(headers?: HeadersInit): Headers {
 // Response Builders
 // ────────────────────────────────────────────────────────────
 
+// Every API response is built here, so this single counter gives app-wide
+// status visibility without instrumenting 145 routes (GAP-03).
+const responsesTotal = counter(
+  'shiora_http_responses_total',
+  'API responses by HTTP status and outcome',
+);
+
 /**
  * Return a success JSON response.
  */
@@ -88,6 +129,7 @@ export function successResponse<T>(
   meta?: Record<string, unknown>,
   headers?: HeadersInit,
 ): NextResponse<APISuccessResponse<T>> {
+  responsesTotal.inc({ status: String(status), outcome: 'success' });
   return NextResponse.json(
     { success: true as const, data, ...(meta ? { meta } : {}) },
     { status, headers: buildHeaders(headers) },
@@ -106,6 +148,7 @@ export function paginatedResponse<T>(
   headers?: HeadersInit,
 ): NextResponse<APIPaginatedResponse<T>> {
   const totalPages = Math.ceil(total / limit);
+  responsesTotal.inc({ status: String(HTTP.OK), outcome: 'success' });
   return NextResponse.json(
     {
       success: true as const,
@@ -134,6 +177,7 @@ export function errorResponse(
   details?: unknown,
   headers?: HeadersInit,
 ): NextResponse<APIErrorResponse> {
+  responsesTotal.inc({ status: String(status), outcome: 'error', code });
   return NextResponse.json(
     {
       success: false as const,
@@ -157,6 +201,28 @@ export function validationError(
     err.flatten().fieldErrors,
     headers,
   );
+}
+
+/**
+ * Map a thrown error to a response for the common cases, or return null so the
+ * caller rethrows (a genuine 500). Handles Zod validation (422) and datastore
+ * connectivity failures (503 + Retry-After) — the graceful-degradation contract
+ * (GAP-05). Use as the first line of a route's catch block.
+ */
+export function errorFromThrow(err: unknown): NextResponse<APIErrorResponse> | null {
+  if (err instanceof ZodError) {
+    return validationError(err);
+  }
+  if (isDatastoreUnavailableError(err)) {
+    return errorResponse(
+      'DATASTORE_UNAVAILABLE',
+      'The service is temporarily unable to reach its datastore. Please retry shortly.',
+      HTTP.SERVICE_UNAVAILABLE,
+      undefined,
+      { 'Retry-After': '5' },
+    );
+  }
+  return null;
 }
 
 /**

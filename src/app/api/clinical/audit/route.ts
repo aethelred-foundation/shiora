@@ -4,15 +4,10 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
-import {
-  seededRandom,
-  seededInt,
-  seededHex,
-  seededPick,
-  generateAttestation,
-} from '@/lib/utils';
+import { requireCapability } from '@/lib/api/rbac';
+import { seededRandom, seededInt, seededHex, seededPick, generateAttestation } from '@/lib/utils';
 import type { ClinicalDecisionAuditEntry } from '@/types';
 
 const SEED = 2100;
@@ -28,9 +23,9 @@ const DECISION_TYPES: ClinicalDecisionAuditEntry['decisionType'][] = [
 ];
 
 const MODEL_IDS = [
-  'clinical-pathway-llm-v3.2',
-  'drug-interaction-bert-v2.1',
-  'differential-dx-gpt-v4.0',
+  'clinical-pathway-reference-v3.2',
+  'drug-interaction-reference-v2.1',
+  'differential-reference-v4.0',
   'guideline-compliance-v2.8',
   'alert-engine-v3.5',
   'risk-stratifier-v1.9',
@@ -101,13 +96,20 @@ const REVIEWERS = [
 ];
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
+
+  const auth = await requireCapability(request, 'clinical_decision_support');
+  if ('status' in auth) return auth;
 
   const entries: ClinicalDecisionAuditEntry[] = Array.from({ length: 15 }, (_, i) => {
     const decisionType = seededPick(SEED + 600 + i * 3, DECISION_TYPES);
-    const inputIdx = Math.floor(seededRandom(SEED + 600 + i * 5) * INPUTS_BY_TYPE[decisionType].length);
-    const outputIdx = Math.floor(seededRandom(SEED + 600 + i * 7) * OUTPUTS_BY_TYPE[decisionType].length);
+    const inputIdx = Math.floor(
+      seededRandom(SEED + 600 + i * 5) * INPUTS_BY_TYPE[decisionType].length,
+    );
+    const outputIdx = Math.floor(
+      seededRandom(SEED + 600 + i * 7) * OUTPUTS_BY_TYPE[decisionType].length,
+    );
 
     return {
       id: `audit-${seededHex(SEED + 600 + i * 11, 12)}`,
@@ -118,14 +120,16 @@ export async function GET(request: NextRequest) {
       confidence: Math.round((seededRandom(SEED + 600 + i * 17) * 20 + 78) * 100) / 100,
       attestation: generateAttestation(SEED + 600 + i * 19),
       timestamp: Date.now() - seededInt(SEED + 600 + i * 23, 1, 168) * 3600000,
-      reviewedBy: seededRandom(SEED + 600 + i * 29) > 0.4
-        ? seededPick(SEED + 600 + i * 31, REVIEWERS)
-        : undefined,
-      reviewedAt: seededRandom(SEED + 600 + i * 29) > 0.4
-        ? Date.now() - seededInt(SEED + 600 + i * 37, 0, 48) * 3600000
-        : undefined,
+      reviewedBy:
+        seededRandom(SEED + 600 + i * 29) > 0.4
+          ? seededPick(SEED + 600 + i * 31, REVIEWERS)
+          : undefined,
+      reviewedAt:
+        seededRandom(SEED + 600 + i * 29) > 0.4
+          ? Date.now() - seededInt(SEED + 600 + i * 37, 0, 48) * 3600000
+          : undefined,
     };
   });
 
-  return successResponse(entries);
+  return simulatedResponse(entries, 'clinical_decision_support');
 }

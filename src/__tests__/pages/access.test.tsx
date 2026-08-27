@@ -2,10 +2,38 @@
 // Tests for src/app/access/page.tsx
 // ============================================================
 
+// The access page reads real grants + the real audit trail via useAccessControl
+// (GET /api/access and /api/access/audit). Mock the hook with deterministic,
+// varied grants (every status; canShare/canDownload variations; a null-lastAccess
+// grant) and audit entries so the client-side filter/search and the detail modal
+// render at full coverage; the live fetch is covered by the hook's own test.
+const mockNow = Date.now();
+const mockGrants = [
+  { id: 'g1', provider: 'Dr. Sarah Chen, OB-GYN', specialty: 'OB-GYN', address: '0xaaaa000000000000000000000000000000000001', status: 'Active', scope: 'Full Records', grantedAt: mockNow - 30 * 86400000, expiresAt: mockNow + 60 * 86400000, lastAccess: mockNow - 2 * 3600000, accessCount: 12, txHash: '', attestation: '', canView: true, canDownload: true, canShare: true },
+  { id: 'g2', provider: 'Dr. James Liu, Endocrinology', specialty: 'Endocrinology', address: '0xbbbb000000000000000000000000000000000002', status: 'Active', scope: 'Lab Results Only', grantedAt: mockNow - 20 * 86400000, expiresAt: mockNow + 40 * 86400000, lastAccess: mockNow - 5 * 3600000, accessCount: 5, txHash: '', attestation: '', canView: true, canDownload: true, canShare: false },
+  { id: 'g3', provider: 'Metro Imaging Center', specialty: 'Radiology', address: '0xcccc000000000000000000000000000000000003', status: 'Active', scope: 'Imaging', grantedAt: mockNow - 10 * 86400000, expiresAt: mockNow + 20 * 86400000, lastAccess: mockNow - 26 * 3600000, accessCount: 3, txHash: '', attestation: '', canView: true, canDownload: false, canShare: false },
+  { id: 'g4', provider: 'Old Family Clinic', specialty: 'General Practice', address: '0xdddd000000000000000000000000000000000004', status: 'Expired', scope: 'Full Records', grantedAt: mockNow - 120 * 86400000, expiresAt: mockNow - 5 * 86400000, lastAccess: null, accessCount: 0, txHash: '', attestation: '', canView: true, canDownload: false, canShare: false },
+  { id: 'g5', provider: 'North Vitals Lab', specialty: 'Pathology', address: '0xeeee000000000000000000000000000000000005', status: 'Active', scope: 'Vitals', grantedAt: mockNow - 4 * 86400000, expiresAt: mockNow + 50 * 86400000, lastAccess: mockNow - 9 * 3600000, accessCount: 2, txHash: '', attestation: '', canView: true, canDownload: false, canShare: false },
+];
+const mockAuditLog = [
+  { id: 'a1', provider: '0xaaaa000000000000000000000000000000000001', action: 'Record accessed', timestamp: mockNow - 2 * 3600000, details: 'health_records · rec-1', txHash: '', type: 'access' },
+  { id: 'a2', provider: '0xowner00000000000000000000000000000000000', action: 'Access granted', timestamp: mockNow - 5 * 3600000, details: 'access-grant · grant-1', txHash: '', type: 'grant' },
+];
+const mockCreateGrant = jest.fn(async () => ({}));
+const mockRevokeGrant = jest.fn(async () => undefined);
+jest.mock('@/hooks/useAccessControl', () => ({
+  useAccessControl: () => ({
+    grants: mockGrants,
+    auditLog: mockAuditLog,
+    createGrant: { mutate: jest.fn(), mutateAsync: mockCreateGrant, isLoading: false, error: null },
+    revokeGrant: { mutate: jest.fn(), mutateAsync: mockRevokeGrant, isLoading: false, error: null },
+  }),
+}));
+
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AppProvider } from '@/contexts/AppContext';
+import { AppProvider, useApp } from '@/contexts/AppContext';
 import AccessPage from '@/app/access/page';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
@@ -17,7 +45,50 @@ function TestWrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ConnectWallet({ children }: { children: React.ReactNode }) {
+  const { connectWalletWithData } = useApp();
+  React.useEffect(() => {
+    connectWalletWithData(
+      '0x00000000000000000000000000000000000a1b2c',
+      null,
+      'aethelred',
+      '7332',
+    );
+  }, [connectWalletWithData]);
+  return children;
+}
+
+function ConnectedTestWrapper({ children }: { children: React.ReactNode }) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppProvider>
+        <ConnectWallet>{children}</ConnectWallet>
+      </AppProvider>
+    </QueryClientProvider>
+  );
+}
+
+function futureDate(days: number): string {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + days);
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
 describe('AccessPage', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    mockCreateGrant.mockReset().mockResolvedValue({});
+    mockRevokeGrant.mockReset().mockResolvedValue(undefined);
+  });
+
   it('renders the access page', () => {
     render(
       <TestWrapper>
@@ -27,6 +98,17 @@ describe('AccessPage', () => {
     // "Access Control" appears in page heading and nav link
     expect(screen.getAllByText('Access Control').length).toBeGreaterThanOrEqual(1);
   });
+
+  it('guards Grant Access behind wallet connection with a notification', () => {
+    render(
+      <TestWrapper>
+        <AccessPage />
+      </TestWrapper>
+    );
+    fireEvent.click(screen.getByRole('button', { name: /grant access/i }));
+    expect(screen.getByText(/Connect your wallet/i)).toBeInTheDocument();
+  });
+
 
   it('renders the page description', () => {
     render(
@@ -159,7 +241,8 @@ describe('AccessPage', () => {
     expect(screen.getAllByText('Provider').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Details')).toBeInTheDocument();
     expect(screen.getByText('Time')).toBeInTheDocument();
-    expect(screen.getByText('Transaction')).toBeInTheDocument();
+    // The fabricated on-chain "Transaction" column was removed.
+    expect(screen.queryByText('Transaction')).not.toBeInTheDocument();
   });
 
   it('displays audit log entries', () => {
@@ -171,7 +254,7 @@ describe('AccessPage', () => {
 
     fireEvent.click(screen.getByText('Audit Log'));
 
-    expect(screen.getByText('Viewed lab results')).toBeInTheDocument();
+    expect(screen.getByText('Record accessed')).toBeInTheDocument();
     expect(screen.getByText('Access granted')).toBeInTheDocument();
   });
 
@@ -188,7 +271,10 @@ describe('AccessPage', () => {
     // Modal should open with grant details
     expect(screen.getByText('Access Grant Details')).toBeInTheDocument();
     expect(screen.getAllByText('Permissions').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Blockchain Verification')).toBeInTheDocument();
+    // De-theatered: a "Provider" block replaces the fabricated "Blockchain Verification".
+    expect(screen.getByText('Provider')).toBeInTheDocument();
+    expect(screen.queryByText('Blockchain Verification')).not.toBeInTheDocument();
+    expect(screen.queryByText('TEE Attestation')).not.toBeInTheDocument();
   });
 
   it('renders security notice', () => {
@@ -197,7 +283,7 @@ describe('AccessPage', () => {
         <AccessPage />
       </TestWrapper>
     );
-    expect(screen.getByText('End-to-End Encrypted Access')).toBeInTheDocument();
+    expect(screen.getByText('Encrypted, owner-controlled access')).toBeInTheDocument();
   });
 
   it('renders grant permissions icons', () => {
@@ -317,5 +403,133 @@ describe('AccessPage', () => {
     const repTab = tabs.find((t) => t.textContent?.includes('Reputation'));
     expect(repTab).toBeDefined();
     fireEvent.click(repTab!);
+  });
+
+  it('opens the real grant flow for a connected wallet and persists a 30-day grant', async () => {
+    render(
+      <ConnectedTestWrapper>
+        <AccessPage />
+      </ConnectedTestWrapper>,
+    );
+    await waitFor(() =>
+      expect(JSON.parse(localStorage.getItem('shiora_wallet')!)).toMatchObject({
+        connected: true,
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /grant access/i }));
+    expect(screen.getByText('Select Provider')).toBeInTheDocument();
+    fireEvent.click(
+      screen.getAllByText('Dr. Sarah Chen, OB-GYN').at(-1)!,
+    );
+    fireEvent.change(screen.getByPlaceholderText('0x...'), {
+      target: {
+        value: '0x1234567890abcdef1234567890abcdef12345678',
+      },
+    });
+    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByText('Review'));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Sign & Grant Access' }),
+    );
+
+    expect(await screen.findByText('Access Granted')).toBeInTheDocument();
+    expect(mockCreateGrant).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerName: 'Dr. Sarah Chen, OB-GYN',
+        durationDays: 30,
+      }),
+    );
+
+    fireEvent.click(screen.getByText('Done'));
+    expect(screen.queryByText('Access Granted')).not.toBeInTheDocument();
+  });
+
+  it('converts a custom expiry into the bounded grant duration', async () => {
+    render(
+      <ConnectedTestWrapper>
+        <AccessPage />
+      </ConnectedTestWrapper>,
+    );
+    await waitFor(() =>
+      expect(JSON.parse(localStorage.getItem('shiora_wallet')!)).toMatchObject({
+        connected: true,
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /grant access/i }));
+    fireEvent.click(
+      screen.getAllByText('Dr. Sarah Chen, OB-GYN').at(-1)!,
+    );
+    fireEvent.change(screen.getByPlaceholderText('0x...'), {
+      target: {
+        value: '0x1234567890abcdef1234567890abcdef12345678',
+      },
+    });
+    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByText('Custom'));
+    fireEvent.change(document.querySelector('input[type="date"]')!, {
+      target: { value: futureDate(30) },
+    });
+    fireEvent.click(screen.getByText('Review'));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Sign & Grant Access' }),
+    );
+
+    await screen.findByText('Access Granted');
+    const submitted = mockCreateGrant.mock.calls[0][0];
+    expect(submitted.durationDays).toBeGreaterThanOrEqual(29);
+    expect(submitted.durationDays).toBeLessThanOrEqual(31);
+  });
+
+  it('revokes an active grant and closes its detail view', async () => {
+    render(
+      <TestWrapper>
+        <AccessPage />
+      </TestWrapper>,
+    );
+
+    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke Access' }));
+
+    await waitFor(() =>
+      expect(mockRevokeGrant).toHaveBeenCalledWith({
+        grantId: 'g1',
+        reason: 'Revoked by owner',
+      }),
+    );
+    expect(await screen.findByText('Access revoked')).toBeInTheDocument();
+    expect(screen.queryByText('Access Grant Details')).not.toBeInTheDocument();
+  });
+
+  it('keeps the detail open and reports a revocation Error', async () => {
+    mockRevokeGrant.mockRejectedValueOnce(new Error('revocation offline'));
+    render(
+      <TestWrapper>
+        <AccessPage />
+      </TestWrapper>,
+    );
+
+    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke Access' }));
+
+    expect(await screen.findByText('Revoke failed')).toBeInTheDocument();
+    expect(screen.getByText('revocation offline')).toBeInTheDocument();
+    expect(screen.getByText('Access Grant Details')).toBeInTheDocument();
+  });
+
+  it('uses a safe revocation message for a non-Error rejection', async () => {
+    mockRevokeGrant.mockRejectedValueOnce('offline');
+    render(
+      <TestWrapper>
+        <AccessPage />
+      </TestWrapper>,
+    );
+
+    fireEvent.click(screen.getByText('Dr. Sarah Chen, OB-GYN'));
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke Access' }));
+
+    expect(await screen.findByText('Revoke failed')).toBeInTheDocument();
+    expect(screen.getByText('Could not revoke the grant.')).toBeInTheDocument();
   });
 });

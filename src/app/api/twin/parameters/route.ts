@@ -4,7 +4,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededRandom, seededHex } from '@/lib/utils';
 import type { TwinParameter } from '@/types';
@@ -45,7 +45,7 @@ const PARAMETER_DEFS: Array<{
 ];
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const parameters: TwinParameter[] = PARAMETER_DEFS.map((def, i) => {
@@ -70,5 +70,5 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  return successResponse(parameters);
+  return simulatedResponse(parameters, 'digital_twin');
 }

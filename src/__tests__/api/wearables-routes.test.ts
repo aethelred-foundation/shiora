@@ -30,7 +30,7 @@ afterEach(() => {
 
 describe('/api/wearables', () => {
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getWearables(new NextRequest('http://localhost:3000/api/wearables'));
     expect(res.status).toBe(403);
   });
@@ -84,7 +84,7 @@ describe('/api/wearables', () => {
 
 describe('/api/wearables/[provider]', () => {
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await connectDevice(
       new NextRequest('http://localhost:3000/api/wearables/apple_health', { method: 'POST' }),
       { params: Promise.resolve({ provider: 'apple_health' }) },
@@ -93,7 +93,7 @@ describe('/api/wearables/[provider]', () => {
   });
 
   it('DELETE returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await disconnectDevice(
       new NextRequest('http://localhost:3000/api/wearables/apple_health', { method: 'DELETE' }),
       { params: Promise.resolve({ provider: 'apple_health' }) },
@@ -113,7 +113,10 @@ describe('/api/wearables/[provider]', () => {
     expect(body.success).toBe(true);
     expect(body.data.provider).toBe('apple_health');
     expect(body.data.status).toBe('connected');
-    expect(body.data.attestation).toBeDefined();
+    // No fabricated attestation, and the simulated surface declares itself.
+    expect(body.data.attestation).toBeUndefined();
+    expect(body.meta.simulatedSurface).toBe(true);
+    expect(body.meta.message).toContain('(simulated)');
   });
 
   it('POST returns 400 for unknown provider', async () => {
@@ -143,7 +146,7 @@ describe('/api/wearables/[provider]', () => {
 
 describe('/api/wearables/sync', () => {
   it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await syncWearables(
       new NextRequest('http://localhost:3000/api/wearables/sync', {
         method: 'POST',
@@ -204,7 +207,7 @@ describe('/api/wearables/sync', () => {
   });
 
   it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
     const res = await getSyncBatches(new NextRequest('http://localhost:3000/api/wearables/sync'));
     expect(res.status).toBe(403);
   });

@@ -11,7 +11,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import {
   Upload, X, FileText, TestTube2, ScanLine, Pill,
   HeartPulse, Lock, ShieldCheck, CheckCircle, AlertCircle,
-  Cloud, Cpu, Link2, Tag, Calendar, Building2,
+  Cloud, Tag, Calendar, Building2,
   ChevronDown, Trash2, File,
 } from 'lucide-react';
 
@@ -32,12 +32,22 @@ interface UploadFile {
   preview?: string;
 }
 
-type UploadStage = 'idle' | 'encrypting' | 'uploading' | 'registering' | 'verifying' | 'success' | 'error';
+type UploadStage = 'idle' | 'encrypting' | 'saving' | 'success' | 'error';
 
 interface UploadModalProps {
   open: boolean;
   onClose: () => void;
-  onUploadComplete?: (data: { recordType: string; provider: string; tags: string[] }) => void;
+  // Must persist the record and RESOLVE on success / REJECT on failure — the
+  // modal awaits it and only declares success when the server actually saved
+  // the record. Returning void (fire-and-forget) would let the UI claim
+  // success while the request failed.
+  onUploadComplete?: (data: {
+    recordType: string;
+    provider: string;
+    tags: string[];
+    label: string;
+    date: string;
+  }) => Promise<void> | void;
 }
 
 // ============================================================
@@ -56,19 +66,19 @@ const ACCEPTED_MIME_TYPES = [
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
 
+// Only the stages that actually happen: the client encrypts the payload
+// (AES-256-GCM) and saves it to the records API. No IPFS pin, on-chain
+// registration, or TEE attestation is performed for a record, so we do not
+// display those steps.
 const STAGE_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   encrypting: { label: 'Encrypting with AES-256-GCM...', icon: <Lock className="w-4 h-4" />, color: 'text-brand-600' },
-  uploading: { label: 'Uploading to IPFS...', icon: <Cloud className="w-4 h-4" />, color: 'text-violet-600' },
-  registering: { label: 'Registering on-chain...', icon: <Link2 className="w-4 h-4" />, color: 'text-amber-600' },
-  verifying: { label: 'Verifying TEE attestation...', icon: <Cpu className="w-4 h-4" />, color: 'text-emerald-600' },
+  saving: { label: 'Saving encrypted record...', icon: <Cloud className="w-4 h-4" />, color: 'text-violet-600' },
 };
 
 const STAGE_PROGRESS: Record<string, number> = {
   idle: 0,
-  encrypting: 25,
-  uploading: 50,
-  registering: 75,
-  verifying: 90,
+  encrypting: 40,
+  saving: 80,
   success: 100,
   error: 0,
 };
@@ -213,7 +223,7 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
     setTags((prev) => prev.filter((t) => t !== tag));
   }, []);
 
-  const simulateUpload = useCallback(async () => {
+  const handleUpload = useCallback(async () => {
     /* istanbul ignore next -- defensive guard: button is disabled when no files */
     if (files.length === 0) {
       setError('Please select at least one file');
@@ -226,16 +236,23 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
     }
 
     setError('');
+    const label = files[0]?.file.name.replace(/\.[^./\\]+$/, '') || 'Health Record';
+    const date = recordDate || new Date().toISOString().slice(0, 10);
 
-    const stages: UploadStage[] = ['encrypting', 'uploading', 'registering', 'verifying'];
-    for (const s of stages) {
-      setStage(s);
-      await new Promise((resolve) => setTimeout(resolve, 1200 + Math.random() * 800));
+    // Persist through the caller's real create. We only declare success if it
+    // resolves; if the server rejects the record (validation, auth, …) we show
+    // the actual error instead of a fake "Upload Successful".
+    try {
+      setStage('encrypting');
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      setStage('saving');
+      await onUploadComplete?.({ recordType, provider, tags, label, date });
+      setStage('success');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save the record.');
+      setStage('error');
     }
-
-    setStage('success');
-    onUploadComplete?.({ recordType, provider, tags });
-  }, [files, recordType, provider, tags, onUploadComplete]);
+  }, [files, recordType, provider, tags, recordDate, onUploadComplete]);
 
   // Success state
   if (stage === 'success') {
@@ -245,9 +262,10 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
           <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-8 h-8 text-emerald-500" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900 mb-2">Upload Successful</h3>
+          <h3 className="text-lg font-bold text-slate-900 mb-2">Record Saved</h3>
           <p className="text-sm text-slate-500 mb-6">
-            Your health record has been encrypted, uploaded to IPFS, and registered on the Aethelred blockchain.
+            Your health record was encrypted and saved to your private vault. Every
+            access is recorded in a tamper-evident audit trail.
           </p>
           <div className="bg-slate-50 rounded-xl p-4 mb-6 space-y-2 text-left">
             <div className="flex items-center justify-between text-xs">
@@ -255,16 +273,12 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
               <Badge variant="info">AES-256-GCM</Badge>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-500">TEE Verification</span>
-              <Badge variant="success" dot>Verified</Badge>
+              <span className="text-slate-500">Storage</span>
+              <Badge variant="success" dot>Encrypted at rest</Badge>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-500">IPFS Status</span>
-              <Badge variant="success" dot>Pinned</Badge>
-            </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-500">On-chain</span>
-              <Badge variant="success" dot>Confirmed</Badge>
+              <span className="text-slate-500">Audit trail</span>
+              <Badge variant="success" dot>Recorded</Badge>
             </div>
           </div>
           <button
@@ -278,8 +292,7 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
     );
   }
 
-  // Error state
-  /* istanbul ignore next -- error state is unreachable: simulateUpload always succeeds */
+  // Error state — the real create rejected (validation, auth, network …).
   if (stage === 'error') {
     return (
       <Modal open={open} onClose={handleClose} size="md">
@@ -288,9 +301,7 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
             <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
           <h3 className="text-lg font-bold text-slate-900 mb-2">Upload Failed</h3>
-          <p className="text-sm text-slate-500 mb-6">
-            An error occurred during the upload process. Please try again.
-          </p>
+          <p className="text-sm text-slate-500 mb-6">{error}</p>
           <div className="flex gap-3 justify-center">
             <button
               onClick={handleClose}
@@ -316,7 +327,7 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
     const progress = STAGE_PROGRESS[stage];
 
     return (
-      <Modal open={open} onClose={noop} showClose={false} title="Uploading Health Record" size="md">
+      <Modal open={open} onClose={noop} showClose={false} title="Saving Health Record" size="md">
         <div className="py-4">
           {/* Progress bar */}
           <div className="mb-6">
@@ -335,7 +346,7 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
           {/* Stage indicators */}
           <div className="space-y-3">
             {Object.entries(STAGE_CONFIG).map(([key, cfg]) => {
-              const stageOrder = ['encrypting', 'uploading', 'registering', 'verifying'];
+              const stageOrder = ['encrypting', 'saving'];
               const currentIndex = stageOrder.indexOf(stage);
               const thisIndex = stageOrder.indexOf(key);
               const isComplete = thisIndex < currentIndex;
@@ -559,7 +570,7 @@ export function UploadModal({ open, onClose, onUploadComplete }: UploadModalProp
             Cancel
           </button>
           <button
-            onClick={simulateUpload}
+            onClick={handleUpload}
             disabled={files.length === 0 || !recordType}
             className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl text-sm font-medium transition-colors"
           >

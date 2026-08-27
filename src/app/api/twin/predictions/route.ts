@@ -4,7 +4,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
   seededRandom,
@@ -101,7 +101,7 @@ const PREDICTION_DEFS: Array<{
 ];
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const predictions: TwinPrediction[] = PREDICTION_DEFS.map((def, i) => {
@@ -145,5 +145,5 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  return successResponse(predictions);
+  return simulatedResponse(predictions, 'digital_twin');
 }

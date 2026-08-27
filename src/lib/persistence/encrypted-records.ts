@@ -1,0 +1,255 @@
+// ============================================================
+// Shiora on Aethelred — Encrypted Health Record Repository
+//
+// The policy layer between the API and storage. It seals PHI at rest with
+// envelope encryption, binds each record's ciphertext to its
+// `owner:recordId` context (AAD), and appends a tamper-evident entry to the
+// audit chain on every mutation. Storage is abstracted behind RecordStorePort,
+// so the same logic runs over the in-memory driver (dev/test) or Postgres
+// (production) without change.
+//
+// The data it returns is real, owner-scoped, and encrypted at rest rather than
+// generated from a fixed seed.
+// ============================================================
+
+import type { AuditRecorder } from '@/lib/crypto/audit-chain';
+import { openJson, sealJson, shredEnvelope, isShredded } from '@/lib/crypto/envelope';
+import { blindIndex, blindIndexAll } from '@/lib/crypto/blind-index';
+import { OptimisticLockError, versionOf } from './optimistic-lock';
+import type { StoredHealthRecord } from '@/lib/api/domain-types';
+import type { RecordStorePort, StoredRecord } from './record-store';
+
+/** Domain separator for record-tag blind indexes (GAP-15). */
+const TAG_INDEX_DOMAIN = 'record-tag';
+
+/** The subset of a record that is PHI and therefore encrypted at rest. */
+interface SealedPhiPayload {
+  label: string;
+  description: string;
+  tags: string[];
+}
+
+/** Fields a caller may change on an existing record. */
+export interface RecordUpdate {
+  label?: string;
+  description?: string;
+  tags?: string[];
+  status?: StoredRecord['status'];
+  provider?: string;
+}
+
+/** Bind a record's ciphertext to its owner and id (defeats substitution). */
+export function recordPhiAad(ownerAddress: string, id: string): string {
+  return `${ownerAddress}:${id}`;
+}
+
+/** @deprecated internal alias — use {@link recordPhiAad}. */
+const phiAad = recordPhiAad;
+
+export class EncryptedRecordRepository {
+  constructor(
+    private readonly store: RecordStorePort,
+    private readonly audit: AuditRecorder,
+  ) {}
+
+  /** Encrypt and persist a new health record. */
+  async create(ownerAddress: string, record: StoredHealthRecord): Promise<StoredHealthRecord> {
+    const row: StoredRecord = {
+      id: record.id,
+      ownerAddress,
+      type: record.type,
+      date: record.date,
+      uploadDate: record.uploadDate,
+      cid: record.cid,
+      txHash: record.txHash,
+      attestation: record.attestation,
+      size: record.size,
+      provider: record.provider,
+      status: record.status,
+      ipfsNodes: record.ipfsNodes,
+      blockHeight: record.blockHeight,
+      encryption: 'AES-256-GCM',
+      sealedPhi: await this.sealPhi(ownerAddress, record.id, {
+        label: record.label,
+        description: record.description,
+        tags: record.tags,
+      }),
+      deleted: false,
+      version: 1,
+      blindTags: blindIndexAll(record.tags, TAG_INDEX_DOMAIN),
+    };
+
+    await this.store.put(row);
+    await this.record('RECORD_CREATE', ownerAddress, record.id);
+    return this.toRecord(row);
+  }
+
+  /** Fetch a single record, decrypting its PHI. */
+  async get(ownerAddress: string, id: string): Promise<StoredHealthRecord | undefined> {
+    const row = await this.store.findById(ownerAddress, id);
+    if (!row || row.deleted) {
+      return undefined;
+    }
+    await this.record('RECORD_READ', ownerAddress, id);
+    return this.toRecord(row);
+  }
+
+  /** The record's current optimistic-concurrency version, or undefined if absent. */
+  async version(ownerAddress: string, id: string): Promise<number | undefined> {
+    const row = await this.store.findById(ownerAddress, id);
+    if (!row || row.deleted) {
+      return undefined;
+    }
+    return versionOf(row);
+  }
+
+  /** List an owner's non-deleted records, decrypting each. */
+  async list(ownerAddress: string): Promise<StoredHealthRecord[]> {
+    const rows = await this.store.findByOwner(ownerAddress);
+    return Promise.all(rows.filter((row) => !row.deleted).map((row) => this.toRecord(row)));
+  }
+
+  /**
+   * Apply changes, re-sealing PHI when any PHI field is touched, and bump the
+   * version. When `expectedVersion` is supplied and the stored version has
+   * moved on, throws {@link OptimisticLockError} instead of clobbering the
+   * concurrent writer's change (GAP-18).
+   */
+  async update(
+    ownerAddress: string,
+    id: string,
+    updates: RecordUpdate,
+    expectedVersion?: number,
+  ): Promise<StoredHealthRecord | undefined> {
+    const existing = await this.store.findById(ownerAddress, id);
+    if (!existing || existing.deleted) {
+      return undefined;
+    }
+
+    const currentVersion = versionOf(existing);
+    if (expectedVersion !== undefined && expectedVersion !== currentVersion) {
+      throw new OptimisticLockError(expectedVersion, currentVersion);
+    }
+
+    const next: StoredRecord = { ...existing, version: currentVersion + 1 };
+
+    if (updates.status !== undefined) {
+      next.status = updates.status;
+    }
+    if (updates.provider !== undefined) {
+      next.provider = updates.provider;
+    }
+
+    const phiChanged =
+      updates.label !== undefined ||
+      updates.description !== undefined ||
+      updates.tags !== undefined;
+
+    if (phiChanged) {
+      const current = await this.openPhi(existing);
+      const tags = updates.tags ?? current.tags;
+      next.sealedPhi = await this.sealPhi(ownerAddress, id, {
+        label: updates.label ?? current.label,
+        description: updates.description ?? current.description,
+        tags,
+      });
+      // Keep the blind index in step whenever the tags could have changed.
+      next.blindTags = blindIndexAll(tags, TAG_INDEX_DOMAIN);
+    }
+
+    await this.store.put(next);
+    await this.record('RECORD_UPDATE', ownerAddress, id);
+    return this.toRecord(next);
+  }
+
+  /**
+   * Find an owner's non-deleted records carrying an exact tag, WITHOUT
+   * decrypting anything (GAP-15): the query tag is blind-indexed and matched
+   * against the stored tokens. Case/'‍width-insensitive via the same
+   * normalization used at write time.
+   */
+  async findByTag(ownerAddress: string, tag: string): Promise<StoredHealthRecord[]> {
+    const token = blindIndex(tag, TAG_INDEX_DOMAIN);
+    const rows = await this.store.findByOwner(ownerAddress);
+    return Promise.all(
+      rows
+        .filter((row) => !row.deleted && (row.blindTags ?? []).includes(token))
+        .map((row) => this.toRecord(row)),
+    );
+  }
+
+  /** Soft-delete a record (retained, but excluded from reads). */
+  async softDelete(ownerAddress: string, id: string): Promise<StoredHealthRecord | undefined> {
+    const existing = await this.store.findById(ownerAddress, id);
+    if (!existing || existing.deleted) {
+      return undefined;
+    }
+
+    const next: StoredRecord = { ...existing, deleted: true, deletedAt: Date.now() };
+    await this.store.put(next);
+    await this.record('RECORD_DELETE', ownerAddress, id);
+    return this.toRecord(next);
+  }
+
+  /**
+   * Crypto-shred a record's PHI (GDPR Art. 17): destroy the wrapped DEK so the
+   * sealed label/description/tags become permanently unrecoverable. The row
+   * survives as a tombstone (its non-PHI columns remain for audit continuity).
+   * Returns false when the record is missing or already shredded.
+   */
+  async cryptoShred(ownerAddress: string, id: string): Promise<boolean> {
+    const existing = await this.store.findById(ownerAddress, id);
+    if (!existing || isShredded(existing.sealedPhi)) {
+      return false;
+    }
+    await this.store.put({ ...existing, sealedPhi: shredEnvelope(), deleted: true });
+    await this.record('RECORD_DELETE', ownerAddress, id);
+    return true;
+  }
+
+  // -- internals -----------------------------------------------------------
+
+  private async sealPhi(ownerAddress: string, id: string, phi: SealedPhiPayload) {
+    return sealJson<SealedPhiPayload>(phi, phiAad(ownerAddress, id));
+  }
+
+  private async openPhi(row: StoredRecord): Promise<SealedPhiPayload> {
+    if (isShredded(row.sealedPhi)) {
+      throw new Error('Record PHI has been crypto-shredded and cannot be read.');
+    }
+    return openJson<SealedPhiPayload>(row.sealedPhi, phiAad(row.ownerAddress, row.id));
+  }
+
+  private async record(
+    action: 'RECORD_CREATE' | 'RECORD_READ' | 'RECORD_UPDATE' | 'RECORD_DELETE',
+    actor: string,
+    resourceId: string,
+  ): Promise<void> {
+    await this.audit.record({ action, actor, resource: 'record', resourceId, success: true });
+  }
+
+  private async toRecord(row: StoredRecord): Promise<StoredHealthRecord> {
+    const phi = await this.openPhi(row);
+    return {
+      id: row.id,
+      type: row.type,
+      label: phi.label,
+      description: phi.description,
+      date: row.date,
+      uploadDate: row.uploadDate,
+      encrypted: true,
+      encryption: row.encryption,
+      cid: row.cid,
+      txHash: row.txHash,
+      attestation: row.attestation,
+      size: row.size,
+      provider: row.provider,
+      status: row.status,
+      ipfsNodes: row.ipfsNodes,
+      tags: phi.tags,
+      deleted: row.deleted,
+      ownerAddress: row.ownerAddress,
+      blockHeight: row.blockHeight,
+    };
+  }
+}

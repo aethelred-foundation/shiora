@@ -1,7 +1,38 @@
 /** @jest-environment node */
 
-import { NextRequest } from 'next/server';
+jest.mock('@/lib/api/middleware', () => {
+  const actual = jest.requireActual('@/lib/api/middleware');
+  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+});
+
+import { NextRequest, NextResponse } from 'next/server';
+import { runMiddleware } from '@/lib/api/middleware';
 import { GET as getStudies, POST as enrollStudy } from '@/app/api/research/studies/route';
+
+const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
+
+afterEach(() => {
+  mockedRunMiddleware.mockImplementation((...args: unknown[]) => {
+    const actual = jest.requireActual('@/lib/api/middleware');
+    return actual.runMiddleware(...args);
+  });
+});
+
+function blockedOnce(): void {
+  mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
+}
+
+describe('middleware guards', () => {
+  it('GET /research/studies returns the middleware error when blocked', async () => {
+    blockedOnce();
+    expect((await getStudies(new NextRequest('http://localhost:3000/api/research/studies'))).status).toBe(429);
+  });
+
+  it('POST /research/studies returns the middleware error when blocked', async () => {
+    blockedOnce();
+    expect((await enrollStudy(new NextRequest('http://localhost:3000/api/research/studies', { method: 'POST' }))).status).toBe(429);
+  });
+});
 
 describe('/api/research/studies', () => {
   it('GET returns research studies', async () => {

@@ -5,41 +5,33 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { ZodError } from 'zod';
-import {
-  RecordCreateSchema,
-  RecordListQuerySchema,
-  parseSearchParams,
-} from '@/lib/api/validation';
-import {
-  successResponse,
-  paginatedResponse,
-  validationError,
-  HTTP,
-} from '@/lib/api/responses';
+import { RecordCreateSchema, RecordListQuerySchema, parseSearchParams } from '@/lib/api/validation';
+import { withIdempotency } from '@/lib/api/idempotency';
+import { successResponse, paginatedResponse, errorFromThrow, HTTP } from '@/lib/api/responses';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
-import type { MockHealthRecord } from '@/lib/api/mock-data';
-import { createRecord, listRecords } from '@/lib/api/store';
-import { generateCID, generateTxHash, generateAttestation, seededHex, seededInt } from '@/lib/utils';
+import type { StoredHealthRecord } from '@/lib/api/domain-types';
+import { randomUUID } from 'node:crypto';
+import { createRecord, listRecords, findRecordsByTag } from '@/lib/api/records-service';
 
 // ────────────────────────────────────────────────────────────
 // GET /api/records
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   try {
     const auth = requireAuth(request);
     if ('status' in auth) return auth;
 
-    const query = parseSearchParams(
-      RecordListQuerySchema,
-      request.nextUrl.searchParams,
-    );
+    const query = parseSearchParams(RecordListQuerySchema, request.nextUrl.searchParams);
 
-    let records = listRecords(auth.walletAddress!);
+    // An exact ?tag= match resolves via the blind index — the tag is a sealed
+    // field, so this finds records without decrypting anything to filter (GAP-15).
+    let records = query.tag
+      ? await findRecordsByTag(auth.walletAddress!, query.tag)
+      : await listRecords(auth.walletAddress!);
 
     // Filter by type
     if (query.type) {
@@ -81,7 +73,8 @@ export async function GET(request: NextRequest) {
 
     return paginatedResponse(paged, total, query.page, query.limit);
   } catch (err) {
-    if (err instanceof ZodError) return validationError(err);
+    const mapped = errorFromThrow(err);
+    if (mapped) return mapped;
     throw err;
   }
 }
@@ -91,46 +84,61 @@ export async function GET(request: NextRequest) {
 // ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
-  try {
-    const auth = requireAuth(request);
-    if ('status' in auth) return auth;
+  const auth = requireAuth(request);
+  if ('status' in auth) return auth;
 
-    const body = await request.json();
-    const validated = RecordCreateSchema.parse(body);
+  // A retried create (with an Idempotency-Key) replays the first response
+  // instead of writing a duplicate record (GAP-17).
+  return withIdempotency(request, auth.walletAddress!, async () => {
+    try {
+      const body = await request.json();
+      const validated = RecordCreateSchema.parse(body);
 
-    const seed = Date.now();
-    const newRecord: MockHealthRecord = {
-      id: `rec-${seededHex(seed, 12)}`,
-      type: validated.type,
-      label: validated.label,
-      description: validated.description ?? `Encrypted health record uploaded at ${new Date().toISOString()}`,
-      date: Date.now(),
-      uploadDate: Date.now(),
-      encrypted: true,
-      encryption: validated.encryption,
-      cid: generateCID(seed),
-      txHash: generateTxHash(seed),
-      attestation: generateAttestation(seed),
-      size: seededInt(seed, 50, 2000) * 1024,
-      provider: validated.provider,
-      status: 'Processing',
-      ipfsNodes: 0,
-      tags: validated.tags,
-      deleted: false,
-      ownerAddress: auth.walletAddress!,
-      blockHeight: 2847391 + seededInt(seed + 1, 1, 100),
-    };
+      const description =
+        validated.description ?? `Health record created at ${new Date().toISOString()}`;
+      // A record stores only its encrypted metadata — no file blob — so "size"
+      // reflects that metadata payload rather than a fabricated file size.
+      const contentBytes = Buffer.byteLength(
+        JSON.stringify({ label: validated.label, description, tags: validated.tags }),
+        'utf8',
+      );
+      const newRecord: StoredHealthRecord = {
+        id: `rec-${randomUUID().replace(/-/g, '')}`,
+        type: validated.type,
+        label: validated.label,
+        description,
+        date: Date.now(),
+        uploadDate: Date.now(),
+        encrypted: true,
+        encryption: validated.encryption,
+        // Records are encrypted at rest and integrity-tracked via the tamper-
+        // evident audit chain. They are NOT IPFS-pinned, on-chain-anchored, or
+        // TEE-attested, so these fields are left empty rather than fabricated.
+        cid: '',
+        txHash: '',
+        attestation: '',
+        size: contentBytes,
+        provider: validated.provider,
+        status: 'Verified',
+        ipfsNodes: 0,
+        tags: validated.tags,
+        deleted: false,
+        ownerAddress: auth.walletAddress!,
+        blockHeight: 0,
+      };
 
-    const persistedRecord = createRecord(auth.walletAddress!, newRecord);
+      const persistedRecord = await createRecord(auth.walletAddress!, newRecord);
 
-    return successResponse(persistedRecord, HTTP.CREATED, {
-      message: 'Record created. IPFS pinning and TEE verification in progress.',
-    });
-  } catch (err) {
-    if (err instanceof ZodError) return validationError(err);
-    throw err;
-  }
+      return successResponse(persistedRecord, HTTP.CREATED, {
+        message: 'Record created and encrypted at rest.',
+      });
+    } catch (err) {
+      const mapped = errorFromThrow(err);
+      if (mapped) return mapped;
+      throw err;
+    }
+  });
 }

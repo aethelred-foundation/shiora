@@ -1,433 +1,146 @@
-# Shiora Health AI -- Deployment Guide
+# Shiora — Deployment Guide
+
+> **Posture:** Shiora is pre-production, targeting a narrow invite-only pilot. This
+> guide describes what the code actually requires and enforces today. The single
+> source of truth for environment variables is [.env.example](../.env.example);
+> if this document and that file ever disagree, `.env.example` wins.
+>
+> For an exact public-testnet installation (contract, application/API,
+> environment templates, port, and acceptance checks), use
+> [PUBLIC_TESTNET_RUNBOOK.md](PUBLIC_TESTNET_RUNBOOK.md).
 
 ## Prerequisites
 
-- Node.js 18.x or 20.x (LTS recommended)
-- npm 9.x or later
-- Git
-- Access to the Aethelred L1 RPC endpoint
-- IPFS node or gateway access
-- TEE-enabled compute environment (Intel SGX or AWS Nitro) for AI inference
+- Node.js 20.x LTS
+- Postgres 14+ (production; development runs fully in-memory)
+- A reverse proxy terminating TLS (production)
+- HashiCorp Vault or a managed KMS for key custody (production)
 
-## Environment Variables
+## Environments
 
-Create a `.env.local` file at the project root:
+| Environment | Datastore                                       | Key custody              | Transport                 |
+| ----------- | ----------------------------------------------- | ------------------------ | ------------------------- |
+| Development | In-memory (empty-start, non-durable)            | Dev env key              | HTTP localhost            |
+| Staging     | Postgres                                        | Vault/KMS                | TLS + HSTS                |
+| Production  | Postgres (**required — boot fails without it**) | Vault/KMS (**required**) | TLS + HSTS (**required**) |
 
-```bash
-# ── Blockchain ────────────────────────────────────────────────
-NEXT_PUBLIC_RPC_URL=https://rpc.mainnet.aethelred.org
-NEXT_PUBLIC_CHAIN_ID=1337
+## Production boot gates (enforced in code)
 
-# ── Shiora API ────────────────────────────────────────────────
-NEXT_PUBLIC_SHIORA_API_URL=https://api.shiora.health
-SHIORA_API_SECRET=<server-side-api-secret>
+`assertProductionReadiness()` runs at Node startup (`src/instrumentation.node.ts`)
+and **hard-fails a production boot** when any of these hold:
 
-# ── IPFS ──────────────────────────────────────────────────────
-NEXT_PUBLIC_IPFS_GATEWAY=https://gateway.ipfs.io/ipfs/
-IPFS_API_URL=http://localhost:5001
-IPFS_PINNING_SERVICE_KEY=<pinning-service-api-key>
+| Gate                             | Requirement                                                                                                                   |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `DATASTORE_NOT_DURABLE`          | `DATABASE_URL` must be set — the in-memory store must never hold PHI in production                                            |
+| `NON_TLS_DATABASE`               | A remote `DATABASE_URL` must require certificate-protected TLS                                                                |
+| `DATA_KEY_DEFAULT`               | Vault Transit must be configured, or a managed legacy KEK must exist while migrating historical envelopes — never the dev key |
+| `SESSION_SECRET_DEFAULT`         | `SHIORA_SESSION_SECRET` must be set (`openssl rand -base64 48`)                                                               |
+| `TRANSPORT_NOT_HARDENED`         | `SHIORA_ENABLE_HSTS=true` — PHI is served only behind TLS/HSTS                                                                |
+| `INSECURE_WALLET_HEADER_ENABLED` | The dev-only wallet-header bypass must be off                                                                                 |
+| `ORIGIN_ALLOWLIST_EMPTY`         | At least one exact HTTPS browser origin must be configured                                                                    |
+| `ADMIN_BOOTSTRAP_EMPTY`          | At least one production administrative wallet must be configured                                                              |
 
-# ── TEE ───────────────────────────────────────────────────────
-TEE_ENCLAVE_URL=https://tee.shiora.health
-TEE_ATTESTATION_KEY=<attestation-verification-key>
+L1 audit anchoring is disabled for the public-testnet deployment until a
+dedicated compatible audit-anchor receiver exists. Leave all
+`SHIORA_L1_*` variables blank. `ShioraSealAttestation` is not an audit-anchor
+receiver and must never be used as `SHIORA_L1_ANCHOR_TO`.
 
-# ── Authentication ────────────────────────────────────────────
-JWT_SECRET=<jwt-signing-secret>
-JWT_EXPIRY=24h
+## Environment variables
 
-# ── Database (optional, for caching/indexing) ─────────────────
-DATABASE_URL=postgresql://user:password@localhost:5432/shiora
+See [.env.example](../.env.example) for the complete annotated set. Summary:
 
-# ── Monitoring ────────────────────────────────────────────────
-NEXT_PUBLIC_SENTRY_DSN=<sentry-dsn>
-LOG_LEVEL=info
-```
+**Required in production**
 
-### Environment Variable Reference
+- `DATABASE_URL` — managed Postgres connection string with TLS required
+  (`sslmode=require`, `verify-ca`, or `verify-full` for non-local services).
+- `SHIORA_SESSION_SECRET` — HMAC session-signing secret (32+ chars).
+- `SHIORA_VAULT_ADDR` / `SHIORA_VAULT_TOKEN` /
+  `SHIORA_TRANSIT_KEY_NAME` — production DEK custody. The Transit master key
+  never enters application memory. Startup makes a bounded wrap probe and
+  fails closed if the Transit key or scoped token is unavailable.
+- `SHIORA_VAULT_KEK_PATH` is optional and used only to read/re-seal historical
+  `local-kek` envelopes during a migration. Fresh production deployments do
+  not configure `SHIORA_DATA_ENCRYPTION_KEY`.
+- `SHIORA_ALLOWED_ORIGINS` — exact browser origins (no wildcards).
+- `SHIORA_ENABLE_HSTS=true`.
+- `SHIORA_ADMIN_ADDRESSES` — RBAC bootstrap allowlist.
 
-| Variable                     | Required | Description                          |
-|------------------------------|----------|--------------------------------------|
-| NEXT_PUBLIC_RPC_URL          | Yes      | Aethelred L1 RPC endpoint           |
-| NEXT_PUBLIC_SHIORA_API_URL   | Yes      | Backend API base URL                 |
-| NEXT_PUBLIC_IPFS_GATEWAY     | Yes      | IPFS HTTP gateway URL                |
-| NEXT_PUBLIC_CHAIN_ID         | Yes      | Blockchain chain ID                  |
-| SHIORA_API_SECRET            | Yes      | Server-side API signing secret       |
-| IPFS_API_URL                 | Yes      | IPFS node API endpoint               |
-| IPFS_PINNING_SERVICE_KEY     | No       | Remote pinning service key           |
-| TEE_ENCLAVE_URL              | Yes      | TEE enclave service endpoint         |
-| TEE_ATTESTATION_KEY          | Yes      | Public key for attestation verification |
-| JWT_SECRET                   | Yes      | JWT token signing secret             |
-| JWT_EXPIRY                   | No       | JWT expiration time (default: 24h)   |
-| DATABASE_URL                 | No       | PostgreSQL connection string         |
-| NEXT_PUBLIC_SENTRY_DSN       | No       | Sentry error tracking DSN            |
-| LOG_LEVEL                    | No       | Logging level (debug, info, warn, error) |
+**Optional / operational**
 
-## Development Setup
+- `SHIORA_METRICS_TOKEN` — Prometheus scraper token for `/api/system/metrics`.
+- `SHIORA_LOG_LEVEL` — structured JSON log level.
+- `SHIORA_PG_*` — pool sizing and statement timeouts.
+- `SHIORA_RETENTION_DAYS` — crypto-shred window for soft-deleted rows.
+- `SHIORA_TRUSTED_PROXY_COUNT` — reverse-proxy hops for client-IP resolution.
 
-### 1. Clone and Install
+The current public-testnet application intentionally leaves
+`SHIORA_L1_RPC_URL`, `SHIORA_L1_ANCHOR_FROM`, `SHIORA_L1_ANCHOR_TO`, and
+`SHIORA_L1_CHAIN_ID` unset. The local WORM anchor series remains active and
+reports `status: local`.
 
-```bash
-git clone https://github.com/aethelred/shiora.git
-cd shiora
-npm install
-```
+There are **no** `JWT_*`, `TEE_*`, or public RPC/IPFS-gateway variables: sessions
+are HMAC-signed cookies (not JWTs), and no TEE endpoint or chain client is part
+of the deployed application.
 
-### 2. Set Up Environment
-
-```bash
-cp .env.example .env.local
-# Edit .env.local with your configuration
-```
-
-### 3. Start Development Server
+## Build & run
 
 ```bash
-npm run dev
+npm ci
+npm run build          # production build (standalone output)
+npm run start          # serves on :3001 behind your TLS-terminating proxy
 ```
 
-The application starts at `http://localhost:3001`.
-
-### 4. Run Tests
-
-```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run tests with coverage
-npm run test:coverage
-
-# Full validation (type-check + lint + format + test)
-npm run validate
-```
-
-### 5. Code Quality
-
-```bash
-# Lint
-npm run lint
-
-# Type-check
-npm run type-check
-
-# Format code
-npm run format
-
-# Check formatting
-npm run format:check
-```
-
-## Production Deployment
-
-### Option 1: Vercel (Recommended)
-
-#### Setup
-
-1. Connect your repository to Vercel
-2. Configure environment variables in Vercel dashboard
-3. Set the framework preset to "Next.js"
-4. Set the root directory to the Shiora project root
-
-#### Deployment
-
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy to preview
-vercel
-
-# Deploy to production
-vercel --prod
-```
-
-#### Vercel Configuration
-
-The project includes a `next.config.js` with security headers that are automatically applied. No additional `vercel.json` is needed for basic deployment.
-
-### Option 2: Docker
-
-#### Dockerfile
-
-```dockerfile
-# ── Build Stage ───────────────────────────────────────────────
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci
-
-COPY . .
-
-ARG NEXT_PUBLIC_RPC_URL
-ARG NEXT_PUBLIC_SHIORA_API_URL
-ARG NEXT_PUBLIC_IPFS_GATEWAY
-
-RUN npm run build
-
-# ── Production Stage ──────────────────────────────────────────
-FROM node:20-alpine AS runner
-
-WORKDIR /app
-
-ENV NODE_ENV=production
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-
-USER nextjs
-
-EXPOSE 3001
-
-ENV PORT=3001
-ENV HOSTNAME="0.0.0.0"
-
-CMD ["node", "server.js"]
-```
-
-#### Docker Compose
-
-```yaml
-version: '3.8'
-
-services:
-  shiora:
-    build:
-      context: .
-      args:
-        NEXT_PUBLIC_RPC_URL: ${NEXT_PUBLIC_RPC_URL}
-        NEXT_PUBLIC_SHIORA_API_URL: ${NEXT_PUBLIC_SHIORA_API_URL}
-        NEXT_PUBLIC_IPFS_GATEWAY: ${NEXT_PUBLIC_IPFS_GATEWAY}
-    ports:
-      - "3001:3001"
-    env_file:
-      - .env.local
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  ipfs:
-    image: ipfs/kubo:latest
-    ports:
-      - "5001:5001"
-      - "8080:8080"
-    volumes:
-      - ipfs_data:/data/ipfs
-    restart: unless-stopped
-
-volumes:
-  ipfs_data:
-```
-
-#### Build and Run
-
-```bash
-# Build
-docker compose build
-
-# Run
-docker compose up -d
-
-# View logs
-docker compose logs -f shiora
-```
-
-### Option 3: Self-Hosted (PM2)
-
-```bash
-# Build the production app
-npm run build
-
-# Start with PM2
-npx pm2 start npm --name "shiora" -- start
-
-# Or use the ecosystem config
-npx pm2 start ecosystem.config.js
-```
-
-#### PM2 Ecosystem Config (`ecosystem.config.js`)
-
-```javascript
-module.exports = {
-  apps: [{
-    name: 'shiora',
-    script: 'npm',
-    args: 'start',
-    instances: 'max',
-    exec_mode: 'cluster',
-    env: {
-      NODE_ENV: 'production',
-      PORT: 3001,
-    },
-    max_memory_restart: '500M',
-    error_file: './logs/error.log',
-    out_file: './logs/out.log',
-    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-  }],
-};
-```
-
-## Smart Contract Deployment
-
-### Prerequisites
-
-- Aethelred CLI (`aethel-cli`) installed
-- Wallet with sufficient AETHEL tokens for gas
-- Access to Aethelred L1 testnet or mainnet
-
-### Deployment Steps
-
-```bash
-# 1. Compile contracts
-aethel-cli compile contracts/
-
-# 2. Deploy to testnet
-aethel-cli deploy --network testnet \
-  --contract HealthRecordRegistry \
-  --args <constructor-args>
-
-# 3. Deploy AccessControlManager
-aethel-cli deploy --network testnet \
-  --contract AccessControlManager \
-  --args <registry-address>
-
-# 4. Deploy TEEAttestationVerifier
-aethel-cli deploy --network testnet \
-  --contract TEEAttestationVerifier \
-  --args <trusted-enclave-key>
-
-# 5. Verify contracts
-aethel-cli verify --network testnet \
-  --address <deployed-address>
-```
-
-### Contract Addresses (Mainnet)
-
-| Contract                 | Address                                    |
-|--------------------------|--------------------------------------------|
-| HealthRecordRegistry     | `aeth1contract_health_registry...`         |
-| AccessControlManager     | `aeth1contract_access_control...`          |
-| TEEAttestationVerifier   | `aeth1contract_tee_verifier...`            |
-| ShioraToken ($SHIO)      | `aeth1contract_shio_token...`              |
-
-## IPFS Node Setup
-
-### Running a Local IPFS Node
-
-```bash
-# Install IPFS
-npm install -g ipfs
-
-# Initialize node
-ipfs init
-
-# Start daemon
-ipfs daemon
-
-# Verify
-ipfs id
-```
-
-### Pinning Configuration
-
-For production, configure a remote pinning service:
-
-```bash
-# Add Pinata as remote pinning service
-ipfs pin remote service add pinata https://api.pinata.cloud/psa <api-key>
-
-# Pin a CID
-ipfs pin remote add --service=pinata <CID>
-```
-
-## Monitoring Setup
-
-### Health Checks
-
-The application exposes the following health check endpoints:
-
-```
-GET /                   # Application health (200 = healthy)
-GET /api/health/overview  # Backend health with data summary
-GET /api/tee/status     # TEE enclave health
-```
-
-### Recommended Monitoring Stack
-
-1. **Error tracking**: Sentry (set `NEXT_PUBLIC_SENTRY_DSN`)
-2. **APM**: Datadog or New Relic for performance monitoring
-3. **Uptime**: UptimeRobot or Better Uptime
-4. **Logs**: Elasticsearch + Kibana or Datadog Logs
-5. **Metrics**: Prometheus + Grafana for custom metrics
-
-### Key Metrics to Monitor
-
-| Metric                    | Threshold        | Alert Level |
-|---------------------------|------------------|-------------|
-| Response time (p95)       | < 500ms          | Warning     |
-| Response time (p99)       | < 1000ms         | Critical    |
-| Error rate (5xx)          | < 0.1%           | Critical    |
-| TEE enclave uptime        | > 99.9%          | Critical    |
-| IPFS node availability    | > 95%            | Warning     |
-| Block height sync lag     | < 10 blocks      | Warning     |
-| Memory usage              | < 80%            | Warning     |
-| CPU usage                 | < 70%            | Warning     |
-
-### Logging
-
-The application logs structured JSON to stdout/stderr:
-
-```json
-{
-  "level": "info",
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "message": "Record uploaded",
-  "recordId": "rec-abc123",
-  "cid": "Qm...",
-  "txHash": "0x...",
-  "duration": 245
-}
-```
-
-## SSL/TLS Configuration
-
-For self-hosted deployments, use a reverse proxy (nginx or Caddy) with automatic TLS:
-
-### Caddy (Recommended)
-
-```
-shiora.health {
-    reverse_proxy localhost:3001
-}
-```
-
-### Nginx
-
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name shiora.health;
-
-    ssl_certificate /etc/letsencrypt/live/shiora.health/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/shiora.health/privkey.pem;
-
-    location / {
-        proxy_pass http://localhost:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
+Database schema is applied by the versioned migration runner
+(`src/lib/persistence/migrator.ts`); migrations are idempotent and additive.
+
+## Operational endpoints
+
+| Endpoint                       | Purpose                                                                  |
+| ------------------------------ | ------------------------------------------------------------------------ |
+| `GET /api/health/live`         | Liveness probe (dependency-free)                                         |
+| `GET /api/health/ready`        | Readiness probe (config + datastore round-trip; 503 when degraded)       |
+| `GET /api/system/status`       | Feature-maturity registry + production-readiness report                  |
+| `GET /api/system/metrics`      | Prometheus metrics (scraper token or admin)                              |
+| `POST /api/system/maintenance` | Durable-store GC + retention purge (admin)                               |
+| `POST /api/system/kek-reseal`  | Re-wrap envelopes under the current KEK version (admin)                  |
+| `GET /api/audit/export`        | Signed WORM audit-chain segment (admin)                                  |
+| `POST /api/anchors`            | Append the audit head to the local WORM series (admin; scheduler-driven) |
+| `GET /api/openapi`             | OpenAPI 3.1 contract                                                     |
+
+## Scheduled operations
+
+Point a scheduler (cron, or your orchestrator) at:
+
+- `POST /api/system/maintenance` — daily; sweeps expired auth state and applies
+  the retention policy (crypto-shreds soft-deleted rows past the window).
+- `POST /api/system/kek-reseal` — after each KEK rotation, until it reports
+  completion (batched and cursor-resumable).
+- `POST /api/anchors` — periodic local WORM audit-head checkpoint. Do not
+  configure an L1 broadcast until a dedicated compatible target is reviewed.
+
+## Backups & disaster recovery
+
+The application is stateless apart from Postgres; all PHI, audit, and
+configuration state lives in the database, encrypted at the row level.
+
+- Use managed Postgres with point-in-time recovery; back up independently of the
+  primary cloud account.
+- **A backup is not proven until restored** — production sign-off requires a
+  full restore exercise, audit-chain `verify()` after restore, and a documented
+  RTO/RPO. See the release gates in [RELEASE_PROCESS.md](RELEASE_PROCESS.md).
+- Crypto-shredding interacts with backups: a restored backup may resurrect a
+  _sealed_ envelope, but shredded DEKs are unrecoverable by design — restoring
+  ciphertext does not restore the plaintext. Never back up KEK material alongside
+  the database.
+
+## Key custody
+
+Production keys must live in a KMS/HSM or Vault; the KEK must never appear in
+plain environment files. Rotation and re-seal procedures, key domains, and the
+compromise runbook are documented in [KEY_MANAGEMENT.md](KEY_MANAGEMENT.md).
+
+## Releases
+
+Every release must be cut from an exact commit SHA through the process in
+[RELEASE_PROCESS.md](RELEASE_PROCESS.md) — provenance manifest, history scan,
+full gate (tests, E2E, lint, build), and signed artifacts.

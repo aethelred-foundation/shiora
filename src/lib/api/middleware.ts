@@ -7,59 +7,90 @@ import { NextRequest, NextResponse } from 'next/server';
 import { errorResponse, HTTP } from './responses';
 import { getCorsHeaders, hasDisallowedOrigin, isMutatingMethod } from './origin';
 import { extractSessionToken, verifySessionToken } from './session';
+import { isSessionRevoked } from './session-revocation';
+import { featureDisabledReason } from './feature-flags';
+import { createLogger } from '@/lib/observability/logger';
+import { counter, normalizeRoute } from '@/lib/observability/metrics';
+import { getRateLimiter } from './rate-limiter';
 import { serverEnv } from './env';
+import { isDatastoreUnavailableError } from '@/lib/persistence/datastore-errors';
 
 // ────────────────────────────────────────────────────────────
-// In-Memory Rate Limiter
+// Rate Limiting
 // ────────────────────────────────────────────────────────────
-
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
-
-const rateLimitStore = new Map<string, RateLimitEntry>();
-let lastRateLimitCleanupAt = 0;
 
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 100;  // per window
 
+// Stricter class for credential-bearing endpoints (challenge issuance and
+// signature verification): brute-force surfaces get a fraction of the
+// default budget (GAP-04).
+// Auth endpoints get their own BUCKET (scope), not just a lower threshold:
+// with a shared per-client counter, an unauthenticated dashboard's data
+// requests (8 per mount, all 401) exhaust the auth allowance before the user
+// ever clicks Connect — the field symptom was wallet challenges 429ing while
+// the auth endpoints themselves were barely used.
+export const AUTH_RATE_LIMIT = {
+  maxRequests: 20,
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  scope: 'auth',
+};
+
 /**
- * Simple in-memory rate limiter keyed by IP address.
- * Returns null if allowed, or a NextResponse if rate limited.
+ * Fixed-window rate limit keyed by client fingerprint, enforced via the
+ * configured {@link getRateLimiter} (in-memory by default; Postgres-backed and
+ * cross-instance when DATABASE_URL is set). Returns null if the request is
+ * allowed, or a 429 NextResponse if the limit is exceeded.
  */
-export function checkRateLimit(
+export async function checkRateLimit(
   request: NextRequest,
   maxRequests: number = RATE_LIMIT_MAX_REQUESTS,
   windowMs: number = RATE_LIMIT_WINDOW_MS,
-): NextResponse | null {
-  const now = Date.now();
-  if (now - lastRateLimitCleanupAt >= 60_000) {
-    lastRateLimitCleanupAt = now;
-    rateLimitStore.forEach((entry, key) => {
-      if (now > entry.resetAt) {
-        rateLimitStore.delete(key);
-      }
-    });
+  scope: string = 'general',
+): Promise<NextResponse | null> {
+  let decision;
+  try {
+    decision = await getRateLimiter().consume(
+      `${scope}:${getClientFingerprint(request)}`,
+      maxRequests,
+      windowMs,
+    );
+  } catch (err) {
+    // The Postgres-backed limiter runs on EVERY request, so an unreachable
+    // datastore must not escape as a naked 500 from each endpoint. Fail
+    // CLOSED (503, the GAP-05 graceful-degradation contract) rather than
+    // open: skipping the limiter would drop brute-force protection on the
+    // auth endpoints exactly when the durable store is down.
+    if (isDatastoreUnavailableError(err)) {
+      return errorResponse(
+        'DATASTORE_UNAVAILABLE',
+        'The service is temporarily unable to reach its datastore. Please retry shortly.',
+        HTTP.SERVICE_UNAVAILABLE,
+        undefined,
+        { 'Retry-After': '5' },
+      );
+    }
+    throw err;
   }
 
-  const entry = rateLimitStore.get(getClientFingerprint(request));
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitStore.set(getClientFingerprint(request), {
-      count: 1,
-      resetAt: now + windowMs,
-    });
-    return null;
-  }
-
-  entry.count += 1;
-
-  if (entry.count > maxRequests) {
+  if (!decision.allowed) {
+    // Standard backoff headers (GAP-04): both fixed-window limiters reset at
+    // the next window boundary, so the reset instant is derivable from the
+    // clock without widening the RateLimiter port.
+    const now = Date.now();
+    const resetMs = (Math.floor(now / windowMs) + 1) * windowMs;
+    const retryAfterSeconds = Math.max(1, Math.ceil((resetMs - now) / 1000));
     return errorResponse(
       'RATE_LIMITED',
       `Too many requests. Limit: ${maxRequests} per ${windowMs / 1000}s`,
       HTTP.TOO_MANY_REQUESTS,
+      undefined,
+      {
+        'Retry-After': String(retryAfterSeconds),
+        'X-RateLimit-Limit': String(maxRequests),
+        'X-RateLimit-Remaining': '0',
+        'X-RateLimit-Reset': String(Math.floor(resetMs / 1000)),
+      },
     );
   }
 
@@ -70,39 +101,84 @@ export function checkRateLimit(
 // Request Logging
 // ────────────────────────────────────────────────────────────
 
-function getClientIp(request: NextRequest): string {
+/**
+ * Resolve the client IP from X-Forwarded-For using the configured trusted-proxy
+ * count. Only the last N entries of XFF are appended by our own infrastructure
+ * and therefore trustworthy; the real client IP is the (N+1)-th from the right.
+ * The leftmost entries are attacker-controllable and MUST NOT be used, or an
+ * attacker could rotate them to mint a fresh rate-limit bucket per request
+ * (audit H-01). With no trusted proxy (count 0) or a malformed/short header we
+ * fail closed to `unknown` rather than trusting client-supplied values.
+ */
+export function getClientIp(request: NextRequest): string {
+  const trustedProxies = serverEnv.trustedProxyCount;
   const forwardedFor = request.headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0]?.trim() || 'unknown';
+
+  if (trustedProxies > 0 && forwardedFor) {
+    const hops = forwardedFor.split(',').map((h) => h.trim()).filter(Boolean);
+    const clientIndex = hops.length - trustedProxies;
+    // filter(Boolean) guarantees a non-empty value at any in-range index.
+    if (clientIndex >= 0) {
+      return hops[clientIndex];
+    }
   }
 
-  return request.headers.get('x-real-ip') ?? 'unknown';
+  // A trusted proxy sets X-Real-IP authoritatively (and strips any client copy);
+  // fall back to it only when a proxy is configured. Never trust it otherwise.
+  if (trustedProxies > 0) {
+    return request.headers.get('x-real-ip')?.trim() || 'unknown';
+  }
+
+  return 'unknown';
 }
 
+/**
+ * The rate-limit bucket key. Authenticated requests are keyed by the verified
+ * wallet address — stable and non-spoofable — so a single account cannot evade
+ * its limit by rotating network identifiers. Unauthenticated requests are keyed
+ * by the trusted client IP + user agent.
+ */
 function getClientFingerprint(request: NextRequest): string {
+  const auth = extractAuth(request);
+  if (auth.isAuthenticated && auth.walletAddress) {
+    return `acct:${auth.walletAddress}`;
+  }
   const ip = getClientIp(request);
   const userAgent = request.headers.get('user-agent') ?? 'unknown';
-  return `${ip}:${userAgent.slice(0, 80)}`;
+  return `ip:${ip}:${userAgent.slice(0, 80)}`;
 }
 
 /**
  * Log incoming API request metadata.
  */
+const apiLogger = createLogger({ subsystem: 'api' });
+
+const requestsTotal = counter(
+  'shiora_http_requests_total',
+  'API requests entering the middleware, by method and normalized route',
+);
+
+const blockedTotal = counter(
+  'shiora_http_blocked_total',
+  'Requests rejected by the middleware perimeter, by reason',
+);
+
 export function logRequest(request: NextRequest): void {
+  const method = request.method;
+  const route = normalizeRoute(request.nextUrl.pathname);
+  requestsTotal.inc({ method, route });
+
   if (serverEnv.isTest) {
     return;
   }
 
-  const method = request.method;
-  const url = request.nextUrl.pathname;
-  const ip = getClientIp(request);
-  const requestId = request.headers.get('x-request-id') ?? 'unknown';
-  const userAgent = request.headers.get('user-agent')?.slice(0, 80) ?? 'unknown';
-
-  // eslint-disable-next-line no-console
-  console.log(
-    `[API] ${requestId} ${method} ${url} — IP: ${ip} — UA: ${userAgent}`,
-  );
+  apiLogger.info('request', {
+    requestId: request.headers.get('x-request-id') ?? 'unknown',
+    method,
+    path: request.nextUrl.pathname,
+    ip: getClientIp(request),
+    userAgent: request.headers.get('user-agent')?.slice(0, 80) ?? 'unknown',
+  });
 }
 
 // ────────────────────────────────────────────────────────────
@@ -195,6 +271,8 @@ export function requireAuth(request: NextRequest): NextResponse | AuthContext {
 interface MiddlewareOptions {
   maxRequests?: number;
   windowMs?: number;
+  /** Rate-limit bucket class; limits with different scopes never contend. */
+  scope?: string;
   requireAuth?: boolean;
 }
 
@@ -206,20 +284,29 @@ interface MiddlewareOptions {
  * Run standard middleware stack: logging, rate limiting.
  * Returns null if all passed, or an error NextResponse.
  */
-export function runMiddleware(
+export async function runMiddleware(
   request: NextRequest,
   options: MiddlewareOptions = {},
-): NextResponse | null {
+): Promise<NextResponse | null> {
   return runMiddlewareWithOptions(request, options);
 }
 
-export function runMiddlewareWithOptions(
+export async function runMiddlewareWithOptions(
   request: NextRequest,
   options: MiddlewareOptions = {},
-): NextResponse | null {
+): Promise<NextResponse | null> {
   logRequest(request);
 
+  // Server-side scope freeze: under the pilot profile, deferred surfaces are
+  // refused here — before auth, rate limiting, or any handler logic runs.
+  const disabledReason = featureDisabledReason(request.nextUrl.pathname);
+  if (disabledReason) {
+    blockedTotal.inc({ reason: 'feature_disabled' });
+    return errorResponse('FEATURE_DISABLED', disabledReason, HTTP.SERVICE_UNAVAILABLE);
+  }
+
   if (isMutatingMethod(request.method) && hasDisallowedOrigin(request)) {
+    blockedTotal.inc({ reason: 'origin' });
     return errorResponse(
       'ORIGIN_NOT_ALLOWED',
       'Cross-origin mutation requests are not allowed.',
@@ -229,16 +316,34 @@ export function runMiddlewareWithOptions(
     );
   }
 
-  const rateLimited = checkRateLimit(
+  const rateLimited = await checkRateLimit(
     request,
     options.maxRequests,
     options.windowMs,
+    options.scope,
   );
-  if (rateLimited) return rateLimited;
+  if (rateLimited) {
+    blockedTotal.inc({ reason: 'rate_limit' });
+    return rateLimited;
+  }
+
+  // Honor server-side revocation for any presented session, on every route —
+  // a logged-out or "signed-out-everywhere" token must never be accepted
+  // anywhere, even before its stateless expiry (audit M-03).
+  const claims = verifySessionToken(extractSessionToken(request));
+  if (claims && (await isSessionRevoked(claims))) {
+    blockedTotal.inc({ reason: 'session_revoked' });
+    return errorResponse(
+      'SESSION_REVOKED',
+      'This session has been revoked. Please sign in again.',
+      HTTP.UNAUTHORIZED,
+    );
+  }
 
   if (options.requireAuth) {
     const auth = requireAuth(request);
     if (auth instanceof NextResponse) {
+      blockedTotal.inc({ reason: 'auth' });
       return auth;
     }
   }

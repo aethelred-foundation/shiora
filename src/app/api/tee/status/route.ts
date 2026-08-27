@@ -4,7 +4,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { generateTEEStatus } from '@/lib/api/mock-data';
 
@@ -13,13 +13,12 @@ import { generateTEEStatus } from '@/lib/api/mock-data';
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const status = generateTEEStatus();
 
-  return successResponse(status, 200, {
+  return simulatedResponse(status, 'tee_attestation', 200, {
     queriedAt: new Date().toISOString(),
-    note: 'TEE status reflects the current state of the Intel SGX enclave cluster.',
   });
 }

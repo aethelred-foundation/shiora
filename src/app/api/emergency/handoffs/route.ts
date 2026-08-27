@@ -5,7 +5,8 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
+import { errorResponse, HTTP } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededHex, seededInt, generateAttestation, generateTxHash } from '@/lib/utils';
 
@@ -50,7 +51,7 @@ const HANDOFFS = [
 ];
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   try {
@@ -65,14 +66,14 @@ export async function GET(request: NextRequest) {
       txHash: generateTxHash(SEED + i * 96),
     }));
 
-    return successResponse(handoffs);
+    return simulatedResponse(handoffs, 'emergency');
   } catch {
     return errorResponse('INTERNAL_ERROR', 'Failed to fetch handoffs', HTTP.INTERNAL);
   }
 }
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   try {
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
       txHash: generateTxHash(seed + 20),
     };
 
-    return successResponse(handoff, HTTP.CREATED);
+    return simulatedResponse(handoff, 'emergency', HTTP.CREATED);
   } catch {
     return errorResponse('INVALID_REQUEST', 'Invalid request body', HTTP.BAD_REQUEST);
   }

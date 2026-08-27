@@ -5,7 +5,8 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
+import { errorResponse, HTTP } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
   seededRandom,
@@ -168,15 +169,15 @@ function buildSimulation(scenarioIdx: number): TwinSimulation {
 }
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const simulations = SCENARIOS.map((_, i) => buildSimulation(i));
-  return successResponse(simulations);
+  return simulatedResponse(simulations, 'digital_twin');
 }
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   try {
@@ -220,7 +221,7 @@ export async function POST(request: NextRequest) {
       txHash: generateTxHash(newSeed + 2),
     };
 
-    return successResponse(newSimulation, HTTP.CREATED);
+    return simulatedResponse(newSimulation, 'digital_twin', HTTP.CREATED);
   } catch {
     return errorResponse(
       'INVALID_BODY',

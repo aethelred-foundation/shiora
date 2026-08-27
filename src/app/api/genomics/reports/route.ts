@@ -5,7 +5,8 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
+import { errorResponse, HTTP } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededHex, seededInt, generateAttestation } from '@/lib/utils';
 import type { GenomicReport } from '@/types';
@@ -63,7 +64,7 @@ const REPORT_DATA: Array<{
 ];
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const reports: GenomicReport[] = REPORT_DATA.map((r, i) => ({
@@ -79,11 +80,11 @@ export async function GET(request: NextRequest) {
     status: r.status,
   }));
 
-  return successResponse(reports);
+  return simulatedResponse(reports, 'genomics');
 }
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   let body: { category?: string } = {};
@@ -107,5 +108,5 @@ export async function POST(request: NextRequest) {
     status: 'generating',
   };
 
-  return successResponse(newReport, HTTP.CREATED);
+  return simulatedResponse(newReport, 'genomics', HTTP.CREATED);
 }

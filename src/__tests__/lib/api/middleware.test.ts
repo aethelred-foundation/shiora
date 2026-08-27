@@ -9,8 +9,12 @@ import {
   requireAuth,
   runMiddleware,
   runMiddlewareWithOptions,
+  getClientIp,
 } from '@/lib/api/middleware';
-import { createSessionToken } from '@/lib/api/session';
+import { createSessionToken, verifySessionToken } from '@/lib/api/session';
+import { revokeSession } from '@/lib/api/session-revocation';
+import { __resetRevocationStoreForTests } from '@/lib/persistence/revocation-store';
+import { __resetRateLimiterForTests } from '@/lib/api/rate-limiter';
 import { seededAddress } from '@/lib/utils';
 
 const TEST_ADDRESS = seededAddress(9876);
@@ -27,20 +31,29 @@ function makeReq(url: string, init?: RequestInit & { ip?: string }): NextRequest
 }
 
 describe('checkRateLimit', () => {
-  it('allows requests within limit', () => {
+  it('allows requests within limit', async () => {
     const req = makeReq('http://localhost:3000/api/test');
-    const result = checkRateLimit(req, 10);
+    const result = await checkRateLimit(req, 10);
     expect(result).toBeNull();
   });
 
-  it('blocks requests exceeding limit', () => {
+  it('blocks requests exceeding limit', async () => {
     const ip = `rate-limit-${Date.now()}`;
     for (let i = 0; i < 5; i++) {
-      checkRateLimit(makeReq('http://localhost:3000/api/test', { ip }), 5);
+      await checkRateLimit(makeReq('http://localhost:3000/api/test', { ip }), 5);
     }
-    const result = checkRateLimit(makeReq('http://localhost:3000/api/test', { ip }), 5);
+    const result = await checkRateLimit(makeReq('http://localhost:3000/api/test', { ip }), 5);
     expect(result).not.toBeNull();
     expect(result!.status).toBe(429);
+
+    // Standard backoff headers so well-behaved clients can wait it out (GAP-04).
+    expect(result!.headers.get('X-RateLimit-Limit')).toBe('5');
+    expect(result!.headers.get('X-RateLimit-Remaining')).toBe('0');
+    const retryAfter = Number(result!.headers.get('Retry-After'));
+    expect(retryAfter).toBeGreaterThanOrEqual(1);
+    expect(retryAfter).toBeLessThanOrEqual(60);
+    const reset = Number(result!.headers.get('X-RateLimit-Reset'));
+    expect(reset * 1000).toBeGreaterThan(Date.now() - 1000);
   });
 });
 
@@ -53,9 +66,9 @@ describe('logRequest', () => {
 
 describe('handleOptions', () => {
   it('returns 204 for allowed origin', () => {
-    const req = makeReq('http://localhost:3000/api/test', {
+    const req = makeReq('http://localhost:3001/api/test', {
       method: 'OPTIONS',
-      headers: { origin: 'http://localhost:3000' },
+      headers: { origin: 'http://localhost:3001' },
     });
     const res = handleOptions(req);
     expect(res.status).toBe(204);
@@ -130,111 +143,53 @@ describe('requireAuth', () => {
 });
 
 describe('runMiddleware', () => {
-  it('returns null for valid request', () => {
+  it('returns null for valid request', async () => {
     const req = makeReq('http://localhost:3000/api/test');
-    const result = runMiddleware(req);
+    const result = await runMiddleware(req);
     expect(result).toBeNull();
   });
 
-  it('blocks cross-origin mutations', () => {
+  it('blocks cross-origin mutations', async () => {
     const req = makeReq('http://localhost:3000/api/test', {
       method: 'POST',
       headers: { origin: 'http://evil.example.com' },
     });
-    const result = runMiddleware(req);
+    const result = await runMiddleware(req);
     expect(result).not.toBeNull();
     expect(result!.status).toBe(403);
   });
 
-  it('checks auth when requireAuth is true', () => {
+  it('checks auth when requireAuth is true', async () => {
     const req = new NextRequest('http://localhost:3000/api/test');
-    const result = runMiddleware(req, { requireAuth: true });
+    const result = await runMiddleware(req, { requireAuth: true });
     expect(result).not.toBeNull();
     expect(result!.status).toBe(401);
   });
 
-  it('passes with auth when requireAuth is true and token valid', () => {
+  it('passes with auth when requireAuth is true and token valid', async () => {
     const req = new NextRequest('http://localhost:3000/api/test', {
       headers: { authorization: `Bearer ${TEST_TOKEN}` },
     });
-    const result = runMiddleware(req, { requireAuth: true });
+    const result = await runMiddleware(req, { requireAuth: true });
     expect(result).toBeNull();
   });
 });
 
 describe('runMiddlewareWithOptions', () => {
-  it('delegates to the same logic as runMiddleware', () => {
+  it('delegates to the same logic as runMiddleware', async () => {
     const req = makeReq('http://localhost:3000/api/test');
-    const result = runMiddlewareWithOptions(req);
+    const result = await runMiddlewareWithOptions(req);
     expect(result).toBeNull();
   });
 
-  it('blocks cross-origin mutations', () => {
+  it('blocks cross-origin mutations', async () => {
     const req = makeReq('http://localhost:3000/api/test', {
       method: 'POST',
       headers: { origin: 'http://evil.example.com' },
     });
-    const result = runMiddlewareWithOptions(req);
+    const result = await runMiddlewareWithOptions(req);
     expect(result).not.toBeNull();
     expect(result!.status).toBe(403);
-  });
-});
-
-describe('checkRateLimit cleanup', () => {
-  it('cleans up expired entries after 60s', () => {
-    // Use a unique IP to avoid collisions
-    const ip = `cleanup-test-${Date.now()}`;
-    const req = makeReq('http://localhost:3000/api/test', { ip });
-
-    // First request sets an entry
-    checkRateLimit(req, 100, 1); // 1ms window so it expires immediately
-
-    // Mock Date.now to simulate time passing > 60s
-    const originalDateNow = Date.now;
-    const futureTime = originalDateNow() + 120_000; // 2 minutes later
-    Date.now = jest.fn(() => futureTime);
-
-    try {
-      // This call should trigger cleanup and the entry should be expired
-      const result = checkRateLimit(
-        makeReq('http://localhost:3000/api/test', { ip: `cleanup-trigger-${futureTime}` }),
-        100,
-      );
-      expect(result).toBeNull();
-    } finally {
-      Date.now = originalDateNow;
-    }
-  });
-
-  it('retains unexpired entries during cleanup', async () => {
-    jest.resetModules();
-    const { checkRateLimit: freshCheckRateLimit } = await import('@/lib/api/middleware');
-    const originalDateNow = Date.now;
-    const initialNow = originalDateNow();
-    const ip = `cleanup-retain-${initialNow}`;
-
-    Date.now = jest.fn(() => initialNow);
-    freshCheckRateLimit(makeReq('http://localhost:3000/api/test', { ip }), 1, 600_000);
-
-    const cleanupNow = initialNow + 120_000;
-    Date.now = jest.fn(() => cleanupNow);
-
-    try {
-      freshCheckRateLimit(
-        makeReq('http://localhost:3000/api/test', { ip: `cleanup-trigger-${cleanupNow}` }),
-        10,
-        600_000,
-      );
-      const result = freshCheckRateLimit(
-        makeReq('http://localhost:3000/api/test', { ip }),
-        1,
-        600_000,
-      );
-      expect(result).not.toBeNull();
-      expect(result!.status).toBe(429);
-    } finally {
-      Date.now = originalDateNow;
-    }
   });
 });
 
@@ -283,12 +238,12 @@ describe('requireAuth default message', () => {
 });
 
 describe('getClientIp via x-real-ip', () => {
-  it('uses x-real-ip when x-forwarded-for is absent', () => {
+  it('uses x-real-ip when x-forwarded-for is absent', async () => {
     const req = new NextRequest('http://localhost:3000/api/test', {
       headers: { 'x-real-ip': '10.0.0.1' },
     });
-    // Should not throw, proving the header is read
-    expect(() => checkRateLimit(req)).not.toThrow();
+    // Should resolve without throwing, proving the header is read
+    await expect(checkRateLimit(req)).resolves.toBeNull();
   });
 });
 
@@ -308,6 +263,7 @@ describe('logRequest non-test behavior', () => {
         hasConfiguredSessionSecret: false,
         sessionSecret: 'test-secret-at-least-32-chars-long-for-mocking',
         sessionTtlHours: 24,
+        trustedProxyCount: 1,
         enableHsts: false,
         allowInsecureWalletHeader: true,
       },
@@ -325,8 +281,9 @@ describe('logRequest non-test behavior', () => {
         },
       });
       logReqDev(req);
+      // Structured JSON line from the api logger (GAP-02).
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[API]'),
+        expect.stringContaining('"subsystem":"api"'),
       );
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('req-abc-123'),
@@ -353,6 +310,7 @@ describe('logRequest non-test behavior', () => {
         hasConfiguredSessionSecret: false,
         sessionSecret: 'test-secret-at-least-32-chars-long-for-mocking',
         sessionTtlHours: 24,
+        trustedProxyCount: 1,
         enableHsts: false,
         allowInsecureWalletHeader: true,
       },
@@ -389,6 +347,7 @@ describe('logRequest non-test behavior', () => {
         hasConfiguredSessionSecret: false,
         sessionSecret: 'test-secret-at-least-32-chars-long-for-mocking',
         sessionTtlHours: 24,
+        trustedProxyCount: 1,
         enableHsts: false,
         allowInsecureWalletHeader: true,
       },
@@ -423,6 +382,7 @@ describe('logRequest non-test behavior', () => {
         hasConfiguredSessionSecret: false,
         sessionSecret: 'test-secret-at-least-32-chars-long-for-mocking',
         sessionTtlHours: 24,
+        trustedProxyCount: 1,
         enableHsts: false,
         allowInsecureWalletHeader: true,
       },
@@ -461,6 +421,7 @@ describe('extractAuth with wallet header when insecure header is disabled', () =
         hasConfiguredSessionSecret: true,
         sessionSecret: 'test-secret-at-least-32-chars-long-for-mocking',
         sessionTtlHours: 24,
+        trustedProxyCount: 1,
         enableHsts: true,
         allowInsecureWalletHeader: false,
       },
@@ -494,18 +455,168 @@ describe('requireAuth with invalidReason', () => {
 });
 
 describe('runMiddlewareWithOptions rate limiting', () => {
-  it('returns rate limit response when limit is exceeded', () => {
+  it('returns rate limit response when limit is exceeded', async () => {
     const ip = `middleware-rl-${Date.now()}`;
     // Exhaust the rate limit
     for (let i = 0; i < 3; i++) {
-      runMiddlewareWithOptions(makeReq('http://localhost:3000/api/test', { ip }), { maxRequests: 3 });
+      await runMiddlewareWithOptions(makeReq('http://localhost:3000/api/test', { ip }), { maxRequests: 3 });
     }
     // Next request should be rate limited
-    const result = runMiddlewareWithOptions(
+    const result = await runMiddlewareWithOptions(
       makeReq('http://localhost:3000/api/test', { ip }),
       { maxRequests: 3 },
     );
     expect(result).not.toBeNull();
     expect(result!.status).toBe(429);
+  });
+});
+
+describe('getClientIp — trusted-proxy resolution (audit H-01)', () => {
+  const REAL_IP = '203.0.113.9';
+  const xff = (value: string) =>
+    new NextRequest('http://localhost:3000/api/test', { headers: { 'x-forwarded-for': value } });
+
+  it('ignores spoofed leftmost XFF entries and uses the proxy-appended client IP', () => {
+    // Default trusted-proxy count is 1: the real client IP is the rightmost hop
+    // (appended by our proxy). An attacker rotating leftmost values cannot move it.
+    expect(getClientIp(xff(`9.9.9.9, 8.8.8.8, ${REAL_IP}`))).toBe(REAL_IP);
+    expect(getClientIp(xff(`10.10.10.10, ${REAL_IP}`))).toBe(REAL_IP);
+    expect(getClientIp(xff(REAL_IP))).toBe(REAL_IP);
+  });
+
+  it('falls back to x-real-ip when XFF is present but has no usable hop', () => {
+    // A non-empty header that yields no hops after trimming/filtering exercises
+    // the clientIndex < 0 path (fewer real hops than the trusted-proxy count).
+    const req = new NextRequest('http://localhost:3000/api/test', {
+      headers: { 'x-forwarded-for': ',', 'x-real-ip': '198.51.100.7' },
+    });
+    expect(getClientIp(req)).toBe('198.51.100.7');
+  });
+
+  it('returns unknown when neither XFF nor x-real-ip is present', () => {
+    expect(getClientIp(new NextRequest('http://localhost:3000/api/test'))).toBe('unknown');
+  });
+
+  it('ignores X-Forwarded-For entirely when no trusted proxy is configured (count=0)', () => {
+    jest.isolateModules(() => {
+      jest.doMock('@/lib/api/env', () => ({
+        serverEnv: {
+          trustedProxyCount: 0,
+          isTest: true, isProduction: false, isDevelopment: true, nodeEnv: 'test',
+          allowedOrigins: [], enableHsts: false, allowInsecureWalletHeader: false,
+          sessionTtlHours: 24, hasConfiguredSessionSecret: false,
+          sessionSecret: 'x'.repeat(32),
+        },
+      }));
+      const { getClientIp: isolated } = require('@/lib/api/middleware');
+      const req = new NextRequest('http://localhost:3000/api/test', {
+        headers: { 'x-forwarded-for': '1.2.3.4', 'x-real-ip': '5.6.7.8' },
+      });
+      expect(isolated(req)).toBe('unknown');
+    });
+  });
+});
+
+describe('rate limiting is per-account for authenticated callers (audit H-01)', () => {
+  it('shares one bucket across source IPs for the same wallet', async () => {
+    __resetRateLimiterForTests();
+    const acct = seededAddress(24680);
+    const { token } = createSessionToken(acct);
+    const authed = (ip: string) =>
+      new NextRequest('http://localhost:3000/api/test', {
+        headers: { authorization: `Bearer ${token}`, 'x-forwarded-for': ip },
+      });
+
+    expect((await checkRateLimit(authed('1.1.1.1'), 2))).toBeNull();
+    expect((await checkRateLimit(authed('2.2.2.2'), 2))).toBeNull(); // different IP, same account
+    const third = await checkRateLimit(authed('3.3.3.3'), 2);        // still the account's bucket
+    expect(third).not.toBeNull();
+    expect(third!.status).toBe(429);
+    __resetRateLimiterForTests();
+  });
+});
+
+describe('runMiddleware honors server-side session revocation (audit M-03)', () => {
+  // Use the top-level imports (not requireActual): prior tests call
+  // jest.resetModules(), so a freshly required revocation-store would carry a
+  // different cached singleton than the runMiddleware imported at file load.
+  afterEach(() => __resetRevocationStoreForTests());
+
+  it('rejects a revoked token with 401 SESSION_REVOKED, on any route', async () => {
+    __resetRevocationStoreForTests();
+    const { token } = createSessionToken(seededAddress(55221));
+    await revokeSession(verifySessionToken(token)!);
+
+    const req = new NextRequest('http://localhost:3000/api/test', {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const res = await runMiddleware(req);
+    expect(res).not.toBeNull();
+    expect(res!.status).toBe(401);
+    expect((await res!.json()).error.code).toBe('SESSION_REVOKED');
+  });
+
+  it('passes a fresh (non-revoked) token through', async () => {
+    __resetRevocationStoreForTests();
+    const { token } = createSessionToken(seededAddress(55222));
+    const req = new NextRequest('http://localhost:3000/api/test', {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(await runMiddleware(req)).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Datastore-backed rate limiter failure — fail closed, not naked 500
+// (integration-style: a real PgRateLimiter pointed at an unreachable port)
+// ---------------------------------------------------------------------------
+describe('checkRateLimit with an unreachable durable limiter', () => {
+  const savedDb = process.env.DATABASE_URL;
+
+  afterEach(() => {
+    if (savedDb === undefined) delete process.env.DATABASE_URL;
+    else process.env.DATABASE_URL = savedDb;
+    require('@/lib/persistence/sql-client').__resetPgPoolForTests();
+    __resetRateLimiterForTests();
+  });
+
+  it('fails closed with a structured 503 DATASTORE_UNAVAILABLE', async () => {
+    process.env.DATABASE_URL = 'postgres://shiora:wrong@127.0.0.1:5499/shiora';
+    require('@/lib/persistence/sql-client').__resetPgPoolForTests();
+    __resetRateLimiterForTests();
+
+    const result = await checkRateLimit(makeReq('http://localhost:3000/api/test'), 10);
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe(503);
+    const body = await result!.json();
+    expect(body.error.code).toBe('DATASTORE_UNAVAILABLE');
+    expect(result!.headers.get('Retry-After')).toBe('5');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Rate-limit bucket scoping — auth must never contend with general traffic
+// ---------------------------------------------------------------------------
+describe('checkRateLimit scoping', () => {
+  it('keeps auth and general buckets independent per client', async () => {
+    const ip = `scope-test-${Date.now()}`;
+    // Exhaust a small GENERAL budget for this client...
+    for (let i = 0; i < 5; i++) {
+      await checkRateLimit(makeReq('http://localhost:3000/api/records', { ip }), 5);
+    }
+    const generalBlocked = await checkRateLimit(
+      makeReq('http://localhost:3000/api/records', { ip }),
+      5,
+    );
+    expect(generalBlocked!.status).toBe(429);
+
+    // ...and the AUTH-scoped budget for the same client is untouched.
+    const authAllowed = await checkRateLimit(
+      makeReq('http://localhost:3000/api/wallet/challenge', { ip }),
+      5,
+      60_000,
+      'auth',
+    );
+    expect(authAllowed).toBeNull();
   });
 });

@@ -1,0 +1,21 @@
+# Gitleaks configuration — secret scanning for CI and release gates.
+#
+# The allowlist below covers the ONLY intentional key material in this
+# repository: the generated test-only PKI used by the attestation-verifier
+# test suite (src/lib/attestation/__testpki__/, produced by
+# scripts/gen-attestation-test-pki.sh). These keys sign synthetic SEV-SNP
+# fixtures in tests and have no production trust anywhere. Everything else
+# that looks like a secret is a finding.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Intentional test fixtures and documentation placeholders"
+paths = [
+  '''src/lib/attestation/__testpki__/.*''',
+]
+regexes = [
+  # Angle-bracket placeholders in documentation (e.g. <jwt-signing-secret>).
+  '''<[a-z-]+-secret>''',
+]

@@ -4,7 +4,8 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse } from '@/lib/api/responses';
+import { errorResponse } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import {
   seededRandom,
@@ -67,7 +68,7 @@ const RISK_INTERVENTIONS: Record<string, string[]> = {
 };
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const { searchParams } = new URL(request.url);
@@ -100,7 +101,7 @@ export async function GET(request: NextRequest) {
       actionableFindings: 5,
     };
 
-    return successResponse(overview);
+    return simulatedResponse(overview, 'genomics');
   }
 
   // ---- Pharmacogenomics ----
@@ -120,7 +121,7 @@ export async function GET(request: NextRequest) {
       attestation: generateAttestation(SEED + 100 + i * 11),
     }));
 
-    return successResponse(results);
+    return simulatedResponse(results, 'genomics');
   }
 
   // ---- Risk Scores ----
@@ -147,7 +148,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return successResponse(scores);
+    return simulatedResponse(scores, 'genomics');
   }
 
   return errorResponse('INVALID_VIEW', `Unknown view: ${view}`, 400);

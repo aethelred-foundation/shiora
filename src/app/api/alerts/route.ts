@@ -5,19 +5,9 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  successResponse,
-  errorResponse,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
-import {
-  seededRandom,
-  seededInt,
-  seededHex,
-  seededPick,
-  generateAttestation,
-} from '@/lib/utils';
+import { seededRandom, seededInt, seededHex, seededPick, generateAttestation } from '@/lib/utils';
 import { ALERT_METRICS } from '@/lib/constants';
 import type { PredictiveAlert, AlertSeverity, AlertMetric } from '@/types';
 
@@ -26,7 +16,12 @@ import type { PredictiveAlert, AlertSeverity, AlertMetric } from '@/types';
 // ────────────────────────────────────────────────────────────
 
 const SEED = 1200;
-const AI_MODEL_IDS = ['lstm', 'anomaly', 'fertility', 'insights'];
+const INFERENCE_WORKLOAD_IDS = [
+  'cycle-patterns',
+  'anomaly-detection',
+  'fertility-window',
+  'health-guidance',
+];
 
 function generateMockAlerts(): PredictiveAlert[] {
   const severities: AlertSeverity[] = ['critical', 'warning', 'info'];
@@ -59,13 +54,16 @@ function generateMockAlerts(): PredictiveAlert[] {
       title: titles[metric] ?? 'Health Alert',
       message: `The ${metricDef.label.toLowerCase()} metric has crossed the configured threshold.`,
       currentValue: parseFloat(
-        (metricDef.defaultThreshold + (metricDef.condition === 'above' ? 1 : -1) * seededRandom(s + 11) * 10).toFixed(1),
+        (
+          metricDef.defaultThreshold +
+          (metricDef.condition === 'above' ? 1 : -1) * seededRandom(s + 11) * 10
+        ).toFixed(1),
       ),
       threshold: metricDef.defaultThreshold,
       triggeredAt,
       acknowledgedAt: isAcknowledged ? triggeredAt + seededInt(s + 13, 5, 60) * 60000 : undefined,
       resolvedAt: isResolved ? triggeredAt + seededInt(s + 15, 60, 360) * 60000 : undefined,
-      modelId: seededPick(s + 17, AI_MODEL_IDS),
+      modelId: seededPick(s + 17, INFERENCE_WORKLOAD_IDS),
       confidence: parseFloat((85 + seededRandom(s + 19) * 14).toFixed(1)),
       attestation: generateAttestation(s + 21),
     };
@@ -77,7 +75,7 @@ function generateMockAlerts(): PredictiveAlert[] {
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const severity = request.nextUrl.searchParams.get('severity') as AlertSeverity | null;
@@ -105,7 +103,7 @@ export async function GET(request: NextRequest) {
 // ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   try {
@@ -117,7 +115,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (!['acknowledge', 'resolve'].includes(action)) {
-      return errorResponse('VALIDATION_ERROR', 'action must be "acknowledge" or "resolve"', HTTP.BAD_REQUEST);
+      return errorResponse(
+        'VALIDATION_ERROR',
+        'action must be "acknowledge" or "resolve"',
+        HTTP.BAD_REQUEST,
+      );
     }
 
     return successResponse(

@@ -1,13 +1,13 @@
 // ============================================================
-// Shiora on Aethelred — XAI Model Cards API
-// GET /api/xai/model-cards — Get model cards for all AI models
+// Shiora on Aethelred — workload assessments API
+// GET /api/xai/model-cards — Get assessments for configured inference workloads
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededRandom, seededInt } from '@/lib/utils';
-import { AI_MODELS } from '@/lib/constants';
+import { INFERENCE_WORKLOADS } from '@/lib/constants';
 
 const SEED = 1600;
 
@@ -16,10 +16,10 @@ const SEED = 1600;
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
-  const modelCards = AI_MODELS.map((model, i) => ({
+  const modelCards = INFERENCE_WORKLOADS.map((model, i) => ({
     modelId: model.id,
     name: model.name,
     version: model.version,
@@ -41,5 +41,5 @@ export async function GET(request: NextRequest) {
     lastUpdated: Date.now() - seededInt(SEED + i * 14, 5, 60) * 86400000,
   }));
 
-  return successResponse(modelCards);
+  return simulatedResponse(modelCards, 'explainable_ai');
 }

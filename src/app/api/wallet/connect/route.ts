@@ -6,31 +6,31 @@
 import { NextRequest } from 'next/server';
 import { ZodError } from 'zod';
 import { WalletConnectSchema } from '@/lib/api/validation';
-import {
-  successResponse,
-  errorResponse,
-  validationError,
-  HTTP,
-} from '@/lib/api/responses';
-import { runMiddleware, extractAuth } from '@/lib/api/middleware';
+import { successResponse, errorResponse, validationError, HTTP } from '@/lib/api/responses';
+import { AUTH_RATE_LIMIT, runMiddleware, extractAuth } from '@/lib/api/middleware';
 import {
   applySessionCookie,
   clearSessionCookie,
   createSessionToken,
-  SESSION_COOKIE_NAME,
+  extractSessionToken,
+  verifySessionToken,
+  sessionCookieName,
 } from '@/lib/api/session';
+import { revokeSession } from '@/lib/api/session-revocation';
+import { recordIssuedSession } from '@/lib/api/session-inventory';
 import { serverEnv } from '@/lib/api/env';
 import { verifyChallenge } from '@/lib/api/challenge';
+import { getNonceStore } from '@/lib/persistence/nonce-store';
+import { getLoginAttemptStore } from '@/lib/persistence/login-attempt-store';
 import { audit } from '@/lib/api/audit';
 import { verifyWalletSignature } from '@/lib/api/wallet-verify';
-import { seededRandom } from '@/lib/utils';
 
 // ────────────────────────────────────────────────────────────
 // GET /api/wallet/connect — Check session validity
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const auth = extractAuth(request);
@@ -53,12 +53,32 @@ export async function GET(request: NextRequest) {
 // ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request, AUTH_RATE_LIMIT);
   if (blocked) return blocked;
 
   try {
     const body = await request.json();
     const validated = WalletConnectSchema.parse(body);
+
+    // ── Step 0: Reject if the address is locked out (audit GAP-09) ──
+    // A run of failed signature verifications locks the address with
+    // exponential backoff, so a targeted brute-force is throttled to a crawl.
+    const lockedUntil = await getLoginAttemptStore().lockedUntil(validated.address);
+    if (lockedUntil !== null) {
+      audit({
+        action: 'WALLET_CONNECT',
+        actor: validated.address,
+        success: false,
+        metadata: { reason: 'locked_out', lockedUntil },
+      });
+      return errorResponse(
+        'ACCOUNT_LOCKED',
+        'Too many failed authentication attempts. Try again later.',
+        HTTP.TOO_MANY_REQUESTS,
+        undefined,
+        { 'Retry-After': String(Math.max(1, Math.ceil((lockedUntil - Date.now()) / 1000))) },
+      );
+    }
 
     // ── Step 1: Verify the HMAC-signed challenge ──────────────
     const challengeResult = verifyChallenge(
@@ -83,22 +103,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── Step 2: Validate timestamp freshness ──────────────────
-    const now = Date.now();
-    const timestampDiff = Math.abs(now - validated.timestamp);
-    if (timestampDiff > 5 * 60 * 1000) {
+    // ── Step 2: Enforce single-use (audit H-02) ───────────────
+    // A valid, unexpired challenge may be redeemed exactly once. Consuming the
+    // nonce after HMAC verification (so only genuine server-issued challenges
+    // are recorded) atomically rejects any replay of the same nonce within its
+    // TTL — even concurrent replays across replicas.
+    const fresh = await getNonceStore().consume(validated.nonce, validated.expiresAt);
+    if (!fresh) {
       audit({
         action: 'WALLET_CONNECT',
         actor: validated.address,
         success: false,
-        metadata: { reason: 'timestamp_expired' },
+        metadata: { reason: 'nonce_replayed' },
       });
       return errorResponse(
-        'TIMESTAMP_EXPIRED',
-        'Signature timestamp has expired. Please sign a new message.',
+        'CHALLENGE_ALREADY_USED',
+        'This challenge has already been used. Please request a new one.',
         HTTP.BAD_REQUEST,
       );
     }
+
+    // Freshness is enforced entirely server-side: the challenge's expiresAt is
+    // HMAC-bound and checked in Step 1, and the nonce is single-use (Step 2).
+    // A client-supplied timestamp adds nothing an attacker can't set (audit L-04).
 
     // ── Step 3: Verify wallet signature ───────────────────────
     // Reconstruct the challenge message the wallet was asked to sign,
@@ -122,11 +149,16 @@ export async function POST(request: NextRequest) {
     );
 
     if (!signatureValid) {
+      const outcome = await getLoginAttemptStore().recordFailure(validated.address);
       audit({
         action: 'WALLET_CONNECT',
         actor: validated.address,
         success: false,
-        metadata: { reason: 'invalid_signature' },
+        metadata: {
+          reason: 'invalid_signature',
+          failures: outcome.failures,
+          ...(outcome.lockedUntil !== null ? { lockedUntil: outcome.lockedUntil } : {}),
+        },
       });
       return errorResponse(
         'INVALID_SIGNATURE',
@@ -135,9 +167,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // A genuine login clears the failure counter for the address.
+    await getLoginAttemptStore().clear(validated.address);
+
     // ── Step 4: Create session ────────────────────────────────
-    const seed = Date.now();
-    const { token, expiresAt } = createSessionToken(validated.address);
+    const { token, expiresAt, claims } = createSessionToken(validated.address);
+    // Index the issued session so the owner can list/revoke devices (GAP-08).
+    await recordIssuedSession(claims, request);
 
     audit({
       action: 'WALLET_CONNECT',
@@ -146,6 +182,10 @@ export async function POST(request: NextRequest) {
       metadata: { chainId: validated.chainId },
     });
 
+    // The response contains only facts this server actually knows:
+    // authentication outcome and session parameters. Balances and profile
+    // stats are NOT fabricated here — Shiora does not query the chain, so an
+    // unknown balance is reported as unknown by the client (audit L-01).
     const response = successResponse(
       {
         address: validated.address,
@@ -153,16 +193,7 @@ export async function POST(request: NextRequest) {
         expiresIn: `${serverEnv.sessionTtlHours}h`,
         session: {
           transport: 'httpOnly-cookie',
-          cookieName: SESSION_COOKIE_NAME,
-        },
-        balances: {
-          aethel: parseFloat((48000 + seededRandom(seed) * 5000).toFixed(2)),
-        },
-        profile: {
-          recordCount: 147,
-          activeGrants: 3,
-          lastActivity: now - 3600000,
-          memberSince: now - 180 * 86400000,
+          cookieName: sessionCookieName(),
         },
       },
       HTTP.OK,
@@ -178,12 +209,19 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
+
+  // Server-side revoke this token so it stops being honored immediately, not
+  // just cleared from the caller's cookie jar (audit M-03).
+  const claims = verifySessionToken(extractSessionToken(request));
+  if (claims) {
+    await revokeSession(claims);
+  }
 
   audit({
     action: 'WALLET_DISCONNECT',
-    actor: 'session',
+    actor: claims?.sub ?? 'session',
     success: true,
   });
 

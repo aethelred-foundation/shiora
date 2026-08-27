@@ -16,8 +16,8 @@ import {
   HTTP,
 } from '@/lib/api/responses';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
-import { getAccessGrant, updateAccessGrant } from '@/lib/api/store';
-import { generateTxHash } from '@/lib/utils';
+import { getAccessGrant, updateAccessGrant } from '@/lib/api/access-service';
+import { notify } from '@/lib/api/notification-service';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -28,14 +28,14 @@ interface RouteContext {
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = requireAuth(request);
   if ('status' in auth) return auth;
 
   const { id } = await context.params;
-  const grant = getAccessGrant(auth.walletAddress!, id);
+  const grant = await getAccessGrant(auth.walletAddress!, id);
 
   if (!grant) {
     return notFoundResponse('AccessGrant', id);
@@ -55,12 +55,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
       download: grant.canDownload,
       share: grant.canShare,
     },
-    blockchain: {
-      txHash: grant.txHash,
-      attestation: grant.attestation,
-      providerAddress: grant.address,
-      ownerAddress: grant.ownerAddress,
-    },
   });
 }
 
@@ -69,14 +63,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
 // ────────────────────────────────────────────────────────────
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = requireAuth(request);
   if ('status' in auth) return auth;
 
   const { id } = await context.params;
-  const grant = getAccessGrant(auth.walletAddress!, id);
+  const grant = await getAccessGrant(auth.walletAddress!, id);
 
   if (!grant) {
     return notFoundResponse('AccessGrant', id);
@@ -94,7 +88,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const body = await request.json();
     const validated = GrantUpdateSchema.parse(body);
 
-    const updated = updateAccessGrant(auth.walletAddress!, id, {
+    const updated = await updateAccessGrant(auth.walletAddress!, id, {
       ...(validated.scope !== undefined && { scope: validated.scope }),
       ...(validated.canView !== undefined && { canView: validated.canView }),
       ...(validated.canDownload !== undefined && { canDownload: validated.canDownload }),
@@ -109,7 +103,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     return successResponse(updated, HTTP.OK, {
-      message: 'Access grant modified. Transaction submitted to blockchain.',
+      message: 'Access grant modified.',
     });
   } catch (err) {
     if (err instanceof ZodError) return validationError(err);
@@ -122,14 +116,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 // ────────────────────────────────────────────────────────────
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   const auth = requireAuth(request);
   if ('status' in auth) return auth;
 
   const { id } = await context.params;
-  const grant = getAccessGrant(auth.walletAddress!, id);
+  const grant = await getAccessGrant(auth.walletAddress!, id);
 
   if (!grant) {
     return notFoundResponse('AccessGrant', id);
@@ -143,7 +137,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     );
   }
 
-  const revokedGrant = updateAccessGrant(auth.walletAddress!, id, {
+  const revokedGrant = await updateAccessGrant(auth.walletAddress!, id, {
     status: 'Revoked',
   });
 
@@ -151,12 +145,18 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     return notFoundResponse('AccessGrant', id);
   }
 
+  // Tell the provider their access has ended.
+  await notify(revokedGrant.address, {
+    type: 'consent',
+    title: 'Record access revoked',
+    body: 'A patient revoked your access to their health records.',
+  });
+
   return successResponse(
     {
       id: revokedGrant.id,
       status: revokedGrant.status,
       revokedAt: Date.now(),
-      revokeTxHash: generateTxHash(Date.now()),
       message: 'Access revoked. Provider can no longer access your data.',
     },
     HTTP.OK,

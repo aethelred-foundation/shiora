@@ -3,9 +3,14 @@ import crypto from 'node:crypto';
 import { type NextRequest, type NextResponse } from 'next/server';
 
 import { serverEnv } from './env';
+import { preflightMode } from './preflight';
+import { sessionSigningKey } from '@/lib/crypto/derived-secrets';
 
-interface SessionClaims {
+export interface SessionClaims {
+  /** Subject — the wallet address this session authenticates. */
   sub: string;
+  /** Unique token id — the handle used to revoke this specific session. */
+  jti: string;
   iat: number;
   exp: number;
   v: 1;
@@ -13,9 +18,24 @@ interface SessionClaims {
 
 const TOKEN_VERSION = 1 as const;
 
+// The __Host- prefix is a browser-ENFORCED contract: such a cookie is
+// rejected outright unless it carries Secure (+ Path=/, no Domain). The name
+// must therefore travel with the Secure decision — an acknowledged evaluation
+// deployment on plain http sets a Secure-less cookie, and keeping the
+// __Host- name there means every browser silently discards it (field-hit:
+// connect succeeded, session never existed). Reads accept both names so a
+// tier change never strands live sessions.
+const HOST_PREFIXED_COOKIE_NAME = '__Host-shiora_session';
+const PLAIN_COOKIE_NAME = 'shiora_session';
+
+export function sessionCookieName(): string {
+  return sessionCookieSecure() ? HOST_PREFIXED_COOKIE_NAME : PLAIN_COOKIE_NAME;
+}
+
+/** @deprecated read-side compatibility export; prefer sessionCookieName(). */
 export const SESSION_COOKIE_NAME = serverEnv.isProduction
-  ? '__Host-shiora_session'
-  : 'shiora_session';
+  ? HOST_PREFIXED_COOKIE_NAME
+  : PLAIN_COOKIE_NAME;
 
 function encodeBase64Url(value: string): string {
   return Buffer.from(value, 'utf8').toString('base64url');
@@ -26,8 +46,9 @@ function decodeBase64Url(value: string): string {
 }
 
 function sign(payload: string): string {
+  // Domain-separated subkey, not the raw root secret (see derived-secrets).
   return crypto
-    .createHmac('sha256', serverEnv.sessionSecret)
+    .createHmac('sha256', sessionSigningKey())
     .update(payload)
     .digest('base64url');
 }
@@ -43,11 +64,14 @@ function safeCompare(a: string, b: string): boolean {
   return crypto.timingSafeEqual(left, right);
 }
 
-export function createSessionToken(address: string): { token: string; expiresAt: number } {
+export function createSessionToken(
+  address: string,
+): { token: string; expiresAt: number; claims: SessionClaims } {
   const issuedAt = Date.now();
   const expiresAt = issuedAt + serverEnv.sessionTtlHours * 60 * 60 * 1000;
   const claims: SessionClaims = {
     sub: address,
+    jti: crypto.randomUUID(),
     iat: issuedAt,
     exp: expiresAt,
     v: TOKEN_VERSION,
@@ -59,6 +83,7 @@ export function createSessionToken(address: string): { token: string; expiresAt:
   return {
     token: `${encodedPayload}.${signature}`,
     expiresAt,
+    claims,
   };
 }
 
@@ -79,6 +104,7 @@ export function verifySessionToken(token: string | null | undefined): SessionCla
     const claims = JSON.parse(decodeBase64Url(payload)) as SessionClaims;
     if (claims.v !== TOKEN_VERSION) return null;
     if (!claims.sub || typeof claims.sub !== 'string') return null;
+    if (!claims.jti || typeof claims.jti !== 'string') return null;
     if (claims.exp <= Date.now()) return null;
     return claims;
   } catch {
@@ -92,7 +118,24 @@ export function extractSessionToken(request: NextRequest): string | null {
     return authHeader.slice(7);
   }
 
-  return request.cookies.get(SESSION_COOKIE_NAME)?.value ?? null;
+  return (
+    request.cookies.get(HOST_PREFIXED_COOKIE_NAME)?.value
+    ?? request.cookies.get(PLAIN_COOKIE_NAME)?.value
+    ?? null
+  );
+}
+
+/**
+ * Whether the session cookie carries the Secure attribute. Production PHI
+ * deployments always do. An acknowledged evaluation deployment has already
+ * accepted TRANSPORT_NOT_HARDENED (plain http) — and a Secure-only cookie on
+ * plain http is silently DROPPED by the browser, so wallet connect "succeeds"
+ * and every following request is 401 (hit twice in testnet field testing).
+ * The relaxation therefore follows the same explicit acknowledgment as the
+ * transport gate itself.
+ */
+function sessionCookieSecure(): boolean {
+  return serverEnv.isProduction && preflightMode() !== 'evaluation';
 }
 
 export function applySessionCookie(
@@ -101,11 +144,11 @@ export function applySessionCookie(
   expiresAt: number,
 ): void {
   response.cookies.set({
-    name: SESSION_COOKIE_NAME,
+    name: sessionCookieName(),
     value: token,
     httpOnly: true,
     sameSite: 'lax',
-    secure: serverEnv.isProduction,
+    secure: sessionCookieSecure(),
     path: '/',
     expires: new Date(expiresAt),
   });
@@ -113,11 +156,11 @@ export function applySessionCookie(
 
 export function clearSessionCookie(response: NextResponse): void {
   response.cookies.set({
-    name: SESSION_COOKIE_NAME,
+    name: sessionCookieName(),
     value: '',
     httpOnly: true,
     sameSite: 'lax',
-    secure: serverEnv.isProduction,
+    secure: sessionCookieSecure(),
     path: '/',
     expires: new Date(0),
   });

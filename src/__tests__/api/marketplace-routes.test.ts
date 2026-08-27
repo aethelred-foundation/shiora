@@ -5,8 +5,8 @@ jest.mock('@/lib/api/middleware', () => {
   return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
 });
 
-jest.mock('@/lib/api/store', () => {
-  const actual = jest.requireActual('@/lib/api/store');
+jest.mock('@/lib/api/marketplace-service', () => {
+  const actual = jest.requireActual('@/lib/api/marketplace-service');
   return {
     ...actual,
     listMarketplaceListings: jest.fn((...args: unknown[]) => actual.listMarketplaceListings(...args)),
@@ -16,488 +16,273 @@ jest.mock('@/lib/api/store', () => {
 
 import { NextRequest, NextResponse } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
-import { listMarketplaceListings, updateMarketplaceListing } from '@/lib/api/store';
+import {
+  listMarketplaceListings as svcList,
+  updateMarketplaceListing as svcUpdate,
+} from '@/lib/api/marketplace-service';
+
 import { GET as listMarketplace, POST as createListing } from '@/app/api/marketplace/route';
 import { GET as getStats } from '@/app/api/marketplace/stats/route';
 import { GET as getListing, POST as purchaseListing, DELETE as deleteListing } from '@/app/api/marketplace/[id]/route';
 import { createSessionToken } from '@/lib/api/session';
 import { seededAddress } from '@/lib/utils';
 
+const mockedList = svcList as jest.MockedFunction<typeof svcList>;
+const mockedUpdate = svcUpdate as jest.MockedFunction<typeof svcUpdate>;
+const actualService = jest.requireActual('@/lib/api/marketplace-service');
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
-const mockedListMarketplaceListings = listMarketplaceListings as jest.MockedFunction<typeof listMarketplaceListings>;
-const mockedUpdateMarketplaceListing = updateMarketplaceListing as jest.MockedFunction<typeof updateMarketplaceListing>;
-const actualStore = jest.requireActual('@/lib/api/store');
 
 afterEach(() => {
   mockedRunMiddleware.mockImplementation((...args: unknown[]) => {
     const actual = jest.requireActual('@/lib/api/middleware');
     return actual.runMiddleware(...args);
   });
-  mockedListMarketplaceListings.mockImplementation((...args: unknown[]) => actualStore.listMarketplaceListings(...args));
-  mockedUpdateMarketplaceListing.mockImplementation((...args: unknown[]) => actualStore.updateMarketplaceListing(...args));
+  mockedList.mockImplementation((...args: unknown[]) => actualService.listMarketplaceListings(...args));
+  mockedUpdate.mockImplementation((...args: unknown[]) => actualService.updateMarketplaceListing(...args));
 });
 
-const addr = seededAddress(7777);
-const { token } = createSessionToken(addr);
-
-// A second user for purchase tests
-const buyerAddr = seededAddress(8888);
-const { token: buyerToken } = createSessionToken(buyerAddr);
-
-function authed(url: string, init?: RequestInit): NextRequest {
-  return new NextRequest(url, {
-    ...init,
-    headers: { ...(init?.headers ?? {}), authorization: `Bearer ${token}` },
-  });
+function authed(url: string, init: RequestInit, token: string): NextRequest {
+  return new NextRequest(url, { ...init, headers: { ...(init.headers ?? {}), authorization: `Bearer ${token}` } });
 }
 
-function buyerAuthed(url: string, init?: RequestInit): NextRequest {
-  return new NextRequest(url, {
-    ...init,
-    headers: { ...(init?.headers ?? {}), authorization: `Bearer ${buyerToken}` },
-  });
+interface ListingPayload {
+  category: string;
+  title: string;
+  description?: string;
+  price: number;
+  expirationDays?: number;
+  anonymizationLevel?: string;
 }
 
-describe('/api/marketplace', () => {
-  it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await listMarketplace(new NextRequest('http://localhost:3000/api/marketplace'));
-    expect(res.status).toBe(403);
+async function postListing(token: string, payload: ListingPayload): Promise<{ id: string; seller: string }> {
+  const res = await createListing(
+    authed('http://localhost:3001/api/marketplace', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    }, token),
+  );
+  return (await res.json()).data;
+}
+
+const sellerToken = createSessionToken(seededAddress(700)).token;
+
+describe('/api/marketplace list, filter, search', () => {
+  beforeAll(async () => {
+    actualService.__resetMarketplaceForTests();
+    await postListing(sellerToken, { category: 'menstrual_cycles', title: 'Cycle Cohort Alpha', price: 100 });
+    await postListing(sellerToken, { category: 'fertility_data', title: 'Fertility Set Beta', price: 200 });
   });
 
-  it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await createListing(
-      authed('http://localhost:3000/api/marketplace', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category: 'vitals_timeseries', title: 'Test', price: 50 }),
-      }),
-    );
-    expect(res.status).toBe(403);
+  it('returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    expect((await listMarketplace(new NextRequest('http://localhost:3001/api/marketplace'))).status).toBe(403);
   });
 
-  it('GET lists marketplace data', async () => {
-    const req = new NextRequest('http://localhost:3000/api/marketplace');
-    const res = await listMarketplace(req);
+  it('lists the public catalog', async () => {
+    const res = await listMarketplace(new NextRequest('http://localhost:3001/api/marketplace?limit=100'));
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(Array.isArray(body.data)).toBe(true);
-    expect(body.pagination).toBeDefined();
+    expect(body.data.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('GET supports pagination', async () => {
-    const req = new NextRequest('http://localhost:3000/api/marketplace?page=1&limit=5');
-    const res = await listMarketplace(req);
+  it('filters by category', async () => {
+    const res = await listMarketplace(new NextRequest('http://localhost:3001/api/marketplace?category=menstrual_cycles&limit=100'));
     const body = await res.json();
-    expect(body.data.length).toBeLessThanOrEqual(5);
-    expect(body.pagination.limit).toBe(5);
+    body.data.forEach((l: { category: string }) => expect(l.category).toBe('menstrual_cycles'));
   });
 
-  it('GET filters by category', async () => {
-    const req = new NextRequest('http://localhost:3000/api/marketplace?category=vitals_timeseries');
-    const res = await listMarketplace(req);
-    const body = await res.json();
-    expect(res.status).toBe(200);
-    body.data.forEach((item: { category: string }) => {
-      expect(item.category).toBe('vitals_timeseries');
-    });
-  });
-
-  it('GET returns 400 for invalid category', async () => {
-    const req = new NextRequest('http://localhost:3000/api/marketplace?category=totally_fake_category');
-    const res = await listMarketplace(req);
+  it('rejects an unsupported category', async () => {
+    const res = await listMarketplace(new NextRequest('http://localhost:3001/api/marketplace?category=not_a_category'));
     expect(res.status).toBe(400);
+  });
+
+  it('searches by title', async () => {
+    const res = await listMarketplace(new NextRequest('http://localhost:3001/api/marketplace?q=alpha&limit=100'));
     const body = await res.json();
-    expect(body.error.code).toBe('INVALID_CATEGORY');
+    expect(body.data.length).toBe(1);
+    expect(body.data[0].title).toBe('Cycle Cohort Alpha');
   });
 
-  it('GET filters by search query (matching)', async () => {
-    const req = new NextRequest('http://localhost:3000/api/marketplace?q=Health');
-    const res = await listMarketplace(req);
-    expect(res.status).toBe(200);
+  it('searches by category text when the title does not match', async () => {
+    const res = await listMarketplace(new NextRequest('http://localhost:3001/api/marketplace?q=menstrual&limit=100'));
     const body = await res.json();
-    expect(body.success).toBe(true);
+    expect(body.data.length).toBe(1);
+    expect(body.data[0].category).toBe('menstrual_cycles');
   });
 
-  it('GET filters by search query (no match)', async () => {
-    const req = new NextRequest('http://localhost:3000/api/marketplace?q=zzzzzznonexistent');
-    const res = await listMarketplace(req);
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.data.length).toBe(0);
+  it('returns nothing when the search matches no field', async () => {
+    const res = await listMarketplace(new NextRequest('http://localhost:3001/api/marketplace?q=zzznomatch&limit=100'));
+    expect((await res.json()).data).toEqual([]);
   });
 
-  it('GET returns 422 for invalid pagination params', async () => {
-    const req = new NextRequest('http://localhost:3000/api/marketplace?page=-1');
-    const res = await listMarketplace(req);
-    expect(res.status).toBe(422);
+  it('returns 422 for invalid query params', async () => {
+    expect((await listMarketplace(new NextRequest('http://localhost:3001/api/marketplace?page=-1'))).status).toBe(422);
   });
 
-  it('POST creates a listing when authenticated', async () => {
+  it('re-throws a non-Zod error from the datastore', async () => {
+    mockedList.mockImplementationOnce(() => { throw new Error('DB down'); });
+    await expect(listMarketplace(new NextRequest('http://localhost:3001/api/marketplace'))).rejects.toThrow('DB down');
+  });
+});
+
+describe('/api/marketplace create', () => {
+  beforeAll(() => actualService.__resetMarketplaceForTests());
+
+  it('returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    expect((await createListing(authed('http://localhost:3001/api/marketplace', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }, sellerToken))).status).toBe(403);
+  });
+
+  it('returns 401 when unauthenticated', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(null);
+    expect((await createListing(new NextRequest('http://localhost:3001/api/marketplace', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }))).status).toBe(401);
+  });
+
+  it('creates a listing (201, active)', async () => {
     const res = await createListing(
-      authed('http://localhost:3000/api/marketplace', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          category: 'vitals_timeseries',
-          title: 'Test Vitals Dataset',
-          description: 'Heart rate and blood pressure data',
-          price: 50,
-          expirationDays: 30,
-          anonymizationLevel: 'k-anonymity',
-        }),
-      }),
+      authed('http://localhost:3001/api/marketplace', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: 'lab_results', title: 'Lab Cohort', price: 50, anonymizationLevel: 'differential-privacy' }),
+      }, sellerToken),
     );
     expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.title).toBe('Test Vitals Dataset');
-    expect(body.data.seller).toBe(addr);
+    expect((await res.json()).data.status).toBe('active');
   });
 
-  it('POST returns 401 from inner requireAuth when middleware is bypassed', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
-    const req = new NextRequest('http://localhost:3000/api/marketplace', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category: 'vitals_timeseries', title: 'Test', price: 50 }),
-    });
-    const res = await createListing(req);
-    expect(res.status).toBe(401);
-  });
-
-  it('POST returns 401 when unauthenticated', async () => {
-    const req = new NextRequest('http://localhost:3000/api/marketplace', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category: 'vitals_timeseries', title: 'Test', price: 50 }),
-    });
-    const res = await createListing(req);
-    expect(res.status).toBe(401);
-  });
-
-  it('POST returns 422 for invalid body', async () => {
+  it('rejects an unsupported category', async () => {
     const res = await createListing(
-      authed('http://localhost:3000/api/marketplace', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: '' }),
-      }),
+      authed('http://localhost:3001/api/marketplace', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: 'not_a_category', title: 'X', price: 50 }),
+      }, sellerToken),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 422 for an invalid create body', async () => {
+    const res = await createListing(
+      authed('http://localhost:3001/api/marketplace', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: 'lab_results', title: '', price: -5 }),
+      }, sellerToken),
     );
     expect(res.status).toBe(422);
   });
 
-  it('POST returns 400 for invalid category in body', async () => {
-    const res = await createListing(
-      authed('http://localhost:3000/api/marketplace', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          category: 'totally_fake_category',
-          title: 'Test',
-          price: 50,
-        }),
-      }),
-    );
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body.error.code).toBe('INVALID_CATEGORY');
-  });
-
-  it('GET re-throws non-ZodError in catch block', async () => {
-    mockedListMarketplaceListings.mockImplementationOnce(() => {
-      throw new Error('DB connection lost');
-    });
+  it('throws on an invalid JSON body (non-Zod error)', async () => {
     await expect(
-      listMarketplace(new NextRequest('http://localhost:3000/api/marketplace')),
-    ).rejects.toThrow('DB connection lost');
-  });
-
-  it('POST throws on invalid JSON body (non-Zod error)', async () => {
-    await expect(
-      createListing(
-        authed('http://localhost:3000/api/marketplace', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: 'not-json',
-        }),
-      ),
+      createListing(authed('http://localhost:3001/api/marketplace', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: 'not-json' }, sellerToken)),
     ).rejects.toThrow();
   });
 });
 
 describe('/api/marketplace/stats', () => {
-  it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await getStats(new NextRequest('http://localhost:3000/api/marketplace/stats'));
-    expect(res.status).toBe(403);
+  it('returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    expect((await getStats(new NextRequest('http://localhost:3001/api/marketplace/stats'))).status).toBe(403);
   });
 
-  it('GET returns marketplace stats', async () => {
-    const req = new NextRequest('http://localhost:3000/api/marketplace/stats');
-    const res = await getStats(req);
+  it('returns aggregate stats', async () => {
+    const res = await getStats(new NextRequest('http://localhost:3001/api/marketplace/stats'));
     expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.totalListings).toBeDefined();
+    expect((await res.json()).data.totalListings).toBeDefined();
   });
 
-  it('GET returns revenue data when type=revenue', async () => {
-    const req = new NextRequest('http://localhost:3000/api/marketplace/stats?type=revenue');
-    const res = await getStats(req);
-    expect(res.status).toBe(200);
+  it('returns the revenue time-series when type=revenue', async () => {
+    const res = await getStats(new NextRequest('http://localhost:3001/api/marketplace/stats?type=revenue'));
     const body = await res.json();
-    expect(body.success).toBe(true);
     expect(Array.isArray(body.data)).toBe(true);
-    expect(body.data[0]).toHaveProperty('day');
     expect(body.data[0]).toHaveProperty('revenue');
-    expect(body.data[0]).toHaveProperty('transactions');
   });
 });
 
-describe('/api/marketplace/[id]', () => {
-  it('GET returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await getListing(
-      new NextRequest('http://localhost:3000/api/marketplace/any-id'),
-      { params: Promise.resolve({ id: 'any-id' }) },
-    );
-    expect(res.status).toBe(403);
-  });
-
-  it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await purchaseListing(
-      authed('http://localhost:3000/api/marketplace/any-id', { method: 'POST' }),
-      { params: Promise.resolve({ id: 'any-id' }) },
-    );
-    expect(res.status).toBe(403);
-  });
-
-  it('DELETE returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await deleteListing(
-      authed('http://localhost:3000/api/marketplace/any-id', { method: 'DELETE' }),
-      { params: Promise.resolve({ id: 'any-id' }) },
-    );
-    expect(res.status).toBe(403);
-  });
-
-  it('POST returns 401 from inner requireAuth when middleware is bypassed', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
-    const res = await purchaseListing(
-      new NextRequest('http://localhost:3000/api/marketplace/any-id', { method: 'POST' }),
-      { params: Promise.resolve({ id: 'any-id' }) },
-    );
-    expect(res.status).toBe(401);
-  });
-
-  it('DELETE returns 401 from inner requireAuth when middleware is bypassed', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
-    const res = await deleteListing(
-      new NextRequest('http://localhost:3000/api/marketplace/any-id', { method: 'DELETE' }),
-      { params: Promise.resolve({ id: 'any-id' }) },
-    );
-    expect(res.status).toBe(401);
-  });
-
-  let activeListingId: string;
-  let sellerListingId: string;
+describe('/api/marketplace/[id] detail, purchase, withdraw', () => {
+  const seller = seededAddress(710);
+  const sToken = createSessionToken(seller).token;
+  const buyerToken = createSessionToken(seededAddress(711)).token;
+  let listingId: string;
 
   beforeAll(async () => {
-    // Create a listing owned by `addr` for purchase and delete tests
-    const createRes = await createListing(
-      authed('http://localhost:3000/api/marketplace', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          category: 'vitals_timeseries',
-          title: 'Purchasable Dataset',
-          price: 100,
-          expirationDays: 30,
-          anonymizationLevel: 'k-anonymity',
-        }),
-      }),
-    );
-    const createBody = await createRes.json();
-    sellerListingId = createBody.data.id;
-
-    // Get any active listing from the seed data for basic tests
-    const listRes = await listMarketplace(new NextRequest('http://localhost:3000/api/marketplace'));
-    const listBody = await listRes.json();
-    activeListingId = listBody.data[0]?.id;
+    actualService.__resetMarketplaceForTests();
+    const l = await postListing(sToken, { category: 'lab_results', title: 'For Sale', price: 75 });
+    listingId = l.id;
   });
 
-  it('GET returns listing details', async () => {
-    expect(activeListingId).toBeDefined();
-    const res = await getListing(
-      new NextRequest(`http://localhost:3000/api/marketplace/${activeListingId}`),
-      { params: Promise.resolve({ id: activeListingId }) },
-    );
+  it('GET returns listing detail', async () => {
+    const res = await getListing(new NextRequest(`http://localhost:3001/api/marketplace/${listingId}`), { params: Promise.resolve({ id: listingId }) });
     expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.data.id).toBe(activeListingId);
+    expect((await res.json()).data.id).toBe(listingId);
   });
 
-  it('GET returns 404 for nonexistent listing', async () => {
-    const res = await getListing(
-      new NextRequest('http://localhost:3000/api/marketplace/nonexistent'),
-      { params: Promise.resolve({ id: 'nonexistent' }) },
-    );
+  it('GET returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    expect((await getListing(new NextRequest(`http://localhost:3001/api/marketplace/${listingId}`), { params: Promise.resolve({ id: listingId }) })).status).toBe(403);
+  });
+
+  it('GET returns 404 for a missing listing', async () => {
+    const res = await getListing(new NextRequest('http://localhost:3001/api/marketplace/listing-missing'), { params: Promise.resolve({ id: 'listing-missing' }) });
     expect(res.status).toBe(404);
   });
 
-  // ── POST (purchase) tests ──
-
-  it('POST returns 401 from inner requireAuth when middleware is bypassed', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
-    const res = await purchaseListing(
-      new NextRequest(`http://localhost:3000/api/marketplace/${activeListingId}`, { method: 'POST' }),
-      { params: Promise.resolve({ id: activeListingId }) },
-    );
-    expect(res.status).toBe(401);
+  it('POST purchase returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    expect((await purchaseListing(authed(`http://localhost:3001/api/marketplace/${listingId}`, { method: 'POST' }, buyerToken), { params: Promise.resolve({ id: listingId }) })).status).toBe(403);
   });
 
-  it('POST returns 401 when unauthenticated', async () => {
-    const res = await purchaseListing(
-      new NextRequest(`http://localhost:3000/api/marketplace/${activeListingId}`, { method: 'POST' }),
-      { params: Promise.resolve({ id: activeListingId }) },
-    );
-    expect(res.status).toBe(401);
+  it('POST purchase returns 401 when unauthenticated', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(null);
+    expect((await purchaseListing(new NextRequest(`http://localhost:3001/api/marketplace/${listingId}`, { method: 'POST' }), { params: Promise.resolve({ id: listingId }) })).status).toBe(401);
   });
 
-  it('POST returns 404 when listing does not exist', async () => {
-    const res = await purchaseListing(
-      buyerAuthed(`http://localhost:3000/api/marketplace/nonexistent`, { method: 'POST' }),
-      { params: Promise.resolve({ id: 'nonexistent' }) },
-    );
+  it('POST purchase returns 404 for a missing listing', async () => {
+    const res = await purchaseListing(authed('http://localhost:3001/api/marketplace/listing-missing', { method: 'POST' }, buyerToken), { params: Promise.resolve({ id: 'listing-missing' }) });
     expect(res.status).toBe(404);
   });
 
-  it('POST returns 409 when seller tries to buy own listing', async () => {
-    const res = await purchaseListing(
-      authed(`http://localhost:3000/api/marketplace/${sellerListingId}`, { method: 'POST' }),
-      { params: Promise.resolve({ id: sellerListingId }) },
-    );
+  it('POST purchase rejects the seller buying their own listing', async () => {
+    const res = await purchaseListing(authed(`http://localhost:3001/api/marketplace/${listingId}`, { method: 'POST' }, sToken), { params: Promise.resolve({ id: listingId }) });
     expect(res.status).toBe(409);
-    const body = await res.json();
-    expect(body.error.code).toBe('INVALID_PURCHASE');
   });
 
-  it('POST successfully purchases an active listing', async () => {
-    const res = await purchaseListing(
-      buyerAuthed(`http://localhost:3000/api/marketplace/${sellerListingId}`, { method: 'POST' }),
-      { params: Promise.resolve({ id: sellerListingId }) },
-    );
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.buyer).toBe(buyerAddr);
-    expect(body.data.listingId).toBe(sellerListingId);
+  it('POST purchase succeeds, then a repeat purchase is rejected (not active)', async () => {
+    const ok = await purchaseListing(authed(`http://localhost:3001/api/marketplace/${listingId}`, { method: 'POST' }, buyerToken), { params: Promise.resolve({ id: listingId }) });
+    expect(ok.status).toBe(201);
+
+    const repeat = await purchaseListing(authed(`http://localhost:3001/api/marketplace/${listingId}`, { method: 'POST' }, buyerToken), { params: Promise.resolve({ id: listingId }) });
+    expect(repeat.status).toBe(409);
   });
 
-  it('POST returns 409 when listing is already sold', async () => {
-    // The listing was just purchased (status=sold)
-    const res = await purchaseListing(
-      buyerAuthed(`http://localhost:3000/api/marketplace/${sellerListingId}`, { method: 'POST' }),
-      { params: Promise.resolve({ id: sellerListingId }) },
-    );
-    expect(res.status).toBe(409);
-    const body = await res.json();
-    expect(body.error.code).toBe('LISTING_NOT_AVAILABLE');
+  it('DELETE withdraw returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    expect((await deleteListing(authed(`http://localhost:3001/api/marketplace/${listingId}`, { method: 'DELETE' }, sToken), { params: Promise.resolve({ id: listingId }) })).status).toBe(403);
   });
 
-  // ── DELETE (withdraw) tests ──
-
-  it('DELETE returns 401 from inner requireAuth when middleware is bypassed', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(null);
-    const res = await deleteListing(
-      new NextRequest(`http://localhost:3000/api/marketplace/${activeListingId}`, { method: 'DELETE' }),
-      { params: Promise.resolve({ id: activeListingId }) },
-    );
-    expect(res.status).toBe(401);
+  it('DELETE withdraw returns 401 when unauthenticated', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(null);
+    expect((await deleteListing(new NextRequest(`http://localhost:3001/api/marketplace/${listingId}`, { method: 'DELETE' }), { params: Promise.resolve({ id: listingId }) })).status).toBe(401);
   });
 
-  it('DELETE returns 401 when unauthenticated', async () => {
-    const res = await deleteListing(
-      new NextRequest(`http://localhost:3000/api/marketplace/${activeListingId}`, { method: 'DELETE' }),
-      { params: Promise.resolve({ id: activeListingId }) },
-    );
-    expect(res.status).toBe(401);
-  });
-
-  it('DELETE returns 404 for nonexistent listing', async () => {
-    const res = await deleteListing(
-      authed(`http://localhost:3000/api/marketplace/nonexistent`, { method: 'DELETE' }),
-      { params: Promise.resolve({ id: 'nonexistent' }) },
-    );
+  it('DELETE withdraw returns 404 for a missing listing', async () => {
+    const res = await deleteListing(authed('http://localhost:3001/api/marketplace/listing-missing', { method: 'DELETE' }, sToken), { params: Promise.resolve({ id: 'listing-missing' }) });
     expect(res.status).toBe(404);
   });
 
-  it('DELETE returns 403 when non-owner tries to withdraw', async () => {
-    // activeListingId is from seed data, not owned by buyerAddr
-    const res = await deleteListing(
-      buyerAuthed(`http://localhost:3000/api/marketplace/${activeListingId}`, { method: 'DELETE' }),
-      { params: Promise.resolve({ id: activeListingId }) },
-    );
+  it('DELETE withdraw rejects a non-seller', async () => {
+    const fresh = await postListing(sToken, { category: 'lab_results', title: 'Seller Only', price: 60 });
+    const res = await deleteListing(authed(`http://localhost:3001/api/marketplace/${fresh.id}`, { method: 'DELETE' }, buyerToken), { params: Promise.resolve({ id: fresh.id }) });
     expect(res.status).toBe(403);
-    const body = await res.json();
-    expect(body.error.code).toBe('FORBIDDEN');
   });
 
-  it('DELETE successfully withdraws own listing', async () => {
-    // Create a fresh listing to withdraw
-    const createRes = await createListing(
-      authed('http://localhost:3000/api/marketplace', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          category: 'vitals_timeseries',
-          title: 'Withdrawable Dataset',
-          price: 75,
-          expirationDays: 30,
-          anonymizationLevel: 'k-anonymity',
-        }),
-      }),
-    );
-    const createBody = await createRes.json();
-    const withdrawId = createBody.data.id;
-
-    const res = await deleteListing(
-      authed(`http://localhost:3000/api/marketplace/${withdrawId}`, { method: 'DELETE' }),
-      { params: Promise.resolve({ id: withdrawId }) },
-    );
+  it('DELETE withdraw succeeds for the seller', async () => {
+    const fresh = await postListing(sToken, { category: 'lab_results', title: 'Withdraw Me', price: 60 });
+    const res = await deleteListing(authed(`http://localhost:3001/api/marketplace/${fresh.id}`, { method: 'DELETE' }, sToken), { params: Promise.resolve({ id: fresh.id }) });
     expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.data.status).toBe('withdrawn');
-    expect(body.data.id).toBe(withdrawId);
+    expect((await res.json()).data.status).toBe('withdrawn');
   });
 
-  it('DELETE returns 404 when updateMarketplaceListing returns null', async () => {
-    // Create a fresh listing so getMarketplaceListing succeeds and seller check passes
-    const createRes = await createListing(
-      authed('http://localhost:3000/api/marketplace', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          category: 'vitals_timeseries',
-          title: 'Null Update Dataset',
-          price: 25,
-          expirationDays: 30,
-          anonymizationLevel: 'k-anonymity',
-        }),
-      }),
-    );
-    const createBody = await createRes.json();
-    const nullUpdateId = createBody.data.id;
-
-    mockedUpdateMarketplaceListing.mockReturnValueOnce(undefined as never);
-    const res = await deleteListing(
-      authed(`http://localhost:3000/api/marketplace/${nullUpdateId}`, { method: 'DELETE' }),
-      { params: Promise.resolve({ id: nullUpdateId }) },
-    );
+  it('DELETE withdraw returns 404 when the datastore update returns nothing', async () => {
+    const fresh = await postListing(sToken, { category: 'lab_results', title: 'Update Null', price: 60 });
+    mockedUpdate.mockResolvedValueOnce(undefined);
+    const res = await deleteListing(authed(`http://localhost:3001/api/marketplace/${fresh.id}`, { method: 'DELETE' }, sToken), { params: Promise.resolve({ id: fresh.id }) });
     expect(res.status).toBe(404);
   });
 });

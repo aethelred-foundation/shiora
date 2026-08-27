@@ -40,7 +40,7 @@ import {
   BiasHeatmap,
   DecisionPath,
 } from '@/components/xai/XAIComponents';
-import type { SHAPValue, FeatureImportance, ModelCard, BiasReport } from '@/types';
+import type { SHAPValue, FeatureImportance, WorkloadAssessment, BiasReport } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Test Data
@@ -49,23 +49,23 @@ import type { SHAPValue, FeatureImportance, ModelCard, BiasReport } from '@/type
 const mockSHAPValues: SHAPValue[] = [
   { feature: 'Heart Rate', value: 75, baseValue: 72, contribution: 0.25 },
   { feature: 'Blood Pressure', value: 120, baseValue: 115, contribution: -0.15 },
-  { feature: 'BMI', value: 22, baseValue: 25, contribution: 0.10 },
+  { feature: 'BMI', value: 22, baseValue: 25, contribution: 0.1 },
   { feature: 'Age', value: 30, baseValue: 35, contribution: -0.05 },
 ];
 
 const mockFeatures: FeatureImportance[] = [
   { feature: 'Heart Rate', importance: 0.35, direction: 'positive' },
   { feature: 'Blood Pressure', importance: 0.25, direction: 'negative' },
-  { feature: 'BMI', importance: 0.20, direction: 'neutral' },
+  { feature: 'BMI', importance: 0.2, direction: 'neutral' },
   { feature: 'Age', importance: 0.15, direction: 'positive' },
 ];
 
-const mockModelCard: ModelCard = {
+const mockModelCard: WorkloadAssessment = {
   modelId: 'model-1',
   name: 'Health Risk Predictor',
   version: 'v2.1.0',
   description: 'Predicts cardiovascular risk based on patient vitals and history.',
-  architecture: 'Transformer',
+  architecture: 'risk-scoring',
   trainingDataSize: 150000,
   validationAccuracy: 94.5,
   fairnessMetrics: {
@@ -115,11 +115,15 @@ describe('SHAPWaterfall', () => {
 
   it('renders chart container (mocked recharts)', () => {
     const { container } = render(<SHAPWaterfall shapValues={mockSHAPValues} />);
-    expect(container.querySelector('[data-testid="mock-responsive-container"]')).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-testid="mock-responsive-container"]'),
+    ).toBeInTheDocument();
   });
 
   it('applies custom className', () => {
-    const { container } = render(<SHAPWaterfall shapValues={mockSHAPValues} className="custom-shap" />);
+    const { container } = render(
+      <SHAPWaterfall shapValues={mockSHAPValues} className="custom-shap" />,
+    );
     expect(container.firstChild).toHaveClass('custom-shap');
   });
 
@@ -163,11 +167,15 @@ describe('FeatureImportanceChart', () => {
 
   it('renders chart container', () => {
     const { container } = render(<FeatureImportanceChart features={mockFeatures} />);
-    expect(container.querySelector('[data-testid="mock-responsive-container"]')).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-testid="mock-responsive-container"]'),
+    ).toBeInTheDocument();
   });
 
   it('applies custom className', () => {
-    const { container } = render(<FeatureImportanceChart features={mockFeatures} className="custom-fi" />);
+    const { container } = render(
+      <FeatureImportanceChart features={mockFeatures} className="custom-fi" />,
+    );
     expect(container.firstChild).toHaveClass('custom-fi');
   });
 });
@@ -193,7 +201,7 @@ describe('ModelCardViewer', () => {
 
   it('renders architecture', () => {
     render(<ModelCardViewer card={mockModelCard} />);
-    expect(screen.getByText('Transformer Architecture')).toBeInTheDocument();
+    expect(screen.getByText('risk-scoring Architecture')).toBeInTheDocument();
   });
 
   it('renders validation accuracy', () => {

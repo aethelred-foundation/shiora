@@ -1,216 +1,123 @@
 /** @jest-environment node */
 
+jest.mock('@/lib/api/middleware', () => {
+  const actual = jest.requireActual('@/lib/api/middleware');
+  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+});
+
 import { NextRequest, NextResponse } from 'next/server';
-
-const mockRunMiddleware = jest.fn<NextResponse | null, [NextRequest, ...unknown[]]>(() => null);
-
-jest.mock('@/lib/api/middleware', () => ({
-  ...jest.requireActual('@/lib/api/middleware'),
-  runMiddleware: (...args: unknown[]) => mockRunMiddleware(args[0] as NextRequest, ...args.slice(1)),
-}));
-
-import { GET as getFhir } from '@/app/api/fhir/route';
+import { runMiddleware } from '@/lib/api/middleware';
+import { GET as capability } from '@/app/api/fhir/route';
+import { GET as mapping } from '@/app/api/fhir/mapping/route';
 import { POST as importFhir } from '@/app/api/fhir/import/route';
-import { POST as exportFhir } from '@/app/api/fhir/export/route';
-import { GET as getMapping } from '@/app/api/fhir/mapping/route';
+import { GET as exportFhir } from '@/app/api/fhir/export/route';
+import { __resetRecordsForTests } from '@/lib/api/records-service';
+import { __resetAuditLogForTests } from '@/lib/api/audit-log';
+import { createSessionToken } from '@/lib/api/session';
+import { seededAddress } from '@/lib/utils';
+
+const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
+const USER = seededAddress(820);
+const token = createSessionToken(USER).token;
+const URL = 'http://localhost:3000/api/fhir';
+
+function req(method: string, body?: unknown, withToken = false): NextRequest {
+  const headers: Record<string, string> = {};
+  if (withToken) headers.authorization = `Bearer ${token}`;
+  const init: { method: string; headers: Record<string, string>; body?: string } = { method, headers };
+  if (body !== undefined) {
+    headers['content-type'] = 'application/json';
+    init.body = typeof body === 'string' ? body : JSON.stringify(body);
+  }
+  return new NextRequest(URL, init);
+}
+
+const SAMPLE_BUNDLE = {
+  resourceType: 'Bundle',
+  type: 'collection',
+  entry: [
+    { resource: { resourceType: 'Observation', code: { text: 'Glucose' }, valueQuantity: { value: 90, unit: 'mg/dL' } } },
+  ],
+};
 
 beforeEach(() => {
-  mockRunMiddleware.mockReset();
-  mockRunMiddleware.mockReturnValue(null);
+  __resetRecordsForTests();
+  __resetAuditLogForTests();
 });
 
-describe('/api/fhir', () => {
-  it('GET returns FHIR overview', async () => {
-    const res = await getFhir(new NextRequest('http://localhost:3000/api/fhir'));
+afterEach(() => {
+  mockedRunMiddleware.mockImplementation((...args: unknown[]) => {
+    const actual = jest.requireActual('@/lib/api/middleware');
+    return actual.runMiddleware(...args);
+  });
+});
+
+describe('GET /api/fhir (capability)', () => {
+  it('returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    expect((await capability(req('GET'))).status).toBe(403);
+  });
+
+  it('returns the FHIR capability summary', async () => {
+    const res = await capability(req('GET'));
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data).toBeDefined();
-  });
-
-  it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
-    );
-    const res = await getFhir(new NextRequest('http://localhost:3000/api/fhir'));
-    expect(res.status).toBe(429);
+    expect(body.data.fhirVersion).toBe('4.0.1');
+    expect(body.data.supportedResources).toContain('Observation');
   });
 });
 
-describe('/api/fhir/import', () => {
-  it('POST imports FHIR resources', async () => {
-    const res = await importFhir(
-      new NextRequest('http://localhost:3000/api/fhir/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source: 'Hospital EHR System' }),
-      }),
-    );
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.id).toMatch(/^import-/);
-    expect(body.data.source).toBe('Hospital EHR System');
-    expect(body.data.status).toBe('processing');
-    expect(body.data.attestation).toBeDefined();
+describe('GET /api/fhir/mapping', () => {
+  it('returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    expect((await mapping(req('GET'))).status).toBe(403);
   });
 
-  it('POST imports with optional URL', async () => {
-    const res = await importFhir(
-      new NextRequest('http://localhost:3000/api/fhir/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source: 'Clinic', url: 'https://fhir.example.com/Patient' }),
-      }),
-    );
-    expect(res.status).toBe(201);
-  });
-
-  it('POST returns 422 for missing source', async () => {
-    const res = await importFhir(
-      new NextRequest('http://localhost:3000/api/fhir/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      }),
-    );
-    expect(res.status).toBe(422);
-  });
-
-  it('POST returns 422 for invalid URL format', async () => {
-    const res = await importFhir(
-      new NextRequest('http://localhost:3000/api/fhir/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source: 'test', url: 'not-a-url' }),
-      }),
-    );
-    expect(res.status).toBe(422);
-  });
-
-  it('POST re-throws non-ZodError', async () => {
-    await expect(
-      importFhir(
-        new NextRequest('http://localhost:3000/api/fhir/import', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: 'not-valid-json',
-        }),
-      ),
-    ).rejects.toThrow();
-  });
-
-  it('POST returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
-    );
-    const res = await importFhir(
-      new NextRequest('http://localhost:3000/api/fhir/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source: 'test' }),
-      }),
-    );
-    expect(res.status).toBe(429);
-  });
-});
-
-describe('/api/fhir/export', () => {
-  it('POST exports FHIR resources', async () => {
-    const res = await exportFhir(
-      new NextRequest('http://localhost:3000/api/fhir/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          resourceTypes: ['Patient', 'Observation'],
-          destination: 'Research Portal',
-          format: 'json',
-        }),
-      }),
-    );
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.id).toMatch(/^export-/);
-    expect(body.data.format).toBe('json');
-    expect(body.data.resourceTypes).toEqual(['Patient', 'Observation']);
-    expect(body.data.attestation).toBeDefined();
-  });
-
-  it('POST returns 422 for missing resourceTypes', async () => {
-    const res = await exportFhir(
-      new NextRequest('http://localhost:3000/api/fhir/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ destination: 'test' }),
-      }),
-    );
-    expect(res.status).toBe(422);
-  });
-
-  it('POST returns 422 for empty resourceTypes', async () => {
-    const res = await exportFhir(
-      new NextRequest('http://localhost:3000/api/fhir/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resourceTypes: [], destination: 'test' }),
-      }),
-    );
-    expect(res.status).toBe(422);
-  });
-
-  it('POST returns 422 for missing destination', async () => {
-    const res = await exportFhir(
-      new NextRequest('http://localhost:3000/api/fhir/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resourceTypes: ['Patient'] }),
-      }),
-    );
-    expect(res.status).toBe(422);
-  });
-
-  it('POST re-throws non-ZodError', async () => {
-    await expect(
-      exportFhir(
-        new NextRequest('http://localhost:3000/api/fhir/export', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: 'not-valid-json',
-        }),
-      ),
-    ).rejects.toThrow();
-  });
-
-  it('POST returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
-    );
-    const res = await exportFhir(
-      new NextRequest('http://localhost:3000/api/fhir/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resourceTypes: ['Patient'], destination: 'test' }),
-      }),
-    );
-    expect(res.status).toBe(429);
-  });
-});
-
-describe('/api/fhir/mapping', () => {
-  it('GET returns FHIR mapping', async () => {
-    const res = await getMapping(new NextRequest('http://localhost:3000/api/fhir/mapping'));
+  it('returns the resource mapping table', async () => {
+    const res = await mapping(req('GET'));
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data).toBeDefined();
+    expect(Array.isArray(body.data.mappings)).toBe(true);
+    expect(body.data.mappings[0]).toHaveProperty('resourceType');
+  });
+});
+
+describe('POST /api/fhir/import', () => {
+  it('requires authentication', async () => {
+    expect((await importFhir(req('POST', SAMPLE_BUNDLE))).status).toBe(401);
   });
 
-  it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      new NextResponse(JSON.stringify({ error: 'blocked' }), { status: 429 }),
-    );
-    const res = await getMapping(new NextRequest('http://localhost:3000/api/fhir/mapping'));
-    expect(res.status).toBe(429);
+  it('imports a FHIR Bundle into encrypted records', async () => {
+    const res = await importFhir(req('POST', SAMPLE_BUNDLE, true));
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body.data.imported).toBe(1);
+    expect(body.data.recordIds).toHaveLength(1);
+  });
+
+  it('returns 422 for a non-Bundle payload', async () => {
+    const res = await importFhir(req('POST', { resourceType: 'Patient' }, true));
+    expect(res.status).toBe(422);
+    expect((await res.json()).error.code).toBe('FHIR_PARSE_ERROR');
+  });
+
+  it('rethrows on a non-JSON body', async () => {
+    await expect(importFhir(req('POST', 'not-json', true))).rejects.toThrow();
+  });
+});
+
+describe('GET /api/fhir/export', () => {
+  it('requires authentication', async () => {
+    expect((await exportFhir(req('GET'))).status).toBe(401);
+  });
+
+  it('exports the caller records as a FHIR Bundle', async () => {
+    await importFhir(req('POST', SAMPLE_BUNDLE, true));
+    const res = await exportFhir(req('GET', undefined, true));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.resourceType).toBe('Bundle');
+    expect(body.data.entry).toHaveLength(1);
+    expect(body.data.entry[0].resource.code.text).toBe('Glucose');
   });
 });

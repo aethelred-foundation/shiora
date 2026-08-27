@@ -167,36 +167,25 @@ describe('Onboarding', () => {
     expect(onComplete).toHaveBeenCalled();
   });
 
-  it('renders wallet provider options on step 2', () => {
+  it('renders the Aethelred Wallet option on step 2', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={jest.fn()} />
       </TestWrapper>
     );
     fireEvent.click(screen.getByText('Next'));
-    expect(screen.getByText('Keplr Wallet')).toBeInTheDocument();
-    expect(screen.getByText('Leap Wallet')).toBeInTheDocument();
+    expect(screen.getByText('Aethelred Wallet')).toBeInTheDocument();
   });
 
-  it('clicks Keplr Wallet button on step 2', () => {
+  it('clicks the Aethelred Wallet button on step 2', () => {
     render(
       <TestWrapper>
         <Onboarding onComplete={jest.fn()} />
       </TestWrapper>
     );
     fireEvent.click(screen.getByText('Next'));
-    fireEvent.click(screen.getByText('Keplr Wallet'));
-    // Should not crash; the .catch handler is triggered
-  });
-
-  it('clicks Leap Wallet button on step 2', () => {
-    render(
-      <TestWrapper>
-        <Onboarding onComplete={jest.fn()} />
-      </TestWrapper>
-    );
-    fireEvent.click(screen.getByText('Next'));
-    fireEvent.click(screen.getByText('Leap Wallet'));
+    fireEvent.click(screen.getByText('Aethelred Wallet'));
+    // Should not crash; the .catch handler is triggered when no wallet is present.
   });
 
   it('generates encryption keys on step 3', async () => {

@@ -4,20 +4,12 @@
  * GET /api/rewards — List reward entries (with optional action, claimed filters)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { runMiddleware } from '@/lib/api/middleware';
+import { simulatedResponse } from '@/lib/api/maturity';
 
-import type {
-  RewardEntry,
-  RewardAction,
-  ApiResponse,
-} from '@/types';
-import {
-  seededHex,
-  seededPick,
-  seededRandom,
-  seededInt,
-  generateTxHash,
-} from '@/lib/utils';
+import type { RewardEntry, RewardAction } from '@/types';
+import { seededHex, seededPick, seededRandom, seededInt, generateTxHash } from '@/lib/utils';
 import { REWARD_ACTIONS } from '@/lib/constants';
 
 // ---------------------------------------------------------------------------
@@ -66,6 +58,9 @@ const rewards = generateRewards();
 // ---------------------------------------------------------------------------
 
 export async function GET(request: NextRequest) {
+  const blocked = await runMiddleware(request);
+  if (blocked) return blocked;
+
   const { searchParams } = request.nextUrl;
   const action = searchParams.get('action') as RewardAction | null;
   const claimed = searchParams.get('claimed');
@@ -84,11 +79,5 @@ export async function GET(request: NextRequest) {
 
   filtered.sort((a, b) => b.earnedAt - a.earnedAt);
 
-  const body: ApiResponse<RewardEntry[]> = {
-    success: true,
-    data: filtered,
-    timestamp: new Date().toISOString(),
-  };
-
-  return NextResponse.json(body);
+  return simulatedResponse(filtered, 'blockchain_anchoring');
 }

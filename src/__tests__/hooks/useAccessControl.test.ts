@@ -2,7 +2,28 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppProvider } from '@/contexts/AppContext';
-import { useAccessControl } from '@/hooks/useAccessControl';
+import {
+  toGrantCreatePayload,
+  useAccessControl,
+} from '@/hooks/useAccessControl';
+
+const mockWalletConnected = true;
+const mockSignMessage = jest.fn(async ({ message }: { message: string }) => ({
+  message,
+  signature: `0x${'11'.repeat(65)}`,
+  publicKey: '',
+}));
+jest.mock('@/contexts/AppContext', () => ({
+  AppProvider: ({ children }: { children: React.ReactNode }) => children,
+  useApp: () => ({
+    wallet: { connected: mockWalletConnected },
+    addNotification: jest.fn(),
+  }),
+}));
+jest.mock('@/hooks/useWallet', () => ({
+  useWallet: () => ({ signMessage: mockSignMessage }),
+}));
+
 
 function createWrapper() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } } });
@@ -12,6 +33,27 @@ function createWrapper() {
 }
 
 describe('useAccessControl', () => {
+  beforeEach(() => {
+    mockSignMessage.mockClear();
+  });
+
+  it('uses a nonempty provider label for a manually entered address', () => {
+    expect(
+      toGrantCreatePayload({
+        providerAddress: '0x1111111111111111111111111111111111111111',
+        providerName: '',
+        specialty: 'General Practice',
+        scope: 'Full Records',
+        durationDays: 30,
+        permissions: {
+          canView: true,
+          canDownload: false,
+          canShare: false,
+        },
+      }).provider,
+    ).toBe('Custom Provider');
+  });
+
   it('initializes with loading state', () => {
     const { result } = renderHook(() => useAccessControl(), { wrapper: createWrapper() });
     expect(result.current.isLoadingGrants).toBe(true);
@@ -46,14 +88,60 @@ describe('useAccessControl', () => {
 
     await act(async () => {
       result.current.createGrant.mutate({
-        providerAddress: 'aeth1test',
+        providerAddress: '0x1111111111111111111111111111111111111111',
+        providerName: 'Dr. Test',
+        specialty: 'General Practice',
         scope: 'Full Records',
         durationDays: 90,
-      } as any);
+        permissions: { canView: true, canDownload: false, canShare: false },
+      });
     });
 
     await waitFor(() => expect(result.current.createGrant.isLoading).toBe(false));
     expect(result.current.createGrant.error).toBeNull();
+    expect(mockSignMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('Authorize Access Grant') }),
+    );
+  });
+
+  it('maps the UI form to the flat API DTO and attaches wallet authorization', async () => {
+    const { result } = renderHook(() => useAccessControl(), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.isLoadingGrants).toBe(false));
+
+    await act(async () => {
+      await result.current.createGrant.mutateAsync({
+        providerAddress: '0x2222222222222222222222222222222222222222',
+        providerName: 'Dr. Rivera',
+        specialty: 'Cardiology',
+        scope: 'Lab Results Only',
+        durationDays: 30,
+        permissions: { canView: true, canDownload: true, canShare: false },
+      });
+    });
+
+    const accessPost = (global.fetch as jest.Mock).mock.calls.find(([input, init]) => {
+      const url = typeof input === 'string' ? input : String(input);
+      return url === '/api/access' && init?.method === 'POST';
+    });
+    expect(accessPost).toBeDefined();
+    const body = JSON.parse(String(accessPost![1].body));
+    expect(body).toMatchObject({
+      provider: 'Dr. Rivera',
+      specialty: 'Cardiology',
+      address: '0x2222222222222222222222222222222222222222',
+      scope: 'Lab Results Only',
+      durationDays: 30,
+      canView: true,
+      canDownload: true,
+      canShare: false,
+      authorization: {
+        signature: `0x${'11'.repeat(65)}`,
+        nonce: 'mock-grant-nonce-123',
+        hmac: 'mock-grant-hmac',
+      },
+    });
+    expect(body).not.toHaveProperty('providerAddress');
+    expect(body).not.toHaveProperty('permissions');
   });
 
   it('revokeGrant mutation completes successfully', async () => {
@@ -162,10 +250,13 @@ describe('useAccessControl', () => {
 
     await act(async () => {
       result.current.createGrant.mutate({
-        providerAddress: 'aeth1bad',
+        providerAddress: '0x3333333333333333333333333333333333333333',
+        providerName: 'Bad Provider',
+        specialty: 'General Practice',
         scope: 'Full Records',
         durationDays: 90,
-      } as any);
+        permissions: { canView: true, canDownload: false, canShare: false },
+      });
     });
 
     await waitFor(() => expect(result.current.createGrant.isLoading).toBe(false));

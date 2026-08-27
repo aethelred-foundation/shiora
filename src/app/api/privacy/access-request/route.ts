@@ -1,23 +1,25 @@
 /**
  * Shiora on Aethelred — Privacy Access Request API Route
  *
- * POST /api/privacy/access-request — Submit a GDPR data access request (Article 15)
+ * POST /api/privacy/access-request — GDPR right of access (Article 15).
+ * Returns the authenticated data subject's complete data across the datastore.
  */
 
 import { NextRequest } from 'next/server';
+import { randomUUID } from 'node:crypto';
 
 import type { PrivacyRequest } from '@/types';
-import { seededHex } from '@/lib/utils';
-import { runMiddleware } from '@/lib/api/middleware';
+import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
-
-// ---------------------------------------------------------------------------
-// POST /api/privacy/access-request
-// ---------------------------------------------------------------------------
+import { collectUserData } from '@/lib/api/privacy';
+import { audit } from '@/lib/api/audit';
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
+
+  const auth = requireAuth(request);
+  if ('status' in auth) return auth;
 
   try {
     const body = await request.json();
@@ -31,22 +33,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const seed = Date.now();
+    const owner = auth.walletAddress!;
+    const data = await collectUserData(owner);
+
     const privacyRequest: PrivacyRequest = {
-      id: `priv-${seededHex(seed, 12)}`,
+      id: `priv-${randomUUID().replace(/-/g, '')}`,
       type: 'access',
-      status: 'pending',
+      status: 'completed',
       requestedAt: Date.now(),
-      details: 'Request full export of selected personal health data categories',
+      completedAt: Date.now(),
+      details: `Access fulfilled: ${data.records.length} records, ${data.consents.length} consents, ${data.accessGrants.length} access grants.`,
       dataCategories: categories,
     };
 
-    return successResponse(privacyRequest, HTTP.CREATED);
+    audit({
+      action: 'DATA_EXPORT',
+      actor: owner,
+      resource: 'privacy',
+      resourceId: privacyRequest.id,
+      success: true,
+      metadata: { type: 'access' },
+    });
+
+    return successResponse({ request: privacyRequest, data }, HTTP.CREATED);
   } catch {
-    return errorResponse(
-      'INTERNAL_ERROR',
-      'Failed to submit access request',
-      HTTP.INTERNAL,
-    );
+    return errorResponse('INTERNAL_ERROR', 'Failed to fulfill access request', HTTP.INTERNAL);
   }
 }

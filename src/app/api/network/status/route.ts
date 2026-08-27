@@ -4,23 +4,41 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
-import { generateNetworkStatus } from '@/lib/api/mock-data';
+import { errorResponse, HTTP, successResponse } from '@/lib/api/responses';
+import { getLiveNetworkStatus, NetworkRpcError } from '@/lib/api/network-status';
 
 // ────────────────────────────────────────────────────────────
 // GET /api/network/status
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
-  const network = generateNetworkStatus();
+  const endpoint = process.env.SHIORA_L1_RPC_URL;
+  if (!endpoint) {
+    return errorResponse(
+      'NETWORK_RPC_NOT_CONFIGURED',
+      'Live Aethelred network telemetry is not configured.',
+      HTTP.SERVICE_UNAVAILABLE,
+    );
+  }
 
-  return successResponse(network, 200, {
-    chain: 'Aethelred',
-    chainId: 'aethelred-1',
-    queriedAt: new Date().toISOString(),
-  });
+  const blockParam = request.nextUrl.searchParams.get('block');
+  const requestedBlock = blockParam === null ? undefined : Number(blockParam);
+
+  try {
+    const network = await getLiveNetworkStatus(endpoint, requestedBlock);
+    return successResponse(network, HTTP.OK, {
+      chain: 'Aethelred',
+      queriedAt: new Date().toISOString(),
+      source: 'evm-json-rpc',
+    });
+  } catch (error) {
+    if (error instanceof NetworkRpcError) {
+      return errorResponse('NETWORK_RPC_UNAVAILABLE', error.message, 502);
+    }
+    throw error;
+  }
 }

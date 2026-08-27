@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraMarketplace
- * @author Shiora Health AI on Aethelred
  * @notice Health data marketplace where users can list anonymized, TEE-verified
  *         health datasets for purchase with SHIO tokens. Revenue is split between
  *         the seller (85%), the protocol treasury (10%), and stakers (5%).

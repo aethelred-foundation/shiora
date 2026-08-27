@@ -36,7 +36,6 @@ jest.mock('@/contexts/AppContext', () => {
 
 const defaultDisconnectedApp = {
   wallet: { connected: false, address: '', balance: 0, aethelBalance: 0 },
-  realTime: { blockHeight: 100000, tps: 1200, epoch: 42, networkLoad: 65, activeValidators: 150, stakedPercentage: 72 },
   notifications: [],
   addNotification: jest.fn(),
   removeNotification: jest.fn(),
@@ -48,7 +47,12 @@ const defaultDisconnectedApp = {
 
 const defaultConnectedApp = {
   ...defaultDisconnectedApp,
-  wallet: { connected: true, address: 'aeth1abcdef1234567890abcdef1234567890abcdef', balance: 1000, aethelBalance: 500.5 },
+  wallet: {
+    connected: true,
+    address: 'aeth1abcdef1234567890abcdef1234567890abcdef',
+    balance: 1000,
+    aethelBalance: 500.5,
+  },
 };
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
@@ -70,7 +74,7 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Connect Wallet')).toBeInTheDocument();
   });
@@ -79,110 +83,105 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
-    expect(screen.getByText('Choose your preferred wallet to connect to Shiora')).toBeInTheDocument();
+    expect(
+      screen.getByText('Choose your preferred wallet to connect to Shiora'),
+    ).toBeInTheDocument();
   });
 
   it('shows wallet options in connect modal', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
-    expect(screen.getByText('Keplr')).toBeInTheDocument();
-    expect(screen.getByText('Leap')).toBeInTheDocument();
+    expect(screen.getByText('Aethelred Wallet')).toBeInTheDocument();
+    expect(screen.getByText('Aethelred Wallet')).toBeInTheDocument();
   });
 
-  it('shows network selector in connect modal', () => {
+  it('pins the connect modal to the public testnet', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
-    expect(screen.getByText('Mainnet')).toBeInTheDocument();
-    expect(screen.getByText('Testnet')).toBeInTheDocument();
-  });
-
-  it('switches network when testnet is clicked', () => {
-    render(
-      <TestWrapper>
-        <WalletConnect />
-      </TestWrapper>
-    );
-    fireEvent.click(screen.getByText('Connect Wallet'));
-    fireEvent.click(screen.getByText('Testnet'));
-    expect(screen.getByText('Aethelred Testnet')).toBeInTheDocument();
-  });
-
-  it('switches network back to mainnet', () => {
-    render(
-      <TestWrapper>
-        <WalletConnect />
-      </TestWrapper>
-    );
-    fireEvent.click(screen.getByText('Connect Wallet'));
-    fireEvent.click(screen.getByText('Testnet'));
-    fireEvent.click(screen.getByText('Mainnet'));
-    expect(screen.getByText('Aethelred Mainnet')).toBeInTheDocument();
-  });
-
-  it('shows default Aethelred Mainnet info', () => {
-    render(
-      <TestWrapper>
-        <WalletConnect />
-      </TestWrapper>
-    );
-    fireEvent.click(screen.getByText('Connect Wallet'));
-    expect(screen.getByText('Aethelred Mainnet')).toBeInTheDocument();
+    expect(screen.getByText('Aethelred Public Testnet')).toBeInTheDocument();
+    expect(screen.queryByText('Mainnet')).not.toBeInTheDocument();
   });
 
   it('renders wallet descriptions', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
-    const descriptions = screen.getAllByText('Cosmos ecosystem wallet');
-    expect(descriptions.length).toBe(2);
+    const descriptions = screen.getAllByText('The one wallet for the Aethelred ecosystem');
+    expect(descriptions.length).toBe(1);
   });
 
   it('closes connect modal when onClose is triggered', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
-    expect(screen.getByText('Keplr')).toBeInTheDocument();
+    expect(screen.getByText('Aethelred Wallet')).toBeInTheDocument();
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByText('Choose your preferred wallet to connect to Shiora')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Choose your preferred wallet to connect to Shiora'),
+    ).not.toBeInTheDocument();
   });
 
-  it('attempts to connect when Keplr is clicked', async () => {
+  it('attempts to connect when the Aethelred Wallet is clicked', async () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
-    fireEvent.click(screen.getByText('Keplr'));
-    expect(mockConnect).toHaveBeenCalledWith('keplr', 'mainnet');
+    fireEvent.click(screen.getByText('Aethelred Wallet'));
+    expect(mockConnect).toHaveBeenCalledWith('aethelred', 'testnet');
   });
 
-  it('attempts to connect when Leap is clicked', async () => {
+  it('offers MetaMask as a second wallet option and connects with it', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
-    fireEvent.click(screen.getByText('Leap'));
-    expect(mockConnect).toHaveBeenCalledWith('leap', 'mainnet');
+    expect(screen.getByText('MetaMask')).toBeInTheDocument();
+    expect(screen.getByText('Connect with the MetaMask browser extension')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('MetaMask'));
+    expect(mockConnect).toHaveBeenCalledWith('metamask', 'testnet');
+  });
+
+  it('marks the Aethelred Wallet as the recommended option', () => {
+    render(
+      <TestWrapper>
+        <WalletConnect />
+      </TestWrapper>,
+    );
+    fireEvent.click(screen.getByText('Connect Wallet'));
+    expect(screen.getByText('Recommended')).toBeInTheDocument();
+  });
+
+  it('invokes connect with the selected network', async () => {
+    render(
+      <TestWrapper>
+        <WalletConnect />
+      </TestWrapper>,
+    );
+    fireEvent.click(screen.getByText('Connect Wallet'));
+    fireEvent.click(screen.getByText('Aethelred Wallet'));
+    expect(mockConnect).toHaveBeenCalledWith('aethelred', 'testnet');
   });
 
   // ─── handleConnect error (line 113, 115) ───
@@ -192,11 +191,11 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     await act(async () => {
-      fireEvent.click(screen.getByText('Keplr'));
+      fireEvent.click(screen.getByText('Aethelred Wallet'));
     });
     await waitFor(() => {
       expect(screen.getByText('Connection rejected')).toBeInTheDocument();
@@ -208,11 +207,11 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     await act(async () => {
-      fireEvent.click(screen.getByText('Keplr'));
+      fireEvent.click(screen.getByText('Aethelred Wallet'));
     });
     await waitFor(() => {
       expect(screen.getByText('Connection failed')).toBeInTheDocument();
@@ -226,24 +225,10 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     expect(screen.getByText('Wallet extension not found')).toBeInTheDocument();
-  });
-
-  // ─── Connect with testnet network ───
-
-  it('connects with testnet network', async () => {
-    render(
-      <TestWrapper>
-        <WalletConnect />
-      </TestWrapper>
-    );
-    fireEvent.click(screen.getByText('Connect Wallet'));
-    fireEvent.click(screen.getByText('Testnet'));
-    fireEvent.click(screen.getByText('Keplr'));
-    expect(mockConnect).toHaveBeenCalledWith('keplr', 'testnet');
   });
 
   // ─── Modal closes after successful connection (line 113) ───
@@ -253,15 +238,17 @@ describe('WalletConnect - disconnected state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
     await act(async () => {
-      fireEvent.click(screen.getByText('Keplr'));
+      fireEvent.click(screen.getByText('Aethelred Wallet'));
     });
     // Modal should close after connect succeeds
     await waitFor(() => {
-      expect(screen.queryByText('Choose your preferred wallet to connect to Shiora')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Choose your preferred wallet to connect to Shiora'),
+      ).not.toBeInTheDocument();
     });
   });
 });
@@ -277,11 +264,6 @@ describe('WalletConnect - connected state', () => {
   it('shows wallet address when connected', () => {
     render(<WalletConnect />);
     expect(screen.queryByText('Connect Wallet')).not.toBeInTheDocument();
-  });
-
-  it('shows transaction history button in dropdown', () => {
-    render(<WalletConnect />);
-    expect(screen.getByText('Transaction History')).toBeInTheDocument();
   });
 
   it('shows sign message button in dropdown', () => {
@@ -300,26 +282,12 @@ describe('WalletConnect - connected state', () => {
     expect(mockDisconnect).toHaveBeenCalled();
   });
 
-  it('opens transaction history drawer', () => {
-    render(<WalletConnect />);
-    fireEvent.click(screen.getByText('Transaction History'));
-    expect(screen.getAllByText(/confirmed|pending/).length).toBeGreaterThan(0);
-  });
-
-  it('closes transaction history drawer via close button', () => {
-    render(<WalletConnect />);
-    fireEvent.click(screen.getByText('Transaction History'));
-    // Drawer should be open
-    expect(screen.getAllByText(/confirmed|pending/).length).toBeGreaterThan(0);
-    // Close the drawer via the Close button (aria-label="Close")
-    const closeBtn = screen.getByLabelText('Close');
-    fireEvent.click(closeBtn);
-  });
-
   it('opens sign message modal', () => {
     render(<WalletConnect />);
     fireEvent.click(screen.getByText('Sign Message'));
-    expect(screen.getByText('Sign a message with your wallet to prove ownership')).toBeInTheDocument();
+    expect(
+      screen.getByText('Sign a message with your wallet to prove ownership'),
+    ).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Enter message to sign...')).toBeInTheDocument();
   });
 
@@ -365,12 +333,22 @@ describe('WalletConnect - connected state', () => {
 
   it('shows network indicator', () => {
     render(<WalletConnect />);
-    expect(screen.getByText('Mainnet')).toBeInTheDocument();
+    expect(screen.getByText('Public Testnet')).toBeInTheDocument();
   });
 
   it('shows $AETHEL balance', () => {
     render(<WalletConnect />);
     expect(screen.getByText('$AETHEL')).toBeInTheDocument();
+    expect(screen.getByText('501')).toBeInTheDocument(); // formatNumber(500.5), no dash
+  });
+
+  it('shows an em-dash when the balance is unknown, never an invented number (audit L-01)', () => {
+    mockUseApp.mockReturnValue({
+      ...defaultConnectedApp,
+      wallet: { ...defaultConnectedApp.wallet, aethelBalance: null },
+    });
+    render(<WalletConnect />);
+    expect(screen.getByText('—')).toBeInTheDocument();
   });
 
   it('closes sign modal and clears state', () => {
@@ -385,7 +363,11 @@ describe('WalletConnect - connected state', () => {
   it('shows Signing... state while signing', async () => {
     // Make signMessage hang so we can capture the signing state
     let resolveSign!: (value: { signature: string }) => void;
-    mockSignMessage.mockReturnValue(new Promise((resolve) => { resolveSign = resolve; }));
+    mockSignMessage.mockReturnValue(
+      new Promise((resolve) => {
+        resolveSign = resolve;
+      }),
+    );
 
     render(<WalletConnect />);
     fireEvent.click(screen.getByText('Sign Message'));
@@ -419,12 +401,12 @@ describe('WalletConnect — loading state', () => {
     render(
       <TestWrapper>
         <WalletConnect />
-      </TestWrapper>
+      </TestWrapper>,
     );
     fireEvent.click(screen.getByText('Connect Wallet'));
 
     // Wallet options should be visible and disabled
-    const keplrButton = screen.getByText('Keplr').closest('button');
-    expect(keplrButton).toBeDisabled();
+    const walletButton = screen.getByText('Aethelred Wallet').closest('button');
+    expect(walletButton).toBeDisabled();
   });
 });

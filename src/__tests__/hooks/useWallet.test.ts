@@ -1,8 +1,8 @@
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppProvider, useApp } from '@/contexts/AppContext';
-import { useWallet, KeplrProvider } from '@/hooks/useWallet';
+import { useWallet, type Eip1193Provider } from '@/hooks/useWallet';
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -20,34 +20,40 @@ function createWrapper() {
   };
 }
 
-function createMockKeplr(): KeplrProvider {
-  return {
-    enable: jest.fn().mockResolvedValue(undefined),
-    getKey: jest.fn().mockResolvedValue({
-      name: 'Test Key',
-      algo: 'secp256k1',
-      pubKey: new Uint8Array(33),
-      address: new Uint8Array(20),
-      bech32Address: 'aeth1mockaddress1234567890abcdef',
-    }),
-    signArbitrary: jest.fn().mockResolvedValue({
-      signature: btoa('mocksignature1234567890'),
-      pub_key: { value: btoa('mockpubkey12345') },
-    }),
-  };
+const TEST_ACCOUNT = '0x00000000000000000000000000000000000a1b2c';
+
+/**
+ * A mock Aethelred Wallet (EIP-1193) provider. Responds to eth_requestAccounts
+ * with a 0x account and to personal_sign with a well-formed 65-byte signature.
+ */
+function createMockWallet(overrides: Partial<Record<string, unknown>> = {}): Eip1193Provider {
+  const request = jest.fn(async ({ method }: { method: string }) => {
+    if (method === 'eth_requestAccounts') return [TEST_ACCOUNT];
+    if (method === 'eth_chainId') return '0x1ca4';
+    if (method === 'personal_sign') return '0x' + '11'.repeat(65);
+    if (method === 'eth_sendTransaction') return '0x' + '22'.repeat(32);
+    return null;
+  });
+  return { request, isAethelred: true, ...overrides } as Eip1193Provider;
 }
 
-describe('useWallet', () => {
+function injectWallet(provider: Eip1193Provider | null) {
+  if (provider) {
+    (window as unknown as Record<string, unknown>).ethereum = provider;
+  } else {
+    delete (window as unknown as Record<string, unknown>).ethereum;
+  }
+}
+
+describe('useWallet (Aethelred Wallet / EIP-1193)', () => {
   beforeEach(() => {
     localStorage.clear();
-    delete (window as unknown as Record<string, unknown>).keplr;
-    delete (window as unknown as Record<string, unknown>).leap;
+    injectWallet(null);
   });
 
   it('starts in disconnected state', () => {
     const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
     expect(result.current.isConnected).toBe(false);
-    expect(result.current.wallet.connected).toBe(false);
     expect(result.current.wallet.address).toBe('');
     expect(result.current.activeProvider).toBeNull();
     expect(result.current.isLoading).toBe(false);
@@ -59,13 +65,18 @@ describe('useWallet', () => {
     expect(result.current.displayAddress).toBe('');
   });
 
-  it('isProviderAvailable returns false when no extension', () => {
+  it('isProviderAvailable is false when no wallet is injected', () => {
     const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-    expect(result.current.isProviderAvailable('keplr')).toBe(false);
-    expect(result.current.isProviderAvailable('leap')).toBe(false);
+    expect(result.current.isProviderAvailable('aethelred')).toBe(false);
   });
 
-  it('exposes connect, disconnect, signMessage, signTransaction functions', () => {
+  it('isProviderAvailable is true when the Aethelred Wallet is injected', () => {
+    injectWallet(createMockWallet());
+    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
+    expect(result.current.isProviderAvailable('aethelred')).toBe(true);
+  });
+
+  it('exposes connect, disconnect, signMessage, signTransaction', () => {
     const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
     expect(typeof result.current.connect).toBe('function');
     expect(typeof result.current.disconnect).toBe('function');
@@ -75,9 +86,9 @@ describe('useWallet', () => {
 
   it('signMessage throws when not connected', async () => {
     const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-    await expect(
-      result.current.signMessage({ message: 'test' }),
-    ).rejects.toThrow('Wallet not connected');
+    await expect(result.current.signMessage({ message: 'test' })).rejects.toThrow(
+      'Wallet not connected',
+    );
   });
 
   it('signTransaction throws when not connected', async () => {
@@ -93,251 +104,489 @@ describe('useWallet', () => {
     ).rejects.toThrow('Wallet not connected');
   });
 
-  it('connect throws when provider not available', async () => {
+  it('connect fails clearly when the Aethelred Wallet is not installed', async () => {
     const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-    // No keplr or leap injected in test env
-    let caughtError: Error | undefined;
+    let caught: Error | undefined;
     await act(async () => {
       try {
-        await result.current.connect('keplr');
+        await result.current.connect('aethelred');
       } catch (e) {
-        caughtError = e as Error;
+        caught = e as Error;
       }
     });
-    expect(caughtError).toBeDefined();
-    expect(result.current.error).toBeTruthy();
+    expect(caught).toBeDefined();
+    expect(result.current.error).toMatch(/Aethelred Wallet not found/);
   });
 
-  it('connect throws for unsupported provider', async () => {
+  it('fails loudly when the session cookie does not stick (post-connect probe)', async () => {
+    const wallet = createMockWallet();
+    injectWallet(wallet);
+    // Simulate a browser that dropped the Secure-only cookie: the probe 401s.
+    const realFetch = global.fetch;
+    global.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/api/me')) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: { code: 'UNAUTHORIZED', message: 'no session' },
+          }),
+          { status: 401, headers: { 'content-type': 'application/json' } },
+        );
+      }
+      return realFetch(input as RequestInfo, init);
+    }) as typeof fetch;
+
     const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-    await expect(
-      result.current.connect('unknown' as 'keplr'),
-    ).rejects.toThrow('not supported');
+    try {
+      let caught: Error | undefined;
+      await act(async () => {
+        try {
+          await result.current.connect('aethelred', 'testnet');
+        } catch (e) {
+          caught = e as Error;
+        }
+      });
+      expect(caught?.message).toMatch(/did not keep the session cookie/);
+      expect(result.current.isConnected).toBe(false);
+    } finally {
+      global.fetch = realFetch;
+    }
   });
 
-  it('disconnect clears state', () => {
-    const { result } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
-
-    // First connect via AppContext to simulate connected state
-    act(() => {
-      result.current.app.connectWalletWithData('aeth1longaddressfortruncation', 1000, 'keplr', 'aethelred-1');
-    });
-    expect(result.current.wallet.isConnected).toBe(true);
-
-    // Now disconnect
-    act(() => {
-      result.current.wallet.disconnect();
-    });
-    expect(result.current.wallet.isConnected).toBe(false);
-    expect(result.current.wallet.error).toBeNull();
-  });
-
-  it('displayAddress truncates long addresses', () => {
-    const { result } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
-
-    act(() => {
-      result.current.app.connectWalletWithData(
-        'aeth1abcdef1234567890xyzxyzxyz',
-        1000,
-      );
-    });
-
-    expect(result.current.wallet.displayAddress).toMatch(/^aeth1abcde\.\.\.xyzxyz$/);
-  });
-
-  it('displayAddress returns short address as-is', () => {
-    const { result } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
-
-    act(() => {
-      result.current.app.connectWalletWithData('aeth1short', 100);
-    });
-
-    // Short addresses (<=16 chars) returned unchanged
-    expect(result.current.wallet.displayAddress).toBe('aeth1short');
-  });
-
-  it('isProviderAvailable detects keplr when injected', () => {
-    (window as unknown as Record<string, unknown>).keplr = {};
+  it('connect succeeds via the Aethelred Wallet (requestAccounts + personal_sign)', async () => {
+    const wallet = createMockWallet();
+    injectWallet(wallet);
     const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-    expect(result.current.isProviderAvailable('keplr')).toBe(true);
-    expect(result.current.isProviderAvailable('leap')).toBe(false);
-  });
 
-  it('isProviderAvailable detects leap when injected', () => {
-    (window as unknown as Record<string, unknown>).leap = {};
-    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-    expect(result.current.isProviderAvailable('leap')).toBe(true);
-  });
-
-  it('isProviderAvailable returns false for unknown provider', () => {
-    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-    expect(result.current.isProviderAvailable('unknown' as 'keplr')).toBe(false);
-  });
-
-  it('signMessage throws when no provider even if connected', async () => {
-    const { result } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
-
-    // Connect without a real provider
-    act(() => {
-      result.current.app.connectWalletWithData('aeth1abc123def456ghi', 1000);
+    await act(async () => {
+      await result.current.connect('aethelred', 'testnet');
     });
 
-    await expect(
-      result.current.wallet.signMessage({ message: 'test' }),
-    ).rejects.toThrow('No wallet provider available');
+    expect(result.current.isConnected).toBe(true);
+    expect(result.current.activeProvider).toBe('aethelred');
+    expect(result.current.error).toBeNull();
+    // Drove the real EIP-1193 methods.
+    expect(wallet.request).toHaveBeenCalledWith({ method: 'eth_requestAccounts' });
+    expect(wallet.request).toHaveBeenCalledWith({ method: 'eth_chainId' });
+    expect(wallet.request).toHaveBeenCalledWith(
+      expect.objectContaining({ method: 'personal_sign' }),
+    );
   });
 
-  it('signTransaction returns hash when connected', async () => {
-    const { result } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
+  it('connect rejects when no account is authorised', async () => {
+    const wallet = createMockWallet({
+      request: jest.fn(async ({ method }: { method: string }) =>
+        method === 'eth_requestAccounts' ? [] : null,
+      ),
+    });
+    injectWallet(wallet);
+    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
 
+    await act(async () => {
+      await result.current.connect('aethelred').catch(() => {});
+    });
+    expect(result.current.isConnected).toBe(false);
+    expect(result.current.error).toMatch(/No account was authorised/);
+  });
+
+  it('switches to chain 7332 before authenticating when the wallet is on another chain', async () => {
+    let activeChainId = '0x1';
+    const wallet = createMockWallet({
+      request: jest.fn(async ({ method }: { method: string }) => {
+        if (method === 'eth_requestAccounts') return [TEST_ACCOUNT];
+        if (method === 'eth_chainId') return activeChainId;
+        if (method === 'wallet_switchEthereumChain') {
+          activeChainId = '0x1ca4';
+          return null;
+        }
+        if (method === 'personal_sign') return '0x' + '11'.repeat(65);
+        return null;
+      }),
+    });
+    injectWallet(wallet);
+    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.connect('aethelred', 'testnet');
+    });
+
+    expect(wallet.request).toHaveBeenCalledWith({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x1ca4' }],
+    });
+    expect(result.current.wallet.chainId).toBe('7332');
+  });
+
+  it.each([
+    ['malformed', 'not-a-chain-id'],
+    ['outside the safe integer range', '0x20000000000000'],
+  ])(
+    'switches from a %s provider chain ID before authenticating',
+    async (_label, initialChainId) => {
+      let activeChainId = initialChainId;
+      const wallet = createMockWallet({
+        request: jest.fn(async ({ method }: { method: string }) => {
+          if (method === 'eth_requestAccounts') return [TEST_ACCOUNT];
+          if (method === 'eth_chainId') return activeChainId;
+          if (method === 'wallet_switchEthereumChain') {
+            activeChainId = '0x1ca4';
+            return null;
+          }
+          if (method === 'personal_sign') return '0x' + '11'.repeat(65);
+          return null;
+        }),
+      });
+      injectWallet(wallet);
+      const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
+
+      await act(async () => {
+        await result.current.connect('aethelred', 'testnet');
+      });
+
+      expect(wallet.request).toHaveBeenCalledWith({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0x1ca4' }],
+      });
+      expect(result.current.isConnected).toBe(true);
+    },
+  );
+
+  it('fails closed when chain 7332 is not configured in the wallet', async () => {
+    const missingChain = Object.assign(new Error('Unknown chain'), { code: 4902 });
+    const wallet = createMockWallet({
+      request: jest.fn(async ({ method }: { method: string }) => {
+        if (method === 'eth_requestAccounts') return [TEST_ACCOUNT];
+        if (method === 'eth_chainId') return '0x1';
+        if (method === 'wallet_switchEthereumChain') throw missingChain;
+        return null;
+      }),
+    });
+    injectWallet(wallet);
+    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.connect('aethelred', 'testnet').catch(() => {});
+    });
+
+    expect(result.current.isConnected).toBe(false);
+    expect(result.current.error).toMatch(/official chain 7332 network profile/);
+  });
+
+  it.each([
+    ['missing error code', new Error('User rejected the network switch')],
+    ['non-numeric error code', { code: '4902' }],
+  ])('fails closed when the network switch has %s', async (_label, switchError) => {
+    const wallet = createMockWallet({
+      request: jest.fn(async ({ method }: { method: string }) => {
+        if (method === 'eth_requestAccounts') return [TEST_ACCOUNT];
+        if (method === 'eth_chainId') return '0x1';
+        if (method === 'wallet_switchEthereumChain') throw switchError;
+        return null;
+      }),
+    });
+    injectWallet(wallet);
+    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.connect('aethelred', 'testnet').catch(() => {});
+    });
+
+    expect(result.current.isConnected).toBe(false);
+    expect(result.current.error).toMatch(/Switch the wallet.*chain 7332/);
+  });
+
+  it('fails closed when the wallet reports the old chain after a successful switch request', async () => {
+    const wallet = createMockWallet({
+      request: jest.fn(async ({ method }: { method: string }) => {
+        if (method === 'eth_requestAccounts') return [TEST_ACCOUNT];
+        if (method === 'eth_chainId') return '0x1';
+        if (method === 'wallet_switchEthereumChain') return null;
+        return null;
+      }),
+    });
+    injectWallet(wallet);
+    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.connect('aethelred', 'testnet').catch(() => {});
+    });
+
+    expect(result.current.isConnected).toBe(false);
+    expect(result.current.error).toMatch(/did not switch.*chain 7332/);
+  });
+
+  it('connect surfaces a user rejection from the wallet', async () => {
+    const wallet = createMockWallet({
+      request: jest.fn(async () => {
+        throw new Error('User rejected the request');
+      }),
+    });
+    injectWallet(wallet);
+    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.connect('aethelred').catch(() => {});
+    });
+    expect(result.current.error).toBe('User rejected the request');
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  it('connect uses a non-Error thrown value default message', async () => {
+    const wallet = createMockWallet({
+      request: jest.fn(async () => {
+        throw 'string error';
+      }),
+    });
+    injectWallet(wallet);
+    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.connect('aethelred').catch(() => {});
+    });
+    expect(result.current.error).toBe('Failed to connect wallet');
+  });
+
+  it('signMessage returns a signature after connect', async () => {
+    injectWallet(createMockWallet());
+    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.connect('aethelred');
+    });
+
+    let sig: { message: string; signature: string; publicKey: string } | undefined;
+    await act(async () => {
+      sig = await result.current.signMessage({ message: 'hello' });
+    });
+    expect(sig!.message).toBe('hello');
+    expect(sig!.signature.startsWith('0x')).toBe(true);
+  });
+
+  it('signMessage passes an explicit signer to personal_sign (lowercased)', async () => {
+    const wallet = createMockWallet();
+    injectWallet(wallet);
+    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.connect('aethelred');
+    });
+    await act(async () => {
+      await result.current.signMessage({
+        message: 'm',
+        signer: '0xABCDEF0000000000000000000000000000000000',
+      });
+    });
+    expect(wallet.request).toHaveBeenCalledWith({
+      method: 'personal_sign',
+      params: ['m', '0xabcdef0000000000000000000000000000000000'],
+    });
+  });
+
+  it('signMessage throws when the wallet is gone but state says connected', async () => {
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
     act(() => {
-      result.current.app.connectWalletWithData('aeth1abc123def456ghi', 1000);
+      result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
+    });
+    await expect(result.current.wallet.signMessage({ message: 'x' })).rejects.toThrow(
+      'No wallet provider available',
+    );
+  });
+
+  it('signTransaction broadcasts through the connected wallet', async () => {
+    const provider = createMockWallet();
+    injectWallet(provider);
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
     });
 
     let hash: string | undefined;
     await act(async () => {
       hash = await result.current.wallet.signTransaction({
         type: 'transfer',
-        from: 'aeth1abc123def456ghi',
-        to: 'aeth1xyz',
+        from: TEST_ACCOUNT,
+        to: '0x1111111111111111111111111111111111111111',
         amount: 100,
         blockHeight: 12345,
       });
     });
-
-    expect(hash).toBeDefined();
     expect(hash!.startsWith('0x')).toBe(true);
+    expect(provider.request).toHaveBeenCalledWith({
+      method: 'eth_sendTransaction',
+      params: [
+        {
+          from: TEST_ACCOUNT,
+          to: '0x1111111111111111111111111111111111111111',
+          value: '0x56bc75e2d63100000',
+        },
+      ],
+    });
   });
 
-  it('connect succeeds with keplr provider injected', async () => {
-    const mockKeplr = createMockKeplr();
-    (window as unknown as Record<string, unknown>).keplr = mockKeplr;
-
-    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-
-    await act(async () => {
-      await result.current.connect('keplr', 'mainnet');
+  it('switches to chain 7332 before broadcasting a transaction', async () => {
+    let activeChainId = '0x1';
+    const provider = createMockWallet({
+      request: jest.fn(async ({ method }: { method: string }) => {
+        if (method === 'eth_chainId') return activeChainId;
+        if (method === 'wallet_switchEthereumChain') {
+          activeChainId = '0x1ca4';
+          return null;
+        }
+        if (method === 'eth_sendTransaction') return '0x' + '22'.repeat(32);
+        return null;
+      }),
     });
-
-    expect(result.current.isConnected).toBe(true);
-    expect(result.current.activeProvider).toBe('keplr');
-    expect(result.current.error).toBeNull();
-  });
-
-  it('connect succeeds with leap provider', async () => {
-    const mockLeap = createMockKeplr();
-    (window as unknown as Record<string, unknown>).leap = mockLeap;
-
-    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-
-    await act(async () => {
-      await result.current.connect('leap', 'testnet');
+    injectWallet(provider);
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
     });
-
-    expect(result.current.isConnected).toBe(true);
-    expect(result.current.activeProvider).toBe('leap');
-  });
-
-  it('signMessage works after successful connect with provider', async () => {
-    const mockKeplr = createMockKeplr();
-    (window as unknown as Record<string, unknown>).keplr = mockKeplr;
-
-    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-
-    await act(async () => {
-      await result.current.connect('keplr');
-    });
-
-    let signResult: { message: string; signature: string; publicKey: string } | undefined;
-    await act(async () => {
-      signResult = await result.current.signMessage({ message: 'test message' });
-    });
-
-    expect(signResult).toBeDefined();
-    expect(signResult!.message).toBe('test message');
-    expect(typeof signResult!.signature).toBe('string');
-    expect(typeof signResult!.publicKey).toBe('string');
-  });
-
-  it('re-enables provider on mount when persisted wallet state exists', async () => {
-    const mockKeplr = createMockKeplr();
-    (window as unknown as Record<string, unknown>).keplr = mockKeplr;
-
-    // First connect to set persisted state
-    const { result: r1, unmount } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
-
     act(() => {
-      r1.current.app.connectWalletWithData('aeth1mockaddress', 1000, 'keplr', 'aethelred-1');
+      result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
     });
-    unmount();
 
-    // Now re-render with persisted state - the useEffect should call enable
-    const { result: r2 } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-    // Wait for the effect to run
-    await waitFor(() => {
-      expect(r2.current.isConnected).toBe(true);
+    await act(async () => {
+      await result.current.wallet.signTransaction({
+        type: 'transfer',
+        from: TEST_ACCOUNT,
+        to: '0x1111111111111111111111111111111111111111',
+        amount: 1,
+        blockHeight: 1,
+      });
     });
+
+    expect(provider.request).toHaveBeenCalledWith({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x1ca4' }],
+    });
+    expect(provider.request).toHaveBeenCalledWith(
+      expect.objectContaining({ method: 'eth_sendTransaction' }),
+    );
   });
 
-  it('connect with default network uses mainnet chain ID', async () => {
-    const mockKeplr = createMockKeplr();
-    (window as unknown as Record<string, unknown>).keplr = mockKeplr;
+  it('signTransaction fails when the injected provider is no longer available', async () => {
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
+    });
 
+    await expect(
+      result.current.wallet.signTransaction({
+        type: 'transfer',
+        from: TEST_ACCOUNT,
+        to: '0x1111111111111111111111111111111111111111',
+        amount: 1,
+        blockHeight: 1,
+      }),
+    ).rejects.toThrow('No wallet provider available for transactions');
+  });
+
+  it('signTransaction rejects a sender other than the connected wallet', async () => {
+    injectWallet(createMockWallet());
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
+    });
+
+    await expect(
+      result.current.wallet.signTransaction({
+        type: 'transfer',
+        from: '0x9999999999999999999999999999999999999999',
+        to: '0x1111111111111111111111111111111111111111',
+        amount: 1,
+        blockHeight: 1,
+      }),
+    ).rejects.toThrow('Transaction sender does not match the connected wallet');
+  });
+
+  it('signTransaction rejects an invalid EVM recipient', async () => {
+    injectWallet(createMockWallet());
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
+    });
+
+    await expect(
+      result.current.wallet.signTransaction({
+        type: 'transfer',
+        from: TEST_ACCOUNT,
+        to: 'not-an-address',
+        amount: 1,
+        blockHeight: 1,
+      }),
+    ).rejects.toThrow('Transaction recipient must be a valid EVM address');
+  });
+
+  it.each([0, Number.POSITIVE_INFINITY])(
+    'signTransaction rejects invalid amount %s',
+    async (amount) => {
+      injectWallet(createMockWallet());
+      const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+        wrapper: createWrapper(),
+      });
+      act(() => {
+        result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
+      });
+
+      await expect(
+        result.current.wallet.signTransaction({
+          type: 'transfer',
+          from: TEST_ACCOUNT,
+          to: '0x1111111111111111111111111111111111111111',
+          amount,
+          blockHeight: 1,
+        }),
+      ).rejects.toThrow('Transaction amount must be a positive finite number');
+    },
+  );
+
+  it('signTransaction rejects a malformed transaction hash from the wallet', async () => {
+    const provider = createMockWallet({
+      request: jest.fn(async ({ method }: { method: string }) => {
+        if (method === 'eth_chainId') return '0x1ca4';
+        if (method === 'eth_sendTransaction') return 'not-a-hash';
+        return null;
+      }),
+    });
+    injectWallet(provider);
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.app.connectWalletWithData(TEST_ACCOUNT, null, 'aethelred', '7332');
+    });
+
+    await expect(
+      result.current.wallet.signTransaction({
+        type: 'transfer',
+        from: TEST_ACCOUNT,
+        to: '0x1111111111111111111111111111111111111111',
+        amount: 1,
+        blockHeight: 1,
+      }),
+    ).rejects.toThrow('Wallet returned an invalid transaction hash');
+  });
+
+  it('disconnect clears state', async () => {
+    injectWallet(createMockWallet());
     const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
 
     await act(async () => {
-      await result.current.connect('keplr');
+      await result.current.connect('aethelred');
     });
-
-    expect(mockKeplr.enable).toHaveBeenCalledWith('aethelred-1');
-  });
-
-  it('connect with unknown network falls back to mainnet chain ID', async () => {
-    const mockKeplr = createMockKeplr();
-    (window as unknown as Record<string, unknown>).keplr = mockKeplr;
-
-    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-
-    await act(async () => {
-      await result.current.connect('keplr', 'unknownnet');
-    });
-
-    expect(mockKeplr.enable).toHaveBeenCalledWith('aethelred-1');
     expect(result.current.isConnected).toBe(true);
-  });
+    expect(result.current.activeProvider).toBe('aethelred');
 
-  it('disconnect sends delete request and clears provider', async () => {
-    const mockKeplr = createMockKeplr();
-    (window as unknown as Record<string, unknown>).keplr = mockKeplr;
-
-    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-
-    // Connect first
-    await act(async () => {
-      await result.current.connect('keplr');
-    });
-    expect(result.current.isConnected).toBe(true);
-    expect(result.current.activeProvider).toBe('keplr');
-
-    // Disconnect
     act(() => {
       result.current.disconnect();
     });
@@ -346,133 +595,28 @@ describe('useWallet', () => {
     expect(result.current.error).toBeNull();
   });
 
-  it('connect handles keplr.enable failure', async () => {
-    const mockKeplr = createMockKeplr();
-    mockKeplr.enable = jest.fn().mockRejectedValue(new Error('User rejected'));
-    (window as unknown as Record<string, unknown>).keplr = mockKeplr;
-
-    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-
-    let caughtError: Error | undefined;
-    await act(async () => {
-      try {
-        await result.current.connect('keplr');
-      } catch (e) {
-        caughtError = e as Error;
-      }
+  it('displayAddress truncates a 0x address', () => {
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
     });
-
-    expect(caughtError).toBeDefined();
-    expect(result.current.error).toBe('User rejected');
-    expect(result.current.isLoading).toBe(false);
+    act(() => {
+      result.current.app.connectWalletWithData(
+        '0x1234567890abcdef1234567890abcdef12345678',
+        null,
+        'aethelred',
+        '7332',
+      );
+    });
+    expect(result.current.wallet.displayAddress).toBe('0x1234…5678');
   });
 
-  it('signMessage uses signer param when provided', async () => {
-    const mockKeplr = createMockKeplr();
-    (window as unknown as Record<string, unknown>).keplr = mockKeplr;
-
-    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-
-    await act(async () => {
-      await result.current.connect('keplr');
+  it('displayAddress returns a short value as-is', () => {
+    const { result } = renderHook(() => ({ wallet: useWallet(), app: useApp() }), {
+      wrapper: createWrapper(),
     });
-
-    let signResult: { message: string; signature: string; publicKey: string } | undefined;
-    await act(async () => {
-      signResult = await result.current.signMessage({
-        message: 'test',
-        signer: 'aeth1customsigner',
-      });
+    act(() => {
+      result.current.app.connectWalletWithData('0x1234', null, 'aethelred', '7332');
     });
-
-    expect(signResult).toBeDefined();
-    // signArbitrary should have been called with the custom signer
-    expect(mockKeplr.signArbitrary).toHaveBeenCalledWith(
-      expect.any(String),
-      'aeth1customsigner',
-      'test',
-    );
+    expect(result.current.wallet.displayAddress).toBe('0x1234');
   });
-
-  it('getLeap returns provider when leap is injected', () => {
-    const mockLeap = createMockKeplr();
-    (window as unknown as Record<string, unknown>).leap = mockLeap;
-
-    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-    expect(result.current.isProviderAvailable('leap')).toBe(true);
-  });
-
-  it('connect error with non-Error thrown uses default message', async () => {
-    const mockKeplr = createMockKeplr();
-    mockKeplr.enable = jest.fn().mockRejectedValue('string error');
-    (window as unknown as Record<string, unknown>).keplr = mockKeplr;
-
-    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-
-    let caughtError: unknown;
-    await act(async () => {
-      try {
-        await result.current.connect('keplr');
-      } catch (e) {
-        caughtError = e;
-      }
-    });
-
-    expect(caughtError).toBe('string error');
-    expect(result.current.error).toBe('Failed to connect wallet');
-  });
-
-  it('useEffect re-enables wallet on mount with persisted keplr provider', async () => {
-    const mockKeplr = createMockKeplr();
-    (window as unknown as Record<string, unknown>).keplr = mockKeplr;
-
-    // Simulate persisted state by connecting first
-    const { result: r1, unmount: u1 } = renderHook(
-      () => ({ wallet: useWallet(), app: useApp() }),
-      { wrapper: createWrapper() },
-    );
-
-    // Connect via keplr
-    await act(async () => {
-      await r1.current.wallet.connect('keplr');
-    });
-    expect(r1.current.wallet.isConnected).toBe(true);
-
-    u1();
-
-    // Re-render - the useEffect should call cosmosProvider.enable
-    const enableCallsBefore = (mockKeplr.enable as jest.Mock).mock.calls.length;
-
-    const wrapper2 = createWrapper();
-    const { result: r2 } = renderHook(() => useWallet(), { wrapper: wrapper2 });
-
-    // The persisted state from localStorage triggers the re-enable effect
-    await waitFor(() => {
-      expect(r2.current.isConnected).toBe(true);
-    });
-  });
-
-  it('useEffect skips re-enable when cosmosProvider is null (extension removed)', async () => {
-    // Pre-set localStorage so wallet initializes with provider='keplr' and connected=true
-    // but don't inject keplr into window. This hits line 165: if (!cosmosProvider) return;
-    // Use address 'aeth1mock' to match the GET /api/wallet/connect mock response.
-    localStorage.setItem('shiora_wallet', JSON.stringify({
-      connected: true,
-      address: 'aeth1mock',
-      balance: 1000,
-      provider: 'keplr',
-      chainId: 'aethelred-1',
-    }));
-
-    const { result } = renderHook(() => useWallet(), { wrapper: createWrapper() });
-
-    // The useEffect fires with connected=true, activeProvider='keplr', but no keplr extension
-    // so getCosmosProvider returns null and the effect returns early
-    await waitFor(() => {
-      expect(result.current.isConnected).toBe(true);
-    });
-
-    localStorage.removeItem('shiora_wallet');
-  });
-
 });

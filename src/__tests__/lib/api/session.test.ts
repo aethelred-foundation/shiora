@@ -1,6 +1,7 @@
 /** @jest-environment node */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { sessionSigningKey } from '@/lib/crypto/derived-secrets';
 
 import {
   SESSION_COOKIE_NAME,
@@ -104,7 +105,7 @@ describe('session utilities', () => {
     const invalidPayload = Buffer.from('not-valid-json!!!').toString('base64url');
     // Sign with the real session secret
     const signature = crypto
-      .createHmac('sha256', serverEnv.sessionSecret)
+      .createHmac('sha256', sessionSigningKey())
       .update(invalidPayload)
       .digest('base64url');
 
@@ -124,7 +125,7 @@ describe('session utilities', () => {
     };
     const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
     const signature = crypto
-      .createHmac('sha256', serverEnv.sessionSecret)
+      .createHmac('sha256', sessionSigningKey())
       .update(payload)
       .digest('base64url');
 
@@ -142,7 +143,7 @@ describe('session utilities', () => {
     };
     const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
     const signature = crypto
-      .createHmac('sha256', serverEnv.sessionSecret)
+      .createHmac('sha256', sessionSigningKey())
       .update(payload)
       .digest('base64url');
 
@@ -155,13 +156,14 @@ describe('session utilities', () => {
 
     const claims = {
       sub: 'aeth1testexpired',
+      jti: 'expired-session-id',
       iat: Date.now() - 7200000,
       exp: Date.now() - 3600000, // expired 1 hour ago
       v: 1,
     };
     const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
     const signature = crypto
-      .createHmac('sha256', serverEnv.sessionSecret)
+      .createHmac('sha256', sessionSigningKey())
       .update(payload)
       .digest('base64url');
 
@@ -180,9 +182,29 @@ describe('session utilities', () => {
     };
     const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
     const signature = crypto
-      .createHmac('sha256', serverEnv.sessionSecret)
+      .createHmac('sha256', sessionSigningKey())
       .update(payload)
       .digest('base64url');
+
+    expect(verifySessionToken(`${payload}.${signature}`)).toBeNull();
+  });
+
+  it('verifySessionToken returns null for a token missing its jti (pre-jti / forged)', () => {
+    const crypto = require('node:crypto');
+    // Legacy tokens issued before per-session ids, or a forged payload, must be
+    // rejected so they can never be individually revoked (audit M-03).
+    const claims = { sub: 'aeth1nojti', iat: Date.now(), exp: Date.now() + 3600000, v: 1 };
+    const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
+    const signature = crypto.createHmac('sha256', sessionSigningKey()).update(payload).digest('base64url');
+
+    expect(verifySessionToken(`${payload}.${signature}`)).toBeNull();
+  });
+
+  it('verifySessionToken returns null for a non-string jti', () => {
+    const crypto = require('node:crypto');
+    const claims = { sub: 'aeth1badjti', jti: 12345, iat: Date.now(), exp: Date.now() + 3600000, v: 1 };
+    const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
+    const signature = crypto.createHmac('sha256', sessionSigningKey()).update(payload).digest('base64url');
 
     expect(verifySessionToken(`${payload}.${signature}`)).toBeNull();
   });

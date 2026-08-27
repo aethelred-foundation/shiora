@@ -7,6 +7,7 @@ import {
   RecordCreateSchema,
   RecordTypeEnum,
   GrantCreateSchema,
+  GrantAuthorizationSchema,
   WalletConnectSchema,
   IPFSUploadSchema,
   ConsentCreateSchema,
@@ -36,22 +37,26 @@ describe('PaginationSchema', () => {
 });
 
 describe('AethelredAddressSchema', () => {
-  it('accepts valid aeth1 address (39 chars after aeth1)', () => {
-    // aeth1 + 38 lowercase alphanumeric
-    const addr = 'aeth1' + 'a'.repeat(38);
+  it('accepts a valid 0x EVM address', () => {
+    const addr = '0x' + 'a'.repeat(40);
     expect(() => AethelredAddressSchema.parse(addr)).not.toThrow();
   });
 
-  it('rejects address with wrong prefix', () => {
-    expect(() => AethelredAddressSchema.parse('cosmos1abc')).toThrow();
+  it('lowercases a checksummed address', () => {
+    const checksummed = '0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf';
+    expect(AethelredAddressSchema.parse(checksummed)).toBe(checksummed.toLowerCase());
   });
 
-  it('rejects too-short address', () => {
-    expect(() => AethelredAddressSchema.parse('aeth1short')).toThrow();
+  it('rejects the old bech32 (aeth1) format', () => {
+    expect(() => AethelredAddressSchema.parse('aeth1' + 'a'.repeat(38))).toThrow();
   });
 
-  it('rejects address with uppercase', () => {
-    expect(() => AethelredAddressSchema.parse('aeth1' + 'A'.repeat(38))).toThrow();
+  it('rejects a too-short address', () => {
+    expect(() => AethelredAddressSchema.parse('0x1234')).toThrow();
+  });
+
+  it('rejects a non-hex address', () => {
+    expect(() => AethelredAddressSchema.parse('0x' + 'z'.repeat(40))).toThrow();
   });
 });
 
@@ -74,9 +79,7 @@ describe('RecordCreateSchema', () => {
   });
 
   it('rejects empty label', () => {
-    expect(() =>
-      RecordCreateSchema.parse({ type: 'vitals', label: '', provider: 'P' }),
-    ).toThrow();
+    expect(() => RecordCreateSchema.parse({ type: 'vitals', label: '', provider: 'P' })).toThrow();
   });
 });
 
@@ -91,7 +94,7 @@ describe('RecordTypeEnum', () => {
 describe('WalletConnectSchema', () => {
   it('validates a complete connect request', () => {
     const result = WalletConnectSchema.parse({
-      address: 'aeth1' + 'a'.repeat(38),
+      address: '0x' + 'a'.repeat(40),
       signature: 'abc123',
       timestamp: Date.now(),
       nonce: 'nonce123',
@@ -99,13 +102,13 @@ describe('WalletConnectSchema', () => {
       expiresAt: Date.now() + 300000,
       hmac: 'a'.repeat(64),
     });
-    expect(result.chainId).toBe('aethelred-1');
+    expect(result.chainId).toBe('7332');
   });
 
   it('rejects invalid HMAC format', () => {
     expect(() =>
       WalletConnectSchema.parse({
-        address: 'aeth1' + 'a'.repeat(38),
+        address: '0x' + 'a'.repeat(40),
         signature: 'sig',
         timestamp: Date.now(),
         nonce: 'n',
@@ -165,13 +168,27 @@ describe('GrantCreateSchema', () => {
     const result = GrantCreateSchema.parse({
       provider: 'Hospital',
       specialty: 'Cardiology',
-      address: 'aeth1' + 'a'.repeat(38),
+      address: '0x' + 'a'.repeat(40),
       scope: 'Full Records',
       durationDays: 30,
     });
     expect(result.canView).toBe(true);
     expect(result.canDownload).toBe(false);
     expect(result.canShare).toBe(false);
+  });
+});
+
+describe('GrantAuthorizationSchema', () => {
+  it('accepts a complete payload-bound wallet authorization', () => {
+    const authorization = {
+      signature: `0x${'11'.repeat(65)}`,
+      nonce: 'a'.repeat(64),
+      issuedAt: 1,
+      expiresAt: 2,
+      hmac: 'b'.repeat(64),
+    };
+
+    expect(GrantAuthorizationSchema.parse(authorization)).toEqual(authorization);
   });
 });
 
@@ -217,7 +234,12 @@ describe('Additional schema coverage', () => {
   } = require('@/lib/api/validation');
 
   it('RecordListQuerySchema accepts valid input', () => {
-    const result = RecordListQuerySchema.parse({ type: 'lab_result', sort: 'date', order: 'asc', q: 'blood' });
+    const result = RecordListQuerySchema.parse({
+      type: 'lab_result',
+      sort: 'date',
+      order: 'asc',
+      q: 'blood',
+    });
     expect(result.type).toBe('lab_result');
     expect(result.sort).toBe('date');
   });
@@ -248,8 +270,8 @@ describe('Additional schema coverage', () => {
   });
 
   it('InferenceListQuerySchema accepts model filter', () => {
-    const result = InferenceListQuerySchema.parse({ model: 'lstm' });
-    expect(result.model).toBe('lstm');
+    const result = InferenceListQuerySchema.parse({ model: 'cycle-patterns' });
+    expect(result.model).toBe('cycle-patterns');
   });
 
   it('AnomalyListQuerySchema accepts severity filter', () => {

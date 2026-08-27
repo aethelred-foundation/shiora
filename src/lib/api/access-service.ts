@@ -1,0 +1,116 @@
+// ============================================================
+// Shiora on Aethelred — Access Grants Service
+//
+// The live, encrypted datastore for access grants. Grants start empty per
+// owner and are encrypted at rest, with every mutation written to the
+// tamper-evident audit chain. Postgres when DATABASE_URL is set, otherwise
+// in-memory — both via the generic EncryptedDocumentRepository.
+// ============================================================
+
+import { getAuditLog } from '@/lib/api/audit-log';
+import { EncryptedDocumentRepository } from '@/lib/persistence/encrypted-documents';
+import { InMemoryDocumentStore, type DocumentStorePort } from '@/lib/persistence/document-store';
+import { PgDocumentStore } from '@/lib/persistence/pg-document-store';
+import { getPgClient } from '@/lib/persistence/sql-client';
+import type { StoredAccessGrant } from '@/lib/api/domain-types';
+import { shouldUsePostgres } from '@/lib/persistence/datastore-mode';
+
+const COLLECTION = 'access-grant';
+
+let repository: EncryptedDocumentRepository<StoredAccessGrant> | null = null;
+
+function createStore(): DocumentStorePort {
+  if (shouldUsePostgres()) {
+    return new PgDocumentStore(getPgClient());
+  }
+  return new InMemoryDocumentStore();
+}
+
+function repo(): EncryptedDocumentRepository<StoredAccessGrant> {
+  if (!repository) {
+    repository = new EncryptedDocumentRepository<StoredAccessGrant>(
+      createStore(),
+      getAuditLog(),
+      COLLECTION,
+      { create: 'GRANT_CREATE', update: 'GRANT_UPDATE' },
+    );
+  }
+  return repository;
+}
+
+export function listAccessGrants(ownerAddress: string): Promise<StoredAccessGrant[]> {
+  return repo().list(ownerAddress);
+}
+
+/** All access grants across every owner. For aggregate analytics only. */
+export function listAllAccessGrants(): Promise<StoredAccessGrant[]> {
+  return repo().listAll();
+}
+
+/** Grants targeting a specific provider — the patients who shared with them. */
+export async function listGrantsForProvider(providerAddress: string): Promise<StoredAccessGrant[]> {
+  const all = await repo().listAll();
+  return all.filter((grant) => grant.address === providerAddress);
+}
+
+/**
+ * The active, viewable grant `provider` holds from `patient`, or null. The
+ * single source of the grant decision — callers that need the grant identity
+ * for an authorization-decision snapshot use this; a boolean predicate would
+ * discard exactly what the snapshot must record.
+ */
+export async function activeGrantForProvider(
+  providerAddress: string,
+  patientAddress: string,
+  now: number = Date.now(),
+): Promise<StoredAccessGrant | null> {
+  const grants = await listGrantsForProvider(providerAddress);
+  return (
+    grants.find(
+      (grant) =>
+        grant.ownerAddress === patientAddress &&
+        grant.status === 'Active' &&
+        grant.canView &&
+        now <= grant.expiresAt, // an expired grant no longer permits access
+    ) ?? null
+  );
+}
+
+/**
+ * Whether `provider` currently holds an active, viewable grant from `patient`.
+ * Used to gate provider clinical actions on a specific patient's record.
+ */
+export async function providerHasActiveGrant(
+  providerAddress: string,
+  patientAddress: string,
+  now: number = Date.now(),
+): Promise<boolean> {
+  return (await activeGrantForProvider(providerAddress, patientAddress, now)) !== null;
+}
+
+export function getAccessGrant(
+  ownerAddress: string,
+  id: string,
+): Promise<StoredAccessGrant | undefined> {
+  return repo().get(ownerAddress, id);
+}
+
+export function createAccessGrant(
+  ownerAddress: string,
+  grant: StoredAccessGrant,
+): Promise<StoredAccessGrant> {
+  return repo().create(ownerAddress, grant);
+}
+
+export function updateAccessGrant(
+  ownerAddress: string,
+  id: string,
+  patch: Partial<StoredAccessGrant>,
+): Promise<StoredAccessGrant | undefined> {
+  return repo().update(ownerAddress, id, patch);
+}
+
+/** Test-only: reset the singleton so each test starts from empty state. */
+export function __resetAccessForTests(): void {
+  repository = null;
+}

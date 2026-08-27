@@ -6,6 +6,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { Providers } from '@/components/layout/Providers';
 import { useQueryClient } from '@tanstack/react-query';
+import { ApiError } from '@/lib/api/client';
 
 // A simple child component that verifies providers are available
 function TestChild() {
@@ -16,6 +17,24 @@ function TestChild() {
 function QueryConsumer() {
   const queryClient = useQueryClient();
   return <div>Query client exists: {queryClient ? 'yes' : 'no'}</div>;
+}
+
+function RetryResult({
+  failureCount,
+  error,
+}: {
+  failureCount: number;
+  error: Error;
+}) {
+  const retry = useQueryClient().getDefaultOptions().queries?.retry;
+  if (typeof retry !== 'function') {
+    throw new Error('Expected the Providers query retry policy to be a function');
+  }
+  return (
+    <div data-testid="retry-result">
+      {String(retry(failureCount, error))}
+    </div>
+  );
 }
 
 describe('Providers', () => {
@@ -58,5 +77,39 @@ describe('Providers', () => {
     );
     expect(screen.getByText('First')).toBeInTheDocument();
     expect(screen.getByText('Second')).toBeInTheDocument();
+  });
+
+  it.each([401, 403, 429])(
+    'does not retry terminal API status %s',
+    (status) => {
+      render(
+        <Providers>
+          <RetryResult
+            failureCount={0}
+            error={new ApiError({ message: 'terminal' }, status)}
+          />
+        </Providers>,
+      );
+      expect(screen.getByTestId('retry-result')).toHaveTextContent('false');
+    },
+  );
+
+  it('retries other failures at most twice', () => {
+    const { rerender } = render(
+      <Providers>
+        <RetryResult failureCount={0} error={new Error('network')} />
+      </Providers>,
+    );
+    expect(screen.getByTestId('retry-result')).toHaveTextContent('true');
+
+    rerender(
+      <Providers>
+        <RetryResult
+          failureCount={2}
+          error={new ApiError({ message: 'server' }, 500)}
+        />
+      </Providers>,
+    );
+    expect(screen.getByTestId('retry-result')).toHaveTextContent('false');
   });
 });

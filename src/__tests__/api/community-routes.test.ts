@@ -52,7 +52,7 @@ describe('/api/community/circles', () => {
 
   it('GET returns blocked when middleware returns a response', async () => {
     const blockedResponse = NextResponse.json({ error: 'blocked' }, { status: 429 });
-    mockedRunMiddleware.mockReturnValueOnce(blockedResponse);
+    mockedRunMiddleware.mockResolvedValueOnce(blockedResponse);
     const res = await getCircles(new NextRequest('http://localhost:3000/api/community/circles'));
     expect(res.status).toBe(429);
   });
@@ -125,7 +125,7 @@ describe('/api/community/circles/[id]', () => {
 
   it('GET returns blocked when middleware returns a response', async () => {
     const blockedResponse = NextResponse.json({ error: 'blocked' }, { status: 429 });
-    mockedRunMiddleware.mockReturnValueOnce(blockedResponse);
+    mockedRunMiddleware.mockResolvedValueOnce(blockedResponse);
     const res = await getCircle(
       new NextRequest('http://localhost:3000/api/community/circles/circle-test'),
       { params: Promise.resolve({ id: 'circle-test' }) },
@@ -252,7 +252,7 @@ describe('/api/community/posts', () => {
 
   it('GET returns blocked when middleware returns a response', async () => {
     const blockedResponse = NextResponse.json({ error: 'blocked' }, { status: 429 });
-    mockedRunMiddleware.mockReturnValueOnce(blockedResponse);
+    mockedRunMiddleware.mockResolvedValueOnce(blockedResponse);
     const res = await getPosts(new NextRequest('http://localhost:3000/api/community/posts'));
     expect(res.status).toBe(429);
   });

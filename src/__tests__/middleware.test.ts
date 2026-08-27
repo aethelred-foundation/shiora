@@ -17,12 +17,12 @@ function makeRequest(
   method = 'GET',
   headers: Record<string, string> = {},
 ): NextRequest {
-  const url = `http://localhost:3000${pathname}`;
+  const url = `http://localhost:3001${pathname}`;
   return new NextRequest(url, { method, headers });
 }
 
 // One of the origins that is allowed by default in serverEnv.
-const ALLOWED_ORIGIN = 'http://localhost:3000';
+const ALLOWED_ORIGIN = 'http://localhost:3001';
 // An origin that is NOT in the allow-list.
 const DISALLOWED_ORIGIN = 'https://evil.example.com';
 
@@ -42,6 +42,32 @@ describe('middleware — non-API routes', () => {
     const req = makeRequest('/', 'GET');
     const res = middleware(req);
     expect(res.headers.get('Cache-Control')).toBeNull();
+  });
+
+  it('returns a 404 rewrite for deferred pages in the pilot profile', () => {
+    const previousProfile = process.env.SHIORA_PROFILE;
+    process.env.SHIORA_PROFILE = 'pilot';
+    try {
+      const res = middleware(makeRequest('/insights'));
+      expect(res.status).toBe(404);
+      expect(res.headers.get('x-middleware-rewrite')).toContain('/not-found');
+    } finally {
+      if (previousProfile === undefined) delete process.env.SHIORA_PROFILE;
+      else process.env.SHIORA_PROFILE = previousProfile;
+    }
+  });
+
+  it('serves production-backed pages in the pilot profile', () => {
+    const previousProfile = process.env.SHIORA_PROFILE;
+    process.env.SHIORA_PROFILE = 'pilot';
+    try {
+      for (const path of ['/', '/records', '/access', '/fhir', '/settings']) {
+        expect(middleware(makeRequest(path)).status).toBe(200);
+      }
+    } finally {
+      if (previousProfile === undefined) delete process.env.SHIORA_PROFILE;
+      else process.env.SHIORA_PROFILE = previousProfile;
+    }
   });
 });
 
@@ -123,6 +149,17 @@ describe('middleware — GET /api route (createApiResponse)', () => {
     expect(res.headers.get('x-request-id')).toBe('test-id-42');
   });
 
+  it('stamps X-Shiora-Maturity from the route registry', () => {
+    const prod = middleware(makeRequest('/api/records', 'GET', { origin: ALLOWED_ORIGIN }));
+    expect(prod.headers.get('X-Shiora-Maturity')).toBe('production');
+
+    const sim = middleware(makeRequest('/api/genomics', 'GET', { origin: ALLOWED_ORIGIN }));
+    expect(sim.headers.get('X-Shiora-Maturity')).toBe('simulated');
+
+    const pilot = middleware(makeRequest('/api/sana/messages', 'GET', { origin: ALLOWED_ORIGIN }));
+    expect(pilot.headers.get('X-Shiora-Maturity')).toBe('pilot');
+  });
+
   it('generates a x-request-id when none is provided', () => {
     const req = makeRequest('/api/health', 'GET', { origin: ALLOWED_ORIGIN });
     const res = middleware(req);
@@ -155,8 +192,82 @@ describe('middleware — GET /api route (createApiResponse)', () => {
 // ---------------------------------------------------------------------------
 
 describe('middleware config', () => {
-  it('exports a matcher that targets /api paths', async () => {
+  it('exports a matcher covering pages and APIs while skipping static assets', async () => {
     const mod = await import('@/middleware');
-    expect(mod.config.matcher).toContain('/api/:path*');
+    expect(mod.config.matcher).toHaveLength(1);
+    const pattern = mod.config.matcher[0];
+    // Build assets and images are excluded — they cannot carry a per-request
+    // nonce and CSP only matters on documents.
+    expect(pattern).toContain('_next/static');
+    expect(pattern).toContain('_next/image');
+    expect(pattern).toContain('favicon');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Content-Security-Policy with per-request script nonce (audit M-01)
+// ---------------------------------------------------------------------------
+
+describe('middleware — page CSP nonce (audit M-01)', () => {
+  it('sets a nonce-based CSP on page responses with no unsafe-inline scripts', () => {
+    const res = middleware(makeRequest('/vault'));
+    const csp = res.headers.get('Content-Security-Policy');
+    expect(csp).toBeTruthy();
+
+    const scriptSrc = csp!.split('; ').find((d) => d.startsWith('script-src '))!;
+    expect(scriptSrc).toMatch(/'nonce-[A-Za-z0-9+/=]+'/);
+    expect(scriptSrc).toContain("'strict-dynamic'");
+    expect(scriptSrc).not.toContain("'unsafe-inline'");
+
+    // Non-script hardening directives stay intact.
+    expect(csp).toContain("default-src 'self'");
+    expect(csp).toContain("frame-ancestors 'none'");
+    expect(csp).toContain("object-src 'none'");
+    expect(csp).toContain("form-action 'self'");
+  });
+
+  it('forwards the nonce and CSP to the renderer via request headers', () => {
+    const res = middleware(makeRequest('/'));
+    const responseCsp = res.headers.get('Content-Security-Policy')!;
+
+    // NextResponse.next({ request }) records overridden request headers here.
+    const forwarded = res.headers.get('x-middleware-request-x-nonce');
+    expect(forwarded).toBeTruthy();
+    expect(responseCsp).toContain(`'nonce-${forwarded}'`);
+    expect(res.headers.get('x-middleware-request-content-security-policy')).toBe(responseCsp);
+  });
+
+  it('wires violation reporting into the page CSP (GAP-10)', () => {
+    const res = middleware(makeRequest('/vault'));
+    const csp = res.headers.get('Content-Security-Policy')!;
+    expect(csp).toContain('report-uri /api/security/csp-report');
+    expect(csp).toContain('report-to csp-endpoint');
+    expect(res.headers.get('Reporting-Endpoints')).toBe('csp-endpoint="/api/security/csp-report"');
+  });
+
+  it('generates a fresh nonce per request', () => {
+    const first = middleware(makeRequest('/insights')).headers.get('Content-Security-Policy');
+    const second = middleware(makeRequest('/insights')).headers.get('Content-Security-Policy');
+    expect(first).not.toBe(second);
+  });
+
+  it("includes 'unsafe-eval' only in development (react-refresh)", () => {
+    const prodCsp = middleware(makeRequest('/')).headers.get('Content-Security-Policy')!;
+    expect(prodCsp).not.toContain("'unsafe-eval'");
+
+    const replaced = jest.replaceProperty(process.env, 'NODE_ENV', 'development');
+    try {
+      const devCsp = middleware(makeRequest('/')).headers.get('Content-Security-Policy')!;
+      expect(devCsp).toContain("'unsafe-eval'");
+    } finally {
+      replaced.restore();
+    }
+  });
+
+  it('locks API responses down to a no-execution CSP', () => {
+    const res = middleware(makeRequest('/api/health'));
+    expect(res.headers.get('Content-Security-Policy')).toBe(
+      "default-src 'none'; frame-ancestors 'none'",
+    );
   });
 });

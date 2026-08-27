@@ -429,7 +429,7 @@ export default function MarketplacePage() {
           }
         }}
         isLoading={marketplace.purchase.isLoading}
-        aethelBalance={wallet.aethelBalance}
+        aethelBalance={wallet.aethelBalance ?? undefined}
       />
     </>
   );

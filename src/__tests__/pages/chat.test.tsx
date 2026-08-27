@@ -1,5 +1,5 @@
 // ============================================================
-// Tests for src/app/chat/page.tsx (Health AI Chat)
+// Tests for src/app/chat/page.tsx (Health Assistant)
 // ============================================================
 
 import React from 'react';
@@ -12,7 +12,10 @@ Element.prototype.scrollIntoView = jest.fn();
 
 // Mock the useHealthChat hook
 const mockSendMessage = { mutate: jest.fn(), mutateAsync: jest.fn(), isLoading: false };
-const mockCreateConversation = { mutate: jest.fn(), mutateAsync: jest.fn().mockResolvedValue({ id: 'new-conv' }) };
+const mockCreateConversation = {
+  mutate: jest.fn(),
+  mutateAsync: jest.fn().mockResolvedValue({ id: 'new-conv' }),
+};
 const mockDeleteConversation = { mutate: jest.fn() };
 const mockSetActiveConversation = jest.fn();
 
@@ -21,9 +24,27 @@ let mockHookState: Record<string, unknown> = {};
 jest.mock('@/hooks/useHealthChat', () => ({
   useHealthChat: () => ({
     conversations: [
-      { id: 'conv-1', title: 'Cycle Analysis Discussion', createdAt: Date.now(), lastMessageAt: Date.now(), attestationCount: 3 },
-      { id: 'conv-2', title: 'Lab Results Review', createdAt: Date.now(), lastMessageAt: Date.now(), attestationCount: 2 },
-      { id: 'conv-3', title: 'Fertility Planning', createdAt: Date.now(), lastMessageAt: Date.now(), attestationCount: 1 },
+      {
+        id: 'conv-1',
+        title: 'Cycle Analysis Discussion',
+        createdAt: Date.now(),
+        lastMessageAt: Date.now(),
+        attestationCount: 3,
+      },
+      {
+        id: 'conv-2',
+        title: 'Lab Results Review',
+        createdAt: Date.now(),
+        lastMessageAt: Date.now(),
+        attestationCount: 2,
+      },
+      {
+        id: 'conv-3',
+        title: 'Fertility Planning',
+        createdAt: Date.now(),
+        lastMessageAt: Date.now(),
+        attestationCount: 1,
+      },
     ],
     activeConversation: null,
     messages: [],
@@ -37,7 +58,14 @@ jest.mock('@/hooks/useHealthChat', () => ({
       { id: 'lab', category: 'Lab Results', prompts: ['Review my labs'] },
       { id: 'symptoms', category: 'Symptoms', prompts: ['Track my symptoms'] },
     ],
-    activeModel: { id: 'health-transformer', name: 'Health Transformer', version: 'v3.0', maxTokens: 4096, teePlatform: 'Intel SGX', capabilities: [] },
+    activeModel: {
+      id: 'health-guidance',
+      name: 'Health Guidance',
+      version: 'v3.0',
+      maxTokens: 4096,
+      teePlatform: 'Intel SGX',
+      capabilities: [],
+    },
     setActiveConversation: mockSetActiveConversation,
     sendMessage: mockSendMessage,
     createConversation: mockCreateConversation,
@@ -70,16 +98,15 @@ function TestWrapper({ children }: { children: React.ReactNode }) {
 }
 
 describe('ChatPage', () => {
-  it('renders the chat page with Health AI heading', async () => {
+  it('renders the chat page with Health Assistant heading', async () => {
     render(
       <TestWrapper>
         <ChatPage />
       </TestWrapper>,
     );
-    // The header shows "Health AI" when no conversation is active
-    // "Health AI" also appears in the TopNav (PRIMARY_NAV_LINKS), so use getAllByText
+    // The header shows "Health Assistant" when no conversation is active.
     await waitFor(() => {
-      expect(screen.getAllByText('Health AI').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Health Assistant').length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -102,9 +129,7 @@ describe('ChatPage', () => {
       </TestWrapper>,
     );
     await waitFor(() => {
-      expect(
-        screen.getByText(/Ask me anything about your health data/),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/non-diagnostic assistant/i)).toBeInTheDocument();
     });
   });
 
@@ -140,9 +165,7 @@ describe('ChatPage', () => {
       </TestWrapper>,
     );
     await waitFor(() => {
-      expect(
-        screen.getByPlaceholderText('Ask your health AI assistant...'),
-      ).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Ask your health assistant...')).toBeInTheDocument();
     });
   });
 
@@ -153,32 +176,30 @@ describe('ChatPage', () => {
       </TestWrapper>,
     );
     await waitFor(() => {
-      // "Health Transformer" may appear in header and empty state badges
-      expect(screen.getAllByText(/Health Transformer/).length).toBeGreaterThanOrEqual(1);
+      // "Health Guidance" may appear in header and empty state badges.
+      expect(screen.getAllByText(/Health Guidance/).length).toBeGreaterThanOrEqual(1);
     });
   });
 
-  it('renders the E2E Encrypted badge', async () => {
+  it('renders the encrypted-at-rest badge', async () => {
     render(
       <TestWrapper>
         <ChatPage />
       </TestWrapper>,
     );
     await waitFor(() => {
-      expect(screen.getByText('E2E Encrypted')).toBeInTheDocument();
+      expect(screen.getAllByText('Encrypted at rest').length).toBeGreaterThanOrEqual(1);
     });
   });
 
-  it('renders TEE attestation footer text', async () => {
+  it('renders the non-diagnostic footer disclaimer', async () => {
     render(
       <TestWrapper>
         <ChatPage />
       </TestWrapper>,
     );
     await waitFor(() => {
-      expect(
-        screen.getByText(/Responses verified via TEE attestation/),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/non-diagnostic — not medical advice/i)).toBeInTheDocument();
     });
   });
 
@@ -230,21 +251,19 @@ describe('ChatPage', () => {
       </TestWrapper>,
     );
     await waitFor(() => {
-      expect(
-        screen.getByRole('navigation', { name: 'Main navigation' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
       expect(screen.getByRole('contentinfo')).toBeInTheDocument();
     });
   });
 
-  it('renders TEE Verified badge in empty state', async () => {
+  it('renders the non-diagnostic badge in empty state', async () => {
     render(
       <TestWrapper>
         <ChatPage />
       </TestWrapper>,
     );
     await waitFor(() => {
-      expect(screen.getByText('TEE Verified')).toBeInTheDocument();
+      expect(screen.getAllByText('Non-diagnostic').length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -326,10 +345,10 @@ describe('ChatPage', () => {
       </TestWrapper>,
     );
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Ask your health AI assistant...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Ask your health assistant...')).toBeInTheDocument();
     });
 
-    const input = screen.getByPlaceholderText('Ask your health AI assistant...');
+    const input = screen.getByPlaceholderText('Ask your health assistant...');
     fireEvent.change(input, { target: { value: 'Test message' } });
 
     const sendBtn = screen.getByLabelText('Send message');
@@ -402,15 +421,18 @@ describe('ChatPage', () => {
     expect(screen.getAllByText('Cycle Analysis Discussion').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renders the attestation count in header', async () => {
+  it('renders the non-diagnostic badge in the header', async () => {
     render(
       <TestWrapper>
         <ChatPage />
       </TestWrapper>,
     );
-    await waitFor(() => {
-      expect(screen.getByText(/\d+ attestations/)).toBeInTheDocument();
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(screen.getAllByText('Non-diagnostic').length).toBeGreaterThanOrEqual(1);
+      },
+      { timeout: 3000 },
+    );
   });
 
   it('clicks a suggested prompt to trigger handlePromptSelect', async () => {
@@ -425,22 +447,20 @@ describe('ChatPage', () => {
 
     // Click the first suggested prompt to trigger handlePromptSelect -> handleSend
     const promptButtons = screen.getAllByRole('button');
-    const cyclePrompt = promptButtons.find(
-      (btn) => btn.textContent?.includes('Cycle Health')
-    );
+    const cyclePrompt = promptButtons.find((btn) => btn.textContent?.includes('Cycle Health'));
     if (cyclePrompt) {
       fireEvent.click(cyclePrompt);
     }
   });
 
-  it('renders the TEE platform badge in empty state', async () => {
+  it('renders the not-a-medical-device disclaimer in empty state', async () => {
     render(
       <TestWrapper>
         <ChatPage />
       </TestWrapper>,
     );
     await waitFor(() => {
-      expect(screen.getByText('Intel SGX')).toBeInTheDocument();
+      expect(screen.getByText(/not a medical device/i)).toBeInTheDocument();
     });
   });
 });
@@ -472,10 +492,28 @@ describe('ChatPage with loading conversations', () => {
 describe('ChatPage with messages', () => {
   beforeEach(() => {
     mockHookState = {
-      activeConversation: { id: 'conv-1', title: 'Cycle Analysis Discussion', createdAt: Date.now(), lastMessageAt: Date.now(), attestationCount: 3 },
+      activeConversation: {
+        id: 'conv-1',
+        title: 'Cycle Analysis Discussion',
+        createdAt: Date.now(),
+        lastMessageAt: Date.now(),
+        attestationCount: 3,
+      },
       messages: [
-        { id: 'msg-1', role: 'user', content: 'Hello world', createdAt: Date.now() - 2000, attestation: null },
-        { id: 'msg-2', role: 'assistant', content: 'How can I help?', createdAt: Date.now() - 1000, attestation: '0xabc' },
+        {
+          id: 'msg-1',
+          role: 'user',
+          content: 'Hello world',
+          createdAt: Date.now() - 2000,
+          attestation: null,
+        },
+        {
+          id: 'msg-2',
+          role: 'assistant',
+          content: 'How can I help?',
+          createdAt: Date.now() - 1000,
+          attestation: '0xabc',
+        },
       ],
       isLoadingMessages: false,
     };
@@ -502,7 +540,13 @@ describe('ChatPage with messages', () => {
 describe('ChatPage with loading messages', () => {
   beforeEach(() => {
     mockHookState = {
-      activeConversation: { id: 'conv-1', title: 'Test Conv', createdAt: Date.now(), lastMessageAt: Date.now(), attestationCount: 0 },
+      activeConversation: {
+        id: 'conv-1',
+        title: 'Test Conv',
+        createdAt: Date.now(),
+        lastMessageAt: Date.now(),
+        attestationCount: 0,
+      },
       messages: [],
       isLoadingMessages: true,
     };
@@ -528,9 +572,21 @@ describe('ChatPage with loading messages', () => {
 describe('ChatPage with isSending', () => {
   beforeEach(() => {
     mockHookState = {
-      activeConversation: { id: 'conv-1', title: 'Test Conv', createdAt: Date.now(), lastMessageAt: Date.now(), attestationCount: 0 },
+      activeConversation: {
+        id: 'conv-1',
+        title: 'Test Conv',
+        createdAt: Date.now(),
+        lastMessageAt: Date.now(),
+        attestationCount: 0,
+      },
       messages: [
-        { id: 'msg-1', role: 'user', content: 'Test message', createdAt: Date.now(), attestation: null },
+        {
+          id: 'msg-1',
+          role: 'user',
+          content: 'Test message',
+          createdAt: Date.now(),
+          attestation: null,
+        },
       ],
       isSending: true,
     };
@@ -555,7 +611,13 @@ describe('ChatPage with isSending', () => {
 describe('ChatPage handleSend with active conversation', () => {
   beforeEach(() => {
     mockHookState = {
-      activeConversation: { id: 'conv-1', title: 'Active Conv', createdAt: Date.now(), lastMessageAt: Date.now(), attestationCount: 0 },
+      activeConversation: {
+        id: 'conv-1',
+        title: 'Active Conv',
+        createdAt: Date.now(),
+        lastMessageAt: Date.now(),
+        attestationCount: 0,
+      },
       messages: [],
       isLoadingMessages: false,
     };
@@ -573,7 +635,7 @@ describe('ChatPage handleSend with active conversation', () => {
       </TestWrapper>,
     );
 
-    const input = screen.getByPlaceholderText('Ask your health AI assistant...');
+    const input = screen.getByPlaceholderText('Ask your health assistant...');
     fireEvent.change(input, { target: { value: 'Hello from active conv' } });
 
     const sendBtn = screen.getByLabelText('Send message');

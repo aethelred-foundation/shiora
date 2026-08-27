@@ -1,51 +1,37 @@
 // ============================================================
 // Shiora on Aethelred — ZKP Proof Verification API
-// POST /api/zkp/verify — Verify a zero-knowledge proof on-chain
+// POST /api/zkp/verify — verify a zero-knowledge set-membership proof
+//   (public: zero-knowledge proofs are publicly verifiable, so no auth is
+//   required — anyone holding the proof + context can check it)
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  successResponse,
-  errorResponse,
-  HTTP,
-} from '@/lib/api/responses';
-import { runMiddleware } from '@/lib/api/middleware';
-import {
-  seededInt,
-  generateTxHash,
-} from '@/lib/utils';
-import type { ZKVerificationResult, ZKClaimType } from '@/types';
+import { z, ZodError } from 'zod';
 
-// ────────────────────────────────────────────────────────────
-// POST /api/zkp/verify
-// ────────────────────────────────────────────────────────────
+import { successResponse, validationError, errorResponse, HTTP } from '@/lib/api/responses';
+import { runMiddleware } from '@/lib/api/middleware';
+import { verifyProof } from '@/lib/api/zkp-service';
+
+const VerifySchema = z.object({
+  context: z.string().min(1).max(200),
+  proof: z.object({
+    commitment: z.string().min(1),
+    set: z.array(z.number().int()),
+    t: z.array(z.string()),
+    e: z.array(z.string()),
+    z: z.array(z.string()),
+  }),
+});
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   try {
-    const body = await request.json();
-    const { proofId, claimType } = body;
-
-    if (!proofId) {
-      return errorResponse('VALIDATION_ERROR', 'proofId is required', HTTP.BAD_REQUEST);
-    }
-
-    const seed = Date.now();
-    const result: ZKVerificationResult = {
-      valid: true,
-      claimType: (claimType as ZKClaimType) ?? 'age_range',
-      verifiedAt: Date.now(),
-      blockHeight: 2847391 + seededInt(seed, 0, 500),
-      gasUsed: seededInt(seed + 5, 50000, 200000),
-    };
-
-    return successResponse(result, HTTP.OK, {
-      message: 'ZK proof verified successfully on the Aethelred blockchain.',
-      txHash: generateTxHash(seed),
-    });
-  } catch {
+    const { proof, context } = VerifySchema.parse(await request.json());
+    return successResponse({ valid: verifyProof(proof, context) });
+  } catch (err) {
+    if (err instanceof ZodError) return validationError(err);
     return errorResponse('INVALID_BODY', 'Invalid JSON body', HTTP.BAD_REQUEST);
   }
 }

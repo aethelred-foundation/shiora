@@ -1,13 +1,15 @@
 /**
- * Tests for useWallet edge cases that require mocking useApp
- * to control the initial wallet state (provider, connected, chainId)
- * so that the re-enable useEffect branches are hit.
+ * useWallet edge cases that need a controlled initial wallet state
+ * (persisted provider/chainId) via a mocked useApp.
+ *
+ * The Aethelred Wallet is EIP-1193, so — unlike the old Cosmos flow — there is
+ * no "re-enable the extension on mount" step. These tests cover what remains:
+ * restoring persisted session state and the provider-detection path.
  */
-import { renderHook, waitFor, act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { KeplrProvider } from '@/hooks/useWallet';
-import { api } from '@/lib/api/client';
+import type { Eip1193Provider } from '@/hooks/useWallet';
 
 const mockAddNotification = jest.fn();
 const mockConnectWalletWithData = jest.fn();
@@ -16,7 +18,7 @@ const mockDisconnectWallet = jest.fn();
 let mockWallet = {
   connected: false,
   address: '',
-  balance: 0,
+  balance: 0 as number | null,
   provider: undefined as string | undefined,
   chainId: undefined as string | undefined,
 };
@@ -43,175 +45,96 @@ jest.mock('@/contexts/AppContext', () => ({
   }),
 }));
 
-// Must import AFTER jest.mock
 import { useWallet } from '@/hooks/useWallet';
 
-function createMockKeplr(): KeplrProvider {
-  return {
-    enable: jest.fn().mockResolvedValue(undefined),
-    getKey: jest.fn().mockResolvedValue({
-      name: 'Test Key',
-      algo: 'secp256k1',
-      pubKey: new Uint8Array(33),
-      address: new Uint8Array(20),
-      bech32Address: 'aeth1mockaddress1234567890abcdef',
-    }),
-    signArbitrary: jest.fn().mockResolvedValue({
-      signature: btoa('mocksignature1234567890'),
-      pub_key: { value: btoa('mockpubkey12345') },
-    }),
-  };
+function wrapper({ children }: { children: React.ReactNode }) {
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return React.createElement(QueryClientProvider, { client: qc }, children);
 }
 
-function makeWrapper() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return ({ children }: { children: React.ReactNode }) =>
-    React.createElement(QueryClientProvider, { client: qc }, children);
+function injectWallet(provider: Eip1193Provider | null) {
+  if (provider) {
+    (window as unknown as Record<string, unknown>).ethereum = provider;
+  } else {
+    delete (window as unknown as Record<string, unknown>).ethereum;
+  }
 }
 
-describe('useWallet re-enable useEffect edge cases', () => {
+describe('useWallet edge cases (persisted state, provider detection)', () => {
   beforeEach(() => {
-    delete (window as unknown as Record<string, unknown>).keplr;
-    delete (window as unknown as Record<string, unknown>).leap;
-    mockAddNotification.mockClear();
+    jest.clearAllMocks();
+    injectWallet(null);
+    mockWallet = {
+      connected: false,
+      address: '',
+      balance: 0,
+      provider: undefined,
+      chainId: undefined,
+    };
   });
 
-  it('useEffect skips re-enable when cosmosProvider is null (line 165)', async () => {
-    // Wallet is connected with keplr provider, but keplr extension is not in window
+  it('restores the active provider from persisted wallet state', () => {
     mockWallet = {
       connected: true,
-      address: 'aeth1mockaddress',
-      balance: 1000,
-      provider: 'keplr',
-      chainId: 'aethelred-1',
+      address: '0x00000000000000000000000000000000000a1b2c',
+      balance: null,
+      provider: 'aethelred',
+      chainId: '7332',
     };
-
-    const { result } = renderHook(() => useWallet(), { wrapper: makeWrapper() });
-
-    // The useEffect fires with connected=true, activeProvider='keplr' (from wallet.provider),
-    // but getCosmosProvider returns null because keplr is not in window -> line 165 returns
+    const { result } = renderHook(() => useWallet(), { wrapper });
     expect(result.current.isConnected).toBe(true);
-    expect(result.current.activeProvider).toBe('keplr');
+    expect(result.current.activeProvider).toBe('aethelred');
   });
 
-  it('useEffect catch branch when provider.enable rejects (lines 168-170)', async () => {
-    const mockKeplr = createMockKeplr();
-    mockKeplr.enable = jest.fn().mockRejectedValue(new Error('Extension locked'));
-    (window as unknown as Record<string, unknown>).keplr = mockKeplr;
+  it('reports the wallet available when window.ethereum is injected', () => {
+    injectWallet({ request: jest.fn(), isAethelred: true } as unknown as Eip1193Provider);
+    const { result } = renderHook(() => useWallet(), { wrapper });
+    expect(result.current.isProviderAvailable('aethelred')).toBe(true);
+  });
 
+  it('reports the wallet unavailable when nothing is injected', () => {
+    const { result } = renderHook(() => useWallet(), { wrapper });
+    expect(result.current.isProviderAvailable('aethelred')).toBe(false);
+  });
+
+  it('derives a truncated display address from a persisted 0x account', () => {
     mockWallet = {
       connected: true,
-      address: 'aeth1mockaddress',
-      balance: 1000,
-      provider: 'keplr',
-      chainId: 'aethelred-1',
+      address: '0xabcdef0123456789abcdef0123456789abcdef01',
+      balance: null,
+      provider: 'aethelred',
+      chainId: '7331',
     };
-
-    const { result } = renderHook(() => useWallet(), { wrapper: makeWrapper() });
-
-    // The useEffect fires with connected=true, activeProvider='keplr',
-    // cosmosProvider.enable rejects -> catch handler runs silently
-    await waitFor(() => {
-      expect(mockKeplr.enable).toHaveBeenCalledWith('aethelred-1');
-    });
-    expect(result.current.isConnected).toBe(true);
-
-    delete (window as unknown as Record<string, unknown>).keplr;
+    const { result } = renderHook(() => useWallet(), { wrapper });
+    expect(result.current.displayAddress).toBe('0xabcd…ef01');
   });
 
-  it('isProviderAvailable returns false for unknown provider (line 175/182)', () => {
-    mockWallet = { connected: false, address: '', balance: 0, provider: undefined, chainId: undefined };
-    const { result } = renderHook(() => useWallet(), { wrapper: makeWrapper() });
-    expect(result.current.isProviderAvailable('unknown' as any)).toBe(false);
-  });
-
-  it('connect with leap provider exercises getLeap path', async () => {
-    const mockLeap = createMockKeplr();
-    (window as unknown as Record<string, unknown>).leap = mockLeap;
-
-    mockWallet = { connected: false, address: '', balance: 0, provider: undefined, chainId: undefined };
-    const { result } = renderHook(() => useWallet(), { wrapper: makeWrapper() });
-
-    await result.current.connect('leap', 'testnet');
-
-    expect(mockLeap.enable).toHaveBeenCalled();
-    expect(mockConnectWalletWithData).toHaveBeenCalled();
-
-    delete (window as unknown as Record<string, unknown>).leap;
-  });
-
-  it('connect with leap when leap is not injected throws error (exercises getLeap null path)', async () => {
-    // No leap extension injected in window
-    mockWallet = { connected: false, address: '', balance: 0, provider: undefined, chainId: undefined };
-    const { result } = renderHook(() => useWallet(), { wrapper: makeWrapper() });
-
-    let caughtError: Error | undefined;
-    await result.current.connect('leap').catch((e: Error) => { caughtError = e; });
-
-    expect(caughtError).toBeDefined();
-    expect(caughtError!.message).toMatch(/not supported/);
-  });
-
-  it('useEffect skips re-enable when leap provider cosmosProvider is null', () => {
-    // Wallet connected with leap provider but no leap extension
+  it('clears local wallet state even when server disconnect fails', async () => {
     mockWallet = {
       connected: true,
-      address: 'aeth1mockaddress',
-      balance: 1000,
-      provider: 'leap',
-      chainId: 'aethelred-1',
+      address: '0xabcdef0123456789abcdef0123456789abcdef01',
+      balance: null,
+      provider: 'aethelred',
+      chainId: '7331',
     };
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn().mockRejectedValue(new Error('offline'));
 
-    const { result } = renderHook(() => useWallet(), { wrapper: makeWrapper() });
-    // getLeap returns null -> getCosmosProvider returns null -> useEffect returns early
-    expect(result.current.isConnected).toBe(true);
-  });
+    try {
+      const { result } = renderHook(() => useWallet(), { wrapper });
+      act(() => {
+        result.current.disconnect();
+      });
+      await act(async () => {
+        await Promise.resolve();
+      });
 
-  it('connect with default args exercises default provider/network', async () => {
-    const mockKeplr = createMockKeplr();
-    (window as unknown as Record<string, unknown>).keplr = mockKeplr;
-
-    mockWallet = { connected: false, address: '', balance: 0, provider: undefined, chainId: undefined };
-    const { result } = renderHook(() => useWallet(), { wrapper: makeWrapper() });
-
-    // Calling connect() with no args uses default provider='keplr', network='mainnet'
-    await result.current.connect();
-
-    expect(mockKeplr.enable).toHaveBeenCalledWith('aethelred-1');
-
-    delete (window as unknown as Record<string, unknown>).keplr;
-  });
-
-  it('disconnect catch handler silently handles api.delete failure', async () => {
-    mockWallet = {
-      connected: true,
-      address: 'aeth1mockaddress',
-      balance: 1000,
-      provider: 'keplr',
-      chainId: 'aethelred-1',
-    };
-
-    // Mock api.delete to reject
-    const spy = jest.spyOn(api, 'delete').mockRejectedValue(new Error('Network error'));
-
-    const { result } = renderHook(() => useWallet(), { wrapper: makeWrapper() });
-
-    act(() => {
-      result.current.disconnect();
-    });
-
-    // Wait for the async catch to settle
-    await waitFor(() => {
       expect(mockDisconnectWallet).toHaveBeenCalled();
-    });
-
-    // The disconnect should still work despite the API error
-    expect(mockAddNotification).toHaveBeenCalledWith(
-      'info',
-      'Wallet Disconnected',
-      'Your wallet has been disconnected',
-    );
-
-    spy.mockRestore();
+      expect(result.current.activeProvider).toBeNull();
+    } finally {
+      global.fetch = originalFetch;
+    }
   });
 });

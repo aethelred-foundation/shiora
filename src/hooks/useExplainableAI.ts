@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 import type {
-  ModelCard,
+  WorkloadAssessment,
   ExplainabilityResult,
   BiasReport,
   FeatureImportance,
@@ -24,14 +24,14 @@ const FEATURE_IMPORTANCE_KEY = 'xai-feature-importance';
 // ---------------------------------------------------------------------------
 
 export interface UseExplainableAIReturn {
-  modelCards: ModelCard[];
+  modelCards: WorkloadAssessment[];
   explainabilityResults: ExplainabilityResult[];
   biasReports: BiasReport[];
   selectedModelId: string;
   setSelectedModelId: (id: string) => void;
   selectedResultIndex: number;
   setSelectedResultIndex: (index: number) => void;
-  selectedModelCard: ModelCard | null;
+  selectedModelCard: WorkloadAssessment | null;
   selectedResult: ExplainabilityResult | null;
   selectedBiasReport: BiasReport | null;
   featureImportances: FeatureImportance[];
@@ -44,12 +44,12 @@ export interface UseExplainableAIReturn {
 // ---------------------------------------------------------------------------
 
 export function useExplainableAI(): UseExplainableAIReturn {
-  const [selectedModelId, setSelectedModelId] = useState<string>('lstm');
+  const [selectedModelId, setSelectedModelId] = useState<string>('cycle-patterns');
   const [selectedResultIndex, setSelectedResultIndex] = useState<number>(0);
 
   const modelCardsQuery = useQuery({
     queryKey: [MODEL_CARDS_KEY],
-    queryFn: () => api.get<ModelCard[]>('/api/xai/model-cards'),
+    queryFn: () => api.get<WorkloadAssessment[]>('/api/xai/model-cards'),
     staleTime: 30_000,
   });
 
@@ -67,8 +67,7 @@ export function useExplainableAI(): UseExplainableAIReturn {
 
   const featureQuery = useQuery({
     queryKey: [FEATURE_IMPORTANCE_KEY, selectedModelId],
-    queryFn: () =>
-      api.get<FeatureImportance[]>('/api/xai/shap', { modelId: selectedModelId }),
+    queryFn: () => api.get<FeatureImportance[]>('/api/xai/shap', { modelId: selectedModelId }),
     staleTime: 30_000,
   });
 

@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { runMiddleware } from '@/lib/api/middleware';
 
 import type {
   ProviderReputation,
@@ -93,9 +94,12 @@ const reviews = generateReviews();
 // ---------------------------------------------------------------------------
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ address: string }> },
 ) {
+  const blocked = await runMiddleware(request);
+  if (blocked) return blocked;
+
   const { address } = await params;
   const provider = providers.find((p) => p.address === address);
 
@@ -129,6 +133,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ address: string }> },
 ) {
+  const blocked = await runMiddleware(request);
+  if (blocked) return blocked;
+
   try {
     const { address } = await params;
     const provider = providers.find((p) => p.address === address);

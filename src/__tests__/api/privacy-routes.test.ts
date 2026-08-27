@@ -7,11 +7,26 @@ jest.mock('@/lib/api/middleware', () => {
 
 import { NextRequest, NextResponse } from 'next/server';
 import { runMiddleware } from '@/lib/api/middleware';
-import { POST as postAccessRequest } from '@/app/api/privacy/access-request/route';
-import { POST as postErasure } from '@/app/api/privacy/erasure/route';
-import { POST as postPortability } from '@/app/api/privacy/portability/route';
+import { POST as accessRequest } from '@/app/api/privacy/access-request/route';
+import { POST as portability } from '@/app/api/privacy/portability/route';
+import { POST as erasure } from '@/app/api/privacy/erasure/route';
+import { __resetRecordsForTests } from '@/lib/api/records-service';
+import { __resetConsentForTests } from '@/lib/api/consent-service';
+import { __resetAccessForTests } from '@/lib/api/access-service';
+import { createSessionToken } from '@/lib/api/session';
+import { seededAddress } from '@/lib/utils';
+import { beginMfaEnrollment, confirmMfaEnrollment, __resetMfaForTests } from '@/lib/api/mfa-service';
+import { totpCode } from '@/lib/api/totp';
+import { mintStepUpAssertion, STEP_UP_HEADER } from '@/lib/api/step-up';
 
 const mockedRunMiddleware = runMiddleware as jest.MockedFunction<typeof runMiddleware>;
+const token = createSessionToken(seededAddress(400)).token;
+
+beforeEach(() => {
+  __resetRecordsForTests();
+  __resetConsentForTests();
+  __resetAccessForTests();
+});
 
 afterEach(() => {
   mockedRunMiddleware.mockImplementation((...args: unknown[]) => {
@@ -20,201 +35,110 @@ afterEach(() => {
   });
 });
 
-function createRequest(url: string, init?: RequestInit): NextRequest {
-  return new NextRequest(url, init);
+function post(url: string, body: unknown, authToken?: string): NextRequest {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (authToken) headers.authorization = `Bearer ${authToken}`;
+  return new NextRequest(url, {
+    method: 'POST',
+    headers,
+    body: typeof body === 'string' ? body : JSON.stringify(body),
+  });
 }
 
-describe('/api/privacy/access-request', () => {
-  it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await postAccessRequest(
-      createRequest('http://localhost:3000/api/privacy/access-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ categories: ['vitals'] }),
-      }),
-    );
-    expect(res.status).toBe(403);
+describe.each([
+  ['access-request', accessRequest, 'http://localhost:3000/api/privacy/access-request'],
+  ['portability', portability, 'http://localhost:3000/api/privacy/portability'],
+  ['erasure', erasure, 'http://localhost:3000/api/privacy/erasure'],
+] as const)('/api/privacy/%s', (name, handler, url) => {
+  it('returns the middleware error when blocked', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    expect((await handler(post(url, { categories: ['records'] }, token))).status).toBe(403);
   });
 
-  it('POST submits an access request with valid categories', async () => {
-    const res = await postAccessRequest(
-      createRequest('http://localhost:3000/api/privacy/access-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ categories: ['vitals', 'lab_results'] }),
-      }),
-    );
+  it('returns 401 when unauthenticated', async () => {
+    mockedRunMiddleware.mockResolvedValueOnce(null);
+    expect((await handler(post(url, { categories: ['records'] }))).status).toBe(401);
+  });
+
+  it('returns 400 when categories is missing or empty', async () => {
+    expect((await handler(post(url, { categories: [] }, token))).status).toBe(400);
+  });
+
+  it('returns 201 for an authenticated data subject', async () => {
+    const res = await handler(post(url, { categories: ['records', 'consents'] }, token));
     expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.type).toBe('access');
-    expect(body.data.status).toBe('pending');
-    expect(body.data.dataCategories).toEqual(['vitals', 'lab_results']);
-    expect(body.data.id).toMatch(/^priv-/);
+    expect((await res.json()).data.request.status).toBe('completed');
   });
 
-  it('POST returns 400 for missing categories', async () => {
-    const res = await postAccessRequest(
-      createRequest('http://localhost:3000/api/privacy/access-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      }),
-    );
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body.success).toBe(false);
-  });
-
-  it('POST returns 400 for empty categories array', async () => {
-    const res = await postAccessRequest(
-      createRequest('http://localhost:3000/api/privacy/access-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ categories: [] }),
-      }),
-    );
-    expect(res.status).toBe(400);
-  });
-
-  it('POST returns 500 for invalid JSON body', async () => {
-    const res = await postAccessRequest(
-      createRequest('http://localhost:3000/api/privacy/access-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: 'not-json',
-      }),
-    );
-    expect(res.status).toBe(500);
+  it('returns 500 on an invalid JSON body', async () => {
+    expect((await handler(post(url, 'not-json', token))).status).toBe(500);
   });
 });
 
-describe('/api/privacy/erasure', () => {
-  it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await postErasure(
-      createRequest('http://localhost:3000/api/privacy/erasure', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ categories: ['vitals'] }),
-      }),
-    );
-    expect(res.status).toBe(403);
-  });
-
-  it('POST submits an erasure request', async () => {
-    const res = await postErasure(
-      createRequest('http://localhost:3000/api/privacy/erasure', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ categories: ['vitals'] }),
-      }),
-    );
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.type).toBe('erasure');
-    expect(body.data.status).toBe('pending');
-  });
-
-  it('POST returns 400 for missing categories', async () => {
-    const res = await postErasure(
-      createRequest('http://localhost:3000/api/privacy/erasure', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      }),
+describe('/api/privacy/portability format validation', () => {
+  it('returns 400 for an unsupported export format', async () => {
+    const res = await portability(
+      post('http://localhost:3000/api/privacy/portability', { categories: ['records'], format: 'pdf' }, token),
     );
     expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body.success).toBe(false);
   });
 
-  it('POST returns 500 for invalid JSON body', async () => {
-    const res = await postErasure(
-      createRequest('http://localhost:3000/api/privacy/erasure', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: 'not-json',
-      }),
+  it('actually serializes the export as CSV when requested', async () => {
+    const res = await portability(
+      post('http://localhost:3000/api/privacy/portability', { categories: ['records'], format: 'csv' }, token),
     );
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(201);
+    const data = (await res.json()).data;
+    expect(data.format).toBe('csv');
+    expect(typeof data.export).toBe('string');
+    expect(data.export).toContain('# records'); // real CSV, not the JSON bundle
+  });
+
+  it('actually serializes the export as XML when requested', async () => {
+    const res = await portability(
+      post('http://localhost:3000/api/privacy/portability', { categories: ['records'], format: 'xml' }, token),
+    );
+    expect(res.status).toBe(201);
+    const data = (await res.json()).data;
+    expect(data.format).toBe('xml');
+    expect(data.export).toContain('<userData>');
+  });
+
+  it('defaults to a JSON export string', async () => {
+    const res = await portability(
+      post('http://localhost:3000/api/privacy/portability', { categories: ['records'] }, token),
+    );
+    expect(res.status).toBe(201);
+    const data = (await res.json()).data;
+    expect(data.format).toBe('json');
+    expect(data.export).toContain('"records"');
   });
 });
 
-describe('/api/privacy/portability', () => {
-  it('POST returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
-    const res = await postPortability(
-      createRequest('http://localhost:3000/api/privacy/portability', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ categories: ['vitals'], format: 'json' }),
-      }),
-    );
-    expect(res.status).toBe(403);
-  });
 
-  it('POST submits a portability request', async () => {
-    const res = await postPortability(
-      createRequest('http://localhost:3000/api/privacy/portability', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ categories: ['vitals', 'imaging'], format: 'json' }),
-      }),
-    );
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.type).toBe('portability');
-    expect(body.data.status).toBe('pending');
-  });
+describe('MFA step-up on GDPR erasure (GAP-07)', () => {
+  const subject = seededAddress(400);
+  afterEach(() => __resetMfaForTests());
 
-  it('POST defaults to json format when not specified', async () => {
-    const res = await postPortability(
-      createRequest('http://localhost:3000/api/privacy/portability', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ categories: ['vitals'] }),
-      }),
-    );
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.data.details).toContain('json');
-  });
+  it('demands a fresh assertion from an MFA-enabled account, then honors it', async () => {
+    const { secret } = await beginMfaEnrollment(subject);
+    expect(await confirmMfaEnrollment(subject, totpCode(secret))).toBe(true);
 
-  it('POST returns 400 for invalid format', async () => {
-    const res = await postPortability(
-      createRequest('http://localhost:3000/api/privacy/portability', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ categories: ['vitals'], format: 'yaml' }),
-      }),
-    );
-    expect(res.status).toBe(400);
-  });
+    const denied = await erasure(post('http://localhost:3000/api/privacy/erasure', { categories: ['records'] }, token));
+    expect(denied.status).toBe(403);
+    expect((await denied.json()).error.code).toBe('STEP_UP_REQUIRED');
 
-  it('POST returns 400 for missing categories', async () => {
-    const res = await postPortability(
-      createRequest('http://localhost:3000/api/privacy/portability', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ format: 'json' }),
-      }),
-    );
-    expect(res.status).toBe(400);
-  });
-
-  it('POST returns 500 for invalid JSON body', async () => {
-    const res = await postPortability(
-      createRequest('http://localhost:3000/api/privacy/portability', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: 'not-json',
-      }),
-    );
-    expect(res.status).toBe(500);
+    const { assertion } = mintStepUpAssertion(subject);
+    const req = new NextRequest('http://localhost:3000/api/privacy/erasure', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        authorization: `Bearer ${token}`,
+        [STEP_UP_HEADER]: assertion,
+      },
+      body: JSON.stringify({ categories: ['records'] }),
+    });
+    const ok = await erasure(req);
+    expect(ok.status).toBe(201);
   });
 });

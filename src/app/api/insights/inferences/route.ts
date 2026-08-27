@@ -1,56 +1,19 @@
 // ============================================================
-// Shiora on Aethelred — Inference History API
-// GET /api/insights/inferences — List AI inference history
+// Shiora on Aethelred — Insight Inferences (trends)
+// GET /api/insights/inferences — per-metric trend over the caller's own
+//   telemetry (auth-gated, owner-scoped, non-diagnostic).
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { ZodError } from 'zod';
-import { InferenceListQuerySchema, parseSearchParams } from '@/lib/api/validation';
-import { paginatedResponse, validationError } from '@/lib/api/responses';
-import { runMiddleware } from '@/lib/api/middleware';
-import { generateMockInferences } from '@/lib/api/mock-data';
 
-// ────────────────────────────────────────────────────────────
-// GET /api/insights/inferences
-// ────────────────────────────────────────────────────────────
+import { successResponse } from '@/lib/api/responses';
+import { runMiddleware, extractAuth } from '@/lib/api/middleware';
+import { listInferences } from '@/lib/api/insights-service';
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
-  try {
-    const query = parseSearchParams(
-      InferenceListQuerySchema,
-      request.nextUrl.searchParams,
-    );
-
-    let inferences = generateMockInferences();
-
-    // Filter by model
-    if (query.model) {
-      inferences = inferences.filter((inf) => inf.model.id === query.model);
-    }
-
-    // Sort by timestamp descending
-    inferences = [...inferences].sort((a, b) => b.timestamp - a.timestamp);
-
-    const total = inferences.length;
-    const start = (query.page - 1) * query.limit;
-    const paged = inferences.slice(start, start + query.limit);
-
-    return paginatedResponse(paged, total, query.page, query.limit, {
-      modelBreakdown: {
-        lstm: generateMockInferences().filter((i) => i.model.id === 'lstm').length,
-        anomaly: generateMockInferences().filter((i) => i.model.id === 'anomaly').length,
-        fertility: generateMockInferences().filter((i) => i.model.id === 'fertility').length,
-        insights: generateMockInferences().filter((i) => i.model.id === 'insights').length,
-      },
-      totalAnomaliesDetected: generateMockInferences().filter(
-        (i) => i.result === 'Anomaly Detected',
-      ).length,
-    });
-  } catch (err) {
-    if (err instanceof ZodError) return validationError(err);
-    throw err;
-  }
+  const owner = extractAuth(request).walletAddress as string;
+  return successResponse(await listInferences(owner));
 }

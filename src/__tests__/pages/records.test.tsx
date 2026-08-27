@@ -2,16 +2,84 @@
 // Tests for src/app/records/page.tsx
 // ============================================================
 
+// The records page reads its data from the real /api/records via
+// useHealthRecords. Mock the hook with deterministic, varied records (all five
+// types, a known label + tag for the search tests, distinct sizes/dates for the
+// sort tests) so the page's client-side type/search/sort derivations run at full
+// coverage; the live fetch + mutations are covered by the hook's own test.
+const mockRecords = [
+  { id: 'rec-1', type: 'lab_result', label: 'Complete Blood Count', description: 'CBC panel', date: Date.now() - 1 * 86400000, uploadDate: Date.now() - 1 * 86400000, encrypted: true, encryption: 'AES-256-GCM', cid: '', txHash: '', attestation: '', size: 1024, provider: 'Metro Labs', status: 'Verified', ipfsNodes: 0, tags: ['routine', 'lab'] },
+  { id: 'rec-2', type: 'imaging', label: 'Pelvic Ultrasound', description: 'Imaging', date: Date.now() - 2 * 86400000, uploadDate: Date.now() - 2 * 86400000, encrypted: true, encryption: 'AES-256-GCM', cid: '', txHash: '', attestation: '', size: 4096, provider: 'Imaging Center', status: 'Verified', ipfsNodes: 0, tags: ['imaging', 'annual'] },
+  { id: 'rec-3', type: 'prescription', label: 'Estradiol 2mg', description: 'Rx', date: Date.now() - 3 * 86400000, uploadDate: Date.now() - 3 * 86400000, encrypted: true, encryption: 'AES-256-GCM', cid: '', txHash: '', attestation: '', size: 512, provider: 'Pharmacy', status: 'Verified', ipfsNodes: 0, tags: ['medication'] },
+  { id: 'rec-4', type: 'vitals', label: 'Blood Pressure Reading', description: 'BP', date: Date.now() - 4 * 86400000, uploadDate: Date.now() - 4 * 86400000, encrypted: true, encryption: 'AES-256-GCM', cid: '', txHash: '', attestation: '', size: 256, provider: 'Clinic', status: 'Verified', ipfsNodes: 0, tags: ['monitoring'] },
+  { id: 'rec-5', type: 'notes', label: 'Annual Exam Notes', description: 'Notes', date: Date.now() - 5 * 86400000, uploadDate: Date.now() - 5 * 86400000, encrypted: true, encryption: 'AES-256-GCM', cid: '', txHash: '', attestation: '', size: 2048, provider: 'Dr. Chen', status: 'Verified', ipfsNodes: 0, tags: ['annual', 'specialist'] },
+];
+const mockMutateAsync = jest.fn(async () => ({}));
+jest.mock('@/hooks/useHealthRecords', () => ({
+  useHealthRecords: () => ({
+    records: mockRecords,
+    upload: { mutate: jest.fn(), mutateAsync: mockMutateAsync, isLoading: false, error: null },
+  }),
+}));
+
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { AppProvider } from '@/contexts/AppContext';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { AppProvider, useApp } from '@/contexts/AppContext';
 import RecordsPage from '@/app/records/page';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   return <AppProvider>{children}</AppProvider>;
 }
 
+function ConnectWallet({ children }: { children: React.ReactNode }) {
+  const { connectWalletWithData } = useApp();
+  React.useEffect(() => {
+    connectWalletWithData(
+      '0x00000000000000000000000000000000000a1b2c',
+      null,
+      'aethelred',
+      '7332',
+    );
+  }, [connectWalletWithData]);
+  return children;
+}
+
+function ConnectedTestWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <AppProvider>
+      <ConnectWallet>{children}</ConnectWallet>
+    </AppProvider>
+  );
+}
+
+function createUploadFile(): File {
+  return new File([new ArrayBuffer(1024)], 'bloodwork.pdf', {
+    type: 'application/pdf',
+  });
+}
+
+async function openUploadForConnectedWallet() {
+  await waitFor(() =>
+    expect(JSON.parse(localStorage.getItem('shiora_wallet')!)).toMatchObject({
+      connected: true,
+    }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: /upload record/i }));
+  expect(screen.getByText('Upload Health Record')).toBeInTheDocument();
+}
+
+function fillUploadForm() {
+  const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+  fireEvent.change(input, { target: { files: [createUploadFile()] } });
+  fireEvent.click(screen.getByText('Lab Results'));
+}
+
 describe('RecordsPage', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    mockMutateAsync.mockReset().mockResolvedValue({});
+  });
+
   it('renders the records page', () => {
     render(
       <TestWrapper>
@@ -22,6 +90,19 @@ describe('RecordsPage', () => {
     expect(screen.getAllByText('Health Records').length).toBeGreaterThanOrEqual(1);
   });
 
+  it('notifies (does not open the upload modal) when no wallet is connected', () => {
+    render(
+      <TestWrapper>
+        <RecordsPage />
+      </TestWrapper>
+    );
+    const uploadBtn = screen.getByRole('button', { name: /upload record/i });
+    fireEvent.click(uploadBtn);
+    // No wallet in a fresh AppProvider → guarded with a notification, no modal.
+    expect(screen.queryByText(/Drag|drop your files|Upload Health Record/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Connect your wallet/i)).toBeInTheDocument();
+  });
+
   it('renders the page description', () => {
     render(
       <TestWrapper>
@@ -29,7 +110,7 @@ describe('RecordsPage', () => {
       </TestWrapper>
     );
     expect(
-      screen.getByText(/AES-256 encrypted, IPFS-pinned, and TEE-verified/)
+      screen.getByText(/AES-256-GCM encrypted at rest/)
     ).toBeInTheDocument();
   });
 
@@ -49,9 +130,10 @@ describe('RecordsPage', () => {
       </TestWrapper>
     );
     expect(screen.getByText('Total Records')).toBeInTheDocument();
-    expect(screen.getByText('Encrypted')).toBeInTheDocument();
-    expect(screen.getByText('Storage Used')).toBeInTheDocument();
-    expect(screen.getByText('IPFS Nodes')).toBeInTheDocument();
+    expect(screen.getByText('Encrypted at Rest')).toBeInTheDocument();
+    expect(screen.getByText('Metadata Size')).toBeInTheDocument();
+    // The fabricated "IPFS Nodes" stat was removed (records are not IPFS-pinned).
+    expect(screen.queryByText('IPFS Nodes')).not.toBeInTheDocument();
   });
 
   it('renders filter tabs', () => {
@@ -283,7 +365,7 @@ describe('RecordsPage', () => {
     expect(screen.getByText('No records match your filters')).toBeInTheDocument();
   });
 
-  it('shows record detail modal with cryptographic details', () => {
+  it('shows record detail modal with honest metadata and no IPFS/TEE theater', () => {
     render(
       <TestWrapper>
         <RecordsPage />
@@ -295,14 +377,15 @@ describe('RecordsPage', () => {
     fireEvent.click(rows[1]);
 
     expect(screen.getByText('Record Details')).toBeInTheDocument();
-    expect(screen.getByText('Cryptographic Details')).toBeInTheDocument();
-    expect(screen.getByText('IPFS CID')).toBeInTheDocument();
-    expect(screen.getByText('Transaction Hash')).toBeInTheDocument();
-    expect(screen.getByText('TEE Attestation')).toBeInTheDocument();
+    expect(screen.getByText('Record Type')).toBeInTheDocument();
     expect(screen.getByText('Tags')).toBeInTheDocument();
     expect(screen.getByText('Record Date')).toBeInTheDocument();
     expect(screen.getByText('Upload Date')).toBeInTheDocument();
     expect(screen.getByText('File Size')).toBeInTheDocument();
+    // The fabricated IPFS/TEE/on-chain crypto block was removed.
+    expect(screen.queryByText('Cryptographic Details')).not.toBeInTheDocument();
+    expect(screen.queryByText('IPFS CID')).not.toBeInTheDocument();
+    expect(screen.queryByText('TEE Attestation')).not.toBeInTheDocument();
   });
 
   it('closes record detail modal', () => {
@@ -352,5 +435,61 @@ describe('RecordsPage', () => {
     const notesTab = screen.getAllByText('Notes')[0];
     fireEvent.click(notesTab);
     expect(screen.getByText(/Showing \d+ of \d+ records/)).toBeInTheDocument();
+  });
+
+  it('persists an upload for a connected wallet and closes the success modal', async () => {
+    render(
+      <ConnectedTestWrapper>
+        <RecordsPage />
+      </ConnectedTestWrapper>,
+    );
+    await openUploadForConnectedWallet();
+    fillUploadForm();
+    fireEvent.click(screen.getByText('Encrypt & Upload'));
+
+    expect(await screen.findByText('Record Saved')).toBeInTheDocument();
+    expect(mockMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'lab_result',
+        label: 'bloodwork',
+        encryption: 'AES-256-GCM',
+      }),
+    );
+    expect(screen.getByText('Record uploaded')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Done'));
+    expect(screen.queryByText('Record Saved')).not.toBeInTheDocument();
+  });
+
+  it('reports the API Error and never claims a failed upload succeeded', async () => {
+    mockMutateAsync.mockRejectedValueOnce(new Error('record store offline'));
+    render(
+      <ConnectedTestWrapper>
+        <RecordsPage />
+      </ConnectedTestWrapper>,
+    );
+    await openUploadForConnectedWallet();
+    fillUploadForm();
+    fireEvent.click(screen.getByText('Encrypt & Upload'));
+
+    expect(await screen.findByText('Upload Failed')).toBeInTheDocument();
+    expect(screen.getAllByText('record store offline').length).toBe(2);
+    expect(screen.getByText('Upload failed')).toBeInTheDocument();
+    expect(screen.queryByText('Record Saved')).not.toBeInTheDocument();
+  });
+
+  it('uses a safe upload message when the API rejects with a non-Error', async () => {
+    mockMutateAsync.mockRejectedValueOnce('offline');
+    render(
+      <ConnectedTestWrapper>
+        <RecordsPage />
+      </ConnectedTestWrapper>,
+    );
+    await openUploadForConnectedWallet();
+    fillUploadForm();
+    fireEvent.click(screen.getByText('Encrypt & Upload'));
+
+    expect(await screen.findByText('Upload Failed')).toBeInTheDocument();
+    expect(screen.getAllByText('Could not save the record.').length).toBeGreaterThan(0);
   });
 });

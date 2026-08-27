@@ -12,14 +12,18 @@ jest.mock('@/components/layout/Providers', () => ({
   ),
 }));
 
-import RootLayout, { metadata, viewport } from '@/app/layout';
+import RootLayout, { metadata, viewport, dynamic } from '@/app/layout';
 
 describe('RootLayout', () => {
+  it('forces per-request rendering so the CSP nonce always matches (audit M-01)', () => {
+    expect(dynamic).toBe('force-dynamic');
+  });
+
   it('renders children inside Providers', () => {
     const { container } = render(
       <RootLayout>
         <div data-testid="child">Hello</div>
-      </RootLayout>
+      </RootLayout>,
     );
     expect(screen.getByTestId('providers')).toBeInTheDocument();
     expect(screen.getByTestId('child')).toBeInTheDocument();
@@ -30,7 +34,7 @@ describe('RootLayout', () => {
     render(
       <RootLayout>
         <div>Content</div>
-      </RootLayout>
+      </RootLayout>,
     );
     expect(screen.getByText('Skip to main content')).toBeInTheDocument();
   });
@@ -39,7 +43,7 @@ describe('RootLayout', () => {
     const { container } = render(
       <RootLayout>
         <div>Content</div>
-      </RootLayout>
+      </RootLayout>,
     );
     const htmlEl = container.querySelector('html');
     expect(htmlEl).toBeTruthy();
@@ -49,7 +53,7 @@ describe('RootLayout', () => {
   it('exports metadata with title and description', () => {
     expect(metadata).toBeDefined();
     expect(metadata.title).toBeDefined();
-    expect(metadata.description).toContain("Women's Health AI Platform");
+    expect(metadata.description).toContain("Women's Health Data Platform");
     expect(metadata.openGraph).toBeDefined();
     expect(metadata.twitter).toBeDefined();
   });
@@ -63,7 +67,7 @@ describe('RootLayout', () => {
     const { container } = render(
       <RootLayout>
         <div>Content</div>
-      </RootLayout>
+      </RootLayout>,
     );
     const bodyEl = container.querySelector('body');
     expect(bodyEl).toBeTruthy();

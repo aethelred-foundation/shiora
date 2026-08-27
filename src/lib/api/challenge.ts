@@ -6,7 +6,7 @@
 
 import crypto from 'node:crypto';
 
-import { serverEnv } from '@/lib/api/env';
+import { challengeSigningKey } from '@/lib/crypto/derived-secrets';
 
 export function verifyChallenge(
   address: string,
@@ -23,7 +23,7 @@ export function verifyChallenge(
   // Verify HMAC — proves the challenge was issued by this server
   const payload = `${address}:${nonce}:${issuedAt}:${expiresAt}`;
   const expected = crypto
-    .createHmac('sha256', serverEnv.sessionSecret)
+    .createHmac('sha256', challengeSigningKey())
     .update(payload)
     .digest('hex');
 

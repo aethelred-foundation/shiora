@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { runMiddleware } from '@/lib/api/middleware';
 
 import type {
   ProviderReputation,
@@ -58,6 +59,9 @@ const providers = generateProviders();
 // ---------------------------------------------------------------------------
 
 export async function GET(request: NextRequest) {
+  const blocked = await runMiddleware(request);
+  if (blocked) return blocked;
+
   const { searchParams } = request.nextUrl;
   const trustLevel = searchParams.get('trustLevel') as TrustLevel | null;
   const search = searchParams.get('search');

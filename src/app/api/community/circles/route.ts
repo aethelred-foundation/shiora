@@ -27,7 +27,7 @@ const CIRCLE_NAMES: Record<string, string> = {
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const circles = COMMUNITY_CATEGORIES.map((cat, i) => ({

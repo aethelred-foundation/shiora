@@ -4,6 +4,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppProvider } from '@/contexts/AppContext';
 import { useHealthRecords } from '@/hooks/useHealthRecords';
 
+const mockWalletConnected = true;
+jest.mock('@/contexts/AppContext', () => ({
+  AppProvider: ({ children }: { children: React.ReactNode }) => children,
+  useApp: () => ({
+    wallet: { connected: mockWalletConnected },
+    addNotification: jest.fn(),
+  }),
+}));
+
+
 function createWrapper() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } } });
   return ({ children }: { children: React.ReactNode }) =>

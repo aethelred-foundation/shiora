@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title ShioraZKVerifier
- * @author Shiora Health AI on Aethelred
  * @notice On-chain verification of zero-knowledge proofs for health-related claims.
  *         Supports claim types such as age_range, condition_present,
  *         medication_active, data_quality, provider_verified, and

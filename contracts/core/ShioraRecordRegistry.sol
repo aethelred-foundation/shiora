@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ShioraRecordRegistry
- * @author Shiora Health AI on Aethelred
  * @notice Manages on-chain registration of encrypted health record metadata.
  *         Records are stored on IPFS; only the CID, content hash, encryption
  *         type, and TEE attestation are registered on-chain for integrity

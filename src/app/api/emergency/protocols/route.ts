@@ -4,7 +4,8 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
+import { errorResponse, HTTP } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededHex, seededInt, generateAttestation } from '@/lib/utils';
 
@@ -96,7 +97,7 @@ const PROTOCOLS = [
 ];
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   try {
@@ -107,7 +108,7 @@ export async function GET(request: NextRequest) {
       lastReviewed: Date.now() - seededInt(SEED + i * 82, 10, 120) * 86400000,
     }));
 
-    return successResponse(protocols);
+    return simulatedResponse(protocols, 'emergency');
   } catch {
     return errorResponse('INTERNAL_ERROR', 'Failed to fetch protocols', HTTP.INTERNAL);
   }

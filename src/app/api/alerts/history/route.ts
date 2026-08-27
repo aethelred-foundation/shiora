@@ -4,17 +4,9 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  successResponse,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, HTTP } from '@/lib/api/responses';
 import { runMiddleware } from '@/lib/api/middleware';
-import {
-  seededInt,
-  seededHex,
-  seededPick,
-  formatDateTime,
-} from '@/lib/utils';
+import { seededInt, seededHex, seededPick, formatDateTime } from '@/lib/utils';
 import type { AlertHistory } from '@/types';
 
 // ────────────────────────────────────────────────────────────
@@ -25,7 +17,7 @@ const SEED = 1200;
 
 function generateMockHistory(): AlertHistory[] {
   const actions: AlertHistory['action'][] = ['triggered', 'acknowledged', 'resolved', 'escalated'];
-  const actors = ['Patient', 'Dr. Sarah Chen', 'AI System', 'Auto-resolve'];
+  const actors = ['Patient', 'Dr. Sarah Chen', 'Inference Service', 'Auto-resolve'];
   const notes = [
     'Reviewed and acknowledged. Monitoring closely.',
     'Resolved after medication adjustment.',
@@ -52,7 +44,7 @@ function generateMockHistory(): AlertHistory[] {
 // ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   const alertId = request.nextUrl.searchParams.get('alertId');

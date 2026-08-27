@@ -5,11 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 import { CHAT_SUGGESTED_PROMPTS } from '@/lib/constants';
 
-import type {
-  ChatMessage,
-  ChatConversation,
-  ChatModelConfig,
-} from '@/types';
+import type { ChatMessage, ChatConversation, ChatModelConfig } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Query keys
@@ -23,19 +19,14 @@ const MESSAGES_KEY = 'chat-messages';
 // ---------------------------------------------------------------------------
 
 const ACTIVE_MODEL: ChatModelConfig = {
-  id: 'health-transformer',
-  name: 'Health Transformer',
-  version: 'v3.0',
+  id: 'sana',
+  name: 'SANA',
+  version: '',
   maxTokens: 4096,
+  // Required by ChatModelConfig; SANA is not TEE-attested and this is not
+  // surfaced as a claim in the UI.
   teePlatform: 'Intel SGX',
-  capabilities: [
-    'cycle-analysis',
-    'lab-interpretation',
-    'medication-review',
-    'wellness-summary',
-    'fertility-prediction',
-    'anomaly-explanation',
-  ],
+  capabilities: ['records-navigation', 'concept-explanation', 'question-preparation'],
 };
 
 // ---------------------------------------------------------------------------
@@ -59,7 +50,7 @@ export interface UseHealthChatReturn {
   error: Error | null;
   /** Suggested prompts for empty state. */
   suggestedPrompts: typeof CHAT_SUGGESTED_PROMPTS;
-  /** Currently active AI model config. */
+  /** Currently active inference configuration. */
   activeModel: ChatModelConfig;
   /** Set the active conversation by ID (null to deselect). */
   setActiveConversation: (id: string | null) => void;

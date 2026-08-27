@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 // ============================================================
-// Shiora Health AI — Interface Definitions
+// Shiora — Interface Definitions
 // Core interfaces for the Shiora protocol on Aethelred
 // ============================================================
 
@@ -214,7 +214,7 @@ interface IShioraTEEVerifier {
         bytes signature;
     }
 
-    /// @notice Registered AI model
+    /// @notice Registered confidential-compute workload
     struct Model {
         string name;
         string version;

@@ -3,6 +3,16 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useReproductiveVault } from '@/hooks/useReproductiveVault';
 
+let mockWalletConnected = true;
+jest.mock('@/contexts/AppContext', () => ({
+  AppProvider: ({ children }: { children: React.ReactNode }) => children,
+  useApp: () => ({
+    wallet: { connected: mockWalletConnected },
+    addNotification: jest.fn(),
+  }),
+}));
+
+
 function createWrapper() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   return ({ children }: { children: React.ReactNode }) =>
@@ -10,6 +20,17 @@ function createWrapper() {
 }
 
 describe('useReproductiveVault', () => {
+  it('does not fetch anything while the wallet is disconnected (empty-until-auth)', () => {
+    mockWalletConnected = false;
+    try {
+      const { result } = renderHook(() => useReproductiveVault(), { wrapper: createWrapper() });
+      expect(result.current.isLoading).toBe(false);
+      expect(global.fetch).not.toHaveBeenCalled();
+    } finally {
+      mockWalletConnected = true;
+    }
+  });
+
   it('initializes with loading', () => {
     const { result } = renderHook(() => useReproductiveVault(), { wrapper: createWrapper() });
     expect(result.current.isLoading).toBe(true);
@@ -99,7 +120,11 @@ describe('useReproductiveVault', () => {
           ok: true,
           status: 200,
           headers: { get: () => 'application/json' },
-          json: () => Promise.resolve({ success: true, data: [] }),
+          json: () =>
+            Promise.resolve({
+              success: true,
+              data: { entries: [], total: 0, insights: {} },
+            }),
         });
       }
       return realFetch(url, init);
@@ -128,7 +153,11 @@ describe('useReproductiveVault', () => {
           headers: { get: () => 'application/json' },
           json: () => Promise.resolve({
             success: true,
-            data: [{ id: 'entry-1', date: Date.now() }],
+            data: {
+              entries: [{ id: 'entry-1', date: Date.now() }],
+              total: 1,
+              insights: {},
+            },
           }),
         });
       }

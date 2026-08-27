@@ -1,50 +1,33 @@
 /**
  * Shiora on Aethelred — Wallet Connect Component
  *
- * Wallet connection with Keplr and Leap support,
- * network selection, balance display, transaction history, and message signing.
+ * Wallet connection for the Aethelred public testnet, balance display, and
+ * message signing.
  */
 
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
-import {
-  Wallet, Globe, ChevronRight, ChevronDown,
-  LogOut, ArrowDownLeft, ArrowUpRight, Clock, Shield,
-  FileSignature, Compass,
-} from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { Wallet, ChevronRight, ChevronDown, LogOut, Shield, FileSignature } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
 import { useWallet } from '@/hooks/useWallet';
-import { Modal, Badge, Drawer } from '@/components/ui/SharedComponents';
+import { Modal } from '@/components/ui/SharedComponents';
 import { CopyButton } from '@/components/ui/PagePrimitives';
-import { formatNumber, truncateAddress, seededHex, seededRandom, formatDate, generateTxHash, timeAgo } from '@/lib/utils';
+import { formatNumber, truncateAddress } from '@/lib/utils';
 
 // ============================================================
 // Types
 // ============================================================
 
-type WalletType = 'keplr' | 'leap';
-type NetworkType = 'mainnet' | 'testnet';
-
+type WalletType = 'aethelred' | 'metamask';
 interface WalletOption {
   id: WalletType;
   name: string;
   description: string;
   icon: React.ReactNode;
   color: string;
-}
-
-interface Transaction {
-  id: string;
-  type: 'send' | 'receive' | 'contract';
-  hash: string;
-  amount: number;
-  token: string;
-  from: string;
-  to: string;
-  timestamp: number;
-  status: 'confirmed' | 'pending' | 'failed';
+  recommended?: boolean;
 }
 
 // ============================================================
@@ -53,68 +36,56 @@ interface Transaction {
 
 const WALLET_OPTIONS: WalletOption[] = [
   {
-    id: 'keplr',
-    name: 'Keplr',
-    description: 'Cosmos ecosystem wallet',
-    icon: <Globe className="w-5 h-5 text-orange-600" />,
-    color: 'bg-orange-100',
+    id: 'aethelred',
+    name: 'Aethelred Wallet',
+    description: 'The one wallet for the Aethelred ecosystem',
+    icon: <Shield className="w-5 h-5 text-rose-600" />,
+    color: 'bg-rose-100',
+    recommended: true,
   },
   {
-    id: 'leap',
-    name: 'Leap',
-    description: 'Cosmos ecosystem wallet',
-    icon: <Compass className="w-5 h-5 text-emerald-600" />,
-    color: 'bg-emerald-100',
+    id: 'metamask',
+    name: 'MetaMask',
+    description: 'Connect with the MetaMask browser extension',
+    icon: <Wallet className="w-5 h-5 text-amber-600" />,
+    color: 'bg-amber-100',
   },
 ];
-
-const SEED = 700;
-
-function generateMockTransactions(): Transaction[] {
-  const types: Transaction['type'][] = ['send', 'receive', 'contract', 'receive', 'send'];
-  const statuses: Transaction['status'][] = ['confirmed', 'confirmed', 'confirmed', 'pending', 'confirmed'];
-  return Array.from({ length: 8 }, (_, i) => ({
-    id: `tx-${i}`,
-    type: types[i % types.length],
-    hash: generateTxHash(SEED + i * 50),
-    amount: parseFloat((Math.round(seededRandom(SEED + i * 7) * 5000) / 100).toFixed(2)),
-    token: i % 3 === 0 ? 'AETHEL' : '$AETHEL',
-    from: `aeth1${seededHex(SEED + i * 10, 8)}...${seededHex(SEED + i * 11, 4)}`,
-    to: `aeth1${seededHex(SEED + i * 20, 8)}...${seededHex(SEED + i * 21, 4)}`,
-    timestamp: Date.now() - (i + 1) * 3600000 * (1 + seededRandom(SEED + i) * 24),
-    status: statuses[i % statuses.length],
-  }));
-}
 
 // ============================================================
 // WalletConnect Component
 // ============================================================
 
 export function WalletConnect() {
-  const { wallet, realTime } = useApp();
-  const { connect, disconnect, signMessage: walletSignMessage, isLoading: walletLoading, error: walletError } = useWallet();
+  const { wallet } = useApp();
+  const {
+    connect,
+    disconnect,
+    signMessage: walletSignMessage,
+    isLoading: walletLoading,
+    error: walletError,
+  } = useWallet();
   const [showConnectModal, setShowConnectModal] = useState(false);
-  const [showTxDrawer, setShowTxDrawer] = useState(false);
   const [showSignModal, setShowSignModal] = useState(false);
   const [selectedWalletType, setSelectedWalletType] = useState<WalletType | null>(null);
-  const [network, setNetwork] = useState<NetworkType>('mainnet');
   const [connectError, setConnectError] = useState<string | null>(null);
   const [signMessageText, setSignMessageText] = useState('');
   const [signResult, setSignResult] = useState('');
   const [signing, setSigning] = useState(false);
 
-  const transactions = useMemo(() => generateMockTransactions(), []);
-
-  const handleConnect = useCallback(async (type: WalletType) => {
-    setSelectedWalletType(type);
-    setConnectError(null);
-    try {
-      await connect(type, network);
-      setShowConnectModal(false);
-    } catch (err) {
-      setConnectError(err instanceof Error ? err.message : 'Connection failed');
-    }
-  }, [connect, network]);
+  const handleConnect = useCallback(
+    async (type: WalletType) => {
+      setSelectedWalletType(type);
+      setConnectError(null);
+      try {
+        await connect(type, 'testnet');
+        setShowConnectModal(false);
+      } catch (err) {
+        setConnectError(err instanceof Error ? err.message : 'Connection failed');
+      }
+    },
+    [connect],
+  );
 
   const handleDisconnect = useCallback(() => {
     disconnect();
@@ -156,26 +127,6 @@ export function WalletConnect() {
           size="sm"
         >
           <div className="space-y-3">
-            {/* Network selector */}
-            <div className="flex bg-slate-100 rounded-lg p-1 mb-4">
-              <button
-                onClick={() => setNetwork('mainnet')}
-                className={`flex-1 py-2 rounded-md text-xs font-medium transition-colors ${
-                  network === 'mainnet' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'
-                }`}
-              >
-                Mainnet
-              </button>
-              <button
-                onClick={() => setNetwork('testnet')}
-                className={`flex-1 py-2 rounded-md text-xs font-medium transition-colors ${
-                  network === 'testnet' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'
-                }`}
-              >
-                Testnet
-              </button>
-            </div>
-
             {/* Wallet options */}
             {WALLET_OPTIONS.map((opt) => (
               <button
@@ -184,17 +135,28 @@ export function WalletConnect() {
                 disabled={walletLoading}
                 className="w-full flex items-center gap-4 p-4 border-2 border-slate-200 rounded-xl hover:border-brand-300 hover:bg-brand-50 transition-colors text-left disabled:opacity-50"
               >
-                <div className={`w-10 h-10 rounded-xl ${opt.color} flex items-center justify-center shrink-0`}>
+                <div
+                  className={`w-10 h-10 rounded-xl ${opt.color} flex items-center justify-center shrink-0`}
+                >
                   {(() => {
                     /* istanbul ignore next -- loading state is transient */
                     if (walletLoading && selectedWalletType === opt.id) {
-                      return <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />;
+                      return (
+                        <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                      );
                     }
                     return opt.icon;
                   })()}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-slate-900">{opt.name}</p>
+                  <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                    {opt.name}
+                    {opt.recommended && (
+                      <span className="text-[10px] uppercase tracking-widest text-brand-600 font-semibold">
+                        Recommended
+                      </span>
+                    )}
+                  </p>
                   <p className="text-xs text-slate-500">{opt.description}</p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400" />
@@ -210,8 +172,8 @@ export function WalletConnect() {
 
             {/* Network info */}
             <div className="pt-2 flex items-center justify-center gap-2 text-xs text-slate-400">
-              <div className={`w-2 h-2 rounded-full ${network === 'mainnet' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-              Aethelred {network === 'mainnet' ? 'Mainnet' : 'Testnet'}
+              <div className="w-2 h-2 rounded-full bg-amber-500" />
+              Aethelred Public Testnet
             </div>
           </div>
         </Modal>
@@ -220,18 +182,13 @@ export function WalletConnect() {
   }
 
   // Connected state
-  /* istanbul ignore next -- network is always mainnet in connected state */
-  const networkDotColor = network === 'mainnet' ? 'bg-emerald-500' : 'bg-amber-500';
-  /* istanbul ignore next */
-  const networkLabel = network === 'mainnet' ? 'Mainnet' : 'Testnet';
-
   return (
     <>
       <div className="flex items-center gap-2">
         {/* Network indicator */}
         <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs">
-          <div className={`w-1.5 h-1.5 rounded-full ${networkDotColor} animate-pulse`} />
-          <span className="text-slate-500">{networkLabel}</span>
+          <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+          <span className="text-slate-500">Public Testnet</span>
         </div>
 
         {/* Wallet button */}
@@ -250,7 +207,9 @@ export function WalletConnect() {
             <div className="mb-3">
               <div className="bg-slate-50 rounded-lg p-2.5 text-center">
                 <p className="text-xs text-slate-500">$AETHEL</p>
-                <p className="text-sm font-bold text-slate-900">{formatNumber(wallet.aethelBalance)}</p>
+                <p className="text-sm font-bold text-slate-900">
+                  {wallet.aethelBalance === null ? '—' : formatNumber(wallet.aethelBalance)}
+                </p>
               </div>
             </div>
 
@@ -266,13 +225,6 @@ export function WalletConnect() {
 
             {/* Actions */}
             <div className="space-y-1">
-              <button
-                onClick={() => setShowTxDrawer(true)}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
-              >
-                <Clock className="w-4 h-4 text-slate-400" />
-                Transaction History
-              </button>
               <button
                 onClick={() => setShowSignModal(true)}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
@@ -293,55 +245,14 @@ export function WalletConnect() {
         </div>
       </div>
 
-      {/* Transaction History Drawer */}
-      <Drawer
-        open={showTxDrawer}
-        onClose={() => setShowTxDrawer(false)}
-        title="Transaction History"
-      >
-        <div className="space-y-3">
-          {transactions.map((tx) => (
-            <div key={tx.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                tx.type === 'receive' ? 'bg-emerald-100 text-emerald-600' :
-                tx.type === 'send' ? 'bg-brand-100 text-brand-600' :
-                'bg-violet-100 text-violet-600'
-              }`}>
-                {tx.type === 'receive' ? <ArrowDownLeft className="w-4 h-4" /> :
-                 tx.type === 'send' ? <ArrowUpRight className="w-4 h-4" /> :
-                 <Shield className="w-4 h-4" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-slate-900 capitalize">{tx.type}</p>
-                  <Badge variant={tx.status === 'confirmed' ? 'success' : tx.status === 'pending' ? 'warning' : /* istanbul ignore next */ 'error'}>
-                    {tx.status}
-                  </Badge>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">{timeAgo(tx.timestamp)}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className={`text-sm font-medium ${tx.type === 'receive' ? 'text-emerald-600' : 'text-slate-900'}`}>
-                  {tx.type === 'receive' ? '+' : '-'}{tx.amount}
-                </p>
-                <p className="text-xs text-slate-400">{tx.token}</p>
-              </div>
-            </div>
-          ))}
-
-          {transactions.length === 0 && (
-            <div className="text-center py-12">
-              <Clock className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-              <p className="text-sm text-slate-500">No transactions yet</p>
-            </div>
-          )}
-        </div>
-      </Drawer>
-
       {/* Sign Message Modal */}
       <Modal
         open={showSignModal}
-        onClose={() => { setShowSignModal(false); setSignMessageText(''); setSignResult(''); }}
+        onClose={() => {
+          setShowSignModal(false);
+          setSignMessageText('');
+          setSignResult('');
+        }}
         title="Sign Message"
         description="Sign a message with your wallet to prove ownership"
         size="md"

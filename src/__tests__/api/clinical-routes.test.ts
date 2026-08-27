@@ -2,8 +2,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-// We need to mock runMiddleware to test the blocked branch.
-// The module uses non-configurable exports, so we use jest.mock.
 const mockRunMiddleware = jest.fn().mockReturnValue(null);
 jest.mock('@/lib/api/middleware', () => ({
   ...jest.requireActual('@/lib/api/middleware'),
@@ -15,133 +13,86 @@ import { GET as getDifferentials } from '@/app/api/clinical/differentials/route'
 import { GET as getInteractions } from '@/app/api/clinical/interactions/route';
 import { GET as getPathways } from '@/app/api/clinical/pathways/route';
 import { GET as getAudit } from '@/app/api/clinical/audit/route';
+import { assignRole, __resetRolesForTests } from '@/lib/api/roles-service';
+import { createSessionToken } from '@/lib/api/session';
+import { seededAddress } from '@/lib/utils';
+
+const PROVIDER = seededAddress(100);
+const PATIENT = seededAddress(101);
+const providerToken = createSessionToken(PROVIDER).token;
+const patientToken = createSessionToken(PATIENT).token;
+
+beforeEach(async () => {
+  __resetRolesForTests();
+  await assignRole(PROVIDER, 'provider');
+});
 
 afterEach(() => {
   mockRunMiddleware.mockReturnValue(null);
 });
 
-describe('/api/clinical', () => {
-  it('GET returns clinical stats (default view)', async () => {
-    const res = await getClinical(new NextRequest('http://localhost:3000/api/clinical'));
+function authed(url: string, token: string): NextRequest {
+  return new NextRequest(url, { headers: { authorization: `Bearer ${token}` } });
+}
+
+const BASE = 'http://localhost:3000/api/clinical';
+
+describe('/api/clinical (provider-gated)', () => {
+  it('returns clinical stats for a provider', async () => {
+    const res = await getClinical(authed(BASE, providerToken));
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.success).toBe(true);
     expect(body.data.totalDecisions).toBeDefined();
     expect(body.data.activePathways).toBeDefined();
   });
 
-  it('GET returns alerts view', async () => {
-    const res = await getClinical(
-      new NextRequest('http://localhost:3000/api/clinical?view=alerts'),
-    );
+  it('returns the alerts view for a provider', async () => {
+    const res = await getClinical(authed(`${BASE}?view=alerts`, providerToken));
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.success).toBe(true);
     expect(Array.isArray(body.data)).toBe(true);
-    expect(body.data.length).toBeGreaterThan(0);
-    expect(body.data[0].type).toBeDefined();
     expect(body.data[0].severity).toBeDefined();
-    expect(body.data[0].recommendation).toBeDefined();
   });
 
-  it('GET returns 400 for invalid view', async () => {
-    const res = await getClinical(
-      new NextRequest('http://localhost:3000/api/clinical?view=invalid'),
-    );
+  it('returns 400 for an invalid view', async () => {
+    const res = await getClinical(authed(`${BASE}?view=invalid`, providerToken));
     expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body.success).toBe(false);
   });
 
-  it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
-    const res = await getClinical(new NextRequest('http://localhost:3000/api/clinical'));
+  it('returns 403 for a non-provider', async () => {
+    const res = await getClinical(authed(BASE, patientToken));
+    expect(res.status).toBe(403);
+  });
+
+  it('returns the blocked response when middleware blocks', async () => {
+    mockRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
+    const res = await getClinical(authed(BASE, providerToken));
     expect(res.status).toBe(429);
   });
 });
 
-describe('/api/clinical/differentials', () => {
-  it('GET returns differentials', async () => {
-    const res = await getDifferentials(
-      new NextRequest('http://localhost:3000/api/clinical/differentials'),
-    );
+describe.each([
+  ['differentials', getDifferentials],
+  ['interactions', getInteractions],
+  ['pathways', getPathways],
+  ['audit', getAudit],
+] as const)('/api/clinical/%s (provider-gated)', (name, handler) => {
+  const url = `${BASE}/${name}`;
+
+  it('returns data for a provider', async () => {
+    const res = await handler(authed(url, providerToken));
     expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
+    expect((await res.json()).success).toBe(true);
   });
 
-  it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
-    const res = await getDifferentials(
-      new NextRequest('http://localhost:3000/api/clinical/differentials'),
-    );
-    expect(res.status).toBe(429);
-  });
-});
-
-describe('/api/clinical/interactions', () => {
-  it('GET returns drug interactions', async () => {
-    const res = await getInteractions(
-      new NextRequest('http://localhost:3000/api/clinical/interactions'),
-    );
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
+  it('returns 403 for a non-provider', async () => {
+    const res = await handler(authed(url, patientToken));
+    expect(res.status).toBe(403);
   });
 
-  it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
-    const res = await getInteractions(
-      new NextRequest('http://localhost:3000/api/clinical/interactions'),
-    );
-    expect(res.status).toBe(429);
-  });
-});
-
-describe('/api/clinical/pathways', () => {
-  it('GET returns clinical pathways', async () => {
-    const res = await getPathways(
-      new NextRequest('http://localhost:3000/api/clinical/pathways'),
-    );
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-  });
-
-  it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
-    const res = await getPathways(
-      new NextRequest('http://localhost:3000/api/clinical/pathways'),
-    );
-    expect(res.status).toBe(429);
-  });
-});
-
-describe('/api/clinical/audit', () => {
-  it('GET returns clinical audit log', async () => {
-    const res = await getAudit(
-      new NextRequest('http://localhost:3000/api/clinical/audit'),
-    );
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.success).toBe(true);
-  });
-
-  it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
-    const res = await getAudit(
-      new NextRequest('http://localhost:3000/api/clinical/audit'),
-    );
+  it('returns the blocked response when middleware blocks', async () => {
+    mockRunMiddleware.mockResolvedValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
+    const res = await handler(authed(url, providerToken));
     expect(res.status).toBe(429);
   });
 });

@@ -9,6 +9,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
+import { useApp } from '@/contexts/AppContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import type {
@@ -176,6 +177,10 @@ export function useHealthRecords(
 
   // ---- List query --------------------------------------------------------
 
+  // Records are empty-until-auth: logged-out fetches are pure 401 noise that
+  // also consumes the client's shared rate-limit budget.
+  const { wallet } = useApp();
+
   const listQuery = useQuery({
     queryKey: [RECORDS_KEY, filters],
     queryFn: () =>
@@ -190,6 +195,7 @@ export function useHealthRecords(
       }),
     staleTime: 30_000,
     placeholderData: (prev) => prev,
+    enabled: wallet.connected,
   });
 
   const data = listQuery.data;

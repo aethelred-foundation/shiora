@@ -8,6 +8,7 @@ out/
 # Environment
 .env
 .env.local
+.env.public-testnet
 .env.production.local
 .env.development.local
 .env.test.local
@@ -50,4 +51,12 @@ contracts/typechain-types/
 
 # Misc
 *.log
-.claude/
+
+# Playwright (GAP-26)
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# Legacy synthetic dev-state (removed; never load in any environment)
+/.shiora-data/

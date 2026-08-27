@@ -6,7 +6,7 @@ import { generateTxHash } from '@/lib/utils';
 interface RouteContext { params: Promise<{ positionId: string }> }
 
 export async function POST(request: NextRequest, context: RouteContext) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
   const { positionId } = await context.params;
   return successResponse({

@@ -5,7 +5,7 @@ import { runMiddleware } from '@/lib/api/middleware';
 interface RouteContext { params: Promise<{ id: string }> }
 
 export async function POST(request: NextRequest, context: RouteContext) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
   const { id } = await context.params;
   return successResponse({ id, resolvedAt: Date.now(), status: 'resolved' }, HTTP.OK);

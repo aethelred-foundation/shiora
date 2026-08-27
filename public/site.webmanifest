@@ -1,7 +1,7 @@
 {
-  "name": "Shiora Health AI",
+  "name": "Shiora",
   "short_name": "Shiora",
-  "description": "Women's Health AI Platform on the Aethelred Blockchain",
+  "description": "Women's Health Data Platform on the Aethelred Blockchain",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8fafc",

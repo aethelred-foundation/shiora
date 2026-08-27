@@ -13,8 +13,8 @@ import type {
   PaginatedResponse,
   ApiResponse,
 } from '@/types';
+import { randomUUID } from 'node:crypto';
 import {
-  seededHex,
   seededAddress,
   generateTxHash,
   generateAttestation,
@@ -25,14 +25,14 @@ import {
   parseSearchParams,
 } from '@/lib/api/validation';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
-import { createConsent, listConsents } from '@/lib/api/store';
+import { createConsent, listConsents, processConsentExpiry } from '@/lib/api/consent-service';
 
 // ---------------------------------------------------------------------------
 // GET /api/consent
 // ---------------------------------------------------------------------------
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   try {
@@ -44,7 +44,10 @@ export async function GET(request: NextRequest) {
       request.nextUrl.searchParams,
     );
 
-    let filtered = listConsents(auth.walletAddress!);
+    // Reconcile expiry/auto-renewal before listing so the caller sees true status.
+    await processConsentExpiry(auth.walletAddress!);
+
+    let filtered = await listConsents(auth.walletAddress!);
 
     if (query.status) {
       filtered = filtered.filter((consent) => consent.status === query.status);
@@ -115,7 +118,7 @@ export async function GET(request: NextRequest) {
 // ---------------------------------------------------------------------------
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request, { requireAuth: true });
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
   try {
@@ -125,8 +128,8 @@ export async function POST(request: NextRequest) {
     const form = ConsentCreateSchema.parse(await request.json());
 
     const seed = Date.now();
-    const consent = createConsent(auth.walletAddress!, {
-      id: `consent-${seededHex(seed, 12)}`,
+    const consent = await createConsent(auth.walletAddress!, {
+      id: `consent-${randomUUID().replace(/-/g, '')}`,
       patientAddress: auth.walletAddress!,
       providerAddress: form.providerAddress || seededAddress(seed + 2),
       providerName: form.providerName,

@@ -25,6 +25,13 @@ import {
   Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine, ReferenceArea,
 } from 'recharts';
 
+import { SealedField } from '@/components/crypto/SealedField';
+import { useFieldKey } from '@/hooks/useFieldKey';
+import { sealSensitiveField } from '@/lib/crypto/client-field-encryption';
+
+/** AAD binding the sealed symptom note to its field type. */
+const SYMPTOM_NOTE_CONTEXT = 'vault:symptom-note';
+
 import type {
   VaultCompartment,
   VaultCompartmentCategory,
@@ -317,6 +324,7 @@ export function SymptomLogger({ categories, onLog, recentLogs }: SymptomLoggerPr
   const [selectedCategory, setSelectedCategory] = useState<SymptomCategory | null>(null);
   const [severity, setSeverity] = useState<number>(3);
   const [notes, setNotes] = useState('');
+  const fieldKey = useFieldKey();
 
   const SeverityIcon = ({ level }: { level: number }) => {
     const config = SEVERITY_ICONS[level - 1];
@@ -325,9 +333,14 @@ export function SymptomLogger({ categories, onLog, recentLogs }: SymptomLoggerPr
     return <LucideIconByName name={config.name} className={`w-5 h-5 ${config.color}`} />;
   };
 
-  const handleLog = () => {
+  const handleLog = async () => {
     /* istanbul ignore next -- guard: button is disabled when no category selected */
     if (!selectedCategory) return;
+    // Seal the free-text note on-device when the user has unlocked encryption;
+    // otherwise it is sent as-is (the store reads both transparently).
+    const storedNotes = fieldKey.fieldKey
+      ? await sealSensitiveField(notes, fieldKey.fieldKey, SYMPTOM_NOTE_CONTEXT)
+      : notes;
     onLog({
       date: Date.now(),
       category: selectedCategory,
@@ -335,7 +348,7 @@ export function SymptomLogger({ categories, onLog, recentLogs }: SymptomLoggerPr
         /* istanbul ignore next */
         selectedCategory,
       severity: severity as 1 | 2 | 3 | 4 | 5,
-      notes,
+      notes: storedNotes,
       tags: [],
     });
     setSelectedCategory(null);
@@ -388,15 +401,17 @@ export function SymptomLogger({ categories, onLog, recentLogs }: SymptomLoggerPr
         </div>
       )}
 
-      {/* Notes */}
+      {/* Notes — highest-sensitivity free text, sealable client-side */}
       {selectedCategory && (
         <div>
           <h4 className="text-sm font-medium text-slate-700 mb-2">Notes (optional)</h4>
-          <textarea
+          <SealedField
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={setNotes}
+            isUnlocked={fieldKey.isUnlocked}
+            isUnlocking={fieldKey.isUnlocking}
+            onUnlock={fieldKey.unlock}
             placeholder="Add any additional details..."
-            className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none h-20"
           />
         </div>
       )}

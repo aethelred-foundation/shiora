@@ -5,7 +5,8 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, HTTP } from '@/lib/api/responses';
+import { errorResponse, HTTP } from '@/lib/api/responses';
+import { simulatedResponse } from '@/lib/api/maturity';
 import { runMiddleware } from '@/lib/api/middleware';
 import { seededHex, seededInt } from '@/lib/utils';
 
@@ -75,7 +76,7 @@ const MEMBERS = [
 ];
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   try {
@@ -85,14 +86,14 @@ export async function GET(request: NextRequest) {
       lastInteraction: Date.now() - seededInt(SEED + i * 51, 1, 90) * 86400000,
     }));
 
-    return successResponse(team);
+    return simulatedResponse(team, 'emergency');
   } catch {
     return errorResponse('INTERNAL_ERROR', 'Failed to fetch care team', HTTP.INTERNAL);
   }
 }
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request);
   if (blocked) return blocked;
 
   try {
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
       isActive: true,
     };
 
-    return successResponse(member, HTTP.CREATED);
+    return simulatedResponse(member, 'emergency', HTTP.CREATED);
   } catch {
     return errorResponse('INVALID_REQUEST', 'Invalid request body', HTTP.BAD_REQUEST);
   }

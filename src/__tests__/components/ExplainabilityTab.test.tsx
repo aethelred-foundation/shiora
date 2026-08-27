@@ -13,7 +13,7 @@ const mockXAI: UseExplainableAIReturn = {
   modelCards: [],
   explainabilityResults: [],
   biasReports: [],
-  selectedModelId: 'lstm',
+  selectedModelId: 'cycle-patterns',
   setSelectedModelId: jest.fn(),
   selectedResultIndex: 0,
   setSelectedResultIndex: jest.fn(),
@@ -33,8 +33,11 @@ import ExplainabilityTab from '@/components/xai/ExplainabilityTab';
 
 function TestWrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return React.createElement(QueryClientProvider, { client: qc },
-    React.createElement(AppProvider, null, children));
+  return React.createElement(
+    QueryClientProvider,
+    { client: qc },
+    React.createElement(AppProvider, null, children),
+  );
 }
 
 describe('ExplainabilityTab', () => {
@@ -45,7 +48,7 @@ describe('ExplainabilityTab', () => {
     mockXAI.selectedModelCard = null;
     mockXAI.selectedBiasReport = null;
     mockXAI.featureImportances = [];
-    mockXAI.selectedModelId = 'lstm';
+    mockXAI.selectedModelId = 'cycle-patterns';
     (mockXAI.setSelectedModelId as jest.Mock).mockClear();
   });
 
@@ -54,7 +57,7 @@ describe('ExplainabilityTab', () => {
     const { container } = render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
   });
@@ -63,70 +66,67 @@ describe('ExplainabilityTab', () => {
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
-    expect(screen.getByText('Select AI Model')).toBeInTheDocument();
-    expect(screen.getByText('Choose a model to view its explainability details')).toBeInTheDocument();
+    expect(screen.getByText('Select Inference Workload')).toBeInTheDocument();
+    expect(
+      screen.getByText('Choose a workload to view its explainability details'),
+    ).toBeInTheDocument();
   });
 
-  it('renders the select dropdown with AI models', () => {
+  it('renders the select dropdown with inference workloads', () => {
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const select = screen.getByRole('combobox');
     expect(select).toBeInTheDocument();
-    // Should have AI_MODELS options
-    expect(screen.getByText(/Cycle LSTM/)).toBeInTheDocument();
+    expect(screen.getByText(/Cycle Pattern Analysis/)).toBeInTheDocument();
   });
 
   it('calls setSelectedModelId when model is changed', () => {
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     const select = screen.getByRole('combobox');
-    fireEvent.change(select, { target: { value: 'anomaly' } });
-    expect(mockXAI.setSelectedModelId).toHaveBeenCalledWith('anomaly');
+    fireEvent.change(select, { target: { value: 'anomaly-detection' } });
+    expect(mockXAI.setSelectedModelId).toHaveBeenCalledWith('anomaly-detection');
   });
 
   it('renders SHAP waterfall when selectedResult is provided', () => {
     mockXAI.selectedResult = {
       inferenceId: 'inf-123456789012',
-      modelId: 'lstm',
+      modelId: 'cycle-patterns',
       explanation: 'This prediction is based on heart rate patterns.',
       confidence: 92,
-      shapValues: [
-        { feature: 'HR', value: 75, baseValue: 72, contribution: 0.25 },
-      ],
+      shapValues: [{ feature: 'HR', value: 75, baseValue: 72, contribution: 0.25 }],
       decisionPath: ['Step 1', 'Step 2'],
     };
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('SHAP Feature Contributions')).toBeInTheDocument();
   });
 
   it('renders feature importance chart when featureImportances are provided', () => {
-    mockXAI.featureImportances = [
-      { feature: 'HR', importance: 0.35, direction: 'positive' },
-    ];
+    mockXAI.featureImportances = [{ feature: 'HR', importance: 0.35, direction: 'positive' }];
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Feature Importance')).toBeInTheDocument();
   });
 
-  it('renders AI explanation and decision path when selectedResult is set', () => {
+  it('renders inference explanation and decision path when selectedResult is set', () => {
     mockXAI.selectedResult = {
       inferenceId: 'inf-123456789012',
-      modelId: 'lstm',
+      modelId: 'cycle-patterns',
       explanation: 'This prediction is based on heart rate patterns.',
       confidence: 92,
       shapValues: [],
@@ -135,22 +135,24 @@ describe('ExplainabilityTab', () => {
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
-    expect(screen.getByText('AI Explanation')).toBeInTheDocument();
-    expect(screen.getByText('This prediction is based on heart rate patterns.')).toBeInTheDocument();
+    expect(screen.getByText('Inference Explanation')).toBeInTheDocument();
+    expect(
+      screen.getByText('This prediction is based on heart rate patterns.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('92% confidence')).toBeInTheDocument();
     expect(screen.getByText(/inf-123456/)).toBeInTheDocument();
     expect(screen.getByText('Decision Path')).toBeInTheDocument();
   });
 
-  it('renders model card viewer when selectedModelCard is set', () => {
+  it('renders the workload assessment when one is selected', () => {
     mockXAI.selectedModelCard = {
-      modelId: 'lstm',
-      name: 'Cycle LSTM',
+      modelId: 'cycle-patterns',
+      name: 'Cycle Pattern Analysis',
       version: 'v2.1',
       description: 'Test model',
-      architecture: 'LSTM',
+      architecture: 'time-series',
       trainingDataSize: 100000,
       validationAccuracy: 96.2,
       fairnessMetrics: { demographicParity: 0.95, equalizedOdds: 0.92, calibration: 0.98 },
@@ -161,14 +163,14 @@ describe('ExplainabilityTab', () => {
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
-    expect(screen.getByText('Cycle LSTM')).toBeInTheDocument();
+    expect(screen.getByText('Cycle Pattern Analysis')).toBeInTheDocument();
   });
 
   it('renders bias heatmap when selectedBiasReport is set', () => {
     mockXAI.selectedBiasReport = {
-      modelId: 'lstm',
+      modelId: 'cycle-patterns',
       reportDate: Date.now(),
       overallBiasScore: 0.05,
       categories: [
@@ -178,18 +180,20 @@ describe('ExplainabilityTab', () => {
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
     expect(screen.getByText('Bias Analysis')).toBeInTheDocument();
   });
 
-  it('renders the About Explainable AI info box', () => {
+  it('renders the inference explainability info box', () => {
     render(
       <TestWrapper>
         <ExplainabilityTab />
-      </TestWrapper>
+      </TestWrapper>,
     );
-    expect(screen.getByText('About Explainable AI')).toBeInTheDocument();
-    expect(screen.getByText(/All AI models in Shiora produce explainability artifacts/)).toBeInTheDocument();
+    expect(screen.getByText('About Inference Explainability')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Configured inference workloads produce explainability artifacts/),
+    ).toBeInTheDocument();
   });
 });

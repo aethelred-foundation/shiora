@@ -1,54 +1,44 @@
 // ============================================================
 // Shiora on Aethelred — ZKP Proof Generation API
-// POST /api/zkp/prove — Generate a zero-knowledge proof for a claim
+// POST /api/zkp/prove — generate a REAL zero-knowledge set-membership proof
+//   (all audiences; owner-scoped). Proves the caller's private value is in the
+//   given public set without revealing it.
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  successResponse,
-  errorResponse,
-  HTTP,
-} from '@/lib/api/responses';
-import { runMiddleware } from '@/lib/api/middleware';
-import {
-  seededHex,
-  seededInt,
-  generateTxHash,
-} from '@/lib/utils';
-import type { ZKProof, ZKClaimType } from '@/types';
+import { z, ZodError } from 'zod';
 
-// ────────────────────────────────────────────────────────────
-// POST /api/zkp/prove
-// ────────────────────────────────────────────────────────────
+import { successResponse, validationError, errorResponse, HTTP } from '@/lib/api/responses';
+import { runMiddleware, requireAuth } from '@/lib/api/middleware';
+import { generateProof, CLAIM_TYPES, MAX_SET, type ClaimType } from '@/lib/api/zkp-service';
+
+const ProveSchema = z.object({
+  claimType: z.enum(Object.keys(CLAIM_TYPES) as [ClaimType, ...ClaimType[]]),
+  value: z.number().int().min(0),
+  set: z.array(z.number().int().min(0)).min(1).max(MAX_SET),
+});
 
 export async function POST(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
+  const auth = requireAuth(request);
+  if ('status' in auth) return auth;
+
   try {
-    const body = await request.json();
-    const { claimId, claimType } = body;
-
-    if (!claimId) {
-      return errorResponse('VALIDATION_ERROR', 'claimId is required', HTTP.BAD_REQUEST);
-    }
-
-    const seed = Date.now();
-    const proof: ZKProof = {
-      id: `proof-${seededHex(seed, 12)}`,
-      claimType: (claimType as ZKClaimType) ?? 'age_range',
-      proofHash: `0x${seededHex(seed + 10, 64)}`,
-      publicInputs: `claimId: ${claimId}, verified: pending`,
-      verified: false,
-      createdAt: Date.now(),
-      expiresAt: Date.now() + 90 * 86400000,
-    };
-
-    return successResponse(proof, HTTP.CREATED, {
-      message: 'ZK proof generation initiated. Verification pending.',
-      estimatedGas: seededInt(seed, 50000, 200000),
-    });
-  } catch {
-    return errorResponse('INVALID_BODY', 'Invalid JSON body', HTTP.BAD_REQUEST);
+    const { claimType, value, set } = ProveSchema.parse(await request.json());
+    const record = await generateProof(auth.walletAddress!, claimType, value, set);
+    return successResponse({
+      proofId: record.id,
+      claimType: record.claimType,
+      context: record.context,
+      proof: record.proof,
+      createdAt: record.createdAt,
+      expiresAt: record.expiresAt,
+    }, HTTP.CREATED);
+  } catch (err) {
+    if (err instanceof ZodError) return validationError(err);
+    // e.g. value not in set — a false statement cannot be proven.
+    return errorResponse('PROOF_FAILED', (err as Error).message, HTTP.BAD_REQUEST);
   }
 }

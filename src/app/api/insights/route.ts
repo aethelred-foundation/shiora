@@ -1,26 +1,19 @@
 // ============================================================
-// Shiora on Aethelred — Insights Overview API
-// GET /api/insights — AI insights overview with scores and predictions
+// Shiora on Aethelred — Health Insights Overview
+// GET /api/insights — non-diagnostic statistical insights over the caller's
+//   own encrypted telemetry (auth-gated, owner-scoped).
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import { successResponse } from '@/lib/api/responses';
-import { runMiddleware } from '@/lib/api/middleware';
-import { generateInsightsOverview } from '@/lib/api/mock-data';
 
-// ────────────────────────────────────────────────────────────
-// GET /api/insights
-// ────────────────────────────────────────────────────────────
+import { successResponse } from '@/lib/api/responses';
+import { runMiddleware, extractAuth } from '@/lib/api/middleware';
+import { computeInsights } from '@/lib/api/insights-service';
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request, { requireAuth: true });
   if (blocked) return blocked;
 
-  const overview = generateInsightsOverview();
-
-  return successResponse(overview, 200, {
-    computedAt: new Date().toISOString(),
-    teeVerified: true,
-    platform: 'Intel SGX',
-  });
+  const owner = extractAuth(request).walletAddress as string;
+  return successResponse(await computeInsights(owner));
 }

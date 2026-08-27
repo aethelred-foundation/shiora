@@ -2,8 +2,8 @@ import crypto from 'node:crypto';
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { serverEnv } from '@/lib/api/env';
-import { runMiddleware } from '@/lib/api/middleware';
+import { challengeSigningKey } from '@/lib/crypto/derived-secrets';
+import { AUTH_RATE_LIMIT, runMiddleware } from '@/lib/api/middleware';
 
 // ---------------------------------------------------------------------------
 // GET /api/wallet/challenge — issue a time-limited, HMAC-signed challenge
@@ -40,7 +40,7 @@ function createChallenge(address: string): {
   // HMAC binds the challenge to our server secret so it cannot be forged
   const payload = `${address}:${nonce}:${issuedAt}:${expiresAt}`;
   const hmac = crypto
-    .createHmac('sha256', serverEnv.sessionSecret)
+    .createHmac('sha256', challengeSigningKey())
     .update(payload)
     .digest('hex');
 
@@ -51,7 +51,7 @@ function createChallenge(address: string): {
 // exporting non-route functions from a Next.js App Router route file.
 
 export async function GET(request: NextRequest) {
-  const blocked = runMiddleware(request);
+  const blocked = await runMiddleware(request, AUTH_RATE_LIMIT);
   if (blocked) return blocked;
 
   const address = request.nextUrl.searchParams.get('address');
